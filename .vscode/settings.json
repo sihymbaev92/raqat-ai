@@ -1,0 +1,31 @@
+{
+  "remote.autoForwardPortsFallback": 0,
+  "editor.minimap.enabled": false,
+  "editor.inlineSuggest.enabled": false,
+  "files.watcherExclude": {
+    "**/.git/**": true,
+    "**/.venv/**": true,
+    "**/node_modules/**": true,
+    "**/__pycache__/**": true,
+    "**/.pytest_cache/**": true,
+    "**/*.db": true,
+    "**/*.db-*": true,
+    "**/*.bak*": true,
+    "**/backups/**": true
+  },
+  "search.exclude": {
+    "**/.venv": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/*.db": true,
+    "**/*.db-*": true,
+    "**/*.bak*": true,
+    "**/backups": true
+  },
+  "python.analysis.indexing": false,
+  "python.analysis.autoImportCompletions": false,
+  "python.analysis.inlayHints.functionReturnTypes": false,
+  "python.analysis.inlayHints.variableTypes": false,
+  "typescript.tsserver.maxTsServerMemory": 256
+}

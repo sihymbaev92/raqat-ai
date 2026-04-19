@@ -1,0 +1,2 @@
+# Пайдалану: pip install -r scripts/requirements-pg-migrate.txt
+psycopg[binary,pool]>=3.1,<4

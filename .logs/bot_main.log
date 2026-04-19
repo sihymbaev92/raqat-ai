@@ -1,0 +1,26 @@
+2026-04-18 01:10:14,256 | WARNING | RAQAT_BOT_API_ONLY=1: RAQAT_CONTENT_READ_SECRET бос. API контент endpoint-тері қорғалса, бот оқуы қателеседі.
+2026-04-18 01:10:15,076 | INFO | Bot commands registered (16 items)
+2026-04-18 01:10:15,078 | INFO | RAQAT AI PRO Started...
+2026-04-18 01:10:15,079 | INFO | Start polling
+2026-04-18 01:10:15,098 | INFO | Run polling for bot @my_islamic_ai_bot id=8655039179 - 'RAQAT AI'
+2026-04-18 01:10:16,701 | ERROR | Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-04-18 01:10:16,701 | WARNING | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8655039179)
+2026-04-18 01:10:21,771 | ERROR | Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-04-18 01:10:21,771 | WARNING | Sleep for 1.426178 seconds and try again... (tryings = 1, bot id = 8655039179)
+2026-04-18 01:10:27,466 | WARNING | Received SIGTERM signal
+2026-04-18 01:10:27,467 | INFO | Polling stopped for bot @my_islamic_ai_bot id=8655039179 - 'RAQAT AI'
+2026-04-18 01:10:27,467 | INFO | Polling stopped
+2026-04-18 01:10:43,163 | WARNING | RAQAT_BOT_API_ONLY=1: RAQAT_CONTENT_READ_SECRET бос. API контент endpoint-тері қорғалса, бот оқуы қателеседі.
+2026-04-18 01:10:43,729 | INFO | Bot commands registered (16 items)
+2026-04-18 01:10:43,729 | INFO | RAQAT AI PRO Started...
+2026-04-18 01:10:43,730 | INFO | Start polling
+2026-04-18 01:10:43,746 | INFO | Run polling for bot @my_islamic_ai_bot id=8655039179 - 'RAQAT AI'
+2026-04-18 01:10:47,817 | ERROR | Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-04-18 01:10:47,819 | WARNING | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8655039179)
+2026-04-18 01:10:53,098 | ERROR | Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-04-18 01:10:53,098 | WARNING | Sleep for 1.266957 seconds and try again... (tryings = 1, bot id = 8655039179)
+2026-04-18 01:10:58,425 | ERROR | Failed to fetch updates - TelegramConflictError: Telegram server says - Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-04-18 01:10:58,426 | WARNING | Sleep for 1.755813 seconds and try again... (tryings = 2, bot id = 8655039179)
+2026-04-18 01:10:59,183 | WARNING | Received SIGTERM signal
+2026-04-18 01:10:59,183 | INFO | Polling stopped for bot @my_islamic_ai_bot id=8655039179 - 'RAQAT AI'
+2026-04-18 01:10:59,184 | INFO | Polling stopped

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Env
+.env
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups
+*.bak
+*.bak.*
+backup/
+backups/
+
+# OS
+.DS_Store
+Thumbs.db

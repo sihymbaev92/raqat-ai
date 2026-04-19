@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="kk" data-api-base="http://127.0.0.1:8787">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RAQAT — платформа</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <p class="eyebrow">Исламдық құралдар мен контент</p>
+    <h1>RAQAT</h1>
+    <p class="lead">
+      Құран, хадис, намаз уақыты, құбыла, тәсбих және AI көмекшісі бір экожүйеде.
+      Веб — орталық бет; толық тәжірибе Telegram бот пен мобильді қосымшада.
+    </p>
+  </header>
+
+  <main class="chapters">
+    <section class="chapter" id="bot">
+      <h2>1. Telegram бот</h2>
+      <p>
+        Тез қолжетімділік: дауыс командалары, RAQAT AI, хадис іздеу, халал тексеру (мәтін немесе сурет),
+        Құран, тәжуид, хатым, намаз бөлімі.
+      </p>
+      <p><a class="btn primary" href="https://t.me/my_islamic_ai_bot" rel="noopener noreferrer">Ботты ашу</a></p>
+    </section>
+
+    <section class="chapter" id="app">
+      <h2>2. Мобильді қосымша</h2>
+      <p>
+        Намаз кестесі, құбыла, Құран мәтіні, офлайнға жақын сценарийлер. Жариялау (App Store / Google Play)
+        қосылған соң сілтемелер осы бетке қосылады.
+      </p>
+      <p class="muted">Қазіргі саты: Expo жобасы репозиторийдегі <code>mobile/</code> қалтасында.</p>
+    </section>
+
+    <section class="chapter" id="api">
+      <h2>3. Платформа API</h2>
+      <p>
+        Келешекте барлық клиенттер осы API арқылы дерек пен AI шлюзіне қосылады. Қазіргі минималды қызмет:
+        денсаулық тексеру және ақпараттық JSON.
+      </p>
+      <p>
+        <code class="inline-code">GET /health</code> · <code class="inline-code">GET /api/v1/info</code> ·
+        <code class="inline-code">GET /api/v1/stats/content</code>
+      </p>
+      <p id="api-status" class="api-pill muted" aria-live="polite">API: тексерілуде…</p>
+      <p id="content-stats" class="content-stats muted" aria-live="polite"></p>
+      <p class="muted">Іске қосу: <code>scripts/run_platform_api.sh</code> немесе <code>platform_api/README.md</code>.</p>
+    </section>
+
+    <section class="chapter" id="doc">
+      <h2>4. Нұсқаулық</h2>
+      <p>Архитектура мен келесі қадамдар толығырақ құжатта сипатталған.</p>
+      <p><a class="btn" href="../docs/RAQAT_PLATFORM.md">RAQAT_PLATFORM.md</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>RAQAT — AI жауаптары ақпараттық сипатта; фиқһтық үкім үшін білікті мүфтилер мен дәстүрлі көздерге жүгініңіз.</p>
+  </footer>
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var base = (root.getAttribute("data-api-base") || "http://127.0.0.1:8787").replace(/\/$/, "");
+      var el = document.getElementById("api-status");
+      var statsEl = document.getElementById("content-stats");
+      if (!el) return;
+      fetch(base + "/health")
+        .then(function (r) {
+          return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status));
+        })
+        .then(function (j) {
+          el.textContent =
+            j.status === "ok"
+              ? "API: қосулы · " + (j.version || "") + " · " + base
+              : "API: жауап күтпеген формат";
+          el.classList.remove("muted");
+        })
+        .catch(function () {
+          el.textContent =
+            "API: байланыс жоқ (алдымен uvicorn іске қосыңыз немесе data-api-base мекенжайын түзетіңіз)";
+        });
+      if (statsEl) {
+        fetch(base + "/api/v1/stats/content")
+          .then(function (r) {
+            return r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status));
+          })
+          .then(function (j) {
+            if (!j || !j.ok) {
+              statsEl.textContent = "Контент статистикасы: API ok=false немесе дерек жоқ.";
+              return;
+            }
+            var q = j.tables && j.tables.quran;
+            var h = j.tables && j.tables.hadith;
+            var parts = [];
+            if (q && typeof q.rows === "number") {
+              parts.push("Құран жолдары: " + q.rows + (q.text_kk_pct != null ? " · қазақша " + q.text_kk_pct + "%" : ""));
+            }
+            if (h && typeof h.rows === "number") {
+              parts.push("Хадис жолдары: " + h.rows + (h.text_kk_pct != null ? " · қазақша " + h.text_kk_pct + "%" : ""));
+            }
+            statsEl.textContent =
+              parts.length > 0
+                ? "Орталық дерек (бір көз): " + parts.join(" · ")
+                : "Контент кестелері бос немесе кесте атаулары күтпеген.";
+            statsEl.classList.remove("muted");
+          })
+          .catch(function () {
+            statsEl.textContent = "";
+          });
+      }
+    })();
+  </script>
+</body>
+</html>

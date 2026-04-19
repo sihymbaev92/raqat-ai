@@ -1,0 +1,995 @@
+{
+  "version": 4,
+  "items": [
+    {
+      "id": 1,
+      "slug": "after_salah",
+      "textAr": "سُبْحَانَ اللَّهِ · الْحَمْدُ لِلَّهِ · اللَّهُ أَكْبَرُ",
+      "textKk": "Намаздан кейін 33+33+33",
+      "translitKk": "СубханаЛлаһ · Әлхамдулиллаһ · Аллаһу акбар",
+      "meaningKk": "Намаздан кейінгі тәсбих: алдымен «СубханаЛлаһ» 33 рет, содан «Әлхамдулиллаһ» 33 рет, соңғысы «Аллаһу акбар» 33 рет — барлығы 99.",
+      "defaultTarget": 99,
+      "phaseRule": "triple_salah"
+    },
+    {
+      "id": 2,
+      "slug": "subhan_wa_bihamdihi",
+      "textAr": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ",
+      "textKk": "СубханаЛлаһи уа биҳамдиһи",
+      "translitKk": "СубханаЛлаһи уа биҳамдиһи",
+      "meaningKk": "Аллаһты мадақтай отырып, Оны бар кемшіліктен пәк деп айту.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 3,
+      "slug": "subhan_al_azim",
+      "textAr": "سُبْحَانَ اللَّهِ الْعَظِيمِ",
+      "textKk": "СубханаЛлаһил-'азим",
+      "translitKk": "СубханаЛлаһил-'азим",
+      "meaningKk": "Ұлы Аллаһ бар кемшіліктен пәк.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 4,
+      "slug": "la_ilaha",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Құлшылыққа лайық тәңірлік жоқ, тек Аллаһ бар.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 5,
+      "slug": "la_ilaha_wahdahu",
+      "textAr": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ",
+      "textKk": "Ла илаһа иллаллаһу уахдаһу",
+      "translitKk": "Ла илаһа иллаллаһу уахдаһу ла шарика лahu",
+      "meaningKk": "Аллаһтан басқа құдай жоқ, Оның серігі жоқ.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 6,
+      "slug": "astaghfirullah",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Мен Аллаһтан кешірім сұраймын.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 7,
+      "slug": "astaghfirullah_azim",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ",
+      "textKk": "Астағфируллаһал-'азим",
+      "translitKk": "Астағфируллаһал-'азим",
+      "meaningKk": "Үлкен Аллаһтан кешірім сұраймын.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 8,
+      "slug": "hasbunallah",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "ҲасбунаЛлаһ",
+      "translitKk": "ҲасбунаЛлаһу уа ниғмал уәкил",
+      "meaningKk": "Бізге Аллаһ жеткілікті — Ол ең жақсы сенімді қорғаушы.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 9,
+      "slug": "la_hawla",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла һаула",
+      "translitKk": "Ла һаула уа ла қувватта илла биллаһ",
+      "meaningKk": "Оңайлық пен күш тек Аллаһта.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 10,
+      "slug": "salawat_short",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
+      "textKk": "Сәләуәт (қысқа)",
+      "translitKk": "Аллаһумма салли 'алә Мухаммадин уа 'алә әли Мухаммад",
+      "meaningKk": "Аллаһумма, Мұхаммедке және оның әулетіне сәләу ет.",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 11,
+      "slug": "rabbana_atina",
+      "textAr": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
+      "textKk": "Раббана әтина…",
+      "translitKk": "Раббана әтина фид-дунья хасанатан…",
+      "meaningKk": "Раббымыз, бізге дүниеде де, ахиретте де жақсылық бер және от азабынан сақта.",
+      "defaultTarget": 7,
+      "phaseRule": null
+    },
+    {
+      "id": 12,
+      "slug": "allahumma_barik",
+      "textAr": "اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
+      "textKk": "Аллаһумма барик",
+      "translitKk": "Аллаһумма барик 'алә Мухаммадин",
+      "meaningKk": "Аллаһумма, Мұхаммедке және оның әулетіне береке бер.",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 13,
+      "slug": "subhan_rabbiyaal_aala",
+      "textAr": "سُبْحَانَ رَبِّيَ الْأَعْلَى",
+      "textKk": "Субхана раббиәл-а'ла (жалпы зікір)",
+      "translitKk": "Субхана раббиәл-а'ла",
+      "meaningKk": "Раббым ең биік — пәк (жалпы зікір ретінде).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 14,
+      "slug": "innallaha_ma_sabirin",
+      "textAr": "إِنَّ اللَّهَ مَعَ الصَّابِرِينَ",
+      "textKk": "Инналлаһа ма'ас-сабирин",
+      "translitKk": "Инналлаһа ма'ас-сабирин",
+      "meaningKk": "Расында Аллаһ сабырлылармен бірге (2:153).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 15,
+      "slug": "hasbiyallahu",
+      "textAr": "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ",
+      "textKk": "Һасбийаллаһ",
+      "translitKk": "Һасбийаллаһу ла илаһа илла һуа",
+      "meaningKk": "Маған Аллаһ жеткілікті; Одан басқа құдай жоқ (9:129 бастапқысы).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 16,
+      "slug": "la_hawla_quwwata",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ الْعَلِيِّ الْعَظِيمِ",
+      "textKk": "Ла һаула ('алий 'азим)",
+      "translitKk": "Ла һаула уа ла қувватта илла биллаһил-'алиййил-'азим",
+      "meaningKk": "Күш пен қуат тек ұлы Аллаһта.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 17,
+      "slug": "subhan_wa_bihamdihi_kathir",
+      "textAr": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "СубханаЛлаһи уа биҳамдиһи астағфируллаһ",
+      "translitKk": "СубханаЛлаһи уа биҳамдиһи астағфируллаһ",
+      "meaningKk": "Аллаһты мадақтай пәк айтамын, кешірім сұраймын.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 18,
+      "slug": "raditu_billahi",
+      "textAr": "رَضِيتُ بِاللهِ رَبًّا وَبِالْإِسْلَامِ دِينًا",
+      "textKk": "Раддиту биллаһи рабба",
+      "translitKk": "Раддиту биллаһи раббан уа бил-ислами дина",
+      "meaningKk": "Аллаһты Раббым, Исламды дінім деп қанағаттандым.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 19,
+      "slug": "allahumma_salli_ala",
+      "textAr": "صَلَّى اللَّهُ عَلَى مُحَمَّدٍ",
+      "textKk": "Саллаллаһу 'алә Мухаммад",
+      "translitKk": "Саллаллаһу 'алә Мухаммад",
+      "meaningKk": "Аллаһ Мұхаммедке сәләу етсін.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 20,
+      "slug": "subhan_rabbiyal_azim_gen",
+      "textAr": "سُبْحَانَ رَبِّيَ الْعَظِيمِ",
+      "textKk": "Субхана раббиәл-'азим",
+      "translitKk": "Субхана раббиәл-'азим",
+      "meaningKk": "Раббым ұлы — пәк (жалпы зікір).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 21,
+      "slug": "yaa_hayyu",
+      "textAr": "يَا حَيُّ يَا قَيُّومُ",
+      "textKk": "Йа Хаййу йа Қайюм",
+      "translitKk": "Йа Хаййу йа Қайюм",
+      "meaningKk": "Тірі, өзінен тұратын (дуаға жиі қосылады).",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 22,
+      "slug": "allahumma_inni_asaluka",
+      "textAr": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْجَنَّةَ",
+      "textKk": "Аллаһумма инни ас'alукал-джанна",
+      "translitKk": "Аллаһумма инни ас'alукал-джанна",
+      "meaningKk": "Аллаһумма, мен Сенен жәннәт сұраймын.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 23,
+      "slug": "allahumma_atina",
+      "textAr": "اللَّهُمَّ آتِنَا فِي الدُّنْيَا حَسَنَةً",
+      "textKk": "Аллаһумма әтина…",
+      "translitKk": "Аллаһумма әтина фид-дунья хасанатан",
+      "meaningKk": "Аллаһумма, бізге дүниеде жақсылық бер.",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 24,
+      "slug": "innahu_man",
+      "textAr": "إِنَّهُ مَن يَتَّقِ وَيَصْبِرْ",
+      "textKk": "Иннаһу ман йяттақи (есім)",
+      "translitKk": "Иннаһу ман йяттақи уа йасбир",
+      "meaningKk": "Расында кім тақуа болса… (бастапқы ескерту).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 25,
+      "slug": "ma_shaa_allah",
+      "textAr": "مَا شَاءَ اللهُ",
+      "textKk": "Ма шаАллаһ",
+      "translitKk": "Ма шаАллаһ",
+      "meaningKk": "Аллаһ қаласады.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 26,
+      "slug": "inna_lillahi",
+      "textAr": "إِنَّا لِلَّهِ وَإِنَّا إِلَيْهِ رَاجِعُونَ",
+      "textKk": "Инна лиллаһи",
+      "translitKk": "Инна лиллаһи уа инна иләйһи ражи'ун",
+      "meaningKk": "Расында біз Аллаһтікіміз және Оған қайтамыз.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 27,
+      "slug": "hasbunallahu_wa_ni'mal_wakil_full",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ نِعْمَ الْمَوْلَى وَنِعْمَ النَّصِيرُ",
+      "textKk": "ҺасбунаЛлаһ (толығырақ)",
+      "translitKk": "ҺасбунаЛлаһу уа ниғмал уәкил",
+      "meaningKk": "Бізге Аллаһ жеткілікті — ең жақсы қорғаушы.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 28,
+      "slug": "rabbanagh_fir",
+      "textAr": "رَبَّنَا اغْفِرْ لَنَا",
+      "textKk": "Раббанағфир лана",
+      "translitKk": "Раббанағфир лана",
+      "meaningKk": "Раббымыз, бізді кешір.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 29,
+      "slug": "allahumma_salim",
+      "textAr": "اللَّهُمَّ سَلِّمْنِي",
+      "textKk": "Аллаһумма саллимни",
+      "translitKk": "Аллаһумма саллимни",
+      "meaningKk": "Аллаһумма, мені салаamat сақта (жалпы сұрау).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 30,
+      "slug": "la_mani",
+      "textAr": "لَا مَانِعَ لِمَا أَعْطَيْتَ",
+      "textKk": "Ла мани лима а'тайта",
+      "translitKk": "Ла мани лима а'тайта",
+      "meaningKk": "Бергеніңді тыймайтын жоқ.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 31,
+      "slug": "ya_mughith",
+      "textAr": "يَا مُغِيثُ أَغِثْنِي",
+      "textKk": "Йа Муғис ағисни",
+      "translitKk": "Йа Муғис ағисни",
+      "meaningKk": "Уа, көмек беруші, көмек бер.",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 32,
+      "slug": "allahumma_bismika",
+      "textAr": "اللَّهُمَّ بِاسْمِكَ أَمُوتُ وَأَحْيَا",
+      "textKk": "Аллаһумма бисмика амуту уа ахйа",
+      "translitKk": "Аллаһумма бисмика амуту уа ахйа",
+      "meaningKk": "Аллаһумма, Сенің атыңмен өлемін және тірілемін.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 33,
+      "slug": "subhanallahi_wa_bihamdihi_adad",
+      "textAr": "سُبْحَانَ اللَّهِ عَدَدَ خَلْقِهِ",
+      "textKk": "СубханаЛлаһи 'адада халқиһи",
+      "translitKk": "СубханаЛлаһи 'адада халқиһи",
+      "meaningKk": "Жаратылысының санымен Аллаһ пәк (бастапқысы).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 34,
+      "slug": "qul_huwa",
+      "textAr": "قُلْ هُوَ اللَّهُ أَحَدٌ",
+      "textKk": "Қул һуаллаһу ахад",
+      "translitKk": "Қул һуаллаһу ахад",
+      "meaningKk": "Айт: Ол — Аллаһ, бір (сүре бастапқысы).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 35,
+      "slug": "fabi_ayyi",
+      "textAr": "فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ",
+      "textKk": "Фабиәййи әлаи раббикума тукәззибан",
+      "translitKk": "Фабиәййи әлаи раббикума тукәззибан",
+      "meaningKk": "Қайсы нығметтерін жоққа шығармайсыңдар (сүре сәлемі).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 36,
+      "slug": "subhan_dhikr2",
+      "textAr": "سُبْحَانَ ذِي الْجَلَالِ وَالْإِكْرَامِ",
+      "textKk": "Субхана зил-Жәләли уал-Икрам",
+      "translitKk": "Субхана зил-Жәләли уал-Икрам",
+      "meaningKk": "Жалпылық пен ұлылық иесі пәк.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 37,
+      "slug": "allahumma_ghfir",
+      "textAr": "اللَّهُمَّ اغْفِرْ لِي وَارْحَمْنِي",
+      "textKk": "Аллаһуммағфир ли уархамни",
+      "translitKk": "Аллаһуммағфир ли уархамни",
+      "meaningKk": "Аллаһумма, мені кешір, маған мейірім ет.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 38,
+      "slug": "rabbishrah",
+      "textAr": "رَبِّ اشْرَحْ لِي صَدْرِي",
+      "textKk": "Раббишрах ли садри",
+      "translitKk": "Раббишрах ли садри",
+      "meaningKk": "Раббым, кеудемді жайғастыр (20:25).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 39,
+      "slug": "wa_qul_rabb",
+      "textAr": "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+      "textKk": "Уа қул рабби зидни 'илман",
+      "translitKk": "Уа қул рабби зидни 'илман",
+      "meaningKk": "Және айт: Раббым, білімімді арттыр.",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 40,
+      "slug": "hasbi_rabbi",
+      "textAr": "حَسْبِيَ رَبِّيَ اللَّهُ",
+      "textKk": "Һасби раббийаллаһ",
+      "translitKk": "Һасби раббийаллаһ",
+      "meaningKk": "Раббым Аллаһ маған жеткілікті.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 41,
+      "slug": "subhan_malik",
+      "textAr": "سُبْحَانَ الْمَلِكِ الْقُدُّوسِ",
+      "textKk": "Субхана әл-Мәликил-Қуддус",
+      "translitKk": "Субхана әл-Мәликил-Қуддус",
+      "meaningKk": "Пәк Патша пәк.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 42,
+      "slug": "allahumma_inni_audhu",
+      "textAr": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+      "textKk": "Аллаһумма инни а'узу бика минаш-шайтан",
+      "translitKk": "Аллаһумма инни а'узу бика минаш-шайтанир-раджим",
+      "meaningKk": "Аллаһумма, мен Сенен шайтаннан пана тілеймін.",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 43,
+      "slug": "audhu_billahi",
+      "textAr": "أَعُوذُ بِاللهِ مِنَ الشَّيْطَانِ الرَّجِيمِ",
+      "textKk": "А'узу биллаһи минаш-шайтан",
+      "translitKk": "А'узу биллаһи минаш-шайтанир-раджим",
+      "meaningKk": "Аллаһтан шайтаннан пана тілеймін.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 44,
+      "slug": "allahumma_atini",
+      "textAr": "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ",
+      "textKk": "Аллаһумма а'инни 'алә зикрика",
+      "translitKk": "Аллаһумма а'инни 'алә зикрика уа шукрик",
+      "meaningKk": "Аллаһумма, зікірім мен шүкірімде көмек бер.",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 45,
+      "slug": "subhan_fatimi",
+      "textAr": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ عَدَدَ خَلْقِهِ",
+      "textKk": "СубханаЛлаһи уа биҳамдиһи 'адада халқиһи",
+      "translitKk": "СубханаЛлаһи уа биҳамдиһи 'адада халқиһи",
+      "meaningKk": "Жаратылыс санымен пәк мақтау (бастапқысы).",
+      "defaultTarget": 5,
+      "phaseRule": null
+    },
+    {
+      "id": 46,
+      "slug": "la_ilaha_illallah_muhammad",
+      "textAr": "مُحَمَّدٌ رَسُولُ اللَّهِ",
+      "textKk": "Мухаммадур расулullah",
+      "translitKk": "Мухаммадур расулullah",
+      "meaningKk": "Мұхаммед — Аллаһтың елшісі (қысқа куәлік).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 47,
+      "slug": "allahumma_salli_full",
+      "textAr": "اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبِيِّنَا مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли уа саллим 'алә набийина Мухаммад",
+      "translitKk": "Аллаһумма салли уа саллим",
+      "meaningKk": "Аллаһумма, Пайғамбарымыз Мұхаммедке сәләу және сәләм бер.",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 48,
+      "slug": "rabbana_atina_short",
+      "textAr": "رَبَّنَا آتِنَا مِنْ لَدُنْكَ رَحْمَةً",
+      "textKk": "Раббана әтина мин ладунка рахматан",
+      "translitKk": "Раббана әтина мин ладунка рахматан",
+      "meaningKk": "Раббымыз, өзіңнен мейірім бер.",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 49,
+      "slug": "dhikr_fabi_ayyi_2",
+      "textAr": "تَبَارَكَ اسْمُ رَبِّكَ ذِي الْجَلَالِ وَالْإِكْرَامِ",
+      "textKk": "Табаракасму раббика зил-Жәләли",
+      "translitKk": "Табаракасму раббика зил-Жәләли уал-икрам",
+      "meaningKk": "Раббыңның аты ұлық (сүре сәлемі).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 50,
+      "slug": "salawat_ibrahim_short",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ",
+      "textKk": "Ибраһимия (бастапқы)",
+      "translitKk": "Аллаһумма салли 'алә Мухаммадин кәма салләйта 'алә Ибраһима",
+      "meaningKk": "Ибраһимия сәләуәтінің басы (толығын кітаптан).",
+      "defaultTarget": 3,
+      "phaseRule": null
+    },
+    {
+      "id": 51,
+      "slug": "allahumma_rabbana",
+      "textAr": "رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ",
+      "textKk": "Раббана һаб лана (бастапқы)",
+      "translitKk": "Раббана һаб лана мин азваджина",
+      "meaningKk": "Раббымыз, жұбайларымыздан және ұрпақтарымыздан көз жұбымын бер (бастапқы).",
+      "defaultTarget": 5,
+      "phaseRule": null
+    },
+    {
+      "id": 52,
+      "slug": "qul_audhu_falaq",
+      "textAr": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
+      "textKk": "Қул а'узу би раббил-фалақ",
+      "translitKk": "Қул а'узу би раббил-фалақ",
+      "meaningKk": "Айт: Таң Раббысынан пана тілеймін (Фалақ бастапқысы).",
+      "defaultTarget": 7,
+      "phaseRule": null
+    },
+    {
+      "id": 53,
+      "slug": "qul_audhu_nas",
+      "textAr": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+      "textKk": "Қул а'узу би раббин-нас",
+      "translitKk": "Қул а'узу би раббин-нас",
+      "meaningKk": "Айт: Адамдар Раббысынан пана тілеймін (Нас бастапқысы).",
+      "defaultTarget": 7,
+      "phaseRule": null
+    },
+    {
+      "id": 54,
+      "slug": "istighfar_sayyid",
+      "textAr": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ",
+      "textKk": "Сәййидүл-истигфар (бастапқы)",
+      "translitKk": "Аллаһумма анта рабби ла илаһа илла анта",
+      "meaningKk": "Аллаһумма, Сен Раббым… (ұзақ дұғаның басы).",
+      "defaultTarget": 3,
+      "phaseRule": null
+    },
+    {
+      "id": 55,
+      "slug": "bismillah_only",
+      "textAr": "بِسْمِ اللَّهِ",
+      "textKk": "Бисмиллаһ",
+      "translitKk": "Бисмиллаһ",
+      "meaningKk": "Аллаһтың атымен бастау — әр істің сүннеті.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 56,
+      "slug": "subhanallah_word",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ (жеке)",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһ бар кемшіліктен пәк — тәсбихтің негізі.",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 57,
+      "slug": "alhamdulillah_word",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ (жеке)",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Бар мақтау Аллаһқа — шүкірдің негізі.",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 58,
+      "slug": "allahu_akbar_word",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар (жеке)",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең ұлы — тәкбірдің негізі.",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 59,
+      "slug": "subhan_bi_hamd_subhan_azim",
+      "textAr": "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ سُبْحَانَ اللَّهِ الْعَظِيمِ",
+      "textKk": "СубханаЛлаһи уа биҳамдиһи…",
+      "translitKk": "СубханаЛлаһи уа биҳамдиһи, СубханаЛлаһил-'азим",
+      "meaningKk": "Хадистегі мықты тәсбих: мадақтау және Ұлы Аллаһты пәк деп айту.",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 60,
+      "slug": "la_ilaha_full_tawhid",
+      "textAr": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+      "textKk": "Ла илаһа (толық тәухид)",
+      "translitKk": "Ла илаһа иллаллаһу уахдаһу… уа һуа 'алә kulli шәй'in қадир",
+      "meaningKk": "Тәухид, мулк, мақтау — таң/кеш жиі зікірі (сүннет формасы).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 61,
+      "slug": "allahumma_antarabbi",
+      "textAr": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ خَلَقْتَنِي وَأَنَا عَبْدُكَ",
+      "textKk": "Сәййидүл-истигфар (басы)",
+      "translitKk": "Аллаһумма анта рабби ла илаһа илла анта…",
+      "meaningKk": "Ұлы истигфардың басы — кешірім мен тәуелділік.",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 62,
+      "slug": "rabbi_ighfir_warham",
+      "textAr": "رَبِّ اغْفِرْ وَارْحَمْ وَأَنْتَ خَيْرُ الرَّاحِمِينَ",
+      "textKk": "Рабби ғфир уарҳам",
+      "translitKk": "Раббиғфир уарҳам уа анта хайрур-рахимин",
+      "meaningKk": "Раббым, кешір, мейірім ет — сен ең жақсы мейірімдісің (23:118).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 63,
+      "slug": "subhan_al_aliyy_al_azim",
+      "textAr": "سُبْحَانَ الْعَلِيِّ الْعَظِيمِ",
+      "textKk": "Субхана әл-'алиййил-'азим",
+      "translitKk": "Субхана әл-'алиййил-'азим",
+      "meaningKk": "Биік пен Ұлы — рүку кезінде жиі.",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 64,
+      "slug": "allahumma_lakal_hamd",
+      "textAr": "اللَّهُمَّ رَبَّنَا لَكَ الْحَمْدُ",
+      "textKk": "Аллаһумма ләкал хамд",
+      "translitKk": "Аллаһумма раббана ләкал хамд",
+      "meaningKk": "Раббымыз, мақтау Саған (сәжде/құттықтау сияқты контекст).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 65,
+      "slug": "allahumma_barik_rizq",
+      "textAr": "اللَّهُمَّ بَارِكْ لِي فِي رِزْقِي",
+      "textKk": "Аллаһумма барик ли ризқи",
+      "translitKk": "Аллаһумма барик ли фи ризқи",
+      "meaningKk": "Аллаһумма, ризығымда береке бер.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 66,
+      "slug": "audhu_hamm_wal_hazan",
+      "textAr": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ",
+      "textKk": "Аллаһумма а'узу бика минал-һамм",
+      "translitKk": "Аллаһумма инни а'узу бика минал-һамми уал-һазан",
+      "meaningKk": "Қайғы мен мазасыздықтан пана (дуа басы).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 67,
+      "slug": "audhu_ajz_wal_kasal",
+      "textAr": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْعَجْزِ وَالْكَسَلِ",
+      "textKk": "Аллаһумма а'узу минал-'ажзи",
+      "translitKk": "Аллаһумма а'узу бика минал-'ажзи уал-касал",
+      "meaningKk": "Әлсіздік пен жалқаулықтан пана.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 68,
+      "slug": "asaluka_ilman_nafia",
+      "textAr": "اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا",
+      "textKk": "Аллаһумма ас'alука 'илман нафи'а",
+      "translitKk": "Аллаһумма ас'alука 'илман нафи'ан",
+      "meaningKk": "Пайдалы білім сұрау (дуаның басы).",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 69,
+      "slug": "asaluka_alhuda",
+      "textAr": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى",
+      "textKk": "Аллаһумма ас'alукал-һуда",
+      "translitKk": "Аллаһумма ас'alукал-һуда",
+      "meaningKk": "Түзу жол сұрау.",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 70,
+      "slug": "allahumma_afuww",
+      "textAr": "اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ الْعَفْوَ فَاعْفُ عَنِّي",
+      "textKk": "Аллаһумма иннака 'афуввун…",
+      "translitKk": "Аллаһумма иннака 'афуввун туһиббул-'афва фа'фу 'анни",
+      "meaningKk": "Қадір түні: кешірімдісің, кешірімді сүйесің, кешір (жиі дұға).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 71,
+      "slug": "allahumma_nur_qalb",
+      "textAr": "اللَّهُمَّ اجْعَلْ فِي قَلْبِي نُورًا",
+      "textKk": "Аллаһумма ж'ал фи қалби нуран",
+      "translitKk": "Аллаһумма ж'ал фи қалби нуран",
+      "meaningKk": "Жүрегіме нұр сал (рухани жарық).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 72,
+      "slug": "allahumma_afwa_afiya",
+      "textAr": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ",
+      "textKk": "Аллаһумма ас'alукал-'афва",
+      "translitKk": "Аллаһумма ас'alукал-'афва уал-'афийа",
+      "meaningKk": "Кешірім мен амандық сұрау.",
+      "defaultTarget": 40,
+      "phaseRule": null
+    },
+    {
+      "id": 73,
+      "slug": "allahumma_hasib_yasir",
+      "textAr": "اللَّهُمَّ حَاسِبْنِي حِسَابًا يَسِيرًا",
+      "textKk": "Аллаһумма ҳасибни ҳисабан йасиран",
+      "translitKk": "Аллаһумма ҳасибни ҳисабан йасиран",
+      "meaningKk": "Есебімді жеңіл ет (қайғысыз кездесу).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 74,
+      "slug": "rabbana_la_tuzigh",
+      "textAr": "رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا",
+      "textKk": "Раббана ла tuzиғ…",
+      "translitKk": "Раббана ла tuzиғ қулубана ба'да ис һадайтана",
+      "meaningKk": "Раббымыз, бізді бағыттағаннан кейін жүректерімізді бұтқа беттетпе (3:8).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 75,
+      "slug": "wa_ma_tawfiqi",
+      "textAr": "وَمَا تَوْفِيقِي إِلَّا بِاللَّهِ",
+      "textKk": "Уа ма тәуфиқи илла биллаһ",
+      "translitKk": "Уа ма тәуфиқи илла биллаһ",
+      "meaningKk": "Табысым тек Аллаһпен (11:88).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 76,
+      "slug": "hasbi_tawakkul_full",
+      "textAr": "حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ",
+      "textKk": "Һасбийаллаһ (толық тәуеккүл)",
+      "translitKk": "Һасбийаллаһу ла илаһа илла һуа 'аләйһи тәуаккалту",
+      "meaningKk": "Тәуеккүлдің толық нұсқасы (9:129).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 77,
+      "slug": "subhan_dhi_mulk",
+      "textAr": "سُبْحَانَ ذِي الْمُلْكِ وَالْمَلَكُوتِ",
+      "textKk": "Субхана зил-мулки",
+      "translitKk": "Субхана зил-мулки уал-малакут",
+      "meaningKk": "Мүлік пен патшалық Иесі пәк.",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 78,
+      "slug": "allahumma_anta_salam",
+      "textAr": "اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ",
+      "textKk": "Аллаһумма антас-Салам",
+      "translitKk": "Аллаһумма антас-саламу уа минкас-салам",
+      "meaningKk": "Сен Саламсың, салаамат Сенен — намаз сәлемінен кейінгі сүннет зікір.",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 79,
+      "slug": "allahumma_ftah_li",
+      "textAr": "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ",
+      "textKk": "Аллаһуммафтaҳ ли абwаба рахматик",
+      "translitKk": "Аллаһумма фтаҳ ли абwаба рахматик",
+      "meaningKk": "Мейірім есіктерін аш (намаз сәлемінен кейін жиі).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 80,
+      "slug": "allahumma_inni_zalamtu",
+      "textAr": "اللَّهُمَّ إِنِّي ظَلَمْتُ نَفْسِي ظُلْمًا كَثِيرًا",
+      "textKk": "Аллаһумма инни заламту нафси",
+      "translitKk": "Аллаһумма инни заламту нафси зulман касиран",
+      "meaningKk": "Нәпсіме көп зұлымдық істедім (истигфар басы).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 81,
+      "slug": "la_mani_atayta",
+      "textAr": "لَا مَانِعَ لِمَا أَعْطَيْتَ وَلَا مُعْطِيَ لِمَا مَنَعْتَ",
+      "textKk": "Ла мани лима а'тайта (толығы)",
+      "translitKk": "Ла мани лима а'тайта уа ла му'ти лима мана'та",
+      "meaningKk": "Бергеніңді тоқтатпайтын жоқ (қысқа нұсқа).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 82,
+      "slug": "allahumma_rzuqni",
+      "textAr": "اللَّهُمَّ ارْزُقْنِي حَلَالًا طَيِّبًا",
+      "textKk": "Аллаһумма рзуқни ҳалалән таййибан",
+      "translitKk": "Аллаһумма рзуқни ҳалалән таййибан",
+      "meaningKk": "Таза халал ризық бер.",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 83,
+      "slug": "allahumma_qini_azab",
+      "textAr": "اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ",
+      "textKk": "Аллаһумма қини 'азабак",
+      "translitKk": "Аллаһумма қини 'азабака йаwма таб'асу 'ибадак",
+      "meaningKk": "Қиямет күні азабыңнан сақта (дуа басы).",
+      "defaultTarget": 15,
+      "phaseRule": null
+    },
+    {
+      "id": 84,
+      "slug": "subhan_rabbika_rabbil_izzati",
+      "textAr": "سُبْحَانَ رَبِّكَ رَبِّ الْعِزَّةِ عَمَّا يَصِفُونَ",
+      "textKk": "Субхана раббика раббил-'иззати",
+      "translitKk": "Субхана раббика раббил-'иззати 'амма йасифун",
+      "meaningKk": "Раббың ұлық — сипатталғандардан пәк (37:180).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 85,
+      "slug": "wa_ila_rabbika_farghab",
+      "textAr": "وَإِلَىٰ رَبِّكَ فَارْغَبْ",
+      "textKk": "Уа илә раббика фарғаб",
+      "translitKk": "Уа илә раббика фарғаб",
+      "meaningKk": "Раббыңа ұмтыл (94:8).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 86,
+      "slug": "wallahu_khairul_hafizin",
+      "textAr": "وَاللَّهُ خَيْرٌ حَافِظًا وَهُوَ أَرْحَمُ الرَّاحِمِينَ",
+      "textKk": "УалЛлаһу хайрун ҳафиза",
+      "translitKk": "УалЛлаһу хайрун һафиза уа һуа арҳамур-рахимин",
+      "meaningKk": "Аллаһ ең жақсы сақтаушы (12:64).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 87,
+      "slug": "rabbishrah_li",
+      "textAr": "رَبِّ اشْرَحْ لِي صَدْرِي",
+      "textKk": "Рабби шраҳ ли садри",
+      "translitKk": "Рабби шраҳ ли садри",
+      "meaningKk": "Раббым, кеудемді жайғасын (Муса дұғасының басы).",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 88,
+      "slug": "allahumma_laka_sumtu",
+      "textAr": "اللَّهُمَّ لَكَ صُمْتُ وَعَلَى رِزْقِكَ أَفْطَرْتُ",
+      "textKk": "Аллаһумма ләка сумту",
+      "translitKk": "Аллаһумма ләка сумту уа 'алә ризқика aftарту",
+      "meaningKk": "Саған ораза ұстап, ризығыңмен аштым (ороза ашар).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 89,
+      "slug": "dhikrullah_akbar",
+      "textAr": "ذِكْرُ اللَّهِ أَكْبَرُ",
+      "textKk": "Зикруллаһи акбар",
+      "translitKk": "Зикруллаһи акбар",
+      "meaningKk": "Аллаһ зікірі ең ұлы (29:45 мағынасына жақын ескерту).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 90,
+      "slug": "fa_idha_azamta",
+      "textAr": "فَإِذَا عَزَمْتَ فَتَوَكَّلْ عَلَى اللَّهِ",
+      "textKk": "Фаиза 'азамта фәтәуаккал 'алаллаһ",
+      "translitKk": "Фаиза 'азамта фәтәуаккал 'алаллаһ",
+      "meaningKk": "Белгілеп қойсаң, Аллаһқа тәуеккүл ет (3:159).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 91,
+      "slug": "hasbunallahu_ni_mal_wakil",
+      "textAr": "نِعْمَ الْمَوْلَى وَنِعْمَ النَّصِيرُ",
+      "textKk": "Ниғмал мaula уа ниғман насир",
+      "translitKk": "Ниғмал мaula уа ниғман насир",
+      "meaningKk": "Қандай жақсы Мәулә, қандай жақсы көмекші (8:40 жалғасы).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 92,
+      "slug": "sallallahu_alayhi_wa_sallam_short",
+      "textAr": "صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ",
+      "textKk": "Саллаллаһу 'аләйһи уа саллам",
+      "translitKk": "Саллаллаһу 'аләйһи уа саллам",
+      "meaningKk": "Аллаһ оған сәләу және сәләм етсін (елшіге).",
+      "defaultTarget": 50,
+      "phaseRule": null
+    },
+    {
+      "id": 93,
+      "slug": "allahumma_salli_muhammadin",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли 'алә Мухаммад",
+      "translitKk": "Аллаһумма салли 'алә Мухаммадин",
+      "meaningKk": "Аллаһумма, Мұхаммедке сәләу ет (қысқа).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 94,
+      "slug": "allahumma_ghfir_muslimin",
+      "textAr": "اللَّهُمَّ اغْفِرْ لِلْمُسْلِمِينَ وَالْمُسْلِمَاتِ",
+      "textKk": "Аллаһуммағфир лил-муслимин",
+      "translitKk": "Аллаһуммағфир лил-муслимина уал-муслимат",
+      "meaningKk": "Мұсылман ерлер мен әйелдерді кешір.",
+      "defaultTarget": 20,
+      "phaseRule": null
+    },
+    {
+      "id": 95,
+      "slug": "subhanallahi_wa_bihamdihi_adada",
+      "textAr": "سُبْحَانَ اللَّهِ عَدَدَ خَلْقِهِ رِضَا نَفْسِهِ",
+      "textKk": "СубханаЛлаһи 'адада халқиһи",
+      "translitKk": "СубханаЛлаһи 'адада халқиһи риза нафсиһи",
+      "meaningKk": "Жаратылыс санымен пәк (Фатима руаяты стиліндегі бастапқы).",
+      "defaultTarget": 10,
+      "phaseRule": null
+    },
+    {
+      "id": 96,
+      "slug": "allahumma_atina_fidunya",
+      "textAr": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً",
+      "textKk": "Раббана әтина (екі дүние)",
+      "translitKk": "Раббана әтина фид-дунья хасанатан уafil-ахирати хасанатан",
+      "meaningKk": "Дүниеде де, ахиретте де жақсылық бер (2:201).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 97,
+      "slug": "innallaha_yuhibb",
+      "textAr": "إِنَّ اللَّهَ يُحِبُّ التَّوَّابِينَ",
+      "textKk": "Инналлаһа юһиббут-таwабин",
+      "translitKk": "Инналлаһа юһиббут-таwабин",
+      "meaningKk": "Расында Аллаһ тәубе еткендерді сүйеді (2:222 үзіндісі).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 98,
+      "slug": "wala_taknatu",
+      "textAr": "وَلَا تَيْأَسُوا مِنْ رَوْحِ اللَّهِ",
+      "textKk": "Уа ла тай'асу мин рауһиллаһ",
+      "translitKk": "Уа ла тай'асу мин рауһиллаһ",
+      "meaningKk": "Аллаһтың мейірімінен үміт үзбеңдер (12:87).",
+      "defaultTarget": 30,
+      "phaseRule": null
+    },
+    {
+      "id": 99,
+      "slug": "alhamdu_lillahi_hamdan_kathiran",
+      "textAr": "الْحَمْدُ لِلَّهِ حَمْدًا كَثِيرًا طَيِّبًا مُبَارَكًا فِيهِ",
+      "textKk": "Әлхамдулиллаһи ҳамдан касиран",
+      "translitKk": "Әлхамдулиллаһи ҳамдан касиран таййибан мубаракан фиһи",
+      "meaningKk": "Көп, таза, берекелі мақтау Аллаһқа (сүннет сәлемдегі стиль).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+# RAQAT — инфра негізі (blueprint: Postgres + Redis).
+# API/bот: әдетте түбірден uvicorn + bot_main.py; контейнерлеу келесі фазада.
+#
+# Телефонмен кіру (SMS): platform_api процесінің ортасында Twilio айнымалылары
+# (TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER) немесе дамуда RAQAT_PHONE_OTP_DEV=1.
+# Үлгі: platform-api.env.example (осы қалтада).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: raqat-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: raqat
+      POSTGRES_PASSWORD: raqat_dev
+      POSTGRES_DB: raqat
+    ports:
+      - "5432:5432"
+    volumes:
+      - raqat_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raqat -d raqat"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: raqat-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - raqat_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # GEMINI_API_KEY және DATABASE_URL түбір .env арқылы беріңіз (volume ../../ бүкіл репо).
+  celery-worker:
+    profiles: ["workers"]
+    image: python:3.12-slim-bookworm
+    working_dir: /workspace/platform_api
+    volumes:
+      - ../../:/workspace
+    environment:
+      RAQAT_REDIS_URL: redis://redis:6379/0
+      RAQAT_CELERY_BROKER_URL: redis://redis:6379/0
+      RAQAT_CELERY_RESULT_BACKEND: redis://redis:6379/0
+      RAQAT_QUEUE_BACKEND: celery
+    command: >
+      bash -lc "pip install --no-cache-dir -q -r requirements.txt &&
+      celery -A celery_app worker --loglevel=info"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  raqat_pgdata:
+  raqat_redisdata:

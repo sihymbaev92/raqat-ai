@@ -1,0 +1,144 @@
+name: Content Release Smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 3 * * *"
+
+jobs:
+  validate-content-release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        backend: [sqlite, postgresql]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: raqat_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d raqat_test"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-postgres.txt
+
+      - name: Prepare backend data
+        env:
+          RAQAT_DB_PATH: ${{ github.workspace }}/global_clean.db
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/raqat_test
+        run: |
+          if [ "${{ matrix.backend }}" = "sqlite" ]; then
+            python - <<'PY'
+import os, sqlite3
+from db.migrations import run_schema_migrations
+db = os.environ["RAQAT_DB_PATH"]
+run_schema_migrations(db)
+con = sqlite3.connect(db)
+con.execute("INSERT OR REPLACE INTO quran (id,surah,ayah,surah_name,text_ar,text_kk,text_ru,text_en,translit,updated_at) VALUES (1,1,1,'Al-Fatiha','بِسْمِ اللَّهِ','Бисмиллаһ','Во имя Аллаха','In the name of Allah','Bismillah',datetime('now'))")
+con.execute("INSERT OR REPLACE INTO hadith (id,source,text_ar,text_kk,text_ru,text_en,grade,updated_at) VALUES (1,'smoke','نص','Тест хадис','Тест хадис','Test hadith','sahih',datetime('now'))")
+con.commit()
+con.close()
+PY
+          else
+            python - <<'PY'
+import os, psycopg
+dsn = os.environ["DATABASE_URL"]
+with psycopg.connect(dsn) as con:
+    with con.cursor() as cur:
+        cur.execute("""
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE TABLE IF NOT EXISTS platform_identities (
+  platform_user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  telegram_user_id BIGINT UNIQUE,
+  apple_sub TEXT UNIQUE,
+  google_sub TEXT UNIQUE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS platform_ai_chat_messages (
+  id BIGSERIAL PRIMARY KEY,
+  platform_user_id UUID NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+  role TEXT NOT NULL,
+  body TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'unknown',
+  client_id TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS quran (
+  id BIGINT PRIMARY KEY,
+  surah INTEGER NOT NULL,
+  ayah INTEGER NOT NULL,
+  surah_name TEXT,
+  text_ar TEXT,
+  text_kk TEXT,
+  text_ru TEXT,
+  text_en TEXT,
+  translit TEXT,
+  updated_at TEXT
+);
+CREATE TABLE IF NOT EXISTS hadith (
+  id BIGINT PRIMARY KEY,
+  source TEXT,
+  text_ar TEXT,
+  text_kk TEXT,
+  text_ru TEXT,
+  text_en TEXT,
+  grade TEXT,
+  updated_at TEXT
+);
+""")
+        cur.execute("""
+INSERT INTO quran (id,surah,ayah,surah_name,text_ar,text_kk,text_ru,text_en,translit,updated_at)
+VALUES (1,1,1,'Al-Fatiha','بِسْمِ اللَّهِ','Бисмиллаһ','Во имя Аллаха','In the name of Allah','Bismillah',CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET updated_at=EXCLUDED.updated_at
+""")
+        cur.execute("""
+INSERT INTO hadith (id,source,text_ar,text_kk,text_ru,text_en,grade,updated_at)
+VALUES (1,'smoke','نص','Тест хадис','Тест хадис','Test hadith','sahih',CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO UPDATE SET updated_at=EXCLUDED.updated_at
+""")
+    con.commit()
+PY
+
+      - name: Run content release smoke
+        env:
+          RAQAT_DB_PATH: ${{ github.workspace }}/global_clean.db
+          RAQAT_PLATFORM_API_BASE: http://127.0.0.1:8787
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/raqat_test
+        run: |
+          if [ "${{ matrix.backend }}" = "sqlite" ]; then
+            unset DATABASE_URL
+          fi
+          nohup python -m uvicorn platform_api.main:app --host 127.0.0.1 --port 8787 >/tmp/raqat_api.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -fsS http://127.0.0.1:8787/health >/dev/null && break
+            sleep 1
+          done
+          python scripts/validate_content_release.py --api-base "$RAQAT_PLATFORM_API_BASE"
+
+      - name: Upload API log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-release-smoke-api-log-${{ matrix.backend }}
+          path: /tmp/raqat_api.log
+          if-no-files-found: warn

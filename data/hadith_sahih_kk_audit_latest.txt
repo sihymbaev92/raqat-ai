@@ -1,0 +1,35 @@
+=== hadith text_kk audit (сахих Бұхари+Муслим) ===
+Жолдар саны: 14645
+Күдікті (латын > 25% және ұзындығы >50): 28
+Мета үлгілері: {'the_user_wants': 1, 'the_provided_arabic': 1, 'therefore_it_does': 1, 'i_need_to_extract': 1, 'lets_reevaluate': 1, 'rule_hash': 3, 'revised_draft': 1}
+
+ratio=0.796 id=105886 source=Sahih al-Bukhari
+ratio=0.782 id=106394 source=Sahih al-Bukhari
+ratio=0.720 id=105858 source=Sahih al-Bukhari
+ratio=0.685 id=106166 source=Sahih al-Bukhari
+ratio=0.642 id=106120 source=Sahih al-Bukhari
+ratio=0.634 id=106013 source=Sahih al-Bukhari
+ratio=0.621 id=106953 source=Sahih al-Bukhari
+ratio=0.618 id=106980 source=Sahih al-Bukhari
+ratio=0.597 id=107631 source=Sahih al-Bukhari
+ratio=0.584 id=106607 source=Sahih al-Bukhari
+ratio=0.569 id=106964 source=Sahih al-Bukhari
+ratio=0.568 id=105868 source=Sahih al-Bukhari
+ratio=0.514 id=106576 source=Sahih al-Bukhari
+ratio=0.512 id=106722 source=Sahih al-Bukhari
+ratio=0.471 id=106610 source=Sahih al-Bukhari
+ratio=0.437 id=107615 source=Sahih al-Bukhari
+ratio=0.427 id=105994 source=Sahih al-Bukhari
+ratio=0.427 id=106787 source=Sahih al-Bukhari
+ratio=0.400 id=106413 source=Sahih al-Bukhari
+ratio=0.391 id=106525 source=Sahih al-Bukhari
+ratio=0.382 id=107059 source=Sahih al-Bukhari
+ratio=0.372 id=106195 source=Sahih al-Bukhari
+ratio=0.363 id=107426 source=Sahih al-Bukhari
+ratio=0.363 id=107518 source=Sahih al-Bukhari
+ratio=0.344 id=105824 source=Sahih al-Bukhari
+ratio=0.324 id=107796 source=Sahih al-Bukhari
+ratio=0.283 id=106814 source=Sahih al-Bukhari
+ratio=0.281 id=106551 source=Sahih al-Bukhari
+
+Жазылды: data/hadith_kk_repair_ids.txt (28 id)

@@ -1,0 +1,100 @@
+{
+  "expo": {
+    "name": "RAQAT",
+    "slug": "raqat-mobile",
+    "version": "1.0.1",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0c1f1a"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Location is used for Qibla direction and accurate prayer times.",
+          "locationWhenInUsePermission": "Location is used for Qibla direction and accurate prayer times."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Суреттер өнім жапсырмасын халал тексеру үшін қажет."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "usesCleartextTraffic": true
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#c9a227",
+          "sounds": [],
+          "mode": "production"
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "kz.raqat.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
+        "NSPhotoLibraryUsageDescription": "Photos are used to analyze product labels for halal checking.",
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "5.75.162.140": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": false
+            }
+          }
+        }
+      }
+    },
+    "android": {
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0c1f1a"
+      },
+      "package": "kz.raqat.app",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "scheme": "raqat",
+    "extra": {
+      "raqatApiBase": "http://5.75.162.140:8787",
+      "raqatContentSecret": "",
+      "raqatAiSecret": "",
+      "raqatDonationUrl": "https://t.me/my_islamic_ai_bot",
+      "raqatSupportAccount": "",
+      "googleWebClientId": "",
+      "googleIosClientId": "",
+      "googleAndroidClientId": ""
+    }
+  }
+}
