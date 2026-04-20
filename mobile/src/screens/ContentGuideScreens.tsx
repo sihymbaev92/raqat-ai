@@ -1,17 +1,26 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import React, { useCallback, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, type ImageSourcePropType } from "react-native";
+import * as Speech from "expo-speech";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import type { TextSection } from "../content/hajjUmrahContent";
 import { NAMAZ_GUIDE_SECTIONS } from "../content/namazContent";
 import { NAMAZ_WUDU_EXTENDED } from "../content/namazWuduExtended";
 import { TAJWEED_WEEK_SECTIONS } from "../content/tajweedWeekContent";
 import { TAJWEED_ARABIC_ALPHABET } from "../content/tajweedAlphabet";
 import { TAJWEED_BOOK_SECTIONS } from "../content/tajweedBookContent";
 import { GuideImageLightbox } from "../components/GuideImageLightbox";
+import { GuideAccordionSection } from "../components/GuideAccordion";
 
-type MciName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+const WUDU_SINGLE_IMAGE_URI =
+  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__14_56_47-b6899b25-8a3a-4743-b217-42b2bda64648.png";
+const NAMAZ_FINAL_SITTING_IMAGE_URI =
+  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_00_47-df49dce0-428d-4027-bc3f-86a947d5ef20.png";
+const NAMAZ_TAKBIR_IMAGE_URI =
+  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_24_58-ccd9545b-3546-48d3-aec7-e2db206166de.png";
+const WUDU_BUTTON_ICON_URI =
+  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_33_20-b9b6970b-5183-4406-918e-27c6be0cb971.png";
 
 export function NamazGuideScreen() {
   const { colors } = useAppTheme();
@@ -19,34 +28,86 @@ export function NamazGuideScreen() {
   /** Сыртта алдымен намаз схемасы көрінсін; дәрет мәтіні мен суреттері тек ашылған бөлімде */
   const [wuduOpen, setWuduOpen] = useState(false);
   const wuduIntroBlocks = NAMAZ_GUIDE_SECTIONS.slice(0, 2);
-  const visualSteps: { icon: MciName; title: string; desc: string; image: number }[] = [
+  const visualSteps: { title: string; desc: string; image: ImageSourcePropType; recitation: string[] }[] = [
     {
-      icon: "hands-pray",
+      title: "Ниет және алғашқы тәкбір",
+      desc: "Намазды ниетпен бастап, қол көтеріп «Аллаһу әкбар» деу",
+      image: { uri: NAMAZ_TAKBIR_IMAGE_URI },
+      recitation: [
+        "Ниет (жүрекпен): қай намазды оқитыныңды бекіту.",
+        "Мысалы: «Бүгінгі парыз намазын Аллаһ разылығы үшін оқуға ниет еттім».",
+        "Кейін алғашқы тәкбір:",
+        "«Аллаһу әкбар».",
+        "Осыдан кейін қиямға өтіп, Субханака және Фатиха басталады.",
+      ],
+    },
+    {
       title: "Қиям",
       desc: "Тік тұрып, Фатиха мен сүре оқу",
       image: require("../../assets/namaz/namaz_qiyam.png"),
+      recitation: [
+        "Қиямда (тік тұрған кезде) оқылады:",
+        "1) Субханака (алғашқы тәкбірден кейін).",
+        "2) «Әғузу билләһи...», «Бисмилләһ...»",
+        "3) Фатиха сүресі.",
+        "4) Қосымша сүре немесе аят (мысалы: Ихлас, Кәусар).",
+      ],
     },
     {
-      icon: "yoga",
       title: "Рукуғ",
       desc: "Белді түзу иіп, зікір айту",
       image: require("../../assets/namaz/namaz_ruku.png"),
+      recitation: [
+        "Рукуғта айтылады:",
+        "«Субхана раббиял-азыйм» (кемі 3 рет).",
+        "Рукуғтан тұрған кезде:",
+        "«Сами'аллаһу лиман хамидаһ»",
+        "Тік тұрған соң:",
+        "«Раббана лакәл-хамд».",
+      ],
     },
     {
-      icon: "arrow-collapse-down",
       title: "Сәжде",
       desc: "Екі сәжде және дұға",
       image: require("../../assets/namaz/namaz_sajdah.png"),
+      recitation: [
+        "Сәждеде айтылады:",
+        "«Субхана раббиял-ағлә» (кемі 3 рет).",
+        "Екі сәжденің ортасында (отырыста):",
+        "«Раббиғфир ли, вархамни, ваһдини, варзуқни»",
+        "(қысқа нұсқа: «Раббиғфир ли»).",
+      ],
     },
     {
-      icon: "account-group",
+      title: "Соңғы отырыс",
+      desc: "Әттахият, салауат, дұға және сәлем",
+      image: { uri: NAMAZ_FINAL_SITTING_IMAGE_URI },
+      recitation: [
+        "Соңғы отырыста реті:",
+        "1) Әттахият:",
+        "«Әт-тахияту лиллаһи вас-салауату ват-таййибат...»",
+        "2) Салауат (Аллаһумма салли / барик).",
+        "3) Дұға (мысалы: «Раббана атина...» немесе басқа мәснүн дұға).",
+        "4) Сәлем:",
+        "Оңға, сосын солға: «Әссәләму аләйкум уә рахматуллаһ».",
+      ],
+    },
+    {
       title: "Жамағат",
       desc: "Имамға ілесу, сап, жұма — толығырақ төмендегі бөлімде",
       image: require("../../assets/namaz/namaz_jamaat.png"),
+      recitation: [
+        "Жамағатта имамға ілесу тәртібі сақталады.",
+        "Имам рукуғқа/сәждеге өтпей тұрып озбау.",
+        "Дауыстап оқылатын намаздарда имамды тыңдау,",
+        "іштен оқылатын жерлерде зікір/тәсбихпен бірге ілесу.",
+      ],
     },
   ];
 
   const namazRest = NAMAZ_GUIDE_SECTIONS.slice(2);
+  const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
+  const toggleAcc = (key: string) => setAccOpen((o) => ({ ...o, [key]: !o[key] }));
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
@@ -58,7 +119,12 @@ export function NamazGuideScreen() {
         accessibilityRole="button"
         accessibilityLabel={wuduOpen ? "Дәрет бөлімін жасыру" : "Дәрет бөлімін ашу"}
       >
-        <Text style={styles.wuduHeroIcon}>💧</Text>
+        <Image
+          source={{ uri: WUDU_BUTTON_ICON_URI }}
+          style={styles.wuduHeroIcon}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+        />
         <View style={styles.wuduHeroTextCol}>
           <Text style={styles.wuduHeroTitle}>Дәрет</Text>
           <Text style={styles.wuduHeroSub}>
@@ -82,20 +148,11 @@ export function NamazGuideScreen() {
               <Text style={styles.blockBody}>{s.body}</Text>
             </View>
           ))}
-          <Text style={styles.galleryTitle}>Дәрет суреттері (ер адам / әйел)</Text>
+          <Text style={styles.galleryTitle}>Дәрет алу реті (біріктірілген толық схема)</Text>
           <Text style={styles.imageHint}>{kk.namazGuide.imageTapHint}</Text>
           <View style={styles.ltrImageWrap}>
             <GuideImageLightbox
-              source={require("../../assets/namaz/wudu_male.png")}
-              colors={colors}
-              thumbStyle={styles.guideImage}
-              closeLabel={kk.namazGuide.closeImageLightbox}
-              openImageA11y={kk.namazGuide.openImageA11y}
-            />
-          </View>
-          <View style={styles.ltrImageWrap}>
-            <GuideImageLightbox
-              source={require("../../assets/namaz/wudu_female.png")}
+              source={{ uri: WUDU_SINGLE_IMAGE_URI }}
               colors={colors}
               thumbStyle={styles.guideImage}
               closeLabel={kk.namazGuide.closeImageLightbox}
@@ -107,44 +164,69 @@ export function NamazGuideScreen() {
 
       <Text style={styles.sectionAfterWudu}>Намаз қимылы мен сәләм</Text>
       <Text style={styles.imageHint}>{kk.namazGuide.imageTapHint}</Text>
-      <View style={styles.visualStepsColumn}>
-        {visualSteps.map((v) => (
-          <View key={v.title} style={styles.visualStepBlock}>
-            <View style={styles.visualCard}>
-              <View style={styles.visualIconWrap}>
-                <MaterialCommunityIcons name={v.icon} size={36} color={colors.accent} />
+      {visualSteps.map((v) => {
+        const key = `pose-${v.title}`;
+        return (
+          <GuideAccordionSection
+            key={key}
+            title={v.title}
+            subtitle={v.desc}
+            expanded={!!accOpen[key]}
+            onToggle={() => toggleAcc(key)}
+            colors={colors}
+          >
+            <View style={styles.visualStepBlock}>
+              <View style={styles.ltrImageWrap}>
+                <GuideImageLightbox
+                  source={v.image}
+                  colors={colors}
+                  thumbStyle={styles.namazPoseImage}
+                  closeLabel={kk.namazGuide.closeImageLightbox}
+                  openImageA11y={`${v.title}: ${kk.namazGuide.openImageA11y}`}
+                />
               </View>
-              <Text style={styles.visualTitle}>{v.title}</Text>
-              <Text style={styles.visualDesc}>{v.desc}</Text>
+              <View style={styles.stepReciteBox}>
+                {v.recitation.map((line, idx) => (
+                  <Text key={`${v.title}-r-${idx}`} style={styles.stepReciteLine}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
             </View>
-            <View style={styles.ltrImageWrap}>
-              <GuideImageLightbox
-                source={v.image}
-                colors={colors}
-                thumbStyle={styles.namazPoseImage}
-                closeLabel={kk.namazGuide.closeImageLightbox}
-                openImageA11y={`${v.title}: ${kk.namazGuide.openImageA11y}`}
-              />
-            </View>
-          </View>
-        ))}
-      </View>
-      {namazRest.map((s) => (
-        <View key={s.title} style={styles.block}>
-          <Text style={styles.blockTitle}>{s.title}</Text>
-          <Text style={styles.blockBody}>{s.body}</Text>
+          </GuideAccordionSection>
+        );
+      })}
+      {namazRest.map((s, idx) => {
+        const key = `namaz-txt-${idx}-${s.title}`;
+        return (
+          <GuideAccordionSection
+            key={key}
+            title={s.title}
+            expanded={!!accOpen[key]}
+            onToggle={() => toggleAcc(key)}
+            colors={colors}
+          >
+            <Text style={styles.blockBody}>{s.body}</Text>
+          </GuideAccordionSection>
+        );
+      })}
+      <GuideAccordionSection
+        title="Намаз қадамдары (суреттік схема)"
+        expanded={!!accOpen["namaz-steps-diagram"]}
+        onToggle={() => toggleAcc("namaz-steps-diagram")}
+        colors={colors}
+      >
+        <Text style={styles.imageHint}>{kk.namazGuide.imageTapHint}</Text>
+        <View style={styles.ltrImageWrap}>
+          <GuideImageLightbox
+            source={require("../../assets/namaz/namaz_steps.png")}
+            colors={colors}
+            thumbStyle={styles.guideImage}
+            closeLabel={kk.namazGuide.closeImageLightbox}
+            openImageA11y={kk.namazGuide.openImageA11y}
+          />
         </View>
-      ))}
-      <Text style={[styles.galleryTitle, styles.galleryAfterText]}>Намаз қадамдары (суреттік схема)</Text>
-      <View style={styles.ltrImageWrap}>
-        <GuideImageLightbox
-          source={require("../../assets/namaz/namaz_steps.png")}
-          colors={colors}
-          thumbStyle={styles.guideImage}
-          closeLabel={kk.namazGuide.closeImageLightbox}
-          openImageA11y={kk.namazGuide.openImageA11y}
-        />
-      </View>
+      </GuideAccordionSection>
     </ScrollView>
   );
 }
@@ -152,50 +234,126 @@ export function NamazGuideScreen() {
 export function TajweedGuideScreen() {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const toggle = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
+
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
+
+  const playTajweedLine = useCallback(async (line: string, rowKey: string) => {
+    const sep = " — ";
+    const i = line.indexOf(sep);
+    const ar = i >= 0 ? line.slice(0, i).trim() : line.trim();
+    const rest = i >= 0 ? line.slice(i + sep.length).trim() : "";
+    const sample = rest.includes("·") ? rest.split("·").pop()?.trim() ?? "" : "";
+    const speechText = [ar, sample].filter(Boolean).join(" ");
+    if (!speechText) return;
+    try {
+      await Speech.stop();
+      setSpeakingKey(rowKey);
+      Speech.speak(speechText, {
+        language: "ar",
+        pitch: 1.0,
+        rate: 0.82,
+        onDone: () => setSpeakingKey((k) => (k === rowKey ? null : k)),
+        onStopped: () => setSpeakingKey((k) => (k === rowKey ? null : k)),
+        onError: () => setSpeakingKey((k) => (k === rowKey ? null : k)),
+      });
+    } catch {
+      setSpeakingKey(null);
+    }
+  }, []);
+
+  const renderTajweedBody = (s: TextSection) => {
+    if (s.title === "Әріптер кестесі") {
+      return (
+        <View style={styles.tajTable}>
+          {s.body.split("\n").map((line, idx) => {
+            const sep = " — ";
+            const i = line.indexOf(sep);
+            const ar = i >= 0 ? line.slice(0, i).trim() : line.trim();
+            const rest = i >= 0 ? line.slice(i + sep.length).trim() : "";
+            const rowKey = `${idx}-${ar}`;
+            return (
+              <View key={rowKey} style={styles.tajRow}>
+                <View style={styles.tajRowTop}>
+                  <Text style={styles.tajAr}>{ar}</Text>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.tajAudioBtn,
+                      pressed && { opacity: 0.9 },
+                    ]}
+                    onPress={() => void playTajweedLine(line, rowKey)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Әріпті тыңдау: ${ar}`}
+                  >
+                    <Text style={styles.tajAudioBtnTxt}>
+                      {speakingKey === rowKey ? "⏹ Тоқтату" : "🔊 Тыңдау"}
+                    </Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.tajMeta}>{rest ? `${sep}${rest}` : ""}</Text>
+              </View>
+            );
+          })}
+        </View>
+      );
+    }
+    return <Text style={styles.blockBody}>{s.body}</Text>;
+  };
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.intro}>{kk.tajweedGuide.intro}</Text>
       <Text style={styles.weekHead}>{kk.tajweedGuide.alphabetHeading}</Text>
-      {TAJWEED_ARABIC_ALPHABET.map((s) => (
-        <View key={s.title} style={styles.block}>
-          <Text style={styles.blockTitle}>{s.title}</Text>
-          {s.title === "Әріптер кестесі" ? (
-            <View style={styles.tajTable}>
-              {s.body.split("\n").map((line, idx) => {
-                const sep = " — ";
-                const i = line.indexOf(sep);
-                const ar = i >= 0 ? line.slice(0, i).trim() : line.trim();
-                const rest = i >= 0 ? line.slice(i + sep.length).trim() : "";
-                return (
-                  <View key={`${idx}-${ar}`} style={styles.tajRow}>
-                    <Text style={styles.tajAr}>{ar}</Text>
-                    <Text style={styles.tajMeta}>
-                      {rest ? `${sep}${rest}` : ""}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : (
-            <Text style={styles.blockBody}>{s.body}</Text>
-          )}
-        </View>
-      ))}
+      {TAJWEED_ARABIC_ALPHABET.map((s, i) => {
+        const key = `taj-alph-${i}`;
+        return (
+          <GuideAccordionSection
+            key={key}
+            title={s.title}
+            expanded={!!open[key]}
+            onToggle={() => toggle(key)}
+            colors={colors}
+          >
+            {renderTajweedBody(s)}
+          </GuideAccordionSection>
+        );
+      })}
       <Text style={styles.weekHead}>{kk.tajweedGuide.bookHeading}</Text>
-      {TAJWEED_BOOK_SECTIONS.map((s) => (
-        <View key={s.title} style={styles.block}>
-          <Text style={styles.blockTitle}>{s.title}</Text>
-          <Text style={styles.blockBody}>{s.body}</Text>
-        </View>
-      ))}
+      {TAJWEED_BOOK_SECTIONS.map((s, i) => {
+        const key = `taj-book-${i}`;
+        return (
+          <GuideAccordionSection
+            key={key}
+            title={s.title}
+            expanded={!!open[key]}
+            onToggle={() => toggle(key)}
+            colors={colors}
+          >
+            <Text style={styles.blockBody}>{s.body}</Text>
+          </GuideAccordionSection>
+        );
+      })}
       <Text style={styles.weekHead}>{kk.tajweedGuide.weekHeading}</Text>
-      {TAJWEED_WEEK_SECTIONS.map((s) => (
-        <View key={s.title} style={styles.block}>
-          <Text style={styles.blockTitle}>{s.title}</Text>
-          <Text style={styles.blockBody}>{s.body}</Text>
-        </View>
-      ))}
+      {TAJWEED_WEEK_SECTIONS.map((s, i) => {
+        const key = `taj-week-${i}`;
+        return (
+          <GuideAccordionSection
+            key={key}
+            title={s.title}
+            expanded={!!open[key]}
+            onToggle={() => toggle(key)}
+            colors={colors}
+          >
+            <Text style={styles.blockBody}>{s.body}</Text>
+          </GuideAccordionSection>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -217,16 +375,18 @@ function makeStyles(colors: ThemeColors) {
     blockBody: { color: colors.text, fontSize: 15, lineHeight: 24 },
     tajTable: { marginTop: 4, gap: 10 },
     tajRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      flexWrap: "wrap",
-      gap: 8,
       paddingVertical: 10,
       paddingHorizontal: 12,
       borderRadius: 12,
       backgroundColor: colors.bg,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    tajRowTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
     },
     tajAr: {
       fontSize: 26,
@@ -237,18 +397,42 @@ function makeStyles(colors: ThemeColors) {
       writingDirection: "rtl",
     },
     tajMeta: {
-      flex: 1,
-      minWidth: 120,
+      marginTop: 4,
       color: colors.text,
       fontSize: 14,
       lineHeight: 21,
     },
-    visualStepsColumn: {
-      marginBottom: 8,
-      alignSelf: "stretch",
+    tajAudioBtn: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    tajAudioBtnTxt: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: "800",
     },
     visualStepBlock: {
-      marginBottom: 14,
+      marginBottom: 4,
+      alignSelf: "stretch",
+    },
+    stepReciteBox: {
+      marginTop: 10,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      gap: 4,
+    },
+    stepReciteLine: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 21,
     },
     namazPoseImage: {
       width: "100%",
@@ -260,7 +444,6 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 0,
     },
     galleryTitle: { color: colors.accent, fontWeight: "800", fontSize: 16, marginBottom: 6 },
-    galleryAfterText: { marginTop: 18 },
     imageHint: {
       color: colors.muted,
       fontSize: 12,
@@ -278,23 +461,6 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
       marginBottom: 12,
     },
-    visualCard: {
-      width: "100%",
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 14,
-      padding: 12,
-      marginBottom: 10,
-    },
-    visualIconWrap: {
-      marginBottom: 8,
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: 40,
-    },
-    visualTitle: { color: colors.accent, fontWeight: "800", fontSize: 15, marginBottom: 4 },
-    visualDesc: { color: colors.text, fontSize: 13, lineHeight: 18 },
     weekHead: {
       color: colors.accent,
       fontWeight: "800",
@@ -313,7 +479,15 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.accent,
     },
     wuduHeroPressed: { opacity: 0.92 },
-    wuduHeroIcon: { fontSize: 36, marginRight: 12 },
+    wuduHeroIcon: {
+      width: 56,
+      height: 56,
+      borderRadius: 12,
+      marginRight: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
     wuduHeroTextCol: { flex: 1 },
     wuduHeroTitle: { color: colors.accent, fontWeight: "900", fontSize: 17, marginBottom: 4 },
     wuduHeroSub: { color: colors.muted, fontSize: 13, lineHeight: 19 },

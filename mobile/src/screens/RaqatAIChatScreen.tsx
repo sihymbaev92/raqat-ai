@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CommonActions, useNavigation } from "@react-navigation/native";
+import { CommonActions, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -23,10 +23,18 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getRaqatAiSecret } from "../config/raqatAiSecret";
-import { fetchPlatformAiChat } from "../services/platformApiClient";
+import {
+  fetchPlatformAiChat,
+  fetchPlatformHadithSearch,
+  fetchPlatformQuranSearch,
+  type PlatformHadithSearchItem,
+  type PlatformQuranSearchItem,
+} from "../services/platformApiClient";
 import { formatAiApiError } from "../utils/formatAiApiError";
+import { getValidAccessToken } from "../storage/authTokens";
 
 const STORAGE_KEY = "raqat_ai_chat_messages_v1";
+const LAST_AI_FAIL_KEY = "raqat_ai_last_failed_v1";
 const MAX_MESSAGES = 80;
 
 export type ChatMsg = {
@@ -34,10 +42,113 @@ export type ChatMsg = {
   role: "user" | "assistant";
   text: string;
   err?: boolean;
+  /** Толық жауап күйі (алдымен quick, содан кейін full) */
+  detailLoading?: boolean;
+  detailText?: string;
+  /** Толық фаза сәтсіз — тек қысқа жауап қалды */
+  detailLoadError?: boolean;
+  retryPrompt?: string;
 };
 
 function newId(): string {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+const MAX_PROMPT_CHARS = 11_500;
+type AsmaRow = { n: number; ar: string; kk: string };
+
+function loadAsmaRows(): AsmaRow[] {
+  try {
+    /* eslint-disable @typescript-eslint/no-require-imports */
+    const raw = require("../../assets/bundled/asma-al-husna-kk.json") as AsmaRow[];
+    /* eslint-enable @typescript-eslint/no-require-imports */
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
+}
+const ASMA_ROWS = loadAsmaRows();
+
+/** Серверге бір сұрау ретінде: соңғы хабарламалар + жаңа сұрақ (көп сатылы контекст). */
+function buildPromptWithHistory(prev: ChatMsg[], nextUserText: string): string {
+  const lines: string[] = [
+    "Төменде сұрақ-жауап тарихы (қысқа), содан кейін жаңа сұрақ.",
+    "Жауап саясаты: 80% локал дереккөз (35% Құран + 35% Хадис + 10% Алланың 99 есімі), 20% интернет/сыртқы дерек.",
+    "Интернет жоқ болса да локал дерекпен толыққанды жауап бер (кемінде 80% мазмұн).",
+  ];
+  const tail = prev.slice(-18);
+  for (const m of tail) {
+    if (m.err) continue;
+    const t = (m.text || "").trim();
+    if (!t) continue;
+    if (m.role === "user") {
+      lines.push(`Пайдаланушы: ${t}`);
+    } else {
+      const one = t.split(/\n/)[0]?.trim() ?? t;
+      lines.push(`Көмекші (қысқа): ${one}`);
+    }
+  }
+  lines.push(`Жаңа сұрақ: ${nextUserText.trim()}`);
+  let body = lines.join("\n\n");
+  if (body.length > MAX_PROMPT_CHARS) {
+    body = body.slice(-MAX_PROMPT_CHARS);
+  }
+  return body;
+}
+
+function truncateText(s: string, max = 180): string {
+  const t = s.replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max).trim()}…`;
+}
+
+function formatQuranBlock(items: PlatformQuranSearchItem[] | undefined): string {
+  if (!items?.length) {
+    return "📖 Құран: сәйкес аят табылмады немесе кейінірек жүктеледі.";
+  }
+  const top = items.slice(0, 2).map((row) => {
+    const ref = `${row.surah ?? "?"}:${row.ayah ?? "?"}`;
+    const text = truncateText((row.text_tr || row.text_ar || "").toString(), 170);
+    return `- ${ref} — ${text}`;
+  });
+  return ["📖 Құраннан үзінді:", ...top].join("\n");
+}
+
+function formatHadithBlock(items: PlatformHadithSearchItem[] | undefined): string {
+  if (!items?.length) {
+    return "📚 Хадис: сәйкес мәтін табылмады немесе кейінірек жүктеледі.";
+  }
+  const top = items.slice(0, 2).map((row) => {
+    const src = (row.source || "hadith").toString();
+    const text = truncateText((row.text_tr || row.text_ar || "").toString(), 170);
+    return `- ${src}: ${text}`;
+  });
+  return ["📚 Хадистен үзінді:", ...top].join("\n");
+}
+
+function formatAsmaBlock(query: string): string {
+  if (!ASMA_ROWS.length) {
+    return "🕋 99 есім: локал тізім жүктелмеді.";
+  }
+  const q = query.trim().toLowerCase();
+  const tokens = q.split(/\s+/).filter((x) => x.length >= 2).slice(0, 5);
+  const fallback = ASMA_ROWS.slice(0, 1);
+  const matched =
+    tokens.length === 0
+      ? fallback
+      : ASMA_ROWS.filter((row) => {
+          const kk = row.kk.toLowerCase();
+          const ar = row.ar.toLowerCase();
+          return tokens.some((tk) => kk.includes(tk) || ar.includes(tk));
+        }).slice(0, 2);
+  const top = (matched.length ? matched : fallback).map(
+    (row) => `- №${row.n} ${row.ar} — ${truncateText(row.kk, 120)}`
+  );
+  return ["🕋 Алланың 99 есімінен:", ...top].join("\n");
+}
+
+function joinStageBlocks(blocks: Array<string | null | undefined>): string {
+  return blocks.map((x) => (x ?? "").trim()).filter(Boolean).join("\n\n");
 }
 
 export function RaqatAIChatScreen() {
@@ -57,7 +168,24 @@ export function RaqatAIChatScreen() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  /** Кіру JWT бар — серверде scope «ai» болса X-Raqat-Ai-Secret қажет емес */
+  const [hasJwt, setHasJwt] = useState(false);
   const listRef = useRef<FlatList<ChatMsg>>(null);
+  const messagesRef = useRef<ChatMsg[]>([]);
+  messagesRef.current = messages;
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      void (async () => {
+        const t = (await getValidAccessToken())?.trim();
+        if (!cancelled) setHasJwt(Boolean(t));
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [])
+  );
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -110,7 +238,7 @@ export function RaqatAIChatScreen() {
 
   const base = getRaqatApiBase();
   const secret = getRaqatAiSecret();
-  const canChat = Boolean(base && secret);
+  const canChat = Boolean(base && (secret.trim() || hasJwt));
 
   const openSettingsTab = useCallback(() => {
     navigation.dispatch(
@@ -121,65 +249,275 @@ export function RaqatAIChatScreen() {
     );
   }, [navigation]);
 
-  const send = useCallback(async () => {
-    const t = input.trim();
-    if (!t || loading || !canChat) return;
+  const send = useCallback(async (rawText?: string) => {
+    const t = (rawText ?? input).trim();
+    if (!t || loading || !canChat || !base) return;
     setInput("");
+    const promptForApi = buildPromptWithHistory(messagesRef.current, t);
     const userMsg: ChatMsg = { id: newId(), role: "user", text: t };
     setMessages((m) => [...m, userMsg]);
     setLoading(true);
+    const assistantId = newId();
+    const useSecret = Boolean(secret.trim());
+    const bearer = useSecret ? null : await getValidAccessToken();
+    const authorizationBearer = useSecret ? undefined : bearer?.trim() || undefined;
+    const authOpts =
+      useSecret
+        ? { aiSecret: secret }
+        : { authorizationBearer };
+
+    const setAssistantText = (nextText: string) => {
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === assistantId
+            ? { ...x, text: nextText }
+            : x
+        )
+      );
+    };
+    const stage: { quran: string; hadith: string; asma: string; web: string } = {
+      quran: "",
+      hadith: "",
+      asma: "",
+      web: "",
+    };
+    setMessages((m) => [
+      ...m,
+      {
+        id: assistantId,
+        role: "assistant",
+        text: "",
+        detailLoading: true,
+      },
+    ]);
+
+    const updateStage = () => {
+      setAssistantText(joinStageBlocks([stage.quran, stage.hadith, stage.asma, stage.web]));
+    };
+
     try {
-      const res = await fetchPlatformAiChat(base!, t, {
-        aiSecret: secret,
-        timeoutMs: 120_000,
+      const quranRes = await fetchPlatformQuranSearch(base, t, {
+        timeoutMs: 6500,
+        limit: 3,
+        authorizationBearer,
       });
-      const reply =
-        typeof res.text === "string" && res.text.trim() ? res.text.trim() : "";
-      const httpOk = res.status === undefined || res.status === 200;
-      if (httpOk && reply && res.ok !== false) {
-        setMessages((m) => [...m, { id: newId(), role: "assistant", text: reply }]);
-      } else {
-        setMessages((m) => [
-          ...m,
-          {
-            id: newId(),
-            role: "assistant",
-            text: formatAiApiError(res.status, res),
-            err: true,
-          },
-        ]);
+      stage.quran = formatQuranBlock(quranRes.items);
+      updateStage();
+    } catch {
+      stage.quran = "📖 Құран: үзінді жүктелмеді.";
+      updateStage();
+    }
+
+    try {
+      const hadithRes = await fetchPlatformHadithSearch(base, t, {
+        timeoutMs: 8000,
+        limit: 4,
+        authorizationBearer,
+      });
+      stage.hadith = formatHadithBlock(hadithRes.items);
+      updateStage();
+    } catch {
+      stage.hadith = "📚 Хадис: үзінді жүктелмеді.";
+      updateStage();
+    }
+
+    stage.asma = formatAsmaBlock(t);
+    updateStage();
+
+    try {
+      const quickRes = await fetchPlatformAiChat(base, promptForApi, {
+        ...authOpts,
+        timeoutMs: 90_000,
+        detailLevel: "quick",
+      });
+      const quickText =
+        typeof quickRes.text === "string" && quickRes.text.trim()
+          ? quickRes.text.trim()
+          : "";
+      const httpOkQuick =
+        quickRes.status === undefined || quickRes.status === 200;
+      if (!httpOkQuick || !quickText || quickRes.ok === false) {
+        setMessages((m) =>
+          m.map((x) =>
+            x.id === assistantId
+              ? {
+                  ...x,
+                  text: joinStageBlocks([
+                    stage.quran,
+                    stage.hadith,
+                    stage.asma,
+                    `🌐 Қосымша дерек: ${formatAiApiError(quickRes.status, quickRes)}`,
+                  ]),
+                  detailLoading: false,
+                }
+              : x
+          )
+        );
+        return;
       }
+      stage.web = `🌐 Қосымша дерек:\n${quickText}`;
+      updateStage();
     } catch (e) {
-      setMessages((m) => [
-        ...m,
-        {
-          id: newId(),
-          role: "assistant",
-          text: e instanceof Error ? e.message : kk.aiChat.error,
-          err: true,
-        },
-      ]);
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === assistantId
+            ? {
+                ...x,
+                text: joinStageBlocks([
+                  stage.quran,
+                  stage.hadith,
+                  stage.asma,
+                  `🌐 Қосымша дерек: ${e instanceof Error ? e.message : kk.aiChat.error}`,
+                ]),
+                detailLoading: false,
+              }
+            : x
+        )
+      );
+      return;
     } finally {
       setLoading(false);
     }
+
+    try {
+      const fullRes = await fetchPlatformAiChat(base, promptForApi, {
+        ...authOpts,
+        timeoutMs: 300_000,
+        detailLevel: "full",
+        stagedPipeline: true,
+      });
+      const fullText =
+        typeof fullRes.text === "string" && fullRes.text.trim()
+          ? fullRes.text.trim()
+          : "";
+      const httpOkFull = fullRes.status === undefined || fullRes.status === 200;
+      if (httpOkFull && fullText && fullRes.ok !== false) {
+        setMessages((m) =>
+          m.map((x) =>
+            x.id === assistantId
+              ? { ...x, detailText: fullText, detailLoading: false }
+              : x
+          )
+        );
+      } else {
+        setMessages((m) =>
+          m.map((x) =>
+            x.id === assistantId
+              ? { ...x, detailLoading: false, detailLoadError: true, retryPrompt: promptForApi }
+              : x
+          )
+        );
+        void AsyncStorage.setItem(
+          LAST_AI_FAIL_KEY,
+          JSON.stringify({ at: Date.now(), prompt: promptForApi, reason: "full_response_failed" })
+        );
+      }
+    } catch {
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === assistantId
+            ? { ...x, detailLoading: false, detailLoadError: true, retryPrompt: promptForApi }
+            : x
+        )
+      );
+      void AsyncStorage.setItem(
+        LAST_AI_FAIL_KEY,
+        JSON.stringify({ at: Date.now(), prompt: promptForApi, reason: "network_or_timeout" })
+      );
+    }
   }, [base, canChat, input, loading, secret]);
+
+  const retryDetail = useCallback(
+    async (item: ChatMsg) => {
+      if (!base || !item.retryPrompt || loading) return;
+      const useSecret = Boolean(secret.trim());
+      const bearer = useSecret ? null : await getValidAccessToken();
+      const authOpts =
+        useSecret
+          ? { aiSecret: secret }
+          : { authorizationBearer: bearer?.trim() || undefined };
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === item.id ? { ...x, detailLoading: true, detailLoadError: false } : x
+        )
+      );
+      try {
+        const fullRes = await fetchPlatformAiChat(base, item.retryPrompt, {
+          ...authOpts,
+          timeoutMs: 300_000,
+          detailLevel: "full",
+          stagedPipeline: true,
+        });
+        const fullText = typeof fullRes.text === "string" ? fullRes.text.trim() : "";
+        if (fullRes.ok !== false && (fullRes.status === undefined || fullRes.status === 200) && fullText) {
+          setMessages((m) =>
+            m.map((x) =>
+              x.id === item.id ? { ...x, detailLoading: false, detailText: fullText, detailLoadError: false } : x
+            )
+          );
+          return;
+        }
+      } catch {
+        // handled below
+      }
+      setMessages((m) =>
+        m.map((x) =>
+          x.id === item.id ? { ...x, detailLoading: false, detailLoadError: true } : x
+        )
+      );
+    },
+    [base, loading, secret]
+  );
 
   const renderItem: ListRenderItem<ChatMsg> = ({ item }) => (
     <View
       style={[
-        styles.bubbleWrap,
-        item.role === "user" ? styles.bubbleUser : styles.bubbleAssistant,
+        styles.bubbleRow,
+        item.role === "user" ? styles.bubbleRowUser : styles.bubbleRowAssistant,
       ]}
     >
-      <Text
+      <View
         style={[
-          styles.bubbleText,
-          item.role === "user" ? styles.bubbleTextUser : null,
-          item.err ? styles.bubbleTextErr : null,
+          styles.bubbleWrap,
+          item.role === "user" ? styles.bubbleUser : styles.bubbleAssistant,
         ]}
       >
-        {item.text}
-      </Text>
+        <Text
+          selectable
+          style={[
+            styles.bubbleText,
+            item.role === "user" ? styles.bubbleTextUser : null,
+            item.err ? styles.bubbleTextErr : null,
+          ]}
+        >
+          {item.text}
+        </Text>
+        {item.role === "assistant" && item.detailLoading ? (
+          <View style={styles.detailLoadingRow}>
+            <ActivityIndicator color={colors.accent} size="small" />
+            <Text style={styles.detailLoadingTxt}>{kk.aiChat.detailPreparing}</Text>
+          </View>
+        ) : null}
+        {item.role === "assistant" && item.detailText ? (
+          <>
+            <Text style={styles.detailHead}>{kk.aiChat.detailSection}</Text>
+            <Text selectable style={styles.bubbleText}>
+              {item.detailText}
+            </Text>
+          </>
+        ) : null}
+        {item.role === "assistant" && item.detailLoadError ? (
+          <View style={styles.detailFailBox}>
+            <Text style={styles.detailMuted}>{kk.aiChat.detailUnavailable}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.retryBtn, pressed && { opacity: 0.9 }]}
+              onPress={() => void retryDetail(item)}
+            >
+              <Text style={styles.retryBtnTxt}>Қайта көру</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -239,26 +577,34 @@ export function RaqatAIChatScreen() {
       />
 
       <View style={[styles.inputRow, { paddingBottom: inputBottomPad }]}>
-        <TextInput
-          style={styles.input}
-          placeholder={kk.aiChat.placeholder}
-          placeholderTextColor={colors.muted}
-          value={input}
-          onChangeText={setInput}
-          multiline
-          maxLength={8000}
-          editable={canChat && !loading}
-          onSubmitEditing={() => void send()}
-          textAlignVertical="top"
-          underlineColorAndroid="transparent"
-        />
+        {/*
+          flex қатарында TextInput кесіліп қалмауы үшін орауышқа minWidth: 0
+          (Android: ұзын сұрақтың жартысы көрінбей қалатын мәселе).
+        */}
+        <View style={styles.inputWrap}>
+          <TextInput
+            style={styles.input}
+            placeholder={kk.aiChat.placeholder}
+            placeholderTextColor={colors.muted}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            scrollEnabled
+            maxLength={8000}
+            editable={canChat && !loading}
+            onSubmitEditing={(e) => void send(e.nativeEvent.text)}
+            textAlignVertical="top"
+            underlineColorAndroid="transparent"
+            {...(Platform.OS === "android" ? { includeFontPadding: false } : {})}
+          />
+        </View>
         <Pressable
           style={({ pressed }) => [
             styles.sendBtn,
             (!canChat || loading || !input.trim()) && styles.sendBtnDisabled,
             pressed && canChat && input.trim() && { opacity: 0.88 },
           ]}
-          onPress={() => void send()}
+          onPress={() => void send(input)}
           disabled={!canChat || loading || !input.trim()}
         >
           <Text style={styles.sendBtnTxt}>{kk.aiChat.send}</Text>
@@ -338,9 +684,15 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 8,
       marginBottom: 12,
     },
+    /** Толық экран енін пайдаланып, көпжолды мәтін қиылып қалмасын */
+    bubbleRow: {
+      width: "100%",
+      marginBottom: 10,
+    },
+    bubbleRowUser: { alignItems: "flex-end" },
+    bubbleRowAssistant: { alignItems: "flex-start" },
     bubbleWrap: {
       maxWidth: "92%",
-      marginBottom: 10,
       paddingVertical: 10,
       paddingHorizontal: 12,
       borderRadius: 14,
@@ -359,9 +711,41 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 16,
       lineHeight: 24,
       color: colors.text,
+      flexShrink: 1,
     },
     bubbleTextUser: { color: "#ffffff" },
     bubbleTextErr: { color: colors.error },
+    detailLoadingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+    },
+    detailLoadingTxt: { color: colors.muted, fontSize: 13 },
+    detailHead: {
+      color: colors.accent,
+      fontWeight: "800",
+      fontSize: 13,
+      marginTop: 10,
+      marginBottom: 6,
+    },
+    detailMuted: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 18,
+      marginTop: 8,
+    },
+    detailFailBox: { marginTop: 8, gap: 8 },
+    retryBtn: {
+      alignSelf: "flex-start",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
+    retryBtnTxt: { color: colors.accent, fontSize: 12, fontWeight: "700" },
     thinking: {
       flexDirection: "row",
       alignItems: "center",
@@ -380,15 +764,19 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.bg,
       gap: 8,
     },
-    input: {
+    inputWrap: {
       flex: 1,
-      minHeight: 44,
-      maxHeight: 120,
+      minWidth: 0,
+    },
+    input: {
+      width: "100%",
+      minHeight: 48,
+      maxHeight: 168,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
       paddingHorizontal: 12,
-      paddingVertical: 10,
+      paddingVertical: Platform.OS === "android" ? 8 : 10,
       color: colors.text,
       fontSize: 16,
       backgroundColor: colors.card,

@@ -1,9 +1,10 @@
-import React from "react";
-import { Text, StyleSheet, ScrollView, View } from "react-native";
+import React, { useState } from "react";
+import { Text, StyleSheet, ScrollView } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { HAJJ_SECTIONS } from "../content/spiritualContent";
+import { GuideAccordionSection } from "../components/GuideAccordion";
 
 function SectionedGuide({
   title,
@@ -16,16 +17,27 @@ function SectionedGuide({
 }) {
   const { colors } = useAppTheme();
   const styles = makeGuideStyles(colors);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const toggle = (key: string) => setOpen((o) => ({ ...o, [key]: !o[key] }));
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.h1}>{title}</Text>
       {intro ? <Text style={styles.intro}>{intro}</Text> : null}
-      {sections.map((s) => (
-        <View key={s.title} style={styles.block}>
-          <Text style={styles.blockTitle}>{s.title}</Text>
-          <Text style={styles.blockBody}>{s.body}</Text>
-        </View>
-      ))}
+      {sections.map((s, i) => {
+        const key = `sec-${i}`;
+        return (
+          <GuideAccordionSection
+            key={`hajj-sec-${i}-${s.title}`}
+            title={s.title}
+            expanded={!!open[key]}
+            onToggle={() => toggle(key)}
+            colors={colors}
+          >
+            <Text style={styles.blockBody}>{s.body}</Text>
+          </GuideAccordionSection>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -42,15 +54,6 @@ function makeGuideStyles(colors: ThemeColors) {
     content: { padding: 18, paddingBottom: 40 },
     h1: { fontSize: 22, fontWeight: "800", color: colors.text, marginBottom: 10 },
     intro: { fontSize: 14, lineHeight: 22, color: colors.muted, marginBottom: 16 },
-    block: {
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 14,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    blockTitle: { color: colors.accent, fontWeight: "800", fontSize: 15, marginBottom: 8 },
     blockBody: { color: colors.text, fontSize: 15, lineHeight: 24 },
   });
 }

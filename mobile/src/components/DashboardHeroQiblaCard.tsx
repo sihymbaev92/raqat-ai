@@ -41,12 +41,12 @@ export function DashboardHeroQiblaCard({ colors, columnWidth, styles, cardShadow
     }, [refreshBearing])
   );
 
-  const arrowSize = Math.min(40, Math.max(28, Math.round(columnWidth * 0.42)));
+  const arrowSize = Math.min(46, Math.max(32, Math.round(columnWidth * 0.5)));
   return (
     <Pressable
       style={({ pressed }) => [
         styles.heroQiblaCard,
-        { width: columnWidth },
+        { flex: 1, minWidth: 0 },
         cardShadow,
         pressed && { opacity: 0.94 },
       ]}

@@ -20,7 +20,6 @@ import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import type { MoreStackParamList } from "../navigation/types";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getOrCreateClientId } from "../storage/clientId";
 import { getValidAccessToken } from "../storage/authTokens";
@@ -33,7 +32,7 @@ import {
 import { menuIconAssets } from "../theme/menuIconAssets";
 
 type Props = {
-  navigation: NativeStackNavigationProp<MoreStackParamList, "CommunityDua">;
+  navigation: NativeStackNavigationProp<{ CommunityDua: undefined }, "CommunityDua">;
 };
 
 export function CommunityDuaScreen(_props: Props) {

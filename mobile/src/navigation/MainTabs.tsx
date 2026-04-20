@@ -1,8 +1,8 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DashboardScreen } from "../screens/DashboardScreen";
-import { DuasScreen } from "../screens/DuasScreen";
-import { TasbihScreen } from "../screens/TasbihScreen";
+import { DuasStack } from "./DuasStack";
+import { TasbihStack } from "./TasbihStack";
 import { MainTabBar } from "./MainTabBar";
 import { useAppTheme } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
@@ -43,17 +43,17 @@ export function MainTabs() {
       />
       <Tab.Screen
         name="Duas"
-        component={DuasScreen}
+        component={DuasStack}
         options={{
-          title: kk.navigation.duasTitle,
+          headerShown: false,
           tabBarLabel: kk.dashboard.duasShort,
         }}
       />
       <Tab.Screen
         name="Tasbih"
-        component={TasbihScreen}
+        component={TasbihStack}
         options={{
-          title: kk.tasbih.screenTitle,
+          headerShown: false,
         }}
       />
     </Tab.Navigator>

@@ -96,7 +96,7 @@ def _voice_text(key: str, lang: str, **kwargs) -> str:
             ),
         },
         "busy": {
-            "kk": "🤖 RAQAT AI жауап дайындап жатыр...",
+            "kk": "🤖 RAQAT AI · КӨМЕКШІ жауап дайындап жатыр...",
             "ru": "🤖 RAQAT AI готовит ответ...",
             "en": "🤖 RAQAT AI is preparing a reply...",
         },

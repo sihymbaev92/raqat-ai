@@ -21,6 +21,8 @@ export function HadithDetailScreen({ route, navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [arabic, setArabic] = useState("");
   const [textKk, setTextKk] = useState("");
+  const [textEn, setTextEn] = useState("");
+  const [textRu, setTextRu] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -47,6 +49,8 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     if (!h) return;
     setArabic(h.arabic);
     setTextKk(h.textKk?.trim() ?? "");
+    setTextEn(h.textEn?.trim() ?? "");
+    setTextRu(h.textRu?.trim() ?? "");
   }, [h]);
 
   useEffect(() => {
@@ -65,9 +69,16 @@ export function HadithDetailScreen({ route, navigation }: Props) {
           authorizationBearer: bearer || undefined,
         });
         if (cancelled || !r.ok || !r.hadith || typeof r.hadith !== "object") return;
-        const row = r.hadith as { text_ar?: string | null; text_kk?: string | null };
+        const row = r.hadith as {
+          text_ar?: string | null;
+          text_kk?: string | null;
+          text_ru?: string | null;
+          text_en?: string | null;
+        };
         if (row.text_ar?.trim()) setArabic(row.text_ar.trim());
         if (row.text_kk?.trim()) setTextKk(row.text_kk.trim());
+        if (row.text_ru?.trim()) setTextRu(row.text_ru.trim());
+        if (row.text_en?.trim()) setTextEn(row.text_en.trim());
       } catch {
         /* офлайн */
       }
@@ -79,7 +90,9 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   useLayoutEffect(() => {
     if (h) {
-      navigation.setOptions({ title: `${h.collectionNameKk} · №${h.reference}` });
+      const coll = h.collectionNameKk ?? kk.hadith.title;
+      const ref = h.reference ?? "";
+      navigation.setOptions({ title: `${coll} · №${ref}` });
     }
   }, [navigation, h]);
 
@@ -103,8 +116,8 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.meta}>{h.collectionNameKk}</Text>
-      <Text style={styles.book}>{h.bookTitleKk}</Text>
+      <Text style={styles.meta}>{h.collectionNameKk ?? ""}</Text>
+      {h.bookTitleKk?.trim() ? <Text style={styles.book}>{h.bookTitleKk}</Text> : null}
       <Text style={styles.ref}>
         {kk.hadith.refLabel} №{h.reference}
       </Text>
@@ -113,20 +126,39 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       <Text style={styles.arabic}>{arabic || h.arabic}</Text>
 
       <Text style={styles.section}>{kk.hadith.translationKk}</Text>
+      <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
       <Text style={textKk ? styles.body : styles.bodyMuted}>
         {textKk || kk.hadith.translationPending}
       </Text>
+
+      {textRu ? (
+        <>
+          <Text style={styles.section}>{kk.hadith.translationRu}</Text>
+          <Text style={styles.body}>{textRu}</Text>
+        </>
+      ) : null}
+
+      {textEn ? (
+        <>
+          <Text style={styles.section}>{kk.hadith.translationEn}</Text>
+          <Text style={styles.body}>{textEn}</Text>
+        </>
+      ) : null}
 
       <Text style={styles.section}>{kk.hadith.narrator}</Text>
       <Text style={narratorKk ? styles.body : styles.bodyMuted}>
         {narratorKk || kk.hadith.narratorPending}
       </Text>
 
-      {corpus ? (
+      {corpus?.provenance ? (
         <View style={styles.prov}>
           <Text style={styles.provTitle}>{kk.hadith.provenance}</Text>
-          <Text style={styles.provTxt}>{corpus.provenance.origin}</Text>
-          <Text style={styles.provTxt}>{corpus.provenance.evidenceKk}</Text>
+          {corpus.provenance.origin ? (
+            <Text style={styles.provTxt}>{corpus.provenance.origin}</Text>
+          ) : null}
+          {corpus.provenance.evidenceKk ? (
+            <Text style={styles.provTxt}>{corpus.provenance.evidenceKk}</Text>
+          ) : null}
           {corpus.provenance.licenseHint ? (
             <Text style={styles.provTxt}>{corpus.provenance.licenseHint}</Text>
           ) : null}
@@ -164,6 +196,13 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 28,
       writingDirection: "rtl",
       textAlign: "right",
+    },
+    meaningNote: {
+      color: colors.muted,
+      fontSize: 13,
+      lineHeight: 20,
+      marginBottom: 10,
+      fontStyle: "italic",
     },
     body: { color: colors.text, fontSize: 16, lineHeight: 26 },
     bodyMuted: { color: colors.muted, fontSize: 15, lineHeight: 24, fontStyle: "italic" },

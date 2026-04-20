@@ -52,6 +52,7 @@ import {
 } from "../services/prayerNotifications";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { AppleSignInButton, GoogleSignInBlock } from "../components/AccountLoginModal";
+import { PhoneAuthBlock } from "../components/PhoneAuthBlock";
 import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
 
 type SettingsMoreLink = keyof Pick<
@@ -264,6 +265,22 @@ export function SettingsScreen() {
             <Text style={styles.boxMuted}>{kk.settings.accountLoggedInAs(platformPid)}</Text>
           ) : null}
 
+          <Text style={[styles.linkMethodTitle, styles.linkMethodTitleFirst]}>
+            {kk.settings.accountLinkPhoneTitle}
+          </Text>
+          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkPhoneSub}</Text>
+          <PhoneAuthBlock
+            busy={loginBusy}
+            setBusy={setLoginBusy}
+            onSuccess={() => void onOAuthSuccess()}
+            onError={(m) => {
+              setOauthMsg(m || null);
+              setLoginMsg(null);
+            }}
+          />
+
+          <Text style={styles.linkMethodTitle}>{kk.settings.accountLinkGmailTitle}</Text>
+          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkGmailSub}</Text>
           <GoogleSignInBlock
             busy={loginBusy}
             onError={(m: string) => {
@@ -272,6 +289,9 @@ export function SettingsScreen() {
             }}
             onSuccess={() => void onOAuthSuccess()}
           />
+
+          <Text style={styles.linkMethodTitle}>{kk.settings.accountLinkIcloudTitle}</Text>
+          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkIcloudSub}</Text>
           <AppleSignInButton
             busy={loginBusy}
             onError={(m: string) => {
@@ -603,6 +623,21 @@ function makeStyles(colors: ThemeColors) {
     label: { color: colors.muted, fontSize: 12, marginBottom: 8, marginTop: 12 },
     linksSectionLabel: { marginTop: 28 },
     accountSectionFirst: { marginTop: 4 },
+    linkMethodTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+      marginTop: 18,
+      letterSpacing: 0.15,
+    },
+    linkMethodTitleFirst: { marginTop: 12 },
+    linkMethodHint: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 17,
+      marginTop: 4,
+      marginBottom: 4,
+    },
     accountApiMissing: { marginBottom: 8 },
     rowGap: { marginTop: 8 },
     rowLead: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },

@@ -10,6 +10,8 @@ const K = {
   tasbihDhikrId: "raqat_tasbih_dhikr_id",
   tasbihGoalMode: "raqat_tasbih_goal_mode",
   tasbihCount: "raqat_tasbih_count",
+  /** Әр зікір id үшін жеке санау (JSON: { "1": 5, "2": 0, ... }) */
+  tasbihDhikrCountsMap: "raqat_tasbih_dhikr_counts_map",
 } as const;
 
 export type TasbihGoalMode = "33" | "99" | "default";
@@ -110,4 +112,48 @@ export async function setTasbihPrefs(
     [K.tasbihGoalMode, goalMode],
     [K.tasbihCount, String(Math.max(0, Math.floor(count)))],
   ]);
+}
+
+/** Әр зікір үшін сақталған санаулар (id → count). */
+export async function getAllDhikrCounts(): Promise<Record<number, number>> {
+  const raw = await AsyncStorage.getItem(K.tasbihDhikrCountsMap);
+  if (!raw) return {};
+  try {
+    const o = JSON.parse(raw) as Record<string, unknown>;
+    const out: Record<number, number> = {};
+    for (const [key, v] of Object.entries(o)) {
+      const id = parseInt(key, 10);
+      if (!Number.isFinite(id)) continue;
+      const n = typeof v === "number" ? v : parseInt(String(v), 10);
+      if (Number.isFinite(n) && n >= 0) out[id] = Math.floor(n);
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export async function setAllDhikrCounts(map: Record<number, number>): Promise<void> {
+  const serial: Record<string, number> = {};
+  for (const [k, v] of Object.entries(map)) {
+    serial[String(k)] = Math.max(0, Math.floor(v));
+  }
+  await AsyncStorage.setItem(K.tasbihDhikrCountsMap, JSON.stringify(serial));
+}
+
+export async function setDhikrCountForId(dhikrId: number, count: number): Promise<void> {
+  const all = await getAllDhikrCounts();
+  all[dhikrId] = Math.max(0, Math.floor(count));
+  await setAllDhikrCounts(all);
+}
+
+/** Ескі тек бір id сақталған кезде: оны картаға көшіру. */
+export async function migrateLegacyTasbihCountIntoMap(): Promise<void> {
+  const prefs = await getTasbihPrefs();
+  if (prefs.dhikrId == null) return;
+  const all = await getAllDhikrCounts();
+  if (all[prefs.dhikrId] === undefined) {
+    all[prefs.dhikrId] = prefs.count;
+    await setAllDhikrCounts(all);
+  }
 }

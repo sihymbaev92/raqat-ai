@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -23,13 +22,20 @@ type MciName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
  * Төменгі қатар: Дұғалар | 99 есім | Тәспі
  * (Басты бет — әдепкі экран, бірақ төменгі жолда жоқ; Дұғалар/Тәспіден «Басты» арқылы)
  */
-export function MainTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+/** @react-navigation/bottom-tabs ішіндегі getPaddingBottom-пен үйлесімді төменгі шегініс */
+function tabBarPaddingBottom(bottom: number): number {
+  return Math.max(bottom - Platform.select({ ios: 10, default: 2 }), 0);
+}
+
+export function MainTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { width: windowWidth } = useWindowDimensions();
-  /** Төменгі қатар: суреттер батырма ішінде мүмкіндігінше үлкен (шықпайды) */
-  const tabRasterSize = Math.min(42, Math.max(32, Math.round(windowWidth * 0.104)));
+  /** Төменгі қатар: иконкаларды айқынырақ үлкейту */
+  const tabRasterSize = Math.min(78, Math.max(58, Math.round(windowWidth * 0.2)));
   const { colors } = useAppTheme();
-  const insets = useSafeAreaInsets();
-  const tabPadBottom = Math.max(insets.bottom, Platform.OS === "android" ? 12 : 8);
+  const tabPadBottom = Math.max(
+    tabBarPaddingBottom(insets.bottom),
+    Platform.OS === "android" ? 0 : 0
+  );
   const styles = makeStyles(colors);
 
   const duasRoute = state.routes.find((r) => r.name === "Duas");
@@ -88,6 +94,7 @@ export function MainTabBar({ state, descriptors, navigation }: BottomTabBarProps
       <Pressable
         onPress={goDuas}
         style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityState={{ selected: duasFocused }}
         accessibilityLabel={duasLabel}
@@ -110,6 +117,7 @@ export function MainTabBar({ state, descriptors, navigation }: BottomTabBarProps
       <Pressable
         onPress={goAsma}
         style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityState={{ selected: false }}
         accessibilityLabel={kk.tabs.asma}
@@ -129,6 +137,7 @@ export function MainTabBar({ state, descriptors, navigation }: BottomTabBarProps
       <Pressable
         onPress={goTasbih}
         style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
+        hitSlop={8}
         accessibilityRole="button"
         accessibilityState={{ selected: tasbihFocused }}
         accessibilityLabel={tasbihLabel}
@@ -197,11 +206,11 @@ function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrap: {
       flexDirection: "row",
+      /** Биік бағанада иконка+мәтін ортада емес, төменгі шекке туралы тұруы керек */
       alignItems: "flex-end",
       justifyContent: "space-between",
-      paddingTop: 8,
+      paddingTop: 0,
       paddingHorizontal: 4,
-      minHeight: 60,
       borderTopWidth: StyleSheet.hairlineWidth,
       ...Platform.select({
         ios: {
@@ -216,26 +225,28 @@ function makeStyles(colors: ThemeColors) {
     sideTab: {
       flex: 1,
       alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 4,
+      justifyContent: "flex-end",
+      paddingTop: 0,
+      paddingBottom: 0,
+      minHeight: 46,
       minWidth: 0,
     },
     tabLabel: {
-      fontSize: 11,
+      fontSize: 10,
       fontWeight: "700",
-      marginTop: 4,
-      marginBottom: 2,
-      lineHeight: 13,
+      marginTop: 1,
+      marginBottom: 0,
+      lineHeight: 12,
       textAlign: "center",
     },
     iconWrap: {
       alignItems: "center",
       justifyContent: "center",
-      minWidth: 44,
-      minHeight: 44,
-      paddingVertical: 2,
-      paddingHorizontal: 4,
-      borderRadius: 16,
+      minWidth: 58,
+      minHeight: 0,
+      paddingVertical: 0,
+      paddingHorizontal: 2,
+      borderRadius: 18,
       borderWidth: 0,
     },
     iconWrapFocused: {

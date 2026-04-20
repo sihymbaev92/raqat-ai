@@ -96,7 +96,9 @@ CREATE TABLE IF NOT EXISTS hadith (
     text_ru TEXT,
     text_en TEXT,
     grade TEXT,
-    updated_at TEXT
+    updated_at TEXT,
+    is_repeated SMALLINT NOT NULL DEFAULT 0,
+    original_id BIGINT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_platform_chat_user_id ON platform_ai_chat_messages(platform_user_id, id);
 CREATE INDEX IF NOT EXISTS idx_platform_chat_user_created ON platform_ai_chat_messages(platform_user_id, created_at);
@@ -112,6 +114,8 @@ CREATE INDEX IF NOT EXISTS idx_quran_surah_ayah ON quran(surah, ayah);
 INDEXES_AFTER_BULK_SQL = """
 CREATE INDEX IF NOT EXISTS idx_quran_updated_at ON quran(updated_at);
 CREATE INDEX IF NOT EXISTS idx_hadith_updated_at ON hadith(updated_at);
+CREATE INDEX IF NOT EXISTS idx_hadith_is_repeated ON hadith(is_repeated);
+CREATE INDEX IF NOT EXISTS idx_hadith_original_id ON hadith(original_id);
 """
 
 # COPY кезінде id көрсетілген кестелерде SERIAL/IDENTITY келесі INSERT үшін синхрондау керек.

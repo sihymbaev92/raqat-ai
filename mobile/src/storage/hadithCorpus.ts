@@ -65,9 +65,17 @@ export type SahihHadithEntry = {
   reference: string;
   arabic: string;
   textKk: string;
+  /** Офлайн бандл / синк: fawaz CDN толтырған орысша */
+  textRu?: string;
+  /** Офлайн бандл / синк: fawaz CDN толтырған ағылшынша (Sahih International стилі) */
+  textEn?: string;
   narratorKk: string;
   /** Экспортта grade болса сақталады */
   grade?: string;
+  /** Кітап ішінде қайта келген жол (is_repeated=1) — әдепкі тізімде жасырылады */
+  isRepeated?: boolean;
+  /** Бірінші кездесу hadith.id (қайталану болса) */
+  originalDbId?: number;
 };
 
 export type HadithCorpusMeta = {

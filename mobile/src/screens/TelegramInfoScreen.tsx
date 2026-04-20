@@ -4,6 +4,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import type { MoreStackParamList } from "../navigation/types";
+import { RAQAT_AI_ASSISTANT_KK } from "../i18n/kk";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "TelegramInfo">;
@@ -20,7 +21,7 @@ export function TelegramInfoScreen({ navigation }: Props) {
       <Text style={styles.h1}>Telegram бот</Text>
       <Text style={styles.p}>
         Құран іздеу, хадис, тәжуид, хатым, намаз бөлімі, дәрет, құбыла, тәсбих,
-        дауыспен командалар және RAQAT AI көмекші — толық жинағы ботта.
+        дауыспен командалар және {RAQAT_AI_ASSISTANT_KK} — толық жинағы ботта.
       </Text>
       <Text style={styles.p}>
         Мобильді қосымша офлайн кеш, хабарламалар және Құран мәтінімен толықтырылады.

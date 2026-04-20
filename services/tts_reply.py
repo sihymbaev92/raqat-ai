@@ -40,7 +40,7 @@ async def send_tts_if_enabled(message: types.Message, text: str, lang: str) -> N
         await message.answer_audio(
             audio=BufferedInputFile(audio_bytes, filename=filename),
             title="RAQAT Voice",
-            performer="RAQAT AI",
+            performer="RAQAT AI · КӨМЕКШІ",
         )
     except Exception as exc:
         logger.warning("TTS send failed uid=%s: %s", message.from_user.id, exc)

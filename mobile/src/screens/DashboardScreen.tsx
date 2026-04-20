@@ -11,13 +11,16 @@ import {
   Image,
   useWindowDimensions,
   type ImageSourcePropType,
+  StatusBar,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { AppIconBadge } from "../components/AppIconBadge";
 import type { MciName } from "../theme/appIcons";
+import { dashboardIcons } from "../theme/appIcons";
 import { menuIconAssets } from "../theme/menuIconAssets";
 import { CommonActions, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fetchPrayerTimesByCity, type PrayerTimesResult } from "../api/prayerTimes";
 import { useAppTheme } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
@@ -95,10 +98,9 @@ function cardShadow(isDark: boolean) {
 }
 
 export function DashboardScreen() {
+  const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
   const rasterBox = dashboardRasterBoxPx(windowWidth);
-  /** AI жолы: тордағы дөңгелектерден кішірек батырма */
-  const promoAiIconBox = Math.max(46, Math.min(64, Math.round(rasterBox * 0.68)));
   const { colors, isDark } = useAppTheme();
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const { refreshBearing } = useQiblaStable();
@@ -116,10 +118,18 @@ export function DashboardScreen() {
   const accentSoft = isDark ? "rgba(56,189,248,0.10)" : "rgba(2,132,199,0.07)";
 
   useLayoutEffect(() => {
+    const headerH =
+      Platform.OS === "ios"
+        ? insets.top + 36
+        : (StatusBar.currentHeight ?? 0) + 42;
     navigation.setOptions({
       headerTitleAlign: "center",
+      headerStyle: {
+        backgroundColor: colors.bg,
+        height: headerH,
+      },
       headerLeft: () => (
-        <View style={{ marginLeft: 10, justifyContent: "center" }}>
+        <View style={{ marginLeft: 8, justifyContent: "center" }}>
           <Text
             style={{
               fontSize: 15,
@@ -135,25 +145,23 @@ export function DashboardScreen() {
         </View>
       ),
       headerTitle: () => (
-        <Pressable
-          onPress={() => navigation.navigate("Qibla")}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={kk.tabs.qibla}
+        <View
           style={{
             paddingHorizontal: 5,
-            paddingVertical: 1,
+            paddingVertical: 0,
             borderRadius: 10,
             backgroundColor: isDark ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
           }}
+          accessibilityRole="image"
+          accessibilityLabel={kk.tabs.qibla}
         >
           <Image
             source={menuIconAssets.headerQibla}
-            style={{ width: 22, height: 22 }}
+            style={{ width: 36, height: 36 }}
             resizeMode="contain"
             accessibilityIgnoresInvertColors
           />
-        </Pressable>
+        </View>
       ),
       headerRight: () => (
         <Pressable
@@ -165,7 +173,7 @@ export function DashboardScreen() {
               }),
             )
           }
-          style={{ marginRight: 6, paddingVertical: 4, paddingHorizontal: 6 }}
+          style={{ marginRight: 6, paddingVertical: 2, paddingHorizontal: 6 }}
           accessibilityRole="button"
           accessibilityLabel={kk.settings.headerSettingsA11y}
         >
@@ -173,7 +181,7 @@ export function DashboardScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, colors.text, colors.accent, isDark]);
+  }, [navigation, colors.text, colors.accent, isDark, insets.top]);
 
   const load = useCallback(async (mode: "focus" | "full" = "full") => {
     const { city, country } = await getSelectedCity();
@@ -324,11 +332,14 @@ export function DashboardScreen() {
   const styles = makeStyles(colors, isDark);
   const timeCells = rows.map((r) => ({ key: r.key, time: r.time }));
   const timesPending = rows.length === 0 && err === null;
+  /** Үстіңгі қатар (Halal / AI) иконкаларын сәл кішірейту */
+  const topPromoBox = Math.max(46, rasterBox - 12);
 
   const goPrayerTimes = () => navigation.navigate("PrayerTimes");
   const goQuranList = () => navigation.navigate("MoreStack", { screen: "QuranList" });
   const goHadithList = () => navigation.navigate("MoreStack", { screen: "HadithList" });
   const goAi = () => navigation.navigate("MoreStack", { screen: "RaqatAI" });
+  const goHalal = () => navigation.navigate("MoreStack", { screen: "Halal" });
 
   return (
     <>
@@ -351,22 +362,22 @@ export function DashboardScreen() {
             cardShadow(isDark),
             pressed && styles.cardPress,
           ]}
-          onPress={goQuranList}
+          onPress={goHalal}
           accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.heroQuranTitle}
+          accessibilityLabel={kk.features.halalTitle}
         >
           <AppIconBadge
-            imageSource={menuIconAssets.heroQuran}
+            imageSource={menuIconAssets.tileHalal}
             colors={colors}
             tintBg={accentSoft}
             size="lg"
-            boxPx={rasterBox}
+            boxPx={topPromoBox}
             border={false}
             shape="circle"
             plain
           />
           <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.dashboard.heroQuranTitle}
+            {kk.features.halalTitle}
           </Text>
         </Pressable>
 
@@ -389,22 +400,22 @@ export function DashboardScreen() {
             cardShadow(isDark),
             pressed && styles.cardPress,
           ]}
-          onPress={goHadithList}
+          onPress={goAi}
           accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.heroHadithTitle}
+          accessibilityLabel={kk.dashboard.aiRowTitle}
         >
           <AppIconBadge
-            imageSource={menuIconAssets.heroHadith}
+            imageSource={menuIconAssets.promoAi}
             colors={colors}
             tintBg={accentSoft}
             size="lg"
-            boxPx={rasterBox}
+            boxPx={topPromoBox}
             border={false}
             shape="circle"
             plain
           />
           <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.dashboard.heroHadithTitle}
+            {kk.dashboard.heroAiStripTitle}
           </Text>
         </Pressable>
       </View>
@@ -459,54 +470,105 @@ export function DashboardScreen() {
         />
       </Pressable>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.promoAiFull,
-          { minHeight: Math.max(54, promoAiIconBox + 14) },
-          cardShadow(isDark),
-          pressed && styles.cardPress,
-        ]}
-        onPress={goAi}
-        accessibilityRole="button"
-        accessibilityLabel={kk.dashboard.aiRowTitle}
-      >
-        <View style={styles.promoAiRow}>
+      <View style={styles.heroRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.heroSideCard,
+            cardShadow(isDark),
+            pressed && styles.cardPress,
+          ]}
+          onPress={goQuranList}
+          accessibilityRole="button"
+          accessibilityLabel={kk.dashboard.heroQuranTitle}
+        >
           <AppIconBadge
-            imageSource={menuIconAssets.promoAi}
+            imageSource={menuIconAssets.heroQuran}
             colors={colors}
             tintBg={accentSoft}
             size="lg"
-            boxPx={promoAiIconBox}
+            boxPx={rasterBox}
             border={false}
             shape="circle"
             plain
           />
-          <Text style={styles.promoAiFullTitle} numberOfLines={2}>
-            {kk.dashboard.aiRowTitle}
+          <Text style={styles.heroSideTitle} numberOfLines={2}>
+            {kk.dashboard.heroQuranTitle}
           </Text>
-        </View>
-      </Pressable>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.heroSideCard,
+            cardShadow(isDark),
+            pressed && styles.cardPress,
+          ]}
+          onPress={goHadithList}
+          accessibilityRole="button"
+          accessibilityLabel={kk.dashboard.heroHadithTitle}
+        >
+          <AppIconBadge
+            imageSource={menuIconAssets.heroHadith}
+            colors={colors}
+            tintBg={accentSoft}
+            size="lg"
+            boxPx={rasterBox}
+            border={false}
+            shape="circle"
+            plain
+          />
+          <Text style={styles.heroSideTitle} numberOfLines={2}>
+            {kk.dashboard.heroHadithTitle}
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.heroSideCard,
+            cardShadow(isDark),
+            pressed && styles.cardPress,
+          ]}
+          onPress={() => navigation.navigate("MoreStack", { screen: "NamazGuide" })}
+          accessibilityRole="button"
+          accessibilityLabel={kk.namazGuide.shortTitle}
+        >
+          <AppIconBadge
+            imageSource={menuIconAssets.tileNamaz}
+            colors={colors}
+            tintBg={accentSoft}
+            size="lg"
+            boxPx={rasterBox}
+            border={false}
+            shape="circle"
+            plain
+          />
+          <Text style={styles.heroSideTitle} numberOfLines={2}>
+            {kk.namazGuide.shortTitle}
+          </Text>
+        </Pressable>
+      </View>
 
       <View style={styles.menuGrid}>
         <Tile
-          iconImage={menuIconAssets.tileNamaz}
+          iconImage={menuIconAssets.tileHajj}
           iconColor={colors.accent}
           colors={colors}
           rasterBox={rasterBox}
-          label={kk.namazGuide.shortTitle}
-          onPress={() => navigation.navigate("MoreStack", { screen: "NamazGuide" })}
+          label={kk.features.hajjTitle}
+          onPress={() => navigation.navigate("MoreStack", { screen: "Hajj" })}
           styles={styles}
           accentSoft={accentSoft}
+          imageEdgeToEdge
         />
         <Tile
-          iconImage={menuIconAssets.tileHalal}
+          iconImage={menuIconAssets.tileSeerah}
           iconColor={colors.accent}
           colors={colors}
           rasterBox={rasterBox}
-          label={kk.features.halalTitle}
-          onPress={() => navigation.navigate("MoreStack", { screen: "Halal" })}
+          label={kk.dashboard.tileSeerah}
+          onPress={() => navigation.navigate("MoreStack", { screen: "Seerah" })}
           styles={styles}
           accentSoft={accentSoft}
+          imageEdgeToEdge
         />
         <Tile
           iconImage={menuIconAssets.tileTajweed}
@@ -517,36 +579,8 @@ export function DashboardScreen() {
           onPress={() => navigation.navigate("MoreStack", { screen: "TajweedGuide" })}
           styles={styles}
           accentSoft={accentSoft}
-        />
-        <Tile
-          iconImage={menuIconAssets.tileHajj}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.features.hajjTitle}
-          onPress={() => navigation.navigate("MoreStack", { screen: "Hajj" })}
-          styles={styles}
-          accentSoft={accentSoft}
-        />
-        <Tile
-          iconImage={menuIconAssets.tileDaily}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.dashboard.tileDailyAyah}
-          onPress={() => navigation.navigate("MoreStack", { screen: "DailyAyah" })}
-          styles={styles}
-          accentSoft={accentSoft}
-        />
-        <Tile
-          iconImage={menuIconAssets.tileCommunity}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.dashboard.tileCommunityDua}
-          onPress={() => navigation.navigate("MoreStack", { screen: "CommunityDua" })}
-          styles={styles}
-          accentSoft={accentSoft}
+          imageEdgeToEdge
+          imageLighten={0.24}
         />
       </View>
 
@@ -567,6 +601,8 @@ function Tile({
   onPress,
   styles,
   accentSoft,
+  imageEdgeToEdge,
+  imageLighten,
 }: {
   emoji?: string;
   glyph?: React.ReactNode;
@@ -579,13 +615,43 @@ function Tile({
   onPress: () => void;
   styles: Record<string, object>;
   accentSoft: string;
+  /** Суретті тайл қоршауына дейін үлкейту (қажылық / сира / тәжуид) */
+  imageEdgeToEdge?: boolean;
+  /** Беткі суретті ашығырақ ету үшін ақ қабат (0..1) */
+  imageLighten?: number;
 }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.tile, styles.tileInGrid, pressed && styles.tilePress]}
+      style={({ pressed }) => [
+        styles.tile,
+        styles.tileInGrid,
+        imageEdgeToEdge && styles.tileMedia,
+        imageEdgeToEdge && styles.tileMediaOuter,
+        pressed && styles.tilePress,
+      ]}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
     >
-      {iconImage ? (
+      {iconImage && imageEdgeToEdge ? (
+        <View style={styles.tileMediaColumn}>
+          <View style={[styles.tileMediaImageWrap, { backgroundColor: colors.card }]}>
+            <Image
+              source={iconImage}
+              style={styles.tileMediaImage}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
+            {typeof imageLighten === "number" && imageLighten > 0 ? (
+              <View style={[styles.tileMediaLight, { opacity: Math.min(0.45, Math.max(0, imageLighten)) }]} />
+            ) : null}
+          </View>
+          <View style={styles.tileMediaSpacer} />
+          <Text style={[styles.quickLabel, styles.quickLabelMedia]} numberOfLines={2}>
+            {label}
+          </Text>
+        </View>
+      ) : iconImage ? (
         <AppIconBadge
           imageSource={iconImage}
           colors={colors}
@@ -616,9 +682,11 @@ function Tile({
           <Text style={styles.tileEmoji}>{emoji ?? ""}</Text>
         </View>
       )}
-      <Text style={styles.quickLabel} numberOfLines={2}>
-        {label}
-      </Text>
+      {!imageEdgeToEdge || !iconImage ? (
+        <Text style={styles.quickLabel} numberOfLines={2}>
+          {label}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -629,7 +697,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     root: { flex: 1, backgroundColor: colors.bg },
     content: {
       paddingHorizontal: 16,
-      paddingTop: 8,
+      paddingTop: 0,
       paddingBottom: 28,
       flexGrow: 1,
     },
@@ -643,8 +711,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     cacheBanner: {
       color: colors.accent,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: 14,
+      lineHeight: 20,
       marginBottom: 14,
       paddingVertical: 12,
       paddingHorizontal: 14,
@@ -658,9 +726,9 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       flexDirection: "row",
       alignItems: "stretch",
       justifyContent: "space-between",
-      gap: 6,
+      gap: 9,
       marginBottom: 10,
-      marginTop: 2,
+      marginTop: 0,
     },
     heroSideCard: {
       flex: 1,
@@ -686,10 +754,10 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     heroSideTitle: {
       marginTop: 4,
       color: colors.text,
-      fontSize: 9,
-      fontWeight: "800",
+      fontSize: 12,
+      fontWeight: "900",
       textAlign: "center",
-      lineHeight: 12,
+      lineHeight: 15,
       letterSpacing: 0.12,
     },
     heroSideMicro: {
@@ -699,7 +767,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "600",
       textAlign: "center",
     },
-    /** Ені DashboardScreen ішінде columnWidth (rasterBox) арқылы беріледі */
+    /** Ені heroRow ішінде flex:1; columnWidth — тек стрелка өлшемі үшін */
     heroQiblaCard: {
       alignSelf: "stretch",
       justifyContent: "center",
@@ -733,22 +801,22 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginTop: 2,
       paddingTop: 2,
       color: colors.accent,
-      fontSize: 11,
-      fontWeight: "800",
+      fontSize: 12,
+      fontWeight: "900",
       textAlign: "center",
-      lineHeight: 14,
+      lineHeight: 16,
       letterSpacing: 0.2,
       alignSelf: "stretch",
     },
-    err: { color: colors.error, marginBottom: 8 },
+    err: { color: colors.error, marginBottom: 8, fontSize: 14, lineHeight: 20 },
     prayerHero: {
       backgroundColor: colors.card,
       borderRadius: 16,
       borderWidth: 1,
       borderColor: isDark ? "rgba(56, 189, 248, 0.22)" : "rgba(2, 132, 199, 0.14)",
-      paddingHorizontal: 12,
-      paddingVertical: 12,
-      marginBottom: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 10,
+      marginBottom: 10,
       overflow: "hidden",
       ...Platform.select({
         ios: {
@@ -777,7 +845,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       flex: 1,
       minWidth: 0,
       color: colors.text,
-      fontSize: 13,
+      fontSize: 14,
       fontWeight: "800",
       letterSpacing: 0.2,
     },
@@ -786,7 +854,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       alignItems: "center",
       justifyContent: "space-between",
       gap: 8,
-      marginBottom: 8,
+      marginBottom: 6,
     },
     cityMicroCompact: {
       fontSize: 13,
@@ -806,39 +874,11 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontVariant: ["tabular-nums"],
       letterSpacing: 0.15,
     },
-    promoAiFull: {
-      width: "100%",
-      minHeight: 56,
-      marginBottom: 10,
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: cardBorder,
-      paddingVertical: 7,
-      paddingHorizontal: 10,
-      overflow: "hidden",
-    },
-    promoAiRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      width: "100%",
-      gap: 8,
-    },
-    promoAiFullTitle: {
-      flex: 1,
-      minWidth: 0,
-      color: colors.text,
-      fontSize: 12,
-      fontWeight: "800",
-      textAlign: "right",
-      lineHeight: 16,
-      letterSpacing: 0.15,
-    },
     menuGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
+      alignItems: "stretch",
       rowGap: 2,
     },
     tile: {
@@ -867,6 +907,35 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     tileInGrid: {
       width: "31%",
       marginBottom: 8,
+      alignSelf: "stretch",
+    },
+    /** Қажылық / сира / тәжуид: сурет тайл шетіне дейін */
+    tileMedia: {
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      alignItems: "stretch",
+      overflow: "hidden",
+    },
+    /** Тор қатарындағы үш тайл биіктігін теңестіру */
+    tileMediaOuter: { flex: 1 },
+    tileMediaColumn: {
+      flex: 1,
+      alignSelf: "stretch",
+      minHeight: 0,
+    },
+    tileMediaSpacer: { flexGrow: 1, minHeight: 0 },
+    tileMediaImageWrap: {
+      width: "100%",
+      aspectRatio: 1,
+      overflow: "hidden",
+    },
+    tileMediaLight: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "#ffffff",
+    },
+    tileMediaImage: {
+      width: "100%",
+      height: "100%",
     },
     tileIcon: {
       width: 39,
@@ -879,12 +948,18 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     tileEmoji: { fontSize: 13 },
     quickLabel: {
       color: colors.text,
-      fontSize: 9,
-      lineHeight: 12,
-      fontWeight: "700",
+      fontSize: 12,
+      lineHeight: 15,
+      fontWeight: "900",
       textAlign: "center",
       letterSpacing: 0.15,
       marginTop: 2,
+    },
+    quickLabelMedia: {
+      marginTop: 0,
+      paddingTop: 5,
+      paddingBottom: 6,
+      paddingHorizontal: 3,
     },
     hint: { color: colors.muted, fontSize: 12, marginTop: 16, lineHeight: 18 },
   });

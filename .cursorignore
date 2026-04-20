@@ -1,0 +1,16 @@
+# Cursor индекстемеуі керек ауыр/сенситив нәрселер (IDE жүктемесін азайту)
+*.db
+*.db.*
+*.bak
+*.bak.*
+backups/
+backup/
+logs/
+*.log
+node_modules/
+.venv/
+venv/
+__pycache__/
+.git/
+mobile/node_modules/
+mobile/android/app/build/

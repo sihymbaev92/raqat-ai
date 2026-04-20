@@ -35,8 +35,7 @@ const HUB_ITEMS: HubItem[] = [
   { key: "ai", image: menuIconAssets.promoAi, label: kk.features.raqatAiTitle, screen: "RaqatAI" },
   { key: "hajj", image: menuIconAssets.tileHajj, label: kk.features.hajjTitle, screen: "Hajj" },
   { key: "hatim", image: menuIconAssets.heroQuran, label: kk.features.hatimTitle, screen: "Hatim" },
-  { key: "daily", image: menuIconAssets.tileDaily, label: kk.dailyAyah.title, screen: "DailyAyah" },
-  { key: "comm", image: menuIconAssets.tileCommunity, label: kk.communityDua.screenTitle, screen: "CommunityDua" },
+  { key: "seerah", image: menuIconAssets.tileSeerah, label: kk.seerah.title, screen: "Seerah" },
   { key: "eco", icon: hubIcons.eco, label: kk.ecosystem.cardTitle, screen: "Ecosystem" },
   { key: "tg", icon: hubIcons.tg, label: kk.navigation.telegramTitle, screen: "TelegramInfo" },
 ];

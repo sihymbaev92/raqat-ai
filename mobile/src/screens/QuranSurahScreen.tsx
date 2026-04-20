@@ -33,11 +33,45 @@ import { surahArabicFromBundled } from "../constants/surahBundledMeta";
 import { loadQuranListCache } from "../storage/quranListCache";
 import { AYAH_COUNTS_PER_SURAH } from "../data/quranAyahCounts";
 import { recordHatimAyahTapped } from "../storage/hatimProgress";
+import { transliterateArabicToKazakh } from "../utils/arabicTranslitKk";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "QuranSurah">;
 
 const surahUrl = (n: number) =>
   `https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`;
+
+const MANUAL_KK_KIRIL_BY_SURAH: Record<number, Record<number, string>> = {
+  1: {
+    1: "Бисмилләһир-Рахмәнир-Рахим.",
+    2: "Әлхамду лилләһи Раббиль-'аләмиин.",
+    3: "Әр-Рахмәнир-Рахиим.",
+    4: "Мәәлики йәумид-диин.",
+    5: "Иййәкә нә'буду уә иййәкә нәстә'иин.",
+    6: "Иһдинас-сыраатал-мустақиим.",
+    7: "Сыраатал-ләзиина ән'амта 'аләйһим, ғайрил-мәғдууби 'аләйһим уә ләд-дааллиин.",
+  },
+  112: {
+    1: "Қул һууаллааһу ахада.",
+    2: "Аллааһус-Самад.",
+    3: "Ләм йәлид уә ләм йууләд.",
+    4: "Уә ләм йәкул-ләһу куфууән ахада.",
+  },
+  113: {
+    1: "Қул ә'уузу бираббил-фәлақ.",
+    2: "Мин шәрри мәә халақ.",
+    3: "Уә мин шәрри ғаасиқин изәә уәқәб.",
+    4: "Уә мин шәррин-нәффәәсаати фил-'уқад.",
+    5: "Уә мин шәрри хәәсидин изәә хәсәд.",
+  },
+  114: {
+    1: "Қул ә'уузу бираббин-нәәс.",
+    2: "Мәликин-нәәс.",
+    3: "Иләәһин-нәәс.",
+    4: "Мин шәррил-уәсуәәсил-ханнәәс.",
+    5: "Әлләзии йууәсуису фии судуурин-нәәс.",
+    6: "Минәл-жиннәти уән-нәәс.",
+  },
+};
 
 export function QuranSurahScreen({ route, navigation }: Props) {
   const { surahNumber, initialAyah: initialAyahParam } = route.params;
@@ -334,7 +368,9 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         }}
         renderItem={({ item }) => {
           const kkLine = item.textKk?.trim() ?? "";
-          /** Транскрипция UI-да көрсетілмейді — автоматты қазақ транслиті сенімді емес; дерекқорда дұрыс жиын болғанша жасырамыз */
+          const kirilRead =
+            MANUAL_KK_KIRIL_BY_SURAH[surahNumber]?.[item.numberInSurah] ??
+            transliterateArabicToKazakh(item.text);
           const showFallbackHint = !kkLine;
           return (
             <Pressable
@@ -348,6 +384,12 @@ export function QuranSurahScreen({ route, navigation }: Props) {
                 <View style={styles.ayahArBlock}>
                   <Text style={styles.ayahTxt}>{item.text}</Text>
                 </View>
+                {kirilRead ? (
+                  <>
+                    <Text style={styles.kirilLabel}>Оқылуы (қаз. кирилл)</Text>
+                    <Text style={styles.ayahKiril}>{kirilRead}</Text>
+                  </>
+                ) : null}
                 {kkLine ? (
                   <>
                     <Text style={styles.meaningLabel}>{kk.quran.meaningKk}</Text>
@@ -482,6 +524,20 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "800",
       color: colors.accent,
       letterSpacing: 0.2,
+    },
+    kirilLabel: {
+      marginTop: 8,
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.accent,
+      letterSpacing: 0.2,
+    },
+    ayahKiril: {
+      marginTop: 4,
+      color: colors.text,
+      fontSize: 15,
+      lineHeight: 23,
+      textAlign: "left",
     },
     noKkHint: {
       marginTop: 10,

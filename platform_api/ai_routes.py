@@ -8,6 +8,7 @@ import time
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
+from typing import Literal
 
 from ai_exact_cache import cache_get_reply, cache_set_reply
 from ai_semantic_cache import cache_get_semantic, cache_set_semantic
@@ -107,6 +108,14 @@ class AiChatRequest(BaseModel):
     prompt: str = Field(..., min_length=1, max_length=12000)
     user_id: int | None = Field(None, description="Telegram user id")
     async_mode: bool = Field(default=False, description="Celery кезегіне (жауап GET /ai/task/{id})")
+    detail_level: Literal["full", "quick"] = Field(
+        default="full",
+        description="quick — қысқа жауап (алдымен жылдам); full — толық талдау",
+    )
+    staged_pipeline: bool = Field(
+        default=False,
+        description="True — Raqat AI чат үшін Құран→хадис→іздеу; False — бір шақыру (халал т.б.)",
+    )
 
 
 @router.post("/ai/chat")
@@ -130,6 +139,8 @@ def ai_chat(
             "raqat.ai.chat",
             {
                 "prompt": body.prompt,
+                "detail_level": body.detail_level,
+                "staged_pipeline": body.staged_pipeline,
                 "platform_user_id": str(pid) if pid else None,
                 "telegram_user_id": tid,
                 "source_auth": src,
@@ -137,26 +148,33 @@ def ai_chat(
         )
         return {**out, "user_id": body.user_id}
 
-    cached = cache_get_reply(body.prompt)
+    quick = body.detail_level == "quick"
+    cache_prompt = f"quick:{body.prompt}" if quick else body.prompt
+
+    cached = cache_get_reply(cache_prompt)
     cache_hit_exact = bool(cached and str(cached).strip())
     cache_hit_semantic = False
     if cache_hit_exact:
         text = str(cached).strip()
     else:
-        sem = cache_get_semantic(body.prompt)
+        sem = cache_get_semantic(cache_prompt)
         if sem and str(sem).strip():
             text = str(sem).strip()
             cache_hit_semantic = True
         else:
             t0 = time.perf_counter()
-            text = generate_ai_reply(body.prompt)
+            text = generate_ai_reply(
+                body.prompt,
+                quick=quick,
+                use_staged_pipeline=body.staged_pipeline,
+            )
             observe_ai_chat(time.perf_counter() - t0)
-            cache_set_reply(body.prompt, text)
-            cache_set_semantic(body.prompt, text)
+            cache_set_reply(cache_prompt, text)
+            cache_set_semantic(cache_prompt, text)
 
     cache_hit = cache_hit_exact or cache_hit_semantic
 
-    if pid:
+    if pid and not quick:
         append_ai_exchange(
             str(resolve_db_path()),
             pid,
@@ -185,6 +203,7 @@ def ai_chat(
         "cached": cache_hit,
         "cached_exact": cache_hit_exact,
         "cached_semantic": cache_hit_semantic,
+        "detail_level": body.detail_level,
     }
 
 

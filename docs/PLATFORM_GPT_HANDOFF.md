@@ -6,6 +6,60 @@
 
 ---
 
+## 25. Mobile update (2026-04-20) — Halal/Barcode/Qibla/UI + APK
+
+Бұл бөлім соңғы мобильді өзгерістерді бір жерге жинайды. GPT/әзірлеушіге жаңа контекст керек болса, **осы §25 + §6 + §22** жеткілікті.
+
+### 25.1 Halal: E-code база және AI prompt толықтыру
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/src/content/halalEcodeDb.ts` | Жаңа E-code анықтама базасы (`HALAL_ECODE_ENTRIES`), `findEcodesInText`, `formatEcodeAppendixForPrompt`, `halalEcodeEntriesSorted` |
+| `mobile/src/content/halalAiPrompts.ts` | `buildHalalTextPrompt` ішінде мәтіннен табылған E-code-тарға қосымша анықтама блогы автоматты қосылады |
+| `mobile/src/screens/HalalScreen.tsx` | E-code glossary UI (scroll + row styles), қолданушыға базаны экранда көрсету |
+
+### 25.2 Barcode smart flow (Open Food Facts)
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/src/services/barcodeNormalize.ts` | QR/OFF URL-дан код алу; GTIN/UPC candidate генерациясы (`barcodeLookupCandidates`) |
+| `mobile/src/services/openFoodFacts.ts` | `fetchProductByBarcodeSmart`: бірнеше candidate-пен іздеу; host fallback (`world.openfoodfacts.org` + `openfoodfacts.org`), retry/backoff |
+| `mobile/src/components/HalalBarcodeScannerModal.tsx` | OFF product URL және цифрлық кодтарды smart қабылдау |
+| `mobile/src/i18n/kk.ts` | Штрихкод hint мәтіні: UPC/EAN/GTIN және көп-нұсқалы lookup туралы түсіндірме |
+
+### 25.3 Qibla жылдам/дәл қозғалыс тюнингі
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/src/context/QiblaSensorContext.tsx` | Магнитометр update интервалы `80ms -> 16ms`; emit фильтрі агрессивті; EMA alpha реакция үшін көтерілді |
+| `mobile/src/components/QiblaArrowPointer.tsx` | Arrow spring параметрлері жылдамдатылды (`tension` өсірілді, `friction` азайды) |
+
+Нәтиже: стрелка қозғалысы әлдеқайда жылдам және кідірісі аз.
+
+### 25.4 UI өзгерістер (Dashboard / Tabs / Seerah)
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/src/navigation/MainTabBar.tsx` | Төменгі таб төмен түсірілді және ықшамдалды (icon/label/padding азайтылды) |
+| `mobile/src/screens/DashboardScreen.tsx` | Header-дегі құбыла белгісі button емес, жай визуал; өлшемі `36x36`; үстіңгі `Halal/AI` қатар иконкалары кішірейтілді |
+| `mobile/src/screens/SeerahScreen.tsx` | Сира ішіндегі lesson card суреттері алынды (мәтін-only карточкалар) |
+
+### 25.5 Тесттер және build күйі
+
+| Тексеру | Нәтиже |
+|---------|--------|
+| `npm run lint` (`mobile`) | OK (`tsc --noEmit`) |
+| `npm run test:full` | OK, **5 suite / 20 test passed** |
+| Қосылған unit tests | `src/services/__tests__/barcodeNormalize.test.ts`, `src/services/__tests__/openFoodFacts.test.ts`, `src/content/__tests__/halalEcodeDb.test.ts` |
+| APK build | `npm run build:apk` — **BUILD SUCCESSFUL** |
+| APK жолы | `mobile/android/app/build/outputs/apk/release/app-release.apk` |
+
+### 25.6 Қысқа next steps
+
+1. Реал құрылғыда Qibla sensor calibration UX (fast vs stable toggle) қосу.  
+2. OFF rate-limit (`429`) үшін adaptive backoff + telemetry өрісін қосу.  
+3. Halal E-code базасын JSON/remote config-ке шығарып, кодсыз жаңарту арнасын ашу.
+
 ## GPT-ге қалай жіберу (ChatGPT, Claude, Cursor, т.б.)
 
 ### Ең қарапайым жол

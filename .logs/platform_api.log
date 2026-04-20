@@ -6737,3 +6737,638 @@ INFO:     85.193.110.104:32918 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not
 INFO:     85.193.110.104:32919 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
 INFO:     85.193.110.104:32919 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
 INFO:     85.193.110.104:32919 - "GET /api/v1/quran/1 HTTP/1.1" 200 OK
+INFO:     85.193.110.104:26924 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.110.104:26925 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.110.104:26926 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.110.104:26927 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     85.193.110.104:32921 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:34863 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17033 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:17033 - "GET /api/v1/quran/1 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:17034 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17035 - "GET /api/v1/quran/10 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34864 - "GET /api/v1/quran/10 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34865 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34866 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34866 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34868 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34869 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:34870 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34871 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17036 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34872 - "GET /api/v1/quran/15/53 HTTP/1.1" 200 OK
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:17037 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:17038 - "GET /api/v1/quran/15/53 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34873 - "GET /api/v1/quran/15 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:34874 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17042 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35342 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17043 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:17048 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35346 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35347 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35348 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:17518 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:17519 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35349 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:35349 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:35350 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35351 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17521 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35352 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35353 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17522 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17523 - "GET /api/v1/hadith/101228 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:17528 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17529 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17530 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35356 - "GET /ready HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35355 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35358 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:17531 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:17534 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17535 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35359 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35359 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:17538 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35361 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35362 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35366 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35367 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:35368 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:17542 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35369 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35370 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35370 - "GET /api/v1/quran/1 HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35370 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35371 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17543 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17544 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35372 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17545 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17546 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35838 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:17547 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35839 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18013 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35840 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35841 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18014 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     194.0.244.171:18015 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35842 - "GET /api/v1/metadata/changes HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 420, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/main.py", line 109, in request_timing_middleware
+    ensure_community_tables(conn)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_routes.py", line 74, in metadata_changes
+    token, meta = content_fingerprint_v1()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_reader.py", line 304, in content_fingerprint_v1
+    select_cols = ["surah", "ayah", "text_ar"]
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_reader.py", line 32, in _content_conn
+    if is_postgresql_configured():
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/get_db.py", line 167, in get_db_reader
+    with get_db() as conn:
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/get_db.py", line 139, in get_db
+    with psycopg.connect(dsn, row_factory=dict_row) as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 122, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "5.75.162.140", port 5432 failed: FATAL:  the database system is not yet accepting connections
+DETAIL:  Consistent recovery state has not been yet reached.
+INFO:     194.0.244.171:35843 - "GET /api/v1/metadata/changes HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 420, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1163, in __call__
+    await super().__call__(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/main.py", line 109, in request_timing_middleware
+    ensure_community_tables(conn)
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/root/bot/raqat_bot/.venv/lINFO:     194.0.244.171:18016 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35845 - "GET /ready HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:35844 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35846 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.171:18017 - "GET /ready HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:18018 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35847 - "GET /api/v1/metadata/changes HTTP/1.1" 500 Internal Server Error
+INFO:     194.0.244.171:18019 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+ib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 330, in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 32, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 63, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2518, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1002, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_routes.py", line 74, in metadata_changes
+    token, meta = content_fingerprint_v1()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_reader.py", line 304, in content_fingerprint_v1
+    select_cols = ["surah", "ayah", "text_ar"]
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/platform_api/content_reader.py", line 32, in _content_conn
+    if is_postgresql_configured():
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/get_db.py", line 167, in get_db_reader
+    with get_db() as conn:
+  File "/usr/lib/python3.12/contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/get_db.py", line 139, in get_db
+    with psycopg.connect(dsn, row_factory=dict_row) as conn:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 122, in connect
+    raise last_ex.with_traceback(None)
+psycopg.OperationalError: connection failed: connection to server at "5.75.162.140", port 5432 failed: FATAL:  the database system is not yet accepting connections
+DETAIL:  Consistent recovery state has not been yet reached.
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+--- Logging error ---
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:35849 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:18020 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18021 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18022 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35850 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:18023 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:35851 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35852 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18024 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18025 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35853 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     194.0.244.171:35854 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+list_duas failed
+Traceback (most recent call last):
+  File "/root/bot/raqat_bot/platform_api/community_routes.py", line 34, in get_duas
+    rows = list_duas(limit=limit)
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/db/community_store.py", line 57, in list_duas
+    rows = _exec(
+           ^^^^^^
+  File "/root/bot/raqat_bot/db/dialect_sql.py", line 94, in execute
+    return conn.execute(adapt_sql_for_connection(conn, sql), params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/bot/raqat_bot/.venv/lib/python3.12/site-packages/psycopg/connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "community_dua" does not exist
+LINE 3:             FROM community_dua
+                         ^
+INFO:     194.0.244.171:18026 - "GET /api/v1/community/duas?limit=50 HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.171:35855 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35856 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:35858 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.171:18027 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.171:18028 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     35.203.211.85:59670 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:32888 - "POST /api/v1/auth/link/telegram HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35750 - "POST /api/v1/ai/tts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35736 - "POST /api/v1/ai/tts HTTP/1.1" 200 OK
+INFO:     85.193.103.237:31620 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.103.237:32089 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.103.237:42488 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46080 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46081 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20317 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20318 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20319 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20320 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20321 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46086 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46088 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46091 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46089 - "GET /ready HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46090 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46092 - "POST /api/v1/auth/phone/start HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.247:46093 - "POST /api/v1/auth/phone/start HTTP/1.1" 503 Service Unavailable
+INFO:     194.0.244.247:46094 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20328 - "GET /ready HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20329 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20330 - "GET /api/v1/hadith/101231 HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20331 - "GET /api/v1/hadith/101237 HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20332 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46097 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20333 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46564 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46564 - "GET /api/v1/quran/14 HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20334 - "GET /api/v1/quran/5 HTTP/1.1" 200 OK
+INFO:     95.82.89.57:36670 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     95.82.89.57:50440 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20335 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     95.82.89.57:24468 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46565 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     95.82.89.57:24767 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     95.82.89.57:36702 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20336 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+halal image model=gemini-2.5-flash: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     95.82.89.57:5715 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+halal image model=gemini-2.5-flash: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     95.82.89.57:5715 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+halal image model=gemini-2.5-flash: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     95.82.89.57:14642 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     95.82.89.57:64365 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46566 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     95.82.89.57:59507 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+halal image model=gemini-2.5-flash: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     95.82.89.57:14944 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20803 - "GET /health HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46567 - "GET /ready HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20804 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     194.0.244.247:46568 - "POST /api/v1/auth/phone/start HTTP/1.1" 503 Service Unavailable
+INFO:     95.82.89.57:64153 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     95.82.89.57:8683 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46569 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     95.82.89.57:65441 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46571 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46572 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46573 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20805 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     162.216.150.109:62398 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     194.0.244.247:20808 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20809 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20810 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:46577 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:20813 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:21310 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     194.0.244.247:47061 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:41974 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:41975 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43905 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.97.96:43905 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42441 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.97.96:42442 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.97.96:42442 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     85.193.97.96:43906 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43907 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42445 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42446 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43908 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42449 - "GET /api/v1/hadith/101233 HTTP/1.1" 200 OK
+INFO:     95.82.89.57:17103 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:43912 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43914 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42451 - "POST /api/v1/ai/analyze-image HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42452 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     89.218.71.141:3934 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42458 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42459 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42461 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     95.82.89.57:37976 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42464 - "GET /health HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42463 - "GET /ready HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42462 - "GET /api/v1/stats/content HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42462 - "POST /api/v1/auth/phone/start HTTP/1.1" 503 Service Unavailable
+INFO:     85.193.97.96:43918 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42465 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43919 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42469 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43924 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:42471 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     149.27.164.179:22205 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     149.27.164.179:15804 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     149.27.164.179:28611 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     149.27.164.179:28611 - "GET /api/v1/quran/1 HTTP/1.1" 200 OK
+INFO:     149.27.164.179:20389 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     149.27.164.179:39494 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42945 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42946 - "GET /api/v1/quran/search?q=%D0%91%D0%B5%D1%80%D0%B5%D0%BA%D0%B5%20%D0%B4%D0%B5%D0%B3%D0%B5%D0%BD%20%D0%BD%D0%B5&lang=kk&include_translit=1&limit=3 HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42946 - "GET /api/v1/hadith/search?q=%D0%91%D0%B5%D1%80%D0%B5%D0%BA%D0%B5%20%D0%B4%D0%B5%D0%B3%D0%B5%D0%BD%20%D0%BD%D0%B5&lang=kk&limit=4&unique=1 HTTP/1.1" 200 OK
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.97.96:42946 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+Platform Gemini failed model=gemini-2.5-flash attempt=1: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
+INFO:     85.193.97.96:42946 - "POST /api/v1/ai/chat HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42946 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     139.162.173.209:44968 - "GET / HTTP/1.0" 404 Not Found
+INFO:     139.162.173.209:44970 - "OPTIONS / HTTP/1.0" 404 Not Found
+INFO:     139.162.173.209:44972 - "OPTIONS / HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     139.162.173.209:45078 - "GET /nice%20ports%2C/Trinity.txt.bak HTTP/1.0" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     139.162.173.209:46828 - "GET /devicedesc.xml HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     139.162.173.209:46966 - "GET / HTTP/1.1" 404 Not Found
+WARNING:  Invalid HTTP request received.
+WARNING:  Invalid HTTP request received.
+INFO:     85.193.97.96:44403 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44404 - "GET /api/v1/hadith/101225 HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44405 - "GET /api/v1/hadith/101225 HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42948 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44406 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44407 - "GET /api/v1/quran/surahs HTTP/1.1" 200 OK
+INFO:     85.193.97.96:42950 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3616 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3616 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     89.218.71.141:3896 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3979 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:4050 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:4050 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:44417 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3606 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44418 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3876 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3619 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:44419 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:3765 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     89.218.71.141:4016 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     89.218.71.141:3793 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43435 - "GET /api/v1/metadata/changes HTTP/1.1" 200 OK
+INFO:     85.193.97.96:43446 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:44897 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43447 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:43449 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified
+INFO:     85.193.97.96:44898 - "GET /api/v1/metadata/changes HTTP/1.1" 304 Not Modified

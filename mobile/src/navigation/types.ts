@@ -6,7 +6,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 export type MoreStackParamList = {
   /** Мазмұн тізімі (басты бет тайлдары өзгермейді). */
   ContentHub: undefined;
-  DailyAyah: undefined;
+  Seerah: undefined;
   QuranList: undefined;
   QuranSurah: {
     surahNumber: number;
@@ -31,11 +31,23 @@ export type MoreStackParamList = {
   TajweedGuide: undefined;
 };
 
+/** Тәспі табы: тізім → таңдалған зікірдің тәспі экраны */
+export type TasbihStackParamList = {
+  TasbihList: undefined;
+  TasbihCounter: { dhikrId: number; titleKk?: string };
+};
+
+/** Дұғалар табы: жергілікті дұғалар → қауым дұғасы */
+export type DuasStackParamList = {
+  DuasHome: undefined;
+  CommunityDua: undefined;
+};
+
 export type MainTabParamList = {
   /** Басты бет (намаз тор, мазмұн тайлдары) — төменгі кастом таб жолында жоқ */
   Home: undefined;
-  Duas: undefined;
-  Tasbih: undefined;
+  Duas: NavigatorScreenParams<DuasStackParamList>;
+  Tasbih: NavigatorScreenParams<TasbihStackParamList>;
 };
 
 /** Түбір stack: табтар + қосымша экрандар (More табы жоқ) */

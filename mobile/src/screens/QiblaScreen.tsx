@@ -9,12 +9,14 @@ import {
   Pressable,
   Linking,
   Platform,
+  Image,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useQiblaSensor } from "../context/QiblaSensorContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { menuIconAssets } from "../theme/menuIconAssets";
 import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
 import { qiblaAlignHint, type QiblaAlignHint } from "../lib/qiblaHints";
 
@@ -36,7 +38,7 @@ function screenHint(h: QiblaAlignHint, bearing: number | null): string {
 
 export function QiblaScreen() {
   const { colors } = useAppTheme();
-  const { perm, bearing, rotateDeg, refreshBearing, positionFailed, locationSource } =
+  const { perm, bearing, rotateDeg, refreshBearing, positionFailed, locationSource, motionMode, setMotionMode } =
     useQiblaSensor();
   const dialSize = Math.min(width - 80, 240);
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -133,8 +135,15 @@ export function QiblaScreen() {
           size={dialSize}
           rotateDeg={rotateDeg}
           aligned={alignHint === "aligned" && bearing != null}
+          showDialRing={false}
         />
-        <Text style={styles.kaabaMark}>🕋</Text>
+        <Image
+          source={menuIconAssets.headerQibla}
+          style={styles.kaabaImg}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+          accessibilityLabel="Kaaba"
+        />
       </View>
 
       {locationSource === "city" ? (
@@ -149,6 +158,29 @@ export function QiblaScreen() {
       >
         {mainHint}
       </Text>
+
+      <View style={styles.modeRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.modeChip,
+            motionMode === "balanced" && styles.modeChipActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => setMotionMode("balanced")}
+        >
+          <Text style={[styles.modeTxt, motionMode === "balanced" && styles.modeTxtActive]}>Balanced</Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.modeChip,
+            motionMode === "fast" && styles.modeChipActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => setMotionMode("fast")}
+        >
+          <Text style={[styles.modeTxt, motionMode === "fast" && styles.modeTxtActive]}>Fast</Text>
+        </Pressable>
+      </View>
 
       <Pressable
         style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
@@ -211,18 +243,37 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.card,
     },
     secondaryBtnTxt: { color: colors.accent, fontWeight: "600", fontSize: 15 },
+    modeRow: {
+      flexDirection: "row",
+      gap: 8,
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    modeChip: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+    modeChipActive: {
+      borderColor: colors.accent,
+      backgroundColor: "rgba(56,189,248,0.12)",
+    },
+    modeTxt: { color: colors.muted, fontSize: 13, fontWeight: "700" },
+    modeTxtActive: { color: colors.accent },
     arrowPanel: {
       alignSelf: "center",
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 16,
-      paddingVertical: 16,
-      paddingHorizontal: 12,
+      marginBottom: 12,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
       minWidth: width - 40,
-      borderRadius: 16,
-      backgroundColor: colors.card,
     },
-    kaabaMark: { fontSize: 28, marginTop: 4 },
+    /** Эмодзи 🕋 орнына PNG — қоршаусыз, анық */
+    kaabaImg: { width: 44, height: 44, marginTop: 10 },
     hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 8 },
   });
 }

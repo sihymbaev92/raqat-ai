@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { AppState, type AppStateStatus, InteractionManager, Platform } from "react-native";
 import * as Location from "expo-location";
 import { Magnetometer } from "expo-sensors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCityApproxCoords } from "../constants/kzCities";
 import { getSelectedCity } from "../storage/prefs";
 import { angleDiff, bearingToKaaba } from "../lib/qibla";
@@ -24,6 +25,8 @@ export type QiblaMotionValue = {
   heading: number;
   /** Қағбаға бұру үшін телефонды бұрау бұрышы (градус) */
   rotateDeg: number;
+  motionMode: "balanced" | "fast";
+  setMotionMode: (mode: "balanced" | "fast") => void;
 };
 
 /** Толық мәлімет — құбыла экраны сияқты жиі жаңартылатын UI үшін */
@@ -32,11 +35,8 @@ export type QiblaSensorValue = QiblaStableValue & QiblaMotionValue;
 const QiblaStableContext = createContext<QiblaStableValue | null>(null);
 const QiblaMotionContext = createContext<QiblaMotionValue | null>(null);
 
-function headingFromMagnetometer(x: number, y: number): number {
-  let h = Math.atan2(y, x) * (180 / Math.PI);
-  h = 90 - h;
-  if (Platform.OS === "android") h = -h;
-  return (h + 360) % 360;
+function normalizeHeadingDeg(v: number): number {
+  return ((v % 360) + 360) % 360;
 }
 
 async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
@@ -131,11 +131,28 @@ async function resolveGpsOrCity(
   return null;
 }
 
-/** UI жиі қатып қалмас үшін; құбыла «қуып қалмау» үшін аралық пен өзгеріс шегін теңдестіреміз. */
-const MAG_HEADING_MIN_INTERVAL_MS = 55;
-const MAG_HEADING_MIN_DELTA_DEG = 0.55;
-/** sin/cos бойынша EMA — дірілді азайтып, бұруды ілесірерлік сақтайды */
-const HEADING_EMA_ALPHA = 0.32;
+type QiblaMotionConfig = {
+  updateIntervalMs: number;
+  minEmitIntervalMs: number;
+  minDeltaDeg: number;
+  emaAlpha: number;
+};
+
+const QIBLA_MODE_KEY = "qibla_motion_mode_v1";
+const QIBLA_MOTION_CONFIG: Record<"balanced" | "fast", QiblaMotionConfig> = {
+  balanced: {
+    updateIntervalMs: 80,
+    minEmitIntervalMs: 60,
+    minDeltaDeg: 0.52,
+    emaAlpha: 0.34,
+  },
+  fast: {
+    updateIntervalMs: 16,
+    minEmitIntervalMs: 16,
+    minDeltaDeg: 0.12,
+    emaAlpha: 0.58,
+  },
+};
 
 export function QiblaSensorProvider({ children }: { children: React.ReactNode }) {
   const [perm, setPerm] = useState<QiblaPerm>("unknown");
@@ -143,7 +160,9 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
   const [heading, setHeading] = useState(0);
   const [positionFailed, setPositionFailed] = useState(false);
   const [locationSource, setLocationSource] = useState<LocationSource>("none");
+  const [motionMode, setMotionModeState] = useState<"balanced" | "fast">("balanced");
   const magRef = useRef<{ remove: () => void } | null>(null);
+  const headingWatchRef = useRef<Location.LocationSubscription | null>(null);
   const lastHeadingPushMs = useRef(0);
   const lastHeadingEmitted = useRef(0);
   const emaCos = useRef<number | null>(null);
@@ -151,39 +170,81 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
   /** GPS/рұқсат дайын болғанда магнитометрді қайта қосуға болады (фонда listener алынып тасталады) */
   const magMayUseRef = useRef(false);
 
+  const setMotionMode = useCallback((mode: "balanced" | "fast") => {
+    setMotionModeState(mode);
+    void AsyncStorage.setItem(QIBLA_MODE_KEY, mode).catch(() => {});
+  }, []);
+
+  const emitHeading = useCallback((rawHeading: number) => {
+    const raw = normalizeHeadingDeg(rawHeading);
+    const rad = (raw * Math.PI) / 180;
+    const c = Math.cos(rad);
+    const s = Math.sin(rad);
+    const cfg = QIBLA_MOTION_CONFIG[motionMode];
+    const a = cfg.emaAlpha;
+    if (emaCos.current == null || emaSin.current == null) {
+      emaCos.current = c;
+      emaSin.current = s;
+    } else {
+      emaCos.current = (1 - a) * emaCos.current + a * c;
+      emaSin.current = (1 - a) * emaSin.current + a * s;
+    }
+    let h = Math.atan2(emaSin.current, emaCos.current) * (180 / Math.PI);
+    h = normalizeHeadingDeg(h);
+    const now = Date.now();
+    const delta = Math.abs(angleDiff(lastHeadingEmitted.current, h));
+    const elapsed = now - lastHeadingPushMs.current;
+    if (elapsed < cfg.minEmitIntervalMs && delta < cfg.minDeltaDeg) {
+      return;
+    }
+    lastHeadingEmitted.current = h;
+    lastHeadingPushMs.current = now;
+    setHeading(h);
+  }, [motionMode]);
+
+  const clearHeadingSubs = useCallback(() => {
+    headingWatchRef.current?.remove();
+    headingWatchRef.current = null;
+    magRef.current?.remove();
+    magRef.current = null;
+  }, []);
+
   const subscribeMagnetometer = useCallback(() => {
-    Magnetometer.setUpdateInterval(80);
+    const cfg = QIBLA_MOTION_CONFIG[motionMode];
+    Magnetometer.setUpdateInterval(cfg.updateIntervalMs);
     magRef.current?.remove();
     lastHeadingPushMs.current = 0;
     lastHeadingEmitted.current = 0;
     emaCos.current = null;
     emaSin.current = null;
     magRef.current = Magnetometer.addListener((data) => {
-      const raw = headingFromMagnetometer(data.x, data.y);
-      const rad = (raw * Math.PI) / 180;
-      const c = Math.cos(rad);
-      const s = Math.sin(rad);
-      const a = HEADING_EMA_ALPHA;
-      if (emaCos.current == null || emaSin.current == null) {
-        emaCos.current = c;
-        emaSin.current = s;
-      } else {
-        emaCos.current = (1 - a) * emaCos.current + a * c;
-        emaSin.current = (1 - a) * emaSin.current + a * s;
-      }
-      let h = Math.atan2(emaSin.current, emaCos.current) * (180 / Math.PI);
-      h = (h + 360) % 360;
-      const now = Date.now();
-      const delta = Math.abs(angleDiff(lastHeadingEmitted.current, h));
-      const elapsed = now - lastHeadingPushMs.current;
-      if (elapsed < MAG_HEADING_MIN_INTERVAL_MS && delta < MAG_HEADING_MIN_DELTA_DEG) {
-        return;
-      }
-      lastHeadingEmitted.current = h;
-      lastHeadingPushMs.current = now;
-      setHeading(h);
+      // Fallback-only: heading stream жоқ құрылғылар үшін қарапайым магнитометр.
+      const raw = 90 - Math.atan2(data.y, data.x) * (180 / Math.PI);
+      emitHeading(raw);
     });
-  }, []);
+  }, [emitHeading, motionMode]);
+
+  const subscribeHeading = useCallback(async () => {
+    clearHeadingSubs();
+    lastHeadingPushMs.current = 0;
+    lastHeadingEmitted.current = 0;
+    emaCos.current = null;
+    emaSin.current = null;
+    try {
+      const sub = await Location.watchHeadingAsync((h) => {
+        const src =
+          Number.isFinite(h.trueHeading) && h.trueHeading >= 0
+            ? h.trueHeading
+            : h.magHeading;
+        if (typeof src === "number" && Number.isFinite(src)) {
+          emitHeading(src);
+        }
+      });
+      headingWatchRef.current = sub;
+    } catch {
+      subscribeMagnetometer();
+    }
+  }, [clearHeadingSubs, emitHeading, subscribeMagnetometer]);
 
   const applyCoords = useCallback((latitude: number, longitude: number, source: LocationSource) => {
     setBearing(bearingToKaaba(latitude, longitude));
@@ -221,6 +282,10 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
 
     (async () => {
       try {
+        const savedMode = (await AsyncStorage.getItem(QIBLA_MODE_KEY))?.trim();
+        if (alive && (savedMode === "balanced" || savedMode === "fast")) {
+          setMotionModeState(savedMode);
+        }
         /* Алғашқы кадр + onboarding/сплэш сызылсын; рұқсат+GPS бірден UI-ды ұзақ бұғаттамауы үшін */
         await new Promise<void>((resolve) => {
           InteractionManager.runAfterInteractions(() => resolve());
@@ -264,7 +329,7 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
 
         magMayUseRef.current = true;
         if (AppState.currentState === "active") {
-          subscribeMagnetometer();
+          void subscribeHeading();
         }
       } catch {
         if (alive) {
@@ -277,25 +342,23 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
     return () => {
       alive = false;
       magMayUseRef.current = false;
-      magRef.current?.remove();
-      magRef.current = null;
+      clearHeadingSubs();
     };
-  }, [applyCoords, subscribeMagnetometer]);
+  }, [applyCoords, clearHeadingSubs, subscribeHeading]);
 
   /** Қолданба фонда тұрғанда магнитометрді тоқтату — қайта кіргенде JS қатып қалмасын */
   useEffect(() => {
     const sub = AppState.addEventListener("change", (next: AppStateStatus) => {
       if (next === "active") {
         if (magMayUseRef.current) {
-          subscribeMagnetometer();
+          void subscribeHeading();
         }
       } else {
-        magRef.current?.remove();
-        magRef.current = null;
+        clearHeadingSubs();
       }
     });
     return () => sub.remove();
-  }, [subscribeMagnetometer]);
+  }, [clearHeadingSubs, subscribeHeading]);
 
   const rotateDeg = bearing != null ? angleDiff(heading, bearing) : 0;
 
@@ -314,8 +377,10 @@ export function QiblaSensorProvider({ children }: { children: React.ReactNode })
     () => ({
       heading,
       rotateDeg,
+      motionMode,
+      setMotionMode,
     }),
-    [heading, rotateDeg]
+    [heading, rotateDeg, motionMode, setMotionMode]
   );
 
   return (

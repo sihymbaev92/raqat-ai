@@ -168,9 +168,15 @@ def hadith_random(
     source: str = Query(..., min_length=1),
     strict_sahih: bool = Query(False),
     lang: str = Query("kk"),
+    unique: bool = Query(
+        True,
+        description="Тек бірегей жолдар (is_repeated=0). False — кітап ішіндегі қайталанулармен.",
+    ),
     _: None = Depends(optional_content_read_secret),
 ):
-    row = hadith_random_for_source(source, strict_sahih=strict_sahih, lang=lang)
+    row = hadith_random_for_source(
+        source, strict_sahih=strict_sahih, lang=lang, unique_only=unique
+    )
     if not row:
         raise HTTPException(404, detail="hadith not found")
     return {"ok": True, "hadith": row}
@@ -181,9 +187,13 @@ def hadith_search_endpoint(
     q: str = Query(..., min_length=1),
     lang: str = Query("kk"),
     limit: int = Query(60, ge=1, le=200),
+    unique: bool = Query(
+        True,
+        description="Тек бірегей жолдар (is_repeated=0). False — толық кітап жолдары.",
+    ),
     _: None = Depends(optional_content_read_secret),
 ):
-    rows = hadith_search(q, lang=lang, limit=limit)
+    rows = hadith_search(q, lang=lang, limit=limit, unique_only=unique)
     return {"ok": True, "items": rows}
 
 

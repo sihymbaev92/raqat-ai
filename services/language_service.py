@@ -180,7 +180,10 @@ MENU_LABELS = {
         "id": "📚 HADIS",
         "ms": "📚 HADIS",
     },
-    "ai": {code: "🤖 RAQAT AI" for code in LANGUAGE_ORDER},
+    "ai": {
+        "kk": "🤖 RAQAT AI · КӨМЕКШІ",
+        **{code: "🤖 RAQAT AI" for code in LANGUAGE_ORDER if code != "kk"},
+    },
     "tasbih": {
         "kk": "📿 ТӘСПІ",
         "en": "📿 TASBIH",

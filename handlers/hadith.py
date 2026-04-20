@@ -11,6 +11,7 @@ from config.settings import DB_PATH, RAQAT_BOT_API_ONLY
 from db.connection import db_conn
 from db.dialect_sql import execute as _exec
 from db.get_db import is_postgresql_configured
+from db.hadith_repeat import hadith_unique_only_sql_suffix
 from db.hadith_repo import resolve_hadith_text_choice
 from services.language_service import (
     _lang_db,
@@ -222,15 +223,17 @@ def _get_random_hadith(mode: str, slug: str, content_lang: str):
             source,
             strict_sahih=bool(mode == "s" and not meta.get("strict_book")),
             lang=content_lang,
+            unique=True,
         )
         return row
 
     with db_conn(DB_PATH) as conn:
+        w = where_clause + hadith_unique_only_sql_suffix(conn)
         return conn.execute(
             f"""
             SELECT source, text_ar, {text_column} AS text_tr, grade
             FROM hadith
-            WHERE {where_clause}
+            WHERE {w}
             ORDER BY RANDOM()
             LIMIT 1
             """,
@@ -253,11 +256,12 @@ def _get_random_hadith_sqlite(mode: str, slug: str, content_lang: str):
         where_clause = "source = ? AND lower(COALESCE(grade, '')) NOT LIKE '%sahih%'"
 
     with db_conn(DB_PATH) as conn:
+        w = where_clause + hadith_unique_only_sql_suffix(conn)
         return conn.execute(
             f"""
             SELECT source, text_ar, {text_column} AS text_tr, grade
             FROM hadith
-            WHERE {where_clause}
+            WHERE {w}
             ORDER BY RANDOM()
             LIMIT 1
             """,
@@ -412,7 +416,7 @@ def _search_rank(row) -> tuple[int, int]:
 
 def _search_hadith_rows(query: str, content_lang: str):
     if RAQAT_BOT_API_ONLY:
-        rows = fetch_hadith_search(query, lang=content_lang, limit=60)
+        rows = fetch_hadith_search(query, lang=content_lang, limit=60, unique=True)
         if rows is None:
             return [], [], True
         rows = _enrich_api_hadith_rows_with_sqlite(rows, content_lang)
@@ -443,6 +447,7 @@ def _search_hadith_rows(query: str, content_lang: str):
                     ]
                     * len(terms)
                 )
+                where += hadith_unique_only_sql_suffix(conn)
                 params = [f"%{term}%" for term in terms]
                 rows = _exec(
                     conn,
@@ -466,6 +471,8 @@ def _search_hadith_rows(query: str, content_lang: str):
                 ).fetchone()[0]
             )
 
+            uq = hadith_unique_only_sql_suffix(conn)
+            uq_h = hadith_unique_only_sql_suffix(conn, "h")
             if has_fts and fts_terms:
                 fts_query = " AND ".join(
                     f'({text_column}:"{t}" OR text_en:"{t}" OR text_ar:"{t}")'
@@ -474,10 +481,11 @@ def _search_hadith_rows(query: str, content_lang: str):
                 try:
                     rows = conn.execute(
                         f"""
-                        SELECT source, text_ar, {text_column} AS text_tr, grade
-                        FROM hadith_fts
-                        WHERE hadith_fts MATCH ?
-                        ORDER BY bm25(hadith_fts)
+                        SELECT h.source, h.text_ar, h.{text_column} AS text_tr, h.grade
+                        FROM hadith_fts f
+                        INNER JOIN hadith h ON h.id = f.hadith_id
+                        WHERE f MATCH ?{uq_h}
+                        ORDER BY bm25(f)
                         LIMIT 60
                         """,
                         (fts_query,),
@@ -498,6 +506,7 @@ def _search_hadith_rows(query: str, content_lang: str):
                     ]
                     * len(terms)
                 )
+                where += uq
                 params = [f"%{term}%" for term in terms]
                 rows = conn.execute(
                     f"""

@@ -11,6 +11,7 @@ from typing import Any, Iterator
 from db.dialect_sql import execute as _exec
 from db.dialect_sql import is_psycopg_connection, is_sqlite_connection, table_names
 from db.get_db import get_db_reader, is_postgresql_configured
+from db.hadith_repeat import hadith_unique_only_sql_suffix
 from db_reader import resolve_db_path
 
 
@@ -203,12 +204,22 @@ def quran_one_ayah(surah: int, ayah: int) -> dict[str, Any] | None:
     return dict(row) if row else None
 
 
+def _hadith_select_columns(conn: Any) -> str:
+    cols = _table_columns(conn, "hadith")
+    base = ["id", "source", "text_ar", "text_kk", "text_ru", "text_en", "grade"]
+    for c in ("is_repeated", "original_id"):
+        if c in cols:
+            base.append(c)
+    return ", ".join(base)
+
+
 def hadith_by_id(hadith_id: int) -> dict[str, Any] | None:
     with _content_conn() as conn:
+        sel = _hadith_select_columns(conn)
         row = _exec(
             conn,
-            """
-            SELECT id, source, text_ar, text_kk, text_ru, text_en, grade
+            f"""
+            SELECT {sel}
             FROM hadith WHERE id = ?
             """,
             (hadith_id,),
@@ -227,13 +238,21 @@ def _norm_lang_col(lang: str) -> str:
     return "text_en"
 
 
-def hadith_random_for_source(source: str, *, strict_sahih: bool, lang: str = "kk") -> dict[str, Any] | None:
+def hadith_random_for_source(
+    source: str,
+    *,
+    strict_sahih: bool,
+    lang: str = "kk",
+    unique_only: bool = True,
+) -> dict[str, Any] | None:
     col = _norm_lang_col(lang)
     where = "source = ?"
     params: list[Any] = [source]
     if strict_sahih:
         where += " AND POSITION('sahih' IN lower(COALESCE(grade, ''))) > 0"
     with _content_conn() as conn:
+        if unique_only:
+            where += hadith_unique_only_sql_suffix(conn)
         row = _exec(
             conn,
             f"""
@@ -248,10 +267,17 @@ def hadith_random_for_source(source: str, *, strict_sahih: bool, lang: str = "kk
     return dict(row) if row else None
 
 
-def hadith_search(query: str, *, lang: str = "kk", limit: int = 60) -> list[dict[str, Any]]:
+def hadith_search(
+    query: str,
+    *,
+    lang: str = "kk",
+    limit: int = 60,
+    unique_only: bool = True,
+) -> list[dict[str, Any]]:
     col = _norm_lang_col(lang)
     token = f"%{(query or '').strip()}%"
     with _content_conn() as conn:
+        uq = hadith_unique_only_sql_suffix(conn) if unique_only else ""
         rows = _exec(
             conn,
             f"""
@@ -262,6 +288,7 @@ def hadith_search(query: str, *, lang: str = "kk", limit: int = 60) -> list[dict
                 COALESCE(text_en, '') || ' ' ||
                 COALESCE(text_ar, '')
             ) LIKE lower(?)
+            {uq}
             LIMIT ?
             """,
             (token, int(max(1, min(limit, 200)))),

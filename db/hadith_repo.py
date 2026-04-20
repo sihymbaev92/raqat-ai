@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from config.settings import DB_PATH, ALLOWED_TEXT_COLS
 from db.connection import db_conn
+from db.hadith_repeat import hadith_unique_only_sql_suffix
 from services.language_service import preferred_hadith_columns
 
 def get_hadith_columns():
@@ -46,12 +47,13 @@ def get_random_hadith(lang: str = "kk"):
     if not col:
         return None
 
-    query = f"""
-        SELECT source, text_ar, {col} AS text_tr
-        FROM hadith
-        ORDER BY RANDOM()
-        LIMIT 1
-    """
-
     with db_conn(DB_PATH) as conn:
+        uq = hadith_unique_only_sql_suffix(conn)
+        query = f"""
+            SELECT source, text_ar, {col} AS text_tr
+            FROM hadith
+            WHERE 1=1{uq}
+            ORDER BY RANDOM()
+            LIMIT 1
+        """
         return conn.execute(query).fetchone()

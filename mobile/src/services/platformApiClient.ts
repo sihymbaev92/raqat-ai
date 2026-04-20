@@ -236,6 +236,22 @@ export type PlatformHadithResponse = {
   hadith?: Record<string, unknown>;
 };
 
+export type PlatformQuranSearchItem = {
+  surah?: number;
+  ayah?: number;
+  text_ar?: string | null;
+  text_tr?: string | null;
+  translit?: string | null;
+};
+
+export type PlatformHadithSearchItem = {
+  id?: number;
+  source?: string | null;
+  text_ar?: string | null;
+  text_tr?: string | null;
+  grade?: string | null;
+};
+
 function contentHeaders(
   contentSecret?: string,
   authorizationBearer?: string
@@ -279,6 +295,10 @@ export async function fetchPlatformAiChat(
     timeoutMs?: number;
     aiSecret?: string;
     authorizationBearer?: string;
+    /** quick — қысқа жауап (алдымен жылдам); full — әдепкі толық */
+    detailLevel?: "full" | "quick";
+    /** Серверде Құран→хадис→іздеу конвейері (тек Raqat AI толық жауабы) */
+    stagedPipeline?: boolean;
   }
 ): Promise<AiChatResponse & { status?: number }> {
   const timeoutMs = opts?.timeoutMs ?? 120_000;
@@ -299,7 +319,11 @@ export async function fetchPlatformAiChat(
       method: "POST",
       signal: ctrl.signal,
       headers,
-      body: JSON.stringify({ prompt: prompt.trim() }),
+      body: JSON.stringify({
+        prompt: prompt.trim(),
+        detail_level: opts?.detailLevel ?? "full",
+        staged_pipeline: opts?.stagedPipeline ?? false,
+      }),
     });
     let j: AiChatResponse;
     try {
@@ -384,6 +408,50 @@ export function fetchPlatformHadith(
   return fetchJson<PlatformHadithResponse>(
     base,
     `/api/v1/hadith/${hadithId}`,
+    opts?.timeoutMs,
+    contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
+  );
+}
+
+/** GET /api/v1/quran/search */
+export function fetchPlatformQuranSearch(
+  base: string,
+  query: string,
+  opts?: {
+    timeoutMs?: number;
+    limit?: number;
+    includeTranslit?: boolean;
+    contentSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<{ ok: boolean; items?: PlatformQuranSearchItem[] }> {
+  const q = encodeURIComponent(query.trim());
+  const limit = Math.min(10, Math.max(1, opts?.limit ?? 3));
+  const includeTranslit = opts?.includeTranslit ?? true;
+  return fetchJson<{ ok: boolean; items?: PlatformQuranSearchItem[] }>(
+    base,
+    `/api/v1/quran/search?q=${q}&lang=kk&include_translit=${includeTranslit ? "1" : "0"}&limit=${limit}`,
+    opts?.timeoutMs,
+    contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
+  );
+}
+
+/** GET /api/v1/hadith/search */
+export function fetchPlatformHadithSearch(
+  base: string,
+  query: string,
+  opts?: {
+    timeoutMs?: number;
+    limit?: number;
+    contentSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<{ ok: boolean; items?: PlatformHadithSearchItem[] }> {
+  const q = encodeURIComponent(query.trim());
+  const limit = Math.min(20, Math.max(1, opts?.limit ?? 4));
+  return fetchJson<{ ok: boolean; items?: PlatformHadithSearchItem[] }>(
+    base,
+    `/api/v1/hadith/search?q=${q}&lang=kk&limit=${limit}&unique=1`,
     opts?.timeoutMs,
     contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
   );

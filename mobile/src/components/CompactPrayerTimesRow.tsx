@@ -179,7 +179,7 @@ export function CompactPrayerTimesRow({
         <View style={styles.sixStack}>
           {data.map((r, i) => {
             const highlighted = Boolean(highlightKey && r.key === highlightKey);
-            const iconSz = sixRowsCompact ? 21 : 24;
+            const iconSz = sixRowsCompact ? 19 : 24;
             const pv = prayerVisual(r.key, dark);
             return (
               <View
@@ -232,15 +232,15 @@ export function CompactPrayerTimesRow({
 function makeStyles(colors: ThemeColors, isDark?: boolean, sixCompact?: boolean, rowCompact?: boolean) {
   const rc = Boolean(rowCompact);
   const chipBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(15, 23, 42, 0.04)";
-  const gap = sixCompact ? 6 : 9;
-  const chipPy = sixCompact ? 8 : 12;
-  const chipPx = sixCompact ? 9 : 13;
-  const chipPl = sixCompact ? 9 : 11;
-  const iconBox = sixCompact ? 34 : 40;
-  const labelFs = sixCompact ? 14 : 16;
-  const timeFs = sixCompact ? 17 : 19;
-  const timeHiFs = sixCompact ? 19 : 21;
-  const hiPadL = sixCompact ? 7 : 9;
+  const gap = sixCompact ? 5 : 9;
+  const chipPy = sixCompact ? 6 : 12;
+  const chipPx = sixCompact ? 8 : 13;
+  const chipPl = sixCompact ? 8 : 11;
+  const iconBox = sixCompact ? 30 : 40;
+  const labelFs = sixCompact ? 13 : 16;
+  const timeFs = sixCompact ? 16 : 19;
+  const timeHiFs = sixCompact ? 18 : 21;
+  const hiPadL = sixCompact ? 6 : 9;
 
   return StyleSheet.create({
     card: {

@@ -98,6 +98,8 @@ def export_rows(
     only_with_kk: bool,
     limit: int | None,
     include_all_sources: bool,
+    *,
+    include_repeats: bool = False,
 ) -> list[dict]:
     where = ["1=1"]
     params: list = []
@@ -107,9 +109,24 @@ def export_rows(
     if only_with_kk:
         where.append("TRIM(COALESCE(text_kk, '')) <> ''")
 
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+    if "is_repeated" in cols and not include_repeats:
+        where.append("COALESCE(is_repeated, 0) = 0")
+
+    sel_cols = "id, source, text_ar, text_kk"
+    if "text_ru" in cols:
+        sel_cols += ", text_ru"
+    if "text_en" in cols:
+        sel_cols += ", text_en"
+    sel_cols += ", grade"
+    if "is_repeated" in cols:
+        sel_cols += ", is_repeated"
+    if "original_id" in cols:
+        sel_cols += ", original_id"
+
     limit_sql = f" LIMIT {int(limit)}" if limit else ""
     q = f"""
-        SELECT id, source, text_ar, text_kk, grade
+        SELECT {sel_cols}
         FROM hadith
         WHERE {' AND '.join(where)}
         ORDER BY
@@ -129,20 +146,31 @@ def export_rows(
         hid = f"{slug}-{r['id']}"
         coll = _collection_field(slug)
         text_kk = _strip_markdown_light(r["text_kk"])
-        out.append(
-            {
-                "id": hid,
-                "dbId": int(r["id"]),
-                "collection": coll,
-                "collectionNameKk": _collection_name_kk(slug, src),
-                "bookTitleKk": "",
-                "reference": str(r["id"]),
-                "arabic": clean_text_content(r["text_ar"]),
-                "textKk": text_kk,
-                "narratorKk": "",
-                "grade": (r["grade"] or "").strip(),
-            }
-        )
+        item: dict = {
+            "id": hid,
+            "dbId": int(r["id"]),
+            "collection": coll,
+            "collectionNameKk": _collection_name_kk(slug, src),
+            "bookTitleKk": "",
+            "reference": str(r["id"]),
+            "arabic": clean_text_content(r["text_ar"]),
+            "textKk": text_kk,
+            "narratorKk": "",
+            "grade": (r["grade"] or "").strip(),
+        }
+        if "text_ru" in cols:
+            tru = r["text_ru"]
+            if tru and str(tru).strip():
+                item["textRu"] = _strip_markdown_light(tru)
+        if "text_en" in cols:
+            ten = r["text_en"]
+            if ten and str(ten).strip():
+                item["textEn"] = _strip_markdown_light(ten)
+        if "is_repeated" in cols:
+            item["isRepeated"] = bool(int(r["is_repeated"] or 0))
+        if "original_id" in cols and r["original_id"] is not None:
+            item["originalDbId"] = int(r["original_id"])
+        out.append(item)
     return out
 
 
@@ -155,6 +183,7 @@ def cmd_export(args: argparse.Namespace) -> int:
             args.only_with_kk,
             args.limit,
             args.include_all_sources,
+            include_repeats=args.include_repeats,
         )
     finally:
         conn.close()
@@ -336,6 +365,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Тек text_kk толық жолдар (қолданбаға жеңіл бандл)",
     )
     pe.add_argument("--limit", type=int, default=0, help="0 = шектеусіз")
+    pe.add_argument(
+        "--include-repeats",
+        action="store_true",
+        help="Кітап ішіндегі қайталанатын жолдарды да экспорттау (әдепкі: тек бірегей is_repeated=0)",
+    )
     pe.set_defaults(func=cmd_export)
 
     pi = sub.add_parser("import-json", help="JSON → SQLite (text_kk жаңарту)")

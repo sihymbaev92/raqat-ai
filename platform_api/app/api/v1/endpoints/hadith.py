@@ -27,9 +27,15 @@ def search(
     q: str = Query(..., min_length=1),
     lang: str = Query("kk"),
     limit: int = Query(60, ge=1, le=200),
+    unique: bool = Query(
+        True,
+        description="Тек бірегей жолдар (is_repeated=0). False — толық кітап.",
+    ),
     _: None = Depends(optional_content_read_secret),
 ) -> dict:
-    return success_response({"items": hadith_search(q, lang=lang, limit=limit)})
+    return success_response(
+        {"items": hadith_search(q, lang=lang, limit=limit, unique_only=unique)}
+    )
 
 
 @router.get("/{hadith_id}")

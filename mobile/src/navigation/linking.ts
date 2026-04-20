@@ -19,8 +19,28 @@ export const raqatLinking: LinkingOptions<RootStackParamList> = {
         path: "",
         screens: {
           Home: "",
-          Duas: "duas",
-          Tasbih: "tasbih",
+          Duas: {
+            path: "duas",
+            screens: {
+              DuasHome: "",
+              CommunityDua: "community",
+            },
+          },
+          Tasbih: {
+            path: "tasbih",
+            screens: {
+              TasbihList: "",
+              TasbihCounter: {
+                path: "dhikr/:dhikrId",
+                parse: {
+                  dhikrId: (v: string) => {
+                    const n = parseInt(v, 10);
+                    return Number.isFinite(n) ? n : 1;
+                  },
+                },
+              },
+            },
+          },
         },
       },
       AsmaAlHusna: "asma",
@@ -40,7 +60,7 @@ export const raqatLinking: LinkingOptions<RootStackParamList> = {
               },
             },
           },
-          DailyAyah: "daily-ayah",
+          Seerah: "seerah",
           Duas: "extra-duas",
           TelegramInfo: "telegram",
           Settings: "more-settings",

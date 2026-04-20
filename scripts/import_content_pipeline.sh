@@ -15,6 +15,8 @@ echo
 echo "== 2) Құран / хадис — қолмен дереккөз =="
 echo "Мысалдар (файл жолдарын өзгертіңіз):"
 echo "  python scripts/hadith_corpus_sync.py import-json --db \"$DB\" --input ./hadith-from-db.json"
+echo "  python scripts/import_hadith_from_open_sources.py --db \"$DB\" --books bukhari,muslim --replace --i-understand"
+echo "    (бос кесте немесе алдымен көшірме; ашық hadith-api CDN — араб + en + ru)"
 echo "  python scripts/import_quran_translit_json.py --help"
 echo "  python scripts/import_quran_kk_verified.py --help"
 echo

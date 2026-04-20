@@ -120,17 +120,16 @@ def _int_env(key: str, default: int) -> int:
         return default
 
 
-def build_retrieved_context(
+def build_retrieved_context_parts(
     prompt: str,
     *,
     lang: str = "kk",
     quran_chars: int | None = None,
     hadith_chars: int | None = None,
     asma_chars: int | None = None,
-) -> str:
+) -> dict[str, str]:
     """
-    Ішкі дерекқор контексті: шамамен 35% Құран, 35% хадис, 10% есімдер
-    (қалған ~20% Google Search — ai_proxy нұсқауы).
+    Құран / хадис / есімдер блогын бөлек қайтарады — кеңейтілген AI конвейерінде кезекпен пайдаланылады.
     """
     total = _int_env("RAQAT_AI_INTERNAL_CONTEXT_TOTAL", 5600)
     total = max(2000, min(total, 20_000))
@@ -150,7 +149,7 @@ def build_retrieved_context(
 
     qry = _search_query_from_prompt(prompt)
     if len(qry) < 2:
-        return ""
+        return {"quran": "", "hadith": "", "asma": ""}
 
     q_lines: list[str] = []
     h_lines: list[str] = []
@@ -189,11 +188,43 @@ def build_retrieved_context(
     except Exception as exc:
         logger.warning("asma context failed: %s", exc)
 
-    parts: list[str] = []
+    quran = ""
     if q_lines:
-        parts.append("[Құраннан табылған үзінділер]\n" + "\n\n".join(q_lines))
+        quran = "[Құраннан табылған үзінділер]\n" + "\n\n".join(q_lines)
+    hadith = ""
     if h_lines:
-        parts.append("[Хадистерден табылған үзінділер]\n" + "\n\n".join(h_lines))
-    if asma_block.strip():
-        parts.append(asma_block.strip())
+        hadith = "[Хадистерден табылған үзінділер]\n" + "\n\n".join(h_lines)
+    return {
+        "quran": quran.strip(),
+        "hadith": hadith.strip(),
+        "asma": (asma_block or "").strip(),
+    }
+
+
+def build_retrieved_context(
+    prompt: str,
+    *,
+    lang: str = "kk",
+    quran_chars: int | None = None,
+    hadith_chars: int | None = None,
+    asma_chars: int | None = None,
+) -> str:
+    """
+    Ішкі дерекқор контексті: шамамен 35% Құран, 35% хадис, 10% есімдер
+    (қалған ~20% Google Search — ai_proxy нұсқауы).
+    """
+    p = build_retrieved_context_parts(
+        prompt,
+        lang=lang,
+        quran_chars=quran_chars,
+        hadith_chars=hadith_chars,
+        asma_chars=asma_chars,
+    )
+    parts: list[str] = []
+    if p["quran"]:
+        parts.append(p["quran"])
+    if p["hadith"]:
+        parts.append(p["hadith"])
+    if p["asma"]:
+        parts.append(p["asma"])
     return "\n\n---\n\n".join(parts)

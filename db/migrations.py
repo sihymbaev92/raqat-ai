@@ -792,6 +792,30 @@ def _migration_013_oauth_and_phone_login(conn) -> None:
     ensure_oauth_phone_tables(conn)
 
 
+def _migration_015_hadith_repeat_tracking(conn) -> None:
+    """
+    Хадис: кітап ішіндегі қайталану — is_repeated (0=бірегей көрініс), original_id.
+    Іздеу/рандом/API әдепкі тек is_repeated=0.
+    """
+    tables = _table_names(conn)
+    if "hadith" not in tables:
+        return
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+    if "is_repeated" not in cols:
+        conn.execute(
+            "ALTER TABLE hadith ADD COLUMN is_repeated INTEGER NOT NULL DEFAULT 0"
+        )
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+    if "original_id" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN original_id INTEGER NULL")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hadith_is_repeated ON hadith(is_repeated)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hadith_original_id ON hadith(original_id)"
+    )
+
+
 def _migration_014_repair_user_data_tables(conn) -> None:
     """
     Кейбір снапшоттарда 12 нұсқа қолданылған деп жазылған, бірақ
@@ -821,6 +845,7 @@ MIGRATIONS: list[tuple[int, str, Callable]] = [
     (12, "user_hatim_and_password_login", _migration_012_user_hatim_and_password_login),
     (13, "oauth_and_phone_login", _migration_013_oauth_and_phone_login),
     (14, "repair_user_data_tables_if_missing", _migration_014_repair_user_data_tables),
+    (15, "hadith_repeat_tracking", _migration_015_hadith_repeat_tracking),
 ]
 
 

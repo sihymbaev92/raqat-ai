@@ -38,10 +38,21 @@ def _get(path: str, params: dict[str, Any], timeout: float = 25.0) -> tuple[int 
         return r.status_code, None
 
 
-def fetch_hadith_random(source: str, *, strict_sahih: bool, lang: str) -> tuple[dict[str, Any] | None, str | None]:
+def fetch_hadith_random(
+    source: str,
+    *,
+    strict_sahih: bool,
+    lang: str,
+    unique: bool = True,
+) -> tuple[dict[str, Any] | None, str | None]:
     status, data = _get(
         "/api/v1/hadith/random",
-        {"source": source, "strict_sahih": 1 if strict_sahih else 0, "lang": lang},
+        {
+            "source": source,
+            "strict_sahih": 1 if strict_sahih else 0,
+            "lang": lang,
+            "unique": 1 if unique else 0,
+        },
     )
     if status == 404:
         return None, "not_found"
@@ -53,8 +64,22 @@ def fetch_hadith_random(source: str, *, strict_sahih: bool, lang: str) -> tuple[
     return row, None
 
 
-def fetch_hadith_search(query: str, *, lang: str, limit: int = 60) -> list[dict[str, Any]] | None:
-    status, data = _get("/api/v1/hadith/search", {"q": query, "lang": lang, "limit": int(limit)})
+def fetch_hadith_search(
+    query: str,
+    *,
+    lang: str,
+    limit: int = 60,
+    unique: bool = True,
+) -> list[dict[str, Any]] | None:
+    status, data = _get(
+        "/api/v1/hadith/search",
+        {
+            "q": query,
+            "lang": lang,
+            "limit": int(limit),
+            "unique": 1 if unique else 0,
+        },
+    )
     if status != 200 or not data or not data.get("ok"):
         return None
     items = data.get("items")

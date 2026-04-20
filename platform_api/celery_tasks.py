@@ -41,6 +41,9 @@ def task_ai_chat(self, payload: dict) -> dict:
     prompt = (payload.get("prompt") or "").strip()
     if not prompt:
         return {"ok": False, "error": "empty_prompt"}
+    quick = (payload.get("detail_level") or "full") == "quick"
+    staged_pipeline = bool(payload.get("staged_pipeline"))
+    cache_prompt = f"quick:{prompt}" if quick else prompt
     try:
         from ai_exact_cache import cache_get_reply, cache_set_reply
         from ai_proxy import generate_ai_reply
@@ -50,22 +53,26 @@ def task_ai_chat(self, payload: dict) -> dict:
         from db_reader import resolve_db_path
         from prometheus_metrics import observe_ai_chat
 
-        cached = cache_get_reply(prompt)
+        cached = cache_get_reply(cache_prompt)
         cache_hit_exact = bool(cached and str(cached).strip())
         cache_hit_semantic = False
         if cache_hit_exact:
             text = str(cached).strip()
         else:
-            sem = cache_get_semantic(prompt)
+            sem = cache_get_semantic(cache_prompt)
             if sem and str(sem).strip():
                 text = str(sem).strip()
                 cache_hit_semantic = True
             else:
                 t0 = time.perf_counter()
-                text = generate_ai_reply(prompt)
+                text = generate_ai_reply(
+                    prompt,
+                    quick=quick,
+                    use_staged_pipeline=staged_pipeline,
+                )
                 observe_ai_chat(time.perf_counter() - t0)
-                cache_set_reply(prompt, text)
-                cache_set_semantic(prompt, text)
+                cache_set_reply(cache_prompt, text)
+                cache_set_semantic(cache_prompt, text)
 
         cache_hit = cache_hit_exact or cache_hit_semantic
 
@@ -78,7 +85,7 @@ def task_ai_chat(self, payload: dict) -> dict:
         except (TypeError, ValueError):
             tid_i = None
 
-        if pid_s:
+        if pid_s and not quick:
             append_ai_exchange(db_path, pid_s, prompt, text, source="api")
 
         src_auth = (payload.get("source_auth") or "jwt").strip()[:32] or "jwt"

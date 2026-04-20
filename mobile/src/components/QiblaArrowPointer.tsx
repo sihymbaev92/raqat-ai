@@ -11,20 +11,30 @@ type Props = {
   rotateDeg: number;
   /** Құбыла бағытына шамамен тура (qiblaHints aligned) */
   aligned?: boolean;
+  /** Сақина сыртқы қабық (halo/ring) — false болса тек иін қалған «таза» көрініс */
+  showDialRing?: boolean;
 };
 
 const ROT_INTERP_LO = -50000;
 const ROT_INTERP_HI = 50000;
 
 /**
- * Компассыз құбыла — жіңішке сақина + жебе (ұш, саб, нок).
+ * Құбыла бағыты — сақина + классикалық компас иіні (үсті — бағыт, астында — қарсы салмақ).
  * Animated.spring; жеңіл тыныс пульсі.
  */
-export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
-  const headH = Math.max(16, Math.round(size * 0.23));
-  const triW = Math.max(12, Math.round(size * 0.14));
-  const shaftH = Math.max(20, Math.round(size * 0.4));
-  const shaftW = Math.max(6, Math.round(size * 0.072));
+export function QiblaArrowPointer({
+  colors,
+  size,
+  rotateDeg,
+  aligned,
+  showDialRing = true,
+}: Props) {
+  const headH = Math.max(18, Math.round(size * 0.26));
+  const triW = Math.max(10, Math.round(size * 0.11));
+  const shaftH = Math.max(12, Math.round(size * 0.2));
+  const shaftW = Math.max(5, Math.round(size * 0.062));
+  const tailW = Math.max(5, Math.round(triW * 0.58));
+  const tailH = Math.max(6, Math.round(size * 0.092));
   const stroke = aligned ? colors.success : colors.accent;
   const showDial = size >= 34;
   const ringInset = Math.max(2, Math.round(size * 0.042));
@@ -40,10 +50,10 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
     Animated.spring(rotAnim, {
       toValue: lastRotRef.current,
       useNativeDriver: true,
-      friction: 7,
-      tension: 38,
-      restDisplacementThreshold: 0.4,
-      restSpeedThreshold: 0.4,
+      friction: 4.4,
+      tension: 96,
+      restDisplacementThreshold: 0.12,
+      restSpeedThreshold: 0.12,
     }).start();
   }, [rotateDeg, rotAnim]);
 
@@ -101,6 +111,12 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
     borderBottomWidth: headH,
     borderBottomColor: stroke,
   };
+  const tailTri = {
+    borderLeftWidth: tailW,
+    borderRightWidth: tailW,
+    borderTopWidth: tailH,
+    borderTopColor: aligned ? `${colors.success}99` : `${colors.accent}aa`,
+  };
   const ringTint = aligned ? colors.success : colors.accent;
   const dialLeft = (size - dialW) / 2;
   const dialTop = (size - dialW) / 2;
@@ -109,7 +125,7 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
 
   return (
     <View style={[styles.wrap, { width: size, height: size }, glow]}>
-      {showDial ? (
+      {showDial && showDialRing ? (
         <>
           <View
             pointerEvents="none"
@@ -154,7 +170,7 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
         ]}
       >
         <View style={styles.col}>
-          {/* Көлеңке қабаты */}
+          {/* Иін ұшының көлеңкесі */}
           <View style={styles.headLayer}>
             <View
               style={[
@@ -163,7 +179,7 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
                   borderLeftWidth: triW,
                   borderRightWidth: triW,
                   borderBottomWidth: headH,
-                  borderBottomColor: "rgba(0,0,0,0.35)",
+                  borderBottomColor: "rgba(0,0,0,0.32)",
                 },
               ]}
             />
@@ -182,8 +198,8 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
                   ...Platform.select({
                     ios: {
                       shadowColor: "#000",
-                      shadowOpacity: 0.14,
-                      shadowRadius: 2.5,
+                      shadowOpacity: 0.12,
+                      shadowRadius: 2,
                       shadowOffset: { width: 0, height: 1 },
                     },
                     android: { elevation: 1 },
@@ -198,7 +214,7 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
                 styles.sheen,
                 {
                   width: Math.max(2, Math.round(shaftW * 0.38)),
-                  height: Math.round(shaftH * 0.62),
+                  height: Math.round(shaftH * 0.55),
                   borderRadius: 2,
                 },
               ]}
@@ -209,25 +225,15 @@ export function QiblaArrowPointer({ colors, size, rotateDeg, aligned }: Props) {
                 styles.shaftShade,
                 {
                   width: Math.max(1, Math.round(shaftW * 0.22)),
-                  height: Math.round(shaftH * 0.45),
+                  height: Math.round(shaftH * 0.4),
                   borderRadius: 1,
                 },
               ]}
             />
           </View>
 
-          <View
-            style={[
-              styles.nock,
-              {
-                width: Math.round(shaftW * 2.6),
-                height: 5,
-                backgroundColor: stroke,
-                opacity: aligned ? 0.92 : 0.78,
-                borderRadius: 3,
-              },
-            ]}
-          />
+          {/* Қарсы салмақ (компас иінінің астқы ұшы) */}
+          <View style={[styles.tail, tailTri]} />
         </View>
       </Animated.View>
     </View>
@@ -288,7 +294,11 @@ const styles = StyleSheet.create({
     top: "18%",
     backgroundColor: "rgba(0,0,0,0.12)",
   },
-  nock: {
-    marginTop: -1,
+  tail: {
+    width: 0,
+    height: 0,
+    marginTop: -2,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
   },
 });

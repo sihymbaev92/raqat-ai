@@ -1,6 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { DailyAyahScreen } from "../screens/DailyAyahScreen";
+import { SeerahScreen } from "../screens/SeerahScreen";
 import { QuranListScreen } from "../screens/QuranListScreen";
 import { QuranSurahScreen } from "../screens/QuranSurahScreen";
 import { DuasScreen } from "../screens/DuasScreen";
@@ -49,11 +49,7 @@ export function MoreNavigator() {
         component={QuranSurahScreen}
         options={{ title: kk.navigation.surahTitle }}
       />
-      <Stack.Screen
-        name="DailyAyah"
-        component={DailyAyahScreen}
-        options={{ title: kk.dailyAyah.title }}
-      />
+      <Stack.Screen name="Seerah" component={SeerahScreen} options={{ title: kk.seerah.title }} />
       <Stack.Screen name="Duas" component={DuasScreen} options={{ title: kk.navigation.duasTitle }} />
       <Stack.Screen
         name="TelegramInfo"

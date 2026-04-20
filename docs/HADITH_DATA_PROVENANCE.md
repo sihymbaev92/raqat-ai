@@ -13,7 +13,7 @@
 | `grade` | Дәреже мәтіні (`sahih`, `hasan`, …) — іздеу/сұрыптау үшін; **Сахих әл-Бұхари / Сахих Муслим** жинақтарында жиі бос болуы мүмкін, бірақ `source` бойынша «кітап тұтастай сахих» логикасы жұмыс істейді. |
 | `text_ar` | Арабша риуаят мәтіні (негізгі көз). |
 | `text_kk` | Қазақша аударма (Gemini батч скрипттері + қолмен түзету; толықтығы DB бойынша өзгереді). |
-| `text_ru`, `text_en` | Басқа тілдер (болса). |
+| `text_ru`, `text_en` | Орыс/ағылшынша аудармалар; **интернеттен толтыру**: `scripts/fill_hadith_text_fawaz.py` (fawazahmed0/hadith-api, jsDelivr). |
 | `updated_at` | Инкременттік синхрон (`/metadata/changes`) үшін. |
 
 ---
@@ -42,6 +42,35 @@
 - Скрипт: `scripts/hadith_corpus_sync.py` — экспорт/импорт, `stats`.
 - JSON `version: 3` (экспорт докстрингте сипатталған).
 - Сыртқы идентификатор: **`{slug}-{numeric_db_id}`**, мысалы `bukhari-101223`, `muslim-204400` (`hadith_corpus_sync.py` бастапқы түсініктемесі).
+
+---
+
+## 3б. Бос немесе қайта құру: ашық API-дан толық импорт (араб + en + ru)
+
+Жаңа SQLite немесе жинақтарды толығымен ауыстыру: `scripts/import_hadith_from_open_sources.py` — [fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api) `eng` / `ara` / `rus` минималды JSON.
+
+```bash
+.venv/bin/python scripts/import_hadith_from_open_sources.py --db global_clean.db \
+  --books bukhari,muslim --replace --i-understand
+```
+
+**Қауіп:** `--replace` таңдалған `source` бойынша бар `hadith` жолдарын жояды. Алдымен көшірме сақтаңыз.
+
+Кейін: `fill_hadith_text_fawaz.py` қажет емес (импортта en/ru қойылды); `text_kk` — `translate_hadith_kk_batch.py`. Индекс: `create_hadith_fts.py` (қолданбаңызда бар болса).
+
+---
+
+## 3а. Орыс және ағылшынша (CDN, «сахих» жинақтар)
+
+| Тіл | Бағана | Скрипт |
+|-----|--------|--------|
+| Ағылшынша (Sahih International стилі) | `text_en` | `.venv/bin/python scripts/fill_hadith_text_fawaz.py --db global_clean.db --target en` |
+| Орысша | `text_ru` | `--target ru` немесе ескі `fill_hadith_text_ru_fawaz.py` (сол скриптті шақырады) |
+| Екеуі қатар | | `bash scripts/run_hadith_fawaz_en_ru.sh` |
+
+Дереккөз: [fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api) — әр хадис жеке JSON (`eng-bukhari`, `rus-muslim`, …). Әбу Дәуд үшін API соңы 5274; дерекқорда одан аса жол болса, орыс/ағылшынша бос қалады.
+
+Экспортта `textRu` / `textEn` JSON-ға кіреді (`hadith_corpus_sync.py export`), қолданба офлайн көрсете алады.
 
 ---
 

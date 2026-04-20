@@ -29,6 +29,13 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Штрихкод пен жапсырма суретін халал тексеру үшін камера қажет.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -62,6 +69,7 @@
         "NSLocationWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
         "NSPhotoLibraryUsageDescription": "Photos are used to analyze product labels for halal checking.",
+        "NSCameraUsageDescription": "Камера штрихкод пен жапсырма суретін халал тексеру үшін қолданылады.",
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
             "5.75.162.140": {

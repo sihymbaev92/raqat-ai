@@ -30,7 +30,7 @@ async def ai_button_handler(message: types.Message):
     logger.info("AI button uid=%s text=%s", getattr(message.from_user, "id", None), message.text)
     log_event(message.from_user.id, "open_ai")
     USER_STATE[message.from_user.id] = "ai_chat"
-    await message.answer("🤖 <b>RAQAT AI</b>\n\nСұрағыңызды жазыңыз.")
+    await message.answer("🤖 <b>RAQAT AI · КӨМЕКШІ</b>\n\nСұрағыңызды жазыңыз.")
 
 async def ai_router(message: types.Message):
     logger.info("AI router uid=%s text=%s", getattr(message.from_user, "id", None), message.text)

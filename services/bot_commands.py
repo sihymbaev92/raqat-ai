@@ -23,7 +23,7 @@ async def register_default_bot_commands(bot: Bot) -> None:
         BotCommand(command="qibla", description="🧭 Құбыла"),
         BotCommand(command="tasbih", description="📿 Тәсбих"),
         BotCommand(command="halal", description="🥗 Halal тексеру"),
-        BotCommand(command="ai", description="🤖 RAQAT AI"),
+        BotCommand(command="ai", description="🤖 RAQAT AI · КӨМЕКШІ"),
         BotCommand(command="body", description="🔗 Бот + платформа бір дене"),
         BotCommand(command="help", description="❓ Көмек / нұсқаулық"),
         BotCommand(command="lang", description="🌐 Тіл ауыстыру"),
