@@ -5,6 +5,8 @@ __pycache__/
 *.pyd
 .venv/
 venv/
+# Платформа API: жүйелік / сақтық venv (репоға кірмейді)
+platform_api/.venv.linux_backup/
 
 # Env
 .env
@@ -24,6 +26,8 @@ backups/
 # Logs / telemetry
 logs/
 *.log
+scripts/asyldin_apply_log.txt
+scripts/asyldin_scrape_err.txt
 
 # JS (түбірде болса)
 node_modules/
@@ -32,3 +36,6 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
+# Локальды workspace (қосалқы multi-root жолдар; репоға кіргізбеу)
+*.code-workspace

@@ -21,10 +21,9 @@ import { kk } from "../i18n/kk";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
 import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
-import { getRaqatContentSecret } from "../config/raqatContentSecret";
 import { runContentSyncWithIncrementalPatches } from "../services/contentSync";
 import {
-  fetchPlatformHealth,
+  fetchPlatformLiveness,
   fetchPlatformReadiness,
   fetchContentStats,
   postAuthLogin,
@@ -106,7 +105,6 @@ export function SettingsScreen() {
     try {
       const bearer = await getValidAccessToken();
       const r = await runContentSyncWithIncrementalPatches(base, {
-        contentSecret: getRaqatContentSecret() || undefined,
         timeoutMs: 120_000,
         accessToken: bearer || undefined,
       });
@@ -144,7 +142,7 @@ export function SettingsScreen() {
     setApiOk(null);
     try {
       const [hr, sr, rr] = await Promise.allSettled([
-        fetchPlatformHealth(base),
+        fetchPlatformLiveness(base),
         fetchContentStats(base),
         fetchPlatformReadiness(base),
       ]);
@@ -154,14 +152,9 @@ export function SettingsScreen() {
       setHealth(h);
       setStats(s);
       setReadiness(rd);
-      const healthOk = h?.status === "ok";
-      const dbOk =
-        !rd ||
-        rd.ok === true ||
-        rd.status === "unsupported" ||
-        rd.status === "network" ||
-        rd.status === "parse_error";
-      setApiOk(healthOk && dbOk);
+      /** Жетімділікті тек /health (немесе /api/v1/info) бойынша — дерекқор 503 /ready-де DB мәселесін «байланыс жоқ» деп көрсетпейді. */
+      const healthOk = h != null && h.status === "ok";
+      setApiOk(healthOk);
     } catch {
       setHealth(null);
       setReadiness(null);
@@ -455,6 +448,9 @@ export function SettingsScreen() {
               <Text style={styles.smallBtnTxt}>{kk.settings.platformApiRefresh}</Text>
             </Pressable>
           </View>
+          {!apiLoading && apiOk === false ? (
+            <Text style={styles.hint}>{kk.settings.platformApiErrorHint}</Text>
+          ) : null}
           {stats?.ok && stats.tables?.hadith?.rows != null ? (
             <Text style={styles.hint}>
               {kk.settings.platformHadithLine(

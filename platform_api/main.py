@@ -41,6 +41,8 @@ from community_routes import router as community_router
 from progress_routes import router as progress_router
 from roadmap_routes import router as roadmap_router
 from usage_routes import router as usage_router
+from app.api.v1.endpoints.halal import router as halal_text_router
+from bot_sync_routes import router as bot_sync_router
 
 APP_NAME = "RAQAT Platform API"
 VERSION = "0.1.0"
@@ -142,10 +144,13 @@ app = FastAPI(title=APP_NAME, version=VERSION, lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(ai_router)
 app.include_router(content_router)
+app.include_router(bot_sync_router)
 app.include_router(community_router)
 app.include_router(progress_router)
 app.include_router(roadmap_router)
 app.include_router(usage_router)
+# Мәтіндік халал сүзгі (мобильді: POST/GET /api/v1/halal/*) — бұрын тек app.api.v1.router ішінде болған, main-ге тіркелмеген.
+app.include_router(halal_text_router, prefix="/api/v1")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
@@ -219,7 +224,8 @@ def info():
         "note_kk": (
             "Liveness: GET /health. Readiness (DB): GET /ready. "
             "Оқу-only: /api/v1/stats/content. "
-            "AI: X-Raqat-Ai-Secret немесе JWT. "
+            "AI: қонақ (әдепкі, IP лимит) немесе JWT (scope ai), "
+            "немесе X-Raqat-Ai-Secret (қосылған болса). RAQAT_AI_ALLOW_ANONYMOUS=0 — кіру керек. "
             "Тарих: GET /api/v1/users/me/history. "
             "Телеграм байлау: POST /api/v1/auth/link/telegram."
         ),

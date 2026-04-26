@@ -99,6 +99,11 @@ export function TasbihListScreen({ navigation }: Props) {
                       <Text style={styles.listBadgeTxt}>{id}</Text>
                     </View>
                     <View style={styles.listRowMain}>
+                      {d.textAr ? (
+                        <Text style={styles.listRowAr} numberOfLines={2}>
+                          {d.textAr}
+                        </Text>
+                      ) : null}
                       <Text style={styles.listRowTitle} numberOfLines={2}>
                         {d.textKk}
                       </Text>
@@ -175,9 +180,18 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontVariant: ["tabular-nums"],
     },
     listRowMain: { flex: 1, minWidth: 0 },
-    listRowTitle: { color: colors.text, fontWeight: "800", fontSize: 15 },
+    listRowAr: {
+      color: colors.scriptureArabic,
+      fontSize: 16,
+      lineHeight: 26,
+      fontWeight: "700",
+      writingDirection: "rtl",
+      textAlign: "right",
+      marginBottom: 4,
+    },
+    listRowTitle: { color: colors.scriptureMeaningKk, fontWeight: "800", fontSize: 15 },
     listRowTranslit: {
-      color: colors.muted,
+      color: colors.scriptureTranslit,
       fontSize: 13,
       marginTop: 4,
       lineHeight: 18,

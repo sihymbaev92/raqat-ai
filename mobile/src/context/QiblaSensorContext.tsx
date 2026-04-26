@@ -1,11 +1,18 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import { AppState, type AppStateStatus, InteractionManager, Platform } from "react-native";
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AppState, type AppStateStatus, Platform } from "react-native";
 import * as Location from "expo-location";
 import { Magnetometer } from "expo-sensors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getCityApproxCoords } from "../constants/kzCities";
-import { getSelectedCity } from "../storage/prefs";
 import { angleDiff, bearingToKaaba } from "../lib/qibla";
+import { getRootNavReady, getRootNavState, subscribeRootNavState } from "../voice/rootNavStateStore";
+import { shouldRunQiblaMotionSensors } from "../voice/deriveGlobalVoiceEntry";
 
 export type QiblaPerm = "unknown" | "granted" | "denied" | "services_disabled";
 
@@ -14,383 +21,396 @@ export type LocationSource = "gps" | "city" | "none";
 export type QiblaStableValue = {
   perm: QiblaPerm;
   bearing: number | null;
-  /** Рұқсат бар, бірақ координата алынбады (таймаут, ішкі бөлме т.б.) */
   positionFailed: boolean;
-  /** GPS немесе таңдалған қала орталығы бойынша */
   locationSource: LocationSource;
   refreshBearing: () => Promise<void>;
+  resumeHeadingSubscription: () => void;
 };
 
 export type QiblaMotionValue = {
   heading: number;
-  /** Қағбаға бұру үшін телефонды бұрау бұрышы (градус) */
   rotateDeg: number;
   motionMode: "balanced" | "fast";
   setMotionMode: (mode: "balanced" | "fast") => void;
 };
 
-/** Толық мәлімет — құбыла экраны сияқты жиі жаңартылатын UI үшін */
 export type QiblaSensorValue = QiblaStableValue & QiblaMotionValue;
 
 const QiblaStableContext = createContext<QiblaStableValue | null>(null);
-const QiblaMotionContext = createContext<QiblaMotionValue | null>(null);
+const QiblaMotionDataContext = createContext<QiblaMotionValue | null>(null);
 
-function normalizeHeadingDeg(v: number): number {
+function shouldRunSensorsFromStore(): boolean {
+  return shouldRunQiblaMotionSensors(getRootNavState(), getRootNavReady());
+}
+
+function smoothHeading(
+  mode: "balanced" | "fast",
+  prev: number,
+  next: number
+): number {
+  const a = mode === "fast" ? 0.4 : 0.14;
+  if (!Number.isFinite(next)) {
+    return prev;
+  }
+  if (!Number.isFinite(prev)) {
+    return ((next % 360) + 360) % 360;
+  }
+  /** 359° -> 1° шекарасында "кері секіру" болмауы үшін шеңберлік тегістеу. */
+  const step = angleDiff(prev, next);
+  const blended = prev + step * a;
+  return ((blended % 360) + 360) % 360;
+}
+
+function headingFromMagnetometer(m: { x: number; y: number; z: number }): number {
+  const { x, y, z: _z } = m;
+  let a: number;
+  if (Platform.OS === "ios") {
+    a = Math.atan2(x, y) * (180 / Math.PI) + 180;
+  } else {
+    a = Math.atan2(-y, x) * (180 / Math.PI);
+  }
+  return (a + 360) % 360;
+}
+
+/** expo-location компасы: trueHeading (iOS) / magHeading — Magnetometer-ден дәлірек. */
+function headingFromLocationHeading(h: Location.LocationHeadingObject): number {
+  const t = h.trueHeading;
+  const m = h.magHeading;
+  /**
+   * Android-та trueHeading кей құрылғыларда сенімсіз/тұрақсыз келеді.
+   * Сол үшін iOS + жақсы калибровкада ғана trueHeading аламыз, әйтпесе magHeading.
+   */
+  const useTrue =
+    Platform.OS === "ios" &&
+    typeof t === "number" &&
+    t >= 0 &&
+    typeof h.accuracy === "number" &&
+    h.accuracy >= 2;
+  const v = useTrue ? t : m;
+  if (!Number.isFinite(v)) {
+    return 0;
+  }
   return ((v % 360) + 360) % 360;
 }
 
-async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | null> {
-  return new Promise((resolve) => {
-    const id = setTimeout(() => resolve(null), ms);
-    p.then((v) => {
-      clearTimeout(id);
-      resolve(v);
-    }).catch(() => {
-      clearTimeout(id);
-      resolve(null);
-    });
-  });
-}
-
-type ResolveCoordsOpts = {
-  /** getCurrentPosition үшін әр әрекеттің макс. күтуі (мс) */
-  positionTimeoutMs?: number;
-  /** GPS дәлдік кезегінің ұзындығы (1–3) */
-  maxAttempts?: number;
+const WEB_MOTION: QiblaMotionValue = {
+  heading: 0,
+  rotateDeg: 0,
+  motionMode: "balanced",
+  setMotionMode: () => {},
 };
 
-/** Соңғы белгілі орын (жылдам), содан дәлдік бойынша кезек; әр шақыруға таймаут */
-async function resolveCoordinates(opts?: ResolveCoordsOpts): Promise<{ latitude: number; longitude: number } | null> {
-  const positionTimeoutMs = opts?.positionTimeoutMs ?? 16_000;
-  const maxAttempts = Math.min(3, Math.max(1, opts?.maxAttempts ?? 3));
-
-  const servicesOk = await Location.hasServicesEnabledAsync();
-  if (!servicesOk) return null;
-
-  try {
-    const last = await withTimeout(
-      Location.getLastKnownPositionAsync({
-        maxAge: 600_000,
-        requiredAccuracy: 5000,
-      }),
-      4000
-    );
-    if (last?.coords) {
-      return { latitude: last.coords.latitude, longitude: last.coords.longitude };
-    }
-  } catch {
-    /* келесі қадам */
-  }
-
-  const attempts: Location.LocationOptions[] = [
-    { accuracy: Location.Accuracy.High, mayShowUserSettingsDialog: true },
-    { accuracy: Location.Accuracy.Balanced, mayShowUserSettingsDialog: true },
-    { accuracy: Location.Accuracy.Low, mayShowUserSettingsDialog: true },
-  ].slice(0, maxAttempts);
-
-  for (const locOpts of attempts) {
-    try {
-      const loc = await withTimeout(Location.getCurrentPositionAsync(locOpts), positionTimeoutMs);
-      if (loc?.coords) {
-        return { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-      }
-    } catch {
-      /* келесі дәлдік */
-    }
-  }
-
-  if (Platform.OS === "android") {
-    try {
-      await Location.enableNetworkProviderAsync();
-      const loc = await withTimeout(
-        Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-          mayShowUserSettingsDialog: true,
-        }),
-        positionTimeoutMs
-      );
-      if (loc?.coords) {
-        return { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
-      }
-    } catch {
-      /* жоқ */
-    }
-  }
-
-  return null;
-}
-
-async function resolveGpsOrCity(
-  coordsOpts?: ResolveCoordsOpts
-): Promise<{ lat: number; lon: number; source: LocationSource } | null> {
-  const gps = await resolveCoordinates(coordsOpts);
-  if (gps) return { lat: gps.latitude, lon: gps.longitude, source: "gps" };
-  const { city } = await getSelectedCity();
-  const approx = getCityApproxCoords(city);
-  if (approx) return { lat: approx.lat, lon: approx.lon, source: "city" };
-  return null;
-}
-
-type QiblaMotionConfig = {
-  updateIntervalMs: number;
-  minEmitIntervalMs: number;
-  minDeltaDeg: number;
-  emaAlpha: number;
+const WEB_STABLE: QiblaStableValue = {
+  perm: "granted",
+  bearing: null,
+  positionFailed: true,
+  locationSource: "none",
+  refreshBearing: async () => {},
+  resumeHeadingSubscription: () => {},
 };
 
-const QIBLA_MODE_KEY = "qibla_motion_mode_v1";
-const QIBLA_MOTION_CONFIG: Record<"balanced" | "fast", QiblaMotionConfig> = {
-  balanced: {
-    updateIntervalMs: 80,
-    minEmitIntervalMs: 60,
-    minDeltaDeg: 0.52,
-    emaAlpha: 0.34,
-  },
-  fast: {
-    updateIntervalMs: 16,
-    minEmitIntervalMs: 16,
-    minDeltaDeg: 0.12,
-    emaAlpha: 0.58,
-  },
-};
+function QiblaWebProvider({ children }: { children: React.ReactNode }) {
+  return (
+    <QiblaStableContext.Provider value={WEB_STABLE}>
+      <QiblaMotionDataContext.Provider value={WEB_MOTION}>{children}</QiblaMotionDataContext.Provider>
+    </QiblaStableContext.Provider>
+  );
+}
 
-export function QiblaSensorProvider({ children }: { children: React.ReactNode }) {
+function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   const [perm, setPerm] = useState<QiblaPerm>("unknown");
   const [bearing, setBearing] = useState<number | null>(null);
-  const [heading, setHeading] = useState(0);
   const [positionFailed, setPositionFailed] = useState(false);
-  const [locationSource, setLocationSource] = useState<LocationSource>("none");
+  const [locationSource, setLocationSource] = useState<"gps" | "city" | "none">("none");
+  const [resumeTick, setResumeTick] = useState(0);
+
+  const [heading, setHeading] = useState(0);
   const [motionMode, setMotionModeState] = useState<"balanced" | "fast">("balanced");
-  const magRef = useRef<{ remove: () => void } | null>(null);
-  const headingWatchRef = useRef<Location.LocationSubscription | null>(null);
-  const lastHeadingPushMs = useRef(0);
-  const lastHeadingEmitted = useRef(0);
-  const emaCos = useRef<number | null>(null);
-  const emaSin = useRef<number | null>(null);
-  /** GPS/рұқсат дайын болғанда магнитометрді қайта қосуға болады (фонда listener алынып тасталады) */
-  const magMayUseRef = useRef(false);
+  const motionModeRef = useRef(motionMode);
+  motionModeRef.current = motionMode;
 
-  const setMotionMode = useCallback((mode: "balanced" | "fast") => {
-    setMotionModeState(mode);
-    void AsyncStorage.setItem(QIBLA_MODE_KEY, mode).catch(() => {});
-  }, []);
-
-  const emitHeading = useCallback((rawHeading: number) => {
-    const raw = normalizeHeadingDeg(rawHeading);
-    const rad = (raw * Math.PI) / 180;
-    const c = Math.cos(rad);
-    const s = Math.sin(rad);
-    const cfg = QIBLA_MOTION_CONFIG[motionMode];
-    const a = cfg.emaAlpha;
-    if (emaCos.current == null || emaSin.current == null) {
-      emaCos.current = c;
-      emaSin.current = s;
-    } else {
-      emaCos.current = (1 - a) * emaCos.current + a * c;
-      emaSin.current = (1 - a) * emaSin.current + a * s;
-    }
-    let h = Math.atan2(emaSin.current, emaCos.current) * (180 / Math.PI);
-    h = normalizeHeadingDeg(h);
-    const now = Date.now();
-    const delta = Math.abs(angleDiff(lastHeadingEmitted.current, h));
-    const elapsed = now - lastHeadingPushMs.current;
-    if (elapsed < cfg.minEmitIntervalMs && delta < cfg.minDeltaDeg) {
-      return;
-    }
-    lastHeadingEmitted.current = h;
-    lastHeadingPushMs.current = now;
-    setHeading(h);
-  }, [motionMode]);
-
-  const clearHeadingSubs = useCallback(() => {
-    headingWatchRef.current?.remove();
-    headingWatchRef.current = null;
-    magRef.current?.remove();
-    magRef.current = null;
-  }, []);
-
-  const subscribeMagnetometer = useCallback(() => {
-    const cfg = QIBLA_MOTION_CONFIG[motionMode];
-    Magnetometer.setUpdateInterval(cfg.updateIntervalMs);
-    magRef.current?.remove();
-    lastHeadingPushMs.current = 0;
-    lastHeadingEmitted.current = 0;
-    emaCos.current = null;
-    emaSin.current = null;
-    magRef.current = Magnetometer.addListener((data) => {
-      // Fallback-only: heading stream жоқ құрылғылар үшін қарапайым магнитометр.
-      const raw = 90 - Math.atan2(data.y, data.x) * (180 / Math.PI);
-      emitHeading(raw);
-    });
-  }, [emitHeading, motionMode]);
-
-  const subscribeHeading = useCallback(async () => {
-    clearHeadingSubs();
-    lastHeadingPushMs.current = 0;
-    lastHeadingEmitted.current = 0;
-    emaCos.current = null;
-    emaSin.current = null;
-    try {
-      const sub = await Location.watchHeadingAsync((h) => {
-        const src =
-          Number.isFinite(h.trueHeading) && h.trueHeading >= 0
-            ? h.trueHeading
-            : h.magHeading;
-        if (typeof src === "number" && Number.isFinite(src)) {
-          emitHeading(src);
-        }
-      });
-      headingWatchRef.current = sub;
-    } catch {
-      subscribeMagnetometer();
-    }
-  }, [clearHeadingSubs, emitHeading, subscribeMagnetometer]);
-
-  const applyCoords = useCallback((latitude: number, longitude: number, source: LocationSource) => {
-    setBearing(bearingToKaaba(latitude, longitude));
-    setPositionFailed(false);
-    setLocationSource(source);
-  }, []);
+  const smHeadRef = useRef(0);
+  const lastAutoBearingAtRef = useRef(0);
 
   const refreshBearing = useCallback(async () => {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status !== "granted") return;
-
-    const servicesOk = await Location.hasServicesEnabledAsync();
-    if (!servicesOk) {
+    setPositionFailed(false);
+    if (perm === "denied" || perm === "services_disabled") {
+      return;
+    }
+    const fg0 = await Location.getForegroundPermissionsAsync();
+    if (!fg0.granted) {
+      const r = await Location.requestForegroundPermissionsAsync();
+      if (!r.granted) {
+        setPerm("denied");
+        setBearing(null);
+        setLocationSource("none");
+        return;
+      }
+    }
+    if (!(await Location.hasServicesEnabledAsync())) {
       setPerm("services_disabled");
       setBearing(null);
-      setPositionFailed(false);
       setLocationSource("none");
       return;
     }
+    setPerm("granted");
 
-    const pos = await resolveGpsOrCity();
-    if (pos) {
-      setPerm("granted");
-      applyCoords(pos.lat, pos.lon, pos.source);
-    } else {
-      setPerm("granted");
-      setBearing(null);
-      setPositionFailed(true);
-      setLocationSource("none");
-    }
-  }, [applyCoords]);
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        const savedMode = (await AsyncStorage.getItem(QIBLA_MODE_KEY))?.trim();
-        if (alive && (savedMode === "balanced" || savedMode === "fast")) {
-          setMotionModeState(savedMode);
-        }
-        /* Алғашқы кадр + onboarding/сплэш сызылсын; рұқсат+GPS бірден UI-ды ұзақ бұғаттамауы үшін */
-        await new Promise<void>((resolve) => {
-          InteractionManager.runAfterInteractions(() => resolve());
-        });
-        await new Promise<void>((r) => setTimeout(r, 320));
-        if (!alive) return;
-
-        let { status } = await Location.getForegroundPermissionsAsync();
-        if (status !== "granted") {
-          const req = await Location.requestForegroundPermissionsAsync();
-          status = req.status;
-        }
-        if (!alive) return;
-
-        if (status !== "granted") {
-          setPerm("denied");
-          return;
-        }
-
-        const servicesOk = await Location.hasServicesEnabledAsync();
-        if (!alive) return;
-        if (!servicesOk) {
-          setPerm("services_disabled");
-          setBearing(null);
-          setPositionFailed(false);
-          setLocationSource("none");
-          return;
-        }
-
-        const pos = await resolveGpsOrCity({ positionTimeoutMs: 9000, maxAttempts: 2 });
-        if (!alive) return;
-        if (pos) {
-          setPerm("granted");
-          applyCoords(pos.lat, pos.lon, pos.source);
-        } else {
-          setPerm("granted");
-          setBearing(null);
-          setPositionFailed(true);
-          setLocationSource("none");
-        }
-
-        magMayUseRef.current = true;
-        if (AppState.currentState === "active") {
-          void subscribeHeading();
-        }
-      } catch {
-        if (alive) {
-          setPerm("denied");
-          setBearing(null);
-        }
-      }
-    })();
-
-    return () => {
-      alive = false;
-      magMayUseRef.current = false;
-      clearHeadingSubs();
+    const apply = (lat: number, lng: number, source: "gps" | "city") => {
+      setBearing(bearingToKaaba(lat, lng));
+      setLocationSource(source);
+      setPositionFailed(false);
     };
-  }, [applyCoords, clearHeadingSubs, subscribeHeading]);
 
-  /** Қолданба фонда тұрғанда магнитометрді тоқтату — қайта кіргенде JS қатып қалмасын */
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.LocationAccuracy.High,
+        mayShowUserSettingsDialog: true,
+      });
+      const acc = pos.coords.accuracy;
+      if (acc != null && acc > 1500) {
+        setPositionFailed(true);
+        setBearing(null);
+        setLocationSource("none");
+        return;
+      }
+      apply(pos.coords.latitude, pos.coords.longitude, "gps");
+      return;
+    } catch {
+      /* next */
+    }
+    try {
+      const last = await Location.getLastKnownPositionAsync({
+        maxAge: 10 * 60_000,
+        requiredAccuracy: 8_000,
+      });
+      if (last) {
+        apply(last.coords.latitude, last.coords.longitude, "gps");
+        return;
+      }
+    } catch {
+      /* next */
+    }
+    try {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.LocationAccuracy.Balanced,
+        mayShowUserSettingsDialog: true,
+      });
+      const acc = pos.coords.accuracy;
+      if (acc != null && acc > 3000) {
+        setPositionFailed(true);
+        setBearing(null);
+        setLocationSource("none");
+        return;
+      }
+      apply(pos.coords.latitude, pos.coords.longitude, "gps");
+      return;
+    } catch {
+      /* last */
+    }
+    setPositionFailed(true);
+    setBearing(null);
+    setLocationSource("none");
+  }, [perm]);
+
+  const resumeHeadingSubscription = useCallback(() => {
+    setResumeTick((t) => t + 1);
+  }, []);
+
   useEffect(() => {
-    const sub = AppState.addEventListener("change", (next: AppStateStatus) => {
-      if (next === "active") {
-        if (magMayUseRef.current) {
-          void subscribeHeading();
+    void (async () => {
+      if (perm !== "unknown") {
+        return;
+      }
+      const r0 = await Location.getForegroundPermissionsAsync();
+      if (!r0.granted) {
+        const r = await Location.requestForegroundPermissionsAsync();
+        if (!r.granted) {
+          setPerm("denied");
+          return;
         }
       } else {
-        clearHeadingSubs();
+        if (!(await Location.hasServicesEnabledAsync())) {
+          setPerm("services_disabled");
+          return;
+        }
+        setPerm("granted");
+        void refreshBearing();
+        return;
       }
+      if (!(await Location.hasServicesEnabledAsync())) {
+        setPerm("services_disabled");
+        return;
+      }
+      setPerm("granted");
+      void refreshBearing();
+    })();
+  }, [perm, refreshBearing]);
+
+  /** Басты бет/Qibla ашық кезде bearing автоматты жаңарып тұрсын. */
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      return;
+    }
+    const maybeRefresh = () => {
+      if (!shouldRunSensorsFromStore()) {
+        return;
+      }
+      const now = Date.now();
+      if (now - lastAutoBearingAtRef.current < 60_000) {
+        return;
+      }
+      lastAutoBearingAtRef.current = now;
+      void refreshBearing();
+    };
+
+    maybeRefresh();
+    const unNav = subscribeRootNavState(() => {
+      maybeRefresh();
     });
+    const iv = setInterval(maybeRefresh, 60_000);
+    return () => {
+      unNav();
+      clearInterval(iv);
+    };
+  }, [refreshBearing]);
+
+  useEffect(() => {
+    const s = (next: AppStateStatus) => {
+      if (next === "active") {
+        resumeHeadingSubscription();
+      }
+    };
+    const sub = AppState.addEventListener("change", s);
     return () => sub.remove();
-  }, [clearHeadingSubs, subscribeHeading]);
+  }, [resumeHeadingSubscription]);
 
-  const rotateDeg = bearing != null ? angleDiff(heading, bearing) : 0;
+  const setMotionMode = useCallback((m: "balanced" | "fast") => {
+    setMotionModeState(m);
+  }, []);
 
-  const stableValue = useMemo<QiblaStableValue>(
+  const motionValue = useMemo<QiblaMotionValue>(
+    () => ({
+      heading,
+      rotateDeg: bearing == null ? 0 : angleDiff(heading, bearing),
+      motionMode,
+      setMotionMode,
+    }),
+    [heading, bearing, motionMode, setMotionMode]
+  );
+
+  const headingSubRef = useRef<Location.LocationSubscription | null>(null);
+  const magSubRef = useRef<ReturnType<typeof Magnetometer.addListener> | null>(null);
+  const lastSubscribed = useRef(false);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      return;
+    }
+
+    const canRun = () => perm === "granted" && shouldRunSensorsFromStore();
+
+    const off = () => {
+      headingSubRef.current?.remove();
+      headingSubRef.current = null;
+      magSubRef.current?.remove();
+      magSubRef.current = null;
+      lastSubscribed.current = false;
+    };
+
+    const startMagnetometerFallback = async () => {
+      if (!(await Magnetometer.isAvailableAsync())) {
+        return;
+      }
+      Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 80 : 200);
+      smHeadRef.current = Number.NaN;
+      const sub = Magnetometer.addListener((e) => {
+        const raw = headingFromMagnetometer(e);
+        const mode = motionModeRef.current;
+        smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
+        setHeading(smHeadRef.current);
+      });
+      magSubRef.current = sub;
+      lastSubscribed.current = true;
+    };
+
+    const on = () => {
+      if (!canRun()) {
+        off();
+        return;
+      }
+      if (bearing == null) {
+        void refreshBearing();
+      }
+      void (async () => {
+        if (lastSubscribed.current) {
+          if (headingSubRef.current) {
+            return;
+          }
+          if (magSubRef.current) {
+            Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 80 : 200);
+            return;
+          }
+        }
+        off();
+        smHeadRef.current = Number.NaN;
+        try {
+          const sub = await Location.watchHeadingAsync((ev) => {
+            const raw = headingFromLocationHeading(ev);
+            const mode = motionModeRef.current;
+            smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
+            setHeading(smHeadRef.current);
+          });
+          headingSubRef.current = sub;
+          lastSubscribed.current = true;
+        } catch {
+          await startMagnetometerFallback();
+        }
+      })();
+    };
+
+    on();
+    const unNav = subscribeRootNavState(() => {
+      on();
+    });
+
+    return () => {
+      unNav();
+      off();
+    };
+  }, [perm, resumeTick, motionMode, bearing, refreshBearing]);
+
+  useEffect(() => {
+    if (magSubRef.current) {
+      Magnetometer.setUpdateInterval(motionMode === "fast" ? 80 : 200);
+    }
+  }, [motionMode]);
+
+  const stable = useMemo<QiblaStableValue>(
     () => ({
       perm,
       bearing,
       positionFailed,
       locationSource,
       refreshBearing,
+      resumeHeadingSubscription,
     }),
-    [perm, bearing, positionFailed, locationSource, refreshBearing]
-  );
-
-  const motionValue = useMemo<QiblaMotionValue>(
-    () => ({
-      heading,
-      rotateDeg,
-      motionMode,
-      setMotionMode,
-    }),
-    [heading, rotateDeg, motionMode, setMotionMode]
+    [perm, bearing, positionFailed, locationSource, refreshBearing, resumeHeadingSubscription]
   );
 
   return (
-    <QiblaStableContext.Provider value={stableValue}>
-      <QiblaMotionContext.Provider value={motionValue}>{children}</QiblaMotionContext.Provider>
+    <QiblaStableContext.Provider value={stable}>
+      <QiblaMotionDataContext.Provider value={motionValue}>{children}</QiblaMotionDataContext.Provider>
     </QiblaStableContext.Provider>
   );
 }
 
-/** GPS/бағыт — сирек өзгереді; басты бет осыны ғана тыңдаса, магнитометр JS-ті қатырмайды */
+export function QiblaSensorProvider({ children }: { children: React.ReactNode }) {
+  if (Platform.OS === "web") {
+    return <QiblaWebProvider>{children}</QiblaWebProvider>;
+  }
+  return <QiblaNativeProvider>{children}</QiblaNativeProvider>;
+}
+
 export function useQiblaStable(): QiblaStableValue {
   const v = useContext(QiblaStableContext);
   if (!v) {
@@ -399,9 +419,8 @@ export function useQiblaStable(): QiblaStableValue {
   return v;
 }
 
-/** Компас бұрышы — жиі жаңартады; тек кіші құраушыларда қолданыңыз */
 export function useQiblaMotion(): QiblaMotionValue {
-  const v = useContext(QiblaMotionContext);
+  const v = useContext(QiblaMotionDataContext);
   if (!v) {
     throw new Error("useQiblaMotion: QiblaSensorProvider жоқ");
   }

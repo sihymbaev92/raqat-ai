@@ -12,8 +12,45 @@ type Props = {
  */
 export function HalalResultFormatted({ text, colors }: Props) {
   const styles = makeStyles(colors);
-  const raw = text.trim();
+  const raw = text
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?(b|i|code)>/gi, "")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
   if (!raw) return null;
+
+  const structured = raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^halal check pro/i.test(line));
+  const hasStructuredHints = structured.some((line) =>
+    /^(нәтиже|әрекет|ескерту|ингредиент|пайдалы белгі)\s*:/i.test(line)
+  );
+  if (hasStructuredHints) {
+    return (
+      <View>
+        {structured.map((line, i) => {
+          const m = line.match(/^([^:]{2,40})\s*:\s*(.+)$/);
+          if (!m) {
+            return (
+              <Text key={i} style={styles.bodyPlain} selectable>
+                {line}
+              </Text>
+            );
+          }
+          return (
+            <View key={i} style={styles.kvRow}>
+              <Text style={styles.kvKey}>{m[1]}</Text>
+              <Text style={styles.kvVal} selectable>
+                {m[2]}
+              </Text>
+            </View>
+          );
+        })}
+      </View>
+    );
+  }
 
   const chunks = raw.split(/\n(?=##\s)/);
   return (
@@ -65,6 +102,27 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 24,
       color: colors.text,
       marginBottom: 10,
+    },
+    kvRow: {
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    kvKey: {
+      fontSize: 12,
+      fontWeight: "900",
+      letterSpacing: 0.2,
+      color: colors.accent,
+      marginBottom: 4,
+      textTransform: "uppercase",
+    },
+    kvVal: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.text,
     },
   });
 }

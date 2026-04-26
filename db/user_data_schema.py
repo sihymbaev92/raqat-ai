@@ -31,11 +31,12 @@ def ensure_user_data_tables(conn: Any) -> None:
         )
         return
     if is_psycopg_connection(conn):
+        # platform_identities.platform_user_id — UUID (PostgreSQL bootstrap)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS platform_password_logins (
                 login_key TEXT PRIMARY KEY NOT NULL,
-                platform_user_id TEXT NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                platform_user_id UUID NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             """
@@ -43,7 +44,7 @@ def ensure_user_data_tables(conn: Any) -> None:
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS platform_hatim_read (
-                platform_user_id TEXT PRIMARY KEY NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                platform_user_id UUID PRIMARY KEY NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
                 surahs_json TEXT NOT NULL,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )

@@ -207,7 +207,20 @@ def quran_one_ayah(surah: int, ayah: int) -> dict[str, Any] | None:
 def _hadith_select_columns(conn: Any) -> str:
     cols = _table_columns(conn, "hadith")
     base = ["id", "source", "text_ar", "text_kk", "text_ru", "text_en", "grade"]
-    for c in ("is_repeated", "original_id"):
+    for c in (
+        "is_repeated",
+        "original_id",
+        "text_kk_literal",
+        "text_kk_clean",
+        "text_kk_explanation",
+        "translation_status",
+        "quality_score",
+        "reviewed_by",
+        "review_notes",
+        "hadith_no",
+        "chapter",
+        "is_sahih",
+    ):
         if c in cols:
             base.append(c)
     return ", ".join(base)
@@ -267,6 +280,34 @@ def hadith_random_for_source(
     return dict(row) if row else None
 
 
+def hadith_random_any(
+    *,
+    strict_sahih: bool,
+    lang: str = "kk",
+    unique_only: bool = True,
+) -> dict[str, Any] | None:
+    """Барлық дереккөз бойынша кездейсоқ хадис (source сүзгісі жоқ)."""
+    col = _norm_lang_col(lang)
+    where = "1=1"
+    if strict_sahih:
+        where += " AND POSITION('sahih' IN lower(COALESCE(grade, ''))) > 0"
+    with _content_conn() as conn:
+        if unique_only:
+            where += hadith_unique_only_sql_suffix(conn)
+        row = _exec(
+            conn,
+            f"""
+            SELECT id, source, text_ar, {col} AS text_tr, grade
+            FROM hadith
+            WHERE {where}
+            ORDER BY RANDOM()
+            LIMIT 1
+            """,
+            (),
+        ).fetchone()
+    return dict(row) if row else None
+
+
 def hadith_search(
     query: str,
     *,
@@ -277,11 +318,23 @@ def hadith_search(
     col = _norm_lang_col(lang)
     token = f"%{(query or '').strip()}%"
     with _content_conn() as conn:
+        cols = _table_columns(conn, "hadith")
+        select_bits = [f"{col} AS text_tr"]
+        for c in (
+            "text_kk_literal",
+            "text_kk_clean",
+            "text_kk_explanation",
+            "translation_status",
+            "quality_score",
+            "is_sahih",
+        ):
+            if c in cols:
+                select_bits.append(c)
         uq = hadith_unique_only_sql_suffix(conn) if unique_only else ""
         rows = _exec(
             conn,
             f"""
-            SELECT id, source, text_ar, {col} AS text_tr, grade
+            SELECT id, source, text_ar, grade, {", ".join(select_bits)}
             FROM hadith
             WHERE lower(
                 COALESCE({col}, '') || ' ' ||

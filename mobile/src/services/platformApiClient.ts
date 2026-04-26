@@ -105,6 +105,31 @@ export function fetchPlatformHealth(
   return fetchJson<HealthPayload>(base, "/health", timeoutMs);
 }
 
+/**
+ * Сервер «жанғанын» білдіру: GET /health, сәтсіз болса GET /api/v1/info (нұсқа атау бар).
+ * Баптау экранының «жалғанбаған» күйі тек дерекқор дайындығына бағынбауы керек.
+ */
+export async function fetchPlatformLiveness(
+  base: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<HealthPayload | null> {
+  try {
+    const h = await fetchJson<HealthPayload>(base, "/health", timeoutMs);
+    if (h?.status === "ok") return h;
+  } catch {
+    // fallback
+  }
+  try {
+    const info = await fetchJson<{ name?: string; version?: string }>(base, "/api/v1/info", timeoutMs);
+    if (info && (info.version != null || (info.name != null && String(info.name).length > 0))) {
+      return { status: "ok", service: info.name, version: info.version };
+    }
+  } catch {
+    // желі қатесі немесе жауап жоқ
+  }
+  return null;
+}
+
 export function fetchContentStats(
   base: string,
   timeoutMs?: number,
@@ -140,16 +165,17 @@ export type MetadataChangesPayload = {
   fingerprint?: Record<string, unknown>;
 };
 
-/** Құран сүре тізімі (read-only API). `contentSecret` — EXPO_PUBLIC_RAQAT_CONTENT_SECRET */
+/** Құран сүре тізімі (read-only API). JWT scope «content» немесе серверде контент құпиясы өшік. */
 export function fetchQuranSurahs(
   base: string,
-  timeoutMs?: number,
-  contentSecret?: string
+  opts?: {
+    timeoutMs?: number;
+    contentSecret?: string;
+    authorizationBearer?: string;
+  }
 ): Promise<{ ok: boolean; surahs: QuranSurahIndexItem[] }> {
-  const h = contentSecret
-    ? { "X-Raqat-Content-Secret": contentSecret }
-    : undefined;
-  return fetchJson(base, "/api/v1/quran/surahs", timeoutMs, h);
+  const h = contentHeaders(opts?.contentSecret, opts?.authorizationBearer);
+  return fetchJson(base, "/api/v1/quran/surahs", opts?.timeoutMs, h);
 }
 
 /** ETag / since — синхрон индикаторы */
@@ -213,16 +239,17 @@ export type PlatformQuranSurahPayload = {
 export function fetchPlatformQuranSurah(
   base: string,
   surah: number,
-  opts?: { timeoutMs?: number; contentSecret?: string }
+  opts?: {
+    timeoutMs?: number;
+    contentSecret?: string;
+    authorizationBearer?: string;
+  }
 ): Promise<PlatformQuranSurahPayload> {
-  const h = opts?.contentSecret
-    ? { "X-Raqat-Content-Secret": opts.contentSecret }
-    : undefined;
   return fetchJson<PlatformQuranSurahPayload>(
     base,
     `/api/v1/quran/${surah}`,
     opts?.timeoutMs,
-    h
+    contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
   );
 }
 
@@ -314,7 +341,7 @@ export async function fetchPlatformAiChat(
   if (opts?.authorizationBearer) {
     headers.Authorization = `Bearer ${opts.authorizationBearer}`;
   }
-  try {
+    try {
     const r = await fetch(joinUrl(base, "/api/v1/ai/chat"), {
       method: "POST",
       signal: ctrl.signal,
@@ -331,6 +358,9 @@ export async function fetchPlatformAiChat(
     } catch {
       return { ok: false, detail: "parse_error", status: r.status };
     }
+    if (!r.ok) {
+      return { ...j, ok: false, status: r.status };
+    }
     return { ...j, status: r.status };
   } catch (e) {
     return { ok: false, detail: String(e) };
@@ -345,6 +375,105 @@ export type AiAnalyzeImageResponse = {
   error?: string;
   detail?: unknown;
 };
+
+export type HalalCheckTextResponse = {
+  success?: boolean;
+  data?: {
+    status?: "haram" | "doubtful" | "halal_possible" | "empty" | string;
+    message?: string;
+  };
+  error?: { code?: string; message?: string };
+  meta?: { request_id?: string };
+  status?: number;
+};
+
+export type HalalReferenceResponse = {
+  success?: boolean;
+  data?: {
+    message?: string;
+    counts?: { haram?: number; doubtful?: number };
+    haram_keywords?: Array<{ keyword: string; reason_kk: string }>;
+    doubtful_keywords?: Array<{ keyword: string; reason_kk: string }>;
+  };
+  error?: { code?: string; message?: string };
+  meta?: { request_id?: string };
+  status?: number;
+};
+
+/** POST /api/v1/halal/check-text — серверлік 1-деңгей сүзгісі */
+export async function fetchPlatformHalalCheckText(
+  base: string,
+  text: string,
+  opts?: {
+    timeoutMs?: number;
+    authorizationBearer?: string;
+  }
+): Promise<HalalCheckTextResponse> {
+  const timeoutMs = opts?.timeoutMs ?? 30_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/halal/check-text"), {
+      method: "POST",
+      signal: ctrl.signal,
+      headers,
+      body: JSON.stringify({ text: text.trim() }),
+    });
+    let j: HalalCheckTextResponse;
+    try {
+      j = (await r.json()) as HalalCheckTextResponse;
+    } catch {
+      return { success: false, error: { code: "parse_error", message: "parse_error" }, status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { success: false, error: { code: "network", message: String(e) } };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/** GET /api/v1/halal/reference — server dictionary */
+export async function fetchPlatformHalalReference(
+  base: string,
+  opts?: {
+    timeoutMs?: number;
+    authorizationBearer?: string;
+  }
+): Promise<HalalReferenceResponse> {
+  const timeoutMs = opts?.timeoutMs ?? 20_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/halal/reference"), {
+      method: "GET",
+      signal: ctrl.signal,
+      headers,
+    });
+    let j: HalalReferenceResponse;
+    try {
+      j = (await r.json()) as HalalReferenceResponse;
+    } catch {
+      return { success: false, error: { code: "parse_error", message: "parse_error" }, status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { success: false, error: { code: "network", message: String(e) } };
+  } finally {
+    clearTimeout(id);
+  }
+}
 
 /** POST /api/v1/ai/analyze-image — халал сурет (X-Raqat-Ai-Secret немесе JWT) */
 export async function fetchPlatformAiAnalyzeImage(
@@ -408,6 +537,33 @@ export function fetchPlatformHadith(
   return fetchJson<PlatformHadithResponse>(
     base,
     `/api/v1/hadith/${hadithId}`,
+    opts?.timeoutMs,
+    contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
+  );
+}
+
+/** GET /api/v1/hadith/random — source берілмесе барлық кітаптан кездейсоқ */
+export function fetchPlatformHadithRandom(
+  base: string,
+  opts?: {
+    timeoutMs?: number;
+    lang?: string;
+    source?: string;
+    strictSahih?: boolean;
+    unique?: boolean;
+    contentSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<PlatformHadithResponse> {
+  const lang = encodeURIComponent((opts?.lang ?? "kk").trim() || "kk");
+  const unique = opts?.unique === false ? "0" : "1";
+  const strict = opts?.strictSahih ? "true" : "false";
+  const qs = [`lang=${lang}`, `unique=${unique}`, `strict_sahih=${strict}`];
+  const src = (opts?.source ?? "").trim();
+  if (src) qs.push(`source=${encodeURIComponent(src)}`);
+  return fetchJson<PlatformHadithResponse>(
+    base,
+    `/api/v1/hadith/random?${qs.join("&")}`,
     opts?.timeoutMs,
     contentHeaders(opts?.contentSecret, opts?.authorizationBearer)
   );

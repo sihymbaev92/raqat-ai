@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Сахих әл-Бұхари → Сахих Муслим кезегімен text_kk толтыру (қазақ кирилл).
 # Ұзақ: мыңдаған сұрау. Желіде орындаңыз: .env ішінде GEMINI_API_KEY болуы керек.
+# DB: RAQAT_DB_PATH > HADITH_DB > репо/global_clean.db
 # Параллель (мысалы 4 процесс): ... --workers 4 --sleep 1 "$@"
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -11,8 +12,10 @@ if [[ -f .env ]]; then
   source .env
   set +a
 fi
+# RAQAT_DB_PATH → платформа API / ботпен бірдей DB; содан HADITH_DB; әйтпесе репо global_clean.db
+DB_FILE="${RAQAT_DB_PATH:-${HADITH_DB:-$ROOT/global_clean.db}}"
 exec .venv/bin/python translate_hadith_kk_batch.py \
-  --db "${HADITH_DB:-$ROOT/global_clean.db}" \
+  --db "$DB_FILE" \
   --bukhari-muslim \
   --backup \
   --sleep "${SAHIH_HADITH_SLEEP:-2.5}" \

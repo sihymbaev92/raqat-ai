@@ -34,15 +34,12 @@ if [[ -z "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]] && [[ -n "${RAQAT_PLATFORM_API_BAS
     export EXPO_PUBLIC_RAQAT_API_BASE="${RAQAT_PLATFORM_API_BASE}"
   fi
 fi
-if [[ -z "${EXPO_PUBLIC_RAQAT_AI_SECRET:-}" ]] && [[ -n "${RAQAT_AI_PROXY_SECRET:-}" ]]; then
-  export EXPO_PUBLIC_RAQAT_AI_SECRET="${RAQAT_AI_PROXY_SECRET}"
-fi
-if [[ -z "${EXPO_PUBLIC_RAQAT_CONTENT_SECRET:-}" ]] && [[ -n "${RAQAT_CONTENT_READ_SECRET:-}" ]]; then
-  export EXPO_PUBLIC_RAQAT_CONTENT_SECRET="${RAQAT_CONTENT_READ_SECRET}"
-fi
+# Қауіпсіздік: AI/content secret клиентке EXPO_PUBLIC арқылы таратылмайды.
 
 if [[ "${RAQAT_EXPO_RELEASE_BUILD:-0}" == "1" ]] && [[ "${RAQAT_ALLOW_LOCALHOST_EXPO:-}" != "1" ]]; then
   if [[ -n "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]] && _is_local_api_base "${EXPO_PUBLIC_RAQAT_API_BASE}"; then
     unset EXPO_PUBLIC_RAQAT_API_BASE
   fi
 fi
+
+# Ескерту: RAQAT_AI_PROXY_SECRET/RAQAT_CONTENT_READ_SECRET тек серверде қалады.

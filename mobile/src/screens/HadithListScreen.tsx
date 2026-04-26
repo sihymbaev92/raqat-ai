@@ -173,7 +173,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     modeChipOn: {
       borderColor: colors.accent,
-      backgroundColor: isDark ? "rgba(56, 189, 248, 0.12)" : "rgba(2, 132, 199, 0.08)",
+      backgroundColor: isDark ? "rgba(34, 197, 94, 0.14)" : "rgba(22, 163, 74, 0.1)",
     },
     modeChipTxt: { color: colors.muted, fontSize: 12, fontWeight: "700" },
     modeChipTxtOn: { color: colors.accent },
@@ -207,12 +207,13 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     coll: { color: colors.accent, fontSize: 12, fontWeight: "700" },
     ref: { color: colors.muted, fontSize: 12, marginTop: 4 },
-    preview: { color: colors.text, fontSize: 14, marginTop: 8, lineHeight: 20 },
+    preview: { color: colors.scriptureMeaningKk, fontSize: 14, marginTop: 8, lineHeight: 20 },
     previewAr: {
       fontSize: 12,
       lineHeight: 18,
       writingDirection: "rtl",
       textAlign: "right",
+      color: colors.scriptureArabic,
     },
     sectionHeader: {
       backgroundColor: colors.bg,
@@ -332,7 +333,10 @@ const HadithRow = memo(function HadithRow({
         №{item.reference}
         {item.bookTitleKk?.trim() ? ` · ${item.bookTitleKk}` : ""}
       </Text>
-      <Text style={[styles.preview, !item.textKk?.trim() ? styles.previewAr : null]} numberOfLines={3}>
+      <Text
+        style={item.textKk?.trim() ? styles.preview : [styles.preview, styles.previewAr]}
+        numberOfLines={3}
+      >
         {item.textKk?.trim() ? item.textKk : item.arabic}
       </Text>
     </Pressable>

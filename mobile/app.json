@@ -2,14 +2,14 @@
   "expo": {
     "name": "RAQAT",
     "slug": "raqat-mobile",
-    "version": "1.0.1",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0c1f1a"
+      "backgroundColor": "#05080B"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -40,7 +40,7 @@
         {
           "android": {
             "minSdkVersion": 24,
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": false
           },
           "ios": {
             "deploymentTarget": "15.1"
@@ -59,35 +59,44 @@
         }
       ],
       "expo-web-browser",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "RAQAT: дауыспен командалар үшін микрофон қажет.",
+          "speechRecognitionPermission": "RAQAT: сіздің сөзіңізді мәтінге айналдыру үшін дауысты тану қажет."
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
       "usesAppleSignIn": true,
       "bundleIdentifier": "kz.raqat.app",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
-        "NSPhotoLibraryUsageDescription": "Photos are used to analyze product labels for halal checking.",
-        "NSCameraUsageDescription": "Камера штрихкод пен жапсырма суретін халал тексеру үшін қолданылады.",
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
             "5.75.162.140": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": false
+              "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
-        }
+        },
+        "NSLocationWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Your location is used for Qibla and prayer times.",
+        "NSPhotoLibraryUsageDescription": "Photos are used to analyze product labels for halal checking.",
+        "NSCameraUsageDescription": "Камера штрихкод пен жапсырма суретін халал тексеру үшін қолданылады."
       }
     },
     "android": {
       "softwareKeyboardLayoutMode": "resize",
+      "usesCleartextTraffic": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
-        "backgroundColor": "#0c1f1a"
+        "backgroundColor": "#000000"
       },
       "package": "kz.raqat.app",
       "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "POST_NOTIFICATIONS"
@@ -96,13 +105,14 @@
     "scheme": "raqat",
     "extra": {
       "raqatApiBase": "http://5.75.162.140:8787",
-      "raqatContentSecret": "",
-      "raqatAiSecret": "",
       "raqatDonationUrl": "https://t.me/my_islamic_ai_bot",
       "raqatSupportAccount": "",
       "googleWebClientId": "",
       "googleIosClientId": "",
-      "googleAndroidClientId": ""
+      "googleAndroidClientId": "",
+      "eas": {
+        "projectId": "94f161ec-5ac3-4bbb-8d6a-7694ecdb20ef"
+      }
     }
   }
 }

@@ -12,11 +12,6 @@ function trimBase(s) {
   return s.trim().replace(/\/+$/, "");
 }
 
-function trimSecret(s) {
-  if (!s || typeof s !== "string") return "";
-  return s.trim();
-}
-
 function isLocalhostUrl(s) {
   const t = (s || "").toLowerCase();
   return t.includes("127.0.0.1") || t.includes("localhost");
@@ -24,11 +19,13 @@ function isLocalhostUrl(s) {
 
 module.exports = () => {
   const expo = JSON.parse(JSON.stringify(appJson.expo));
+  /** EAS: Expo account / org (eas init; dynamic config is not auto-patched) */
+  if (!expo.owner) {
+    expo.owner = "raqat-omir";
+  }
   const extra = { ...(expo.extra || {}) };
 
   const apiEnv = trimBase(process.env.EXPO_PUBLIC_RAQAT_API_BASE);
-  const aiEnv = trimSecret(process.env.EXPO_PUBLIC_RAQAT_AI_SECRET);
-  const contentEnv = trimSecret(process.env.EXPO_PUBLIC_RAQAT_CONTENT_SECRET);
   const donationEnv = (process.env.EXPO_PUBLIC_RAQAT_DONATION_URL || "").trim();
 
   if (apiEnv) {
@@ -38,8 +35,9 @@ module.exports = () => {
     extra.raqatApiBase = "";
   }
 
-  if (aiEnv) extra.raqatAiSecret = aiEnv;
-  if (contentEnv) extra.raqatContentSecret = contentEnv;
+  /** AI/контент: клиент бандлына құпия енгізілмейді — JWT (кіру) арқылы. */
+  delete extra.raqatAiSecret;
+  delete extra.raqatContentSecret;
   if (donationEnv) extra.raqatDonationUrl = donationEnv;
 
   expo.extra = extra;

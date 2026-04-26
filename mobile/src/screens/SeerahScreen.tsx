@@ -155,7 +155,7 @@ function makeStyles(colors: ThemeColors) {
     chipPressed: { opacity: 0.92 },
     lessonChipViewed: {
       borderColor: colors.accent,
-      backgroundColor: "rgba(56,189,248,0.08)",
+      backgroundColor: "rgba(34,197,94,0.1)",
     },
     lastBadge: {
       alignSelf: "center",

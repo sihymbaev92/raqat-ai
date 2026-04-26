@@ -114,6 +114,18 @@ def export_rows(
         where.append("COALESCE(is_repeated, 0) = 0")
 
     sel_cols = "id, source, text_ar, text_kk"
+    if "text_kk_literal" in cols:
+        sel_cols += ", text_kk_literal"
+    if "text_kk_clean" in cols:
+        sel_cols += ", text_kk_clean"
+    if "text_kk_explanation" in cols:
+        sel_cols += ", text_kk_explanation"
+    if "translation_status" in cols:
+        sel_cols += ", translation_status"
+    if "quality_score" in cols:
+        sel_cols += ", quality_score"
+    if "is_sahih" in cols:
+        sel_cols += ", is_sahih"
     if "text_ru" in cols:
         sel_cols += ", text_ru"
     if "text_en" in cols:
@@ -170,6 +182,18 @@ def export_rows(
             item["isRepeated"] = bool(int(r["is_repeated"] or 0))
         if "original_id" in cols and r["original_id"] is not None:
             item["originalDbId"] = int(r["original_id"])
+        if "text_kk_literal" in cols and r["text_kk_literal"]:
+            item["textKkLiteral"] = _strip_markdown_light(r["text_kk_literal"])
+        if "text_kk_clean" in cols and r["text_kk_clean"]:
+            item["textKkClean"] = _strip_markdown_light(r["text_kk_clean"])
+        if "text_kk_explanation" in cols and r["text_kk_explanation"]:
+            item["textKkExplanation"] = _strip_markdown_light(r["text_kk_explanation"])
+        if "translation_status" in cols and r["translation_status"] is not None:
+            item["translationStatus"] = str(r["translation_status"])
+        if "quality_score" in cols and r["quality_score"] is not None:
+            item["qualityScore"] = float(r["quality_score"])
+        if "is_sahih" in cols and r["is_sahih"] is not None:
+            item["isSahih"] = bool(int(r["is_sahih"]))
         out.append(item)
     return out
 
@@ -293,6 +317,11 @@ def cmd_import(args: argparse.Namespace) -> int:
                 continue
             hid = (h.get("id") or "").strip()
             text_kk = _strip_markdown_light(h.get("textKk"))
+            text_kk_literal = _strip_markdown_light(h.get("textKkLiteral"))
+            text_kk_clean = _strip_markdown_light(h.get("textKkClean"))
+            text_kk_explanation = _strip_markdown_light(h.get("textKkExplanation"))
+            translation_status = (h.get("translationStatus") or "").strip()
+            quality_score = h.get("qualityScore")
             db_id = h.get("dbId")
             m = ID_RE.match(hid)
             if db_id is None and m:
@@ -332,9 +361,31 @@ def cmd_import(args: argparse.Namespace) -> int:
                 continue
 
             if not args.dry_run:
+                cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+                sets = ["text_kk = ?", "updated_at = datetime('now')"]
+                bind: list = [text_kk]
+                if "text_kk_literal" in cols and text_kk_literal:
+                    sets.append("text_kk_literal = ?")
+                    bind.append(text_kk_literal)
+                if "text_kk_clean" in cols and text_kk_clean:
+                    sets.append("text_kk_clean = ?")
+                    bind.append(text_kk_clean)
+                if "text_kk_explanation" in cols and text_kk_explanation:
+                    sets.append("text_kk_explanation = ?")
+                    bind.append(text_kk_explanation)
+                if "translation_status" in cols and translation_status:
+                    sets.append("translation_status = ?")
+                    bind.append(translation_status)
+                if "quality_score" in cols and quality_score is not None:
+                    try:
+                        bind.append(float(quality_score))
+                        sets.append("quality_score = ?")
+                    except Exception:
+                        pass
+                bind.append(int(db_id))
                 conn.execute(
-                    "UPDATE hadith SET text_kk = ?, updated_at = datetime('now') WHERE id = ?",
-                    (text_kk, int(db_id)),
+                    f"UPDATE hadith SET {', '.join(sets)} WHERE id = ?",
+                    tuple(bind),
                 )
             updated += 1
 

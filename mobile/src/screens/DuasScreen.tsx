@@ -4,6 +4,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { DUA_CATEGORIES } from "../content/spiritualContent";
+import type { DuaBlock } from "../content/duasCatalog";
 import { kk } from "../i18n/kk";
 import type { DuasStackParamList, MoreStackParamList } from "../navigation/types";
 import { menuIconAssets } from "../theme/menuIconAssets";
@@ -54,13 +55,13 @@ const ARABIC_TO_KK_CYR_MAP: Record<string, string> = {
   " ": " ",
 };
 
-function arabicToKkCyrillic(ar: string): string {
+/** Экранда тек көмек: каталогда translitKk жоқ eski сақталған кеңестер болса ғана. */
+function arabicToKkCyrillicFallback(ar: string): string {
   const clean = ar
     .replace(/[\u064B-\u065F\u0670]/g, "")
     .replace(/\u0640/g, "")
     .trim();
   if (!clean) return "";
-
   let out = "";
   for (let i = 0; i < clean.length; i += 1) {
     const pair = clean.slice(i, i + 2);
@@ -109,12 +110,16 @@ export function DuasScreen({ navigation }: Props) {
       {DUA_CATEGORIES.map((cat) => (
         <View key={cat.title} style={styles.category}>
           <Text style={styles.catTitle}>{cat.title}</Text>
-          {cat.blocks.map((b) => (
+          {cat.blocks.map((b: DuaBlock) => (
             <View key={`${cat.title}::${b.title}`} style={styles.card}>
               <Text style={styles.cardTitle}>{b.title}</Text>
               <Text style={styles.ar}>{b.ar}</Text>
-              <Text style={styles.kiril}>{`Оқылуы (қаз. кирилл): ${arabicToKkCyrillic(b.ar)}`}</Text>
-              <Text style={styles.kk}>{b.kk}</Text>
+              <Text style={styles.caption}>{kk.duas.translitCaption}</Text>
+              <Text style={styles.kiril}>
+                {b.translitKk?.trim() ? b.translitKk : arabicToKkCyrillicFallback(b.ar)}
+              </Text>
+              <Text style={styles.caption}>{kk.duas.meaningCaption}</Text>
+              <Text style={styles.kk}>{b.meaningKk}</Text>
             </View>
           ))}
         </View>
@@ -176,20 +181,27 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     cardTitle: { color: colors.accent, fontWeight: "700", marginBottom: 8 },
+    caption: {
+      marginTop: 8,
+      fontSize: 11,
+      fontWeight: "800",
+      color: colors.muted,
+      letterSpacing: 0.2,
+    },
     ar: {
-      color: colors.text,
+      color: colors.scriptureArabic,
       fontSize: 18,
       lineHeight: 30,
       writingDirection: "rtl",
       textAlign: "right",
     },
     kiril: {
-      color: colors.text,
+      color: colors.scriptureTranslit,
       marginTop: 8,
       lineHeight: 21,
       fontSize: 14,
       fontWeight: "600",
     },
-    kk: { color: colors.muted, marginTop: 10, lineHeight: 20, fontSize: 14 },
+    kk: { color: colors.scriptureMeaningKk, marginTop: 10, lineHeight: 22, fontSize: 15, fontWeight: "500" },
   });
 }

@@ -40,7 +40,7 @@ export function QiblaScreen() {
   const { colors } = useAppTheme();
   const { perm, bearing, rotateDeg, refreshBearing, positionFailed, locationSource, motionMode, setMotionMode } =
     useQiblaSensor();
-  const dialSize = Math.min(width - 80, 240);
+  const dialSize = Math.min(width - 124, 196);
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const alignHint = qiblaAlignHint(rotateDeg, bearing);
   const mainHint = screenHint(alignHint, bearing);
@@ -259,7 +259,7 @@ function makeStyles(colors: ThemeColors) {
     },
     modeChipActive: {
       borderColor: colors.accent,
-      backgroundColor: "rgba(56,189,248,0.12)",
+      backgroundColor: "rgba(34,197,94,0.14)",
     },
     modeTxt: { color: colors.muted, fontSize: 13, fontWeight: "700" },
     modeTxtActive: { color: colors.accent },
@@ -268,12 +268,12 @@ function makeStyles(colors: ThemeColors) {
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 12,
-      paddingVertical: 8,
+      paddingVertical: 6,
       paddingHorizontal: 4,
-      minWidth: width - 40,
+      minWidth: width - 84,
     },
     /** Эмодзи 🕋 орнына PNG — қоршаусыз, анық */
-    kaabaImg: { width: 44, height: 44, marginTop: 10 },
+    kaabaImg: { width: 36, height: 36, marginTop: 8 },
     hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 8 },
   });
 }

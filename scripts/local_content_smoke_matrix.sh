@@ -51,6 +51,8 @@ stop_api() {
 echo "== [1/2] SQLite smoke =="
 unset DATABASE_URL
 RAQAT_DB_PATH="$DB" DB_PATH="$DB" "$PY" -c "import os; from db.migrations import run_schema_migrations; run_schema_migrations(os.environ['RAQAT_DB_PATH'])"
+# Startup smoke: схема үйлесімділігі (quran/hadith минимал бағандары + info warnings)
+"$PY" scripts/check_schema_compat.py --db "$DB"
 pid="$(run_api)" || { echo "API startup failed (sqlite)"; exit 2; }
 "$PY" scripts/validate_content_release.py --api-base "$API_BASE"
 stop_api "$pid"

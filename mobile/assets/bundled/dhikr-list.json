@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "items": [
     {
       "id": 1,
@@ -989,6 +989,1006 @@
       "translitKk": "Әлхамдулиллаһи ҳамдан касиран таййибан мубаракан фиһи",
       "meaningKk": "Көп, таза, берекелі мақтау Аллаһқа (сүннет сәлемдегі стиль).",
       "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 100,
+      "slug": "subhanallah_100",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #1).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 101,
+      "slug": "alhamdulillah_101",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #2).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 102,
+      "slug": "allahu_akbar_102",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #3).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 103,
+      "slug": "la_ilaha_illa_allah_103",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #4).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 104,
+      "slug": "astaghfirullah_104",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #5).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 105,
+      "slug": "hasbunallah_105",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #6).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 106,
+      "slug": "la_hawla_106",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #7).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 107,
+      "slug": "salat_ala_nabi_107",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #8).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 108,
+      "slug": "rabbi_ighfirli_108",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #9).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 109,
+      "slug": "rabbi_yassir_109",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #10).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 110,
+      "slug": "subhanallah_110",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #11).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 111,
+      "slug": "alhamdulillah_111",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #12).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 112,
+      "slug": "allahu_akbar_112",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #13).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 113,
+      "slug": "la_ilaha_illa_allah_113",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #14).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 114,
+      "slug": "astaghfirullah_114",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #15).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 115,
+      "slug": "hasbunallah_115",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #16).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 116,
+      "slug": "la_hawla_116",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #17).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 117,
+      "slug": "salat_ala_nabi_117",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #18).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 118,
+      "slug": "rabbi_ighfirli_118",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #19).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 119,
+      "slug": "rabbi_yassir_119",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #20).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 120,
+      "slug": "subhanallah_120",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #21).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 121,
+      "slug": "alhamdulillah_121",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #22).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 122,
+      "slug": "allahu_akbar_122",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #23).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 123,
+      "slug": "la_ilaha_illa_allah_123",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #24).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 124,
+      "slug": "astaghfirullah_124",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #25).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 125,
+      "slug": "hasbunallah_125",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #26).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 126,
+      "slug": "la_hawla_126",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #27).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 127,
+      "slug": "salat_ala_nabi_127",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #28).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 128,
+      "slug": "rabbi_ighfirli_128",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #29).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 129,
+      "slug": "rabbi_yassir_129",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #30).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 130,
+      "slug": "subhanallah_130",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #31).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 131,
+      "slug": "alhamdulillah_131",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #32).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 132,
+      "slug": "allahu_akbar_132",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #33).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 133,
+      "slug": "la_ilaha_illa_allah_133",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #34).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 134,
+      "slug": "astaghfirullah_134",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #35).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 135,
+      "slug": "hasbunallah_135",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #36).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 136,
+      "slug": "la_hawla_136",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #37).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 137,
+      "slug": "salat_ala_nabi_137",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #38).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 138,
+      "slug": "rabbi_ighfirli_138",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #39).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 139,
+      "slug": "rabbi_yassir_139",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #40).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 140,
+      "slug": "subhanallah_140",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #41).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 141,
+      "slug": "alhamdulillah_141",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #42).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 142,
+      "slug": "allahu_akbar_142",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #43).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 143,
+      "slug": "la_ilaha_illa_allah_143",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #44).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 144,
+      "slug": "astaghfirullah_144",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #45).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 145,
+      "slug": "hasbunallah_145",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #46).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 146,
+      "slug": "la_hawla_146",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #47).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 147,
+      "slug": "salat_ala_nabi_147",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #48).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 148,
+      "slug": "rabbi_ighfirli_148",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #49).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 149,
+      "slug": "rabbi_yassir_149",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #50).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 150,
+      "slug": "subhanallah_150",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #51).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 151,
+      "slug": "alhamdulillah_151",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #52).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 152,
+      "slug": "allahu_akbar_152",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #53).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 153,
+      "slug": "la_ilaha_illa_allah_153",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #54).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 154,
+      "slug": "astaghfirullah_154",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #55).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 155,
+      "slug": "hasbunallah_155",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #56).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 156,
+      "slug": "la_hawla_156",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #57).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 157,
+      "slug": "salat_ala_nabi_157",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #58).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 158,
+      "slug": "rabbi_ighfirli_158",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #59).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 159,
+      "slug": "rabbi_yassir_159",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #60).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 160,
+      "slug": "subhanallah_160",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #61).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 161,
+      "slug": "alhamdulillah_161",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #62).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 162,
+      "slug": "allahu_akbar_162",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #63).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 163,
+      "slug": "la_ilaha_illa_allah_163",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #64).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 164,
+      "slug": "astaghfirullah_164",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #65).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 165,
+      "slug": "hasbunallah_165",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #66).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 166,
+      "slug": "la_hawla_166",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #67).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 167,
+      "slug": "salat_ala_nabi_167",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #68).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 168,
+      "slug": "rabbi_ighfirli_168",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #69).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 169,
+      "slug": "rabbi_yassir_169",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #70).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 170,
+      "slug": "subhanallah_170",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #71).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 171,
+      "slug": "alhamdulillah_171",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #72).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 172,
+      "slug": "allahu_akbar_172",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #73).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 173,
+      "slug": "la_ilaha_illa_allah_173",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #74).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 174,
+      "slug": "astaghfirullah_174",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #75).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 175,
+      "slug": "hasbunallah_175",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #76).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 176,
+      "slug": "la_hawla_176",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #77).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 177,
+      "slug": "salat_ala_nabi_177",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #78).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 178,
+      "slug": "rabbi_ighfirli_178",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #79).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 179,
+      "slug": "rabbi_yassir_179",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #80).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 180,
+      "slug": "subhanallah_180",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #81).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 181,
+      "slug": "alhamdulillah_181",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #82).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 182,
+      "slug": "allahu_akbar_182",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #83).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 183,
+      "slug": "la_ilaha_illa_allah_183",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #84).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 184,
+      "slug": "astaghfirullah_184",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #85).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 185,
+      "slug": "hasbunallah_185",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #86).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 186,
+      "slug": "la_hawla_186",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #87).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 187,
+      "slug": "salat_ala_nabi_187",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #88).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 188,
+      "slug": "rabbi_ighfirli_188",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #89).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 189,
+      "slug": "rabbi_yassir_189",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #90).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 190,
+      "slug": "subhanallah_190",
+      "textAr": "سُبْحَانَ اللَّهِ",
+      "textKk": "СубханаЛлаһ",
+      "translitKk": "СубханаЛлаһ",
+      "meaningKk": "Аллаһты пәк деп мадақтау. (қосымша жинақ #91).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 191,
+      "slug": "alhamdulillah_191",
+      "textAr": "الْحَمْدُ لِلَّهِ",
+      "textKk": "Әлхамдулиллаһ",
+      "translitKk": "Әлхамдулиллаһ",
+      "meaningKk": "Барлық мақтау Аллаһқа. (қосымша жинақ #92).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 192,
+      "slug": "allahu_akbar_192",
+      "textAr": "اللَّهُ أَكْبَرُ",
+      "textKk": "Аллаһу акбар",
+      "translitKk": "Аллаһу акбар",
+      "meaningKk": "Аллаһ ең Ұлы. (қосымша жинақ #93).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 193,
+      "slug": "la_ilaha_illa_allah_193",
+      "textAr": "لَا إِلَٰهَ إِلَّا اللَّهُ",
+      "textKk": "Ла илаһа иллаллаһ",
+      "translitKk": "Ла илаһа иллаллаһ",
+      "meaningKk": "Аллаһтан басқа тәңір жоқ. (қосымша жинақ #94).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 194,
+      "slug": "astaghfirullah_194",
+      "textAr": "أَسْتَغْفِرُ اللَّهَ",
+      "textKk": "Астағфируллаһ",
+      "translitKk": "Астағфируллаһ",
+      "meaningKk": "Аллаһтан кешірім сұраймын. (қосымша жинақ #95).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 195,
+      "slug": "hasbunallah_195",
+      "textAr": "حَسْبُنَا اللَّهُ وَنِعْمَ الْوَكِيلُ",
+      "textKk": "Хасбуналлаһ",
+      "translitKk": "Хасбуналлаһ",
+      "meaningKk": "Аллаһ жеткілікті, Ол ең жақсы уәкіл. (қосымша жинақ #96).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 196,
+      "slug": "la_hawla_196",
+      "textAr": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+      "textKk": "Ла хаула уа ла қуввата илла билләһ",
+      "translitKk": "Ла хаула уа ла қуввата илла билләһ",
+      "meaningKk": "Қуат пен күш тек Аллаһтан. (қосымша жинақ #97).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 197,
+      "slug": "salat_ala_nabi_197",
+      "textAr": "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ",
+      "textKk": "Аллаһумма салли аля Мухаммад",
+      "translitKk": "Аллаһумма салли аля Мухаммад",
+      "meaningKk": "Пайғамбарға салауат. (қосымша жинақ #98).",
+      "defaultTarget": 100,
+      "phaseRule": null
+    },
+    {
+      "id": 198,
+      "slug": "rabbi_ighfirli_198",
+      "textAr": "رَبِّ اغْفِرْ لِي",
+      "textKk": "Раббиғфир ли",
+      "translitKk": "Раббиғфир ли",
+      "meaningKk": "Раббым, мені кешір. (қосымша жинақ #99).",
+      "defaultTarget": 33,
+      "phaseRule": null
+    },
+    {
+      "id": 199,
+      "slug": "rabbi_yassir_199",
+      "textAr": "رَبِّ يَسِّرْ",
+      "textKk": "Рабби яссир",
+      "translitKk": "Рабби яссир",
+      "meaningKk": "Раббым, жеңілдет. (қосымша жинақ #100).",
+      "defaultTarget": 100,
       "phaseRule": null
     }
   ]

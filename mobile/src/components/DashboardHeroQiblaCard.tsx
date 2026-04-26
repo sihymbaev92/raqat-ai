@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from "react";
-import { Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { QiblaArrowPointer } from "./QiblaArrowPointer";
 import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
@@ -12,6 +12,8 @@ type Props = {
   colors: ThemeColors;
   /** Бүйірдегі дөңгелек растрмен бір қатар — бағана ені */
   columnWidth: number;
+  /** inline — үш бағана ішіндегі орта; banner — үстінгі толық ендік құбыла */
+  variant?: "inline" | "banner";
   styles: {
     heroQiblaCard: StyleProp<ViewStyle>;
     heroArrowInner: StyleProp<ViewStyle>;
@@ -25,11 +27,12 @@ type Props = {
 /**
  * Магнитометр тек осы кіші блогта — бүкіл Dashboard қайта салынбайды.
  */
-export function DashboardHeroQiblaCard({ colors, columnWidth, styles, cardShadow }: Props) {
+export function DashboardHeroQiblaCard({ colors, columnWidth, variant = "inline", styles, cardShadow }: Props) {
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const { refreshBearing, bearing } = useQiblaStable();
   const { rotateDeg } = useQiblaMotion();
-  const qiblaAligned = qiblaAlignHint(rotateDeg, bearing) === "aligned" && bearing != null;
+  const bearingReady = bearing != null;
+  const qiblaAligned = qiblaAlignHint(rotateDeg, bearing) === "aligned" && bearingReady;
   const lastBearingFocusAt = useRef(0);
 
   useFocusEffect(
@@ -41,14 +44,34 @@ export function DashboardHeroQiblaCard({ colors, columnWidth, styles, cardShadow
     }, [refreshBearing])
   );
 
-  const arrowSize = Math.min(46, Math.max(32, Math.round(columnWidth * 0.5)));
+  const isBanner = variant === "banner";
+  const arrowSize = isBanner
+    ? Math.min(72, Math.max(40, Math.round(columnWidth * 0.55)))
+    : Math.min(46, Math.max(32, Math.round(columnWidth * 0.5)));
   return (
     <Pressable
       style={({ pressed }) => [
         styles.heroQiblaCard,
-        { flex: 1, minWidth: 0 },
+        isBanner
+          ? { width: "100%" as const, minHeight: 124, alignSelf: "stretch" as const }
+          : { flex: 1, minWidth: 0 },
+        bearingReady &&
+          !qiblaAligned && {
+            borderColor: `${colors.success}44`,
+            borderWidth: 1,
+          },
+        qiblaAligned && {
+          borderColor: colors.success,
+          borderWidth: 2,
+          shadowColor: colors.success,
+          shadowOpacity: 0.35,
+          shadowRadius: 10,
+          shadowOffset: { width: 0, height: 0 },
+          elevation: 4,
+        },
         cardShadow,
         pressed && { opacity: 0.94 },
+        { position: "relative" as const },
       ]}
       onPress={() => navigation.navigate("Qibla")}
       onLongPress={() => void refreshBearing()}
@@ -56,6 +79,31 @@ export function DashboardHeroQiblaCard({ colors, columnWidth, styles, cardShadow
       accessibilityLabel={kk.tabs.qibla}
       accessibilityHint={kk.dashboard.qiblaHeroFoot}
     >
+      {bearingReady ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 8,
+            right: isBanner ? 12 : 8,
+            width: 9,
+            height: 9,
+            borderRadius: 5,
+            backgroundColor: colors.success,
+            borderWidth: 1.5,
+            borderColor: qiblaAligned ? `${colors.success}ff` : `${colors.card}`,
+            zIndex: 2,
+            ...(Platform.OS === "ios"
+              ? {
+                  shadowColor: colors.success,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.8,
+                  shadowRadius: 3,
+                }
+              : { elevation: 3 }),
+          }}
+        />
+      ) : null}
       <View style={styles.heroArrowInner}>
         <View style={styles.heroArrowArea}>
           <View style={styles.heroArrowLift}>

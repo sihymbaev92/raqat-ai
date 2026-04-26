@@ -13,15 +13,6 @@ import { TAJWEED_BOOK_SECTIONS } from "../content/tajweedBookContent";
 import { GuideImageLightbox } from "../components/GuideImageLightbox";
 import { GuideAccordionSection } from "../components/GuideAccordion";
 
-const WUDU_SINGLE_IMAGE_URI =
-  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__14_56_47-b6899b25-8a3a-4743-b217-42b2bda64648.png";
-const NAMAZ_FINAL_SITTING_IMAGE_URI =
-  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_00_47-df49dce0-428d-4027-bc3f-86a947d5ef20.png";
-const NAMAZ_TAKBIR_IMAGE_URI =
-  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_24_58-ccd9545b-3546-48d3-aec7-e2db206166de.png";
-const WUDU_BUTTON_ICON_URI =
-  "file:///root/.cursor/projects/root-bot-raqat-bot/assets/c__Users_Asus_AppData_Roaming_Cursor_User_workspaceStorage_7b13c5716c23a8438f4d976f384a5640_images_ChatGPT_Image_20____._2026__.__15_33_20-b9b6970b-5183-4406-918e-27c6be0cb971.png";
-
 export function NamazGuideScreen() {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
@@ -32,7 +23,7 @@ export function NamazGuideScreen() {
     {
       title: "Ниет және алғашқы тәкбір",
       desc: "Намазды ниетпен бастап, қол көтеріп «Аллаһу әкбар» деу",
-      image: { uri: NAMAZ_TAKBIR_IMAGE_URI },
+      image: require("../../assets/namaz/namaz_takbir_custom.jpg"),
       recitation: [
         "Ниет (жүрекпен): қай намазды оқитыныңды бекіту.",
         "Мысалы: «Бүгінгі парыз намазын Аллаһ разылығы үшін оқуға ниет еттім».",
@@ -81,7 +72,7 @@ export function NamazGuideScreen() {
     {
       title: "Соңғы отырыс",
       desc: "Әттахият, салауат, дұға және сәлем",
-      image: { uri: NAMAZ_FINAL_SITTING_IMAGE_URI },
+      image: require("../../assets/namaz/namaz_final_sitting_custom.png"),
       recitation: [
         "Соңғы отырыста реті:",
         "1) Әттахият:",
@@ -120,7 +111,7 @@ export function NamazGuideScreen() {
         accessibilityLabel={wuduOpen ? "Дәрет бөлімін жасыру" : "Дәрет бөлімін ашу"}
       >
         <Image
-          source={{ uri: WUDU_BUTTON_ICON_URI }}
+          source={require("../../assets/namaz/wudu_button_icon_custom.png")}
           style={styles.wuduHeroIcon}
           resizeMode="cover"
           accessibilityIgnoresInvertColors
@@ -152,7 +143,7 @@ export function NamazGuideScreen() {
           <Text style={styles.imageHint}>{kk.namazGuide.imageTapHint}</Text>
           <View style={styles.ltrImageWrap}>
             <GuideImageLightbox
-              source={{ uri: WUDU_SINGLE_IMAGE_URI }}
+              source={require("../../assets/namaz/wudu_full_steps.png")}
               colors={colors}
               thumbStyle={styles.guideImage}
               closeLabel={kk.namazGuide.closeImageLightbox}
@@ -391,7 +382,7 @@ function makeStyles(colors: ThemeColors) {
     tajAr: {
       fontSize: 26,
       fontWeight: "800",
-      color: colors.accent,
+      color: colors.scriptureArabic,
       minWidth: 36,
       textAlign: "center",
       writingDirection: "rtl",

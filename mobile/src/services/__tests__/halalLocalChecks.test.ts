@@ -13,4 +13,11 @@ describe("runHalalLocalChecks", () => {
     expect(r.highRiskTerms).toHaveLength(0);
     expect(r.summaryKk).toContain("Күшті қауіп маркерлері табылмады");
   });
+
+  it("detects expanded ingredient markers", () => {
+    const r = runHalalLocalChecks("Ingredients: whey protein, magnesium stearate, polysorbate 80");
+    expect(r.suspiciousTerms).toContain("сүт сарысуы/казеин");
+    expect(r.suspiciousTerms).toContain("стеарат");
+    expect(r.suspiciousTerms).toContain("полисорбат");
+  });
 });

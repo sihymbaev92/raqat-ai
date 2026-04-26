@@ -45,9 +45,9 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
   const items = useMemo(() => loadDhikrItems(), []);
   const active = useMemo(() => items.find((i) => i.id === dhikrId) ?? null, [items, dhikrId]);
 
-  const { colors, isDark } = useAppTheme();
+  const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [manualGoal, setManualGoal] = useState<number | null>(null);
   const [count, setCount] = useState(0);
@@ -275,8 +275,8 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
   );
 }
 
-function makeStyles(colors: ThemeColors, isDark: boolean) {
-  const chipFill = isDark ? "rgba(229, 193, 88, 0.08)" : "rgba(184, 134, 11, 0.06)";
+function makeStyles(colors: ThemeColors) {
+  const chipFill = colors.accentSurface;
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     scroll: { flex: 1 },
@@ -286,7 +286,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       flexGrow: 1,
     },
     tapDock: {
-      paddingTop: 10,
+      paddingTop: 22,
       paddingHorizontal: 16,
       borderTopWidth: StyleSheet.hairlineWidth,
       alignItems: "center",
@@ -307,7 +307,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     arCompact: {
       fontSize: 20,
       lineHeight: 34,
-      color: colors.text,
+      color: colors.scriptureArabic,
       textAlign: "center",
       writingDirection: "rtl",
       marginBottom: 6,
@@ -328,14 +328,14 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginBottom: 4,
     },
     translit: {
-      color: colors.text,
+      color: colors.scriptureTranslit,
       fontSize: 14,
       lineHeight: 21,
     },
     meaning: {
-      color: colors.muted,
-      fontSize: 13,
-      lineHeight: 20,
+      color: colors.scriptureMeaningKk,
+      fontSize: 14,
+      lineHeight: 22,
     },
     goals: { flexDirection: "row", marginBottom: 14, flexWrap: "wrap", gap: 8 },
     goalBtn: {

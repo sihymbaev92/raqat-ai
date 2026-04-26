@@ -47,12 +47,13 @@ def ensure_oauth_phone_tables(conn: Any) -> None:
         )
         return
     if is_psycopg_connection(conn):
+        # platform_identities.platform_user_id — UUID (migrate_sqlite_to_postgres BOOTSTRAP_DDL)
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS platform_oauth_links (
                 provider TEXT NOT NULL,
                 oauth_subject TEXT NOT NULL,
-                platform_user_id TEXT NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                platform_user_id UUID NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 PRIMARY KEY (provider, oauth_subject)
             )
@@ -62,7 +63,7 @@ def ensure_oauth_phone_tables(conn: Any) -> None:
             """
             CREATE TABLE IF NOT EXISTS platform_phone_logins (
                 phone_e164 TEXT PRIMARY KEY NOT NULL,
-                platform_user_id TEXT NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                platform_user_id UUID NOT NULL UNIQUE REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             """

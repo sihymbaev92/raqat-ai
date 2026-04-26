@@ -75,20 +75,56 @@ export async function loadSurahAyahsCache(
   }
 }
 
+function _nonEmptyTranslit(ayahs: CachedAyah[]): string[] {
+  return ayahs
+    .map((a) => (a.translit ?? "").trim())
+    .filter((s) => s.length > 0);
+}
+
 /**
- * Желіден тек араб келгенде (alquran.cloud) бандл/platform кешіндегі
- * translit және textKk сақтау үшін біріктіру.
+ * API кейде барлық аяттарға бірдей «бисмил…» сияқты бұзақ translit қайтарады; осындайда лақтырамыз.
+ */
+function isSuspiciousIdenticalTranslit(ayahs: CachedAyah[]): boolean {
+  const t = _nonEmptyTranslit(ayahs);
+  if (t.length < 2) return false;
+  if (!t.every((x) => x === t[0])) return false;
+  // Бір-ақ қысқа сөз тіркесінің қайталауы
+  if (t[0].length < 80) return true;
+  return t[0].toLowerCase().includes("бисмил");
+}
+
+/**
+ * Желіден араб/мағына келгенде: textKk-ні API-дан аламыз, ал
+ * **translit-ті бандл/сидтен (previous) бұрын** сақтаймыз — API әр сүреге
+ * бисмилдінің бір ғана нұсқасын қайтса да кештің әр-аяттық оқылуын жауып алмасын.
  */
 export function mergeAyahsPreserveOfflineExtras(
   incoming: CachedAyah[],
   previous: CachedAyah[] | null | undefined
 ): CachedAyah[] {
-  if (!previous?.length) return incoming;
+  const junk = isSuspiciousIdenticalTranslit(incoming);
+  if (!previous?.length) {
+    if (!junk) return incoming;
+    return incoming.map(({ numberInSurah, text, textKk }) => {
+      const row: CachedAyah = { numberInSurah, text };
+      if (textKk) row.textKk = textKk;
+      return row;
+    });
+  }
   const pmap = new Map(previous.map((a) => [a.numberInSurah, a]));
   return incoming.map((a) => {
     const p = pmap.get(a.numberInSurah);
-    if (!p) return a;
-    const tr = (a.translit ?? "").trim() || (p.translit ?? "").trim() || undefined;
+    if (!p) {
+      if (!junk) return a;
+      return {
+        numberInSurah: a.numberInSurah,
+        text: a.text,
+        ...(a.textKk ? { textKk: a.textKk } : {}),
+      };
+    }
+    const pTr = (p.translit ?? "").trim();
+    const aTr = junk ? "" : (a.translit ?? "").trim();
+    const tr = pTr || aTr || undefined;
     const kk = (a.textKk ?? "").trim() || (p.textKk ?? "").trim() || undefined;
     const ar = (a.text ?? "").trim() || p.text;
     return {

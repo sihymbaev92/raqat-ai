@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import httpx
@@ -15,10 +16,25 @@ def _configured() -> bool:
     return bool(RAQAT_PLATFORM_API_BASE)
 
 
+def _accept_content_read_secret_header() -> bool:
+    return (os.getenv("RAQAT_ACCEPT_CONTENT_READ_SECRET_HEADER") or "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+    )
+
+
 def _headers() -> dict[str, str]:
     h: dict[str, str] = {}
-    if RAQAT_CONTENT_READ_SECRET:
+    if not RAQAT_CONTENT_READ_SECRET:
+        return h
+    if _accept_content_read_secret_header():
         h["X-Raqat-Content-Secret"] = RAQAT_CONTENT_READ_SECRET
+        return h
+    tok = (os.getenv("RAQAT_PLATFORM_API_SERVICE_TOKEN") or "").strip()
+    if tok:
+        h["Authorization"] = f"Bearer {tok}"
     return h
 
 

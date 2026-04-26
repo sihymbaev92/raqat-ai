@@ -1,0 +1,31 @@
+# Copy to /etc/systemd/system/raqat-platform-api.service, then:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now raqat-platform-api
+#
+# Paths assume repo at /opt/raqat (adjust if different).
+# www-data must read /opt/raqat/.env and traverse /opt/raqat/platform_api and .venv
+#   sudo chown -R www-data:www-data /opt/raqat
+# or: sudo chmod o+X /opt /opt/raqat and group ownership for app files.
+
+[Unit]
+Description=RAQAT Platform API (uvicorn)
+After=network-online.target
+Wants=network-online.target
+After=docker.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/raqat/platform_api
+Environment=PYTHONUNBUFFERED=1
+# Leading "-" = do not fail if file is missing (remove "-" in production when .env exists)
+EnvironmentFile=-/opt/raqat/.env
+# Сырттан тіке :8787 (VPS, firewall ашық): --host 0.0.0.0
+# Nginx TLS алдында uvicorn тек жергілікті: --host 127.0.0.1
+ExecStart=/opt/raqat/platform_api/.venv/bin/uvicorn main:app --host 0.0.0.0 --port 8787
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

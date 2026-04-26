@@ -25,8 +25,8 @@ import {
   type CachedAyah,
 } from "../storage/quranSurahCache";
 import { getRaqatApiBase, isRaqatApiOnlyMode } from "../config/raqatApiBase";
-import { getRaqatContentSecret } from "../config/raqatContentSecret";
 import { fetchPlatformQuranSurah } from "../services/platformApiClient";
+import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
 import { surahArabicFromBundled } from "../constants/surahBundledMeta";
@@ -34,44 +34,22 @@ import { loadQuranListCache } from "../storage/quranListCache";
 import { AYAH_COUNTS_PER_SURAH } from "../data/quranAyahCounts";
 import { recordHatimAyahTapped } from "../storage/hatimProgress";
 import { transliterateArabicToKazakh } from "../utils/arabicTranslitKk";
+import { getQuranTranslitOverride } from "../content/quranTranslitOverrides";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "QuranSurah">;
 
 const surahUrl = (n: number) =>
   `https://api.alquran.cloud/v1/surah/${n}/quran-uthmani`;
 
-const MANUAL_KK_KIRIL_BY_SURAH: Record<number, Record<number, string>> = {
-  1: {
-    1: "Бисмилләһир-Рахмәнир-Рахим.",
-    2: "Әлхамду лилләһи Раббиль-'аләмиин.",
-    3: "Әр-Рахмәнир-Рахиим.",
-    4: "Мәәлики йәумид-диин.",
-    5: "Иййәкә нә'буду уә иййәкә нәстә'иин.",
-    6: "Иһдинас-сыраатал-мустақиим.",
-    7: "Сыраатал-ләзиина ән'амта 'аләйһим, ғайрил-мәғдууби 'аләйһим уә ләд-дааллиин.",
-  },
-  112: {
-    1: "Қул һууаллааһу ахада.",
-    2: "Аллааһус-Самад.",
-    3: "Ләм йәлид уә ләм йууләд.",
-    4: "Уә ләм йәкул-ләһу куфууән ахада.",
-  },
-  113: {
-    1: "Қул ә'уузу бираббил-фәлақ.",
-    2: "Мин шәрри мәә халақ.",
-    3: "Уә мин шәрри ғаасиқин изәә уәқәб.",
-    4: "Уә мин шәррин-нәффәәсаати фил-'уқад.",
-    5: "Уә мин шәрри хәәсидин изәә хәсәд.",
-  },
-  114: {
-    1: "Қул ә'уузу бираббин-нәәс.",
-    2: "Мәликин-нәәс.",
-    3: "Иләәһин-нәәс.",
-    4: "Мин шәррил-уәсуәәсил-ханнәәс.",
-    5: "Әлләзии йууәсуису фии судуурин-нәәс.",
-    6: "Минәл-жиннәти уән-нәәс.",
-  },
-};
+/** Бандл/API translit: тек қазақ кирилл болса қолданылады (латын en.transliteration — өткізіледі). */
+function bundledKkTranslitOrEmpty(tr: string | undefined): string {
+  const s = (tr ?? "").trim();
+  if (!s) return "";
+  const hasCy = /[а-яА-ЯәғқңөүұҺһіІ]/i.test(s);
+  const hasLat = /[a-zA-Z]/.test(s);
+  if (hasLat && !hasCy) return "";
+  return hasCy ? s : "";
+}
 
 export function QuranSurahScreen({ route, navigation }: Props) {
   const { surahNumber, initialAyah: initialAyahParam } = route.params;
@@ -148,11 +126,11 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const fetchRemote = useCallback(async () => {
     const base = getRaqatApiBase();
     const apiOnly = isRaqatApiOnlyMode();
-    const secret = getRaqatContentSecret();
+    const bearer = ((await getValidAccessToken()) ?? "").trim() || undefined;
     if (base) {
       try {
         const data = await fetchPlatformQuranSurah(base, surahNumber, {
-          contentSecret: secret || undefined,
+          authorizationBearer: bearer,
         });
         const fromPl = parseAyahsFromPlatformPayload(data);
         if (fromPl?.length) {
@@ -368,9 +346,10 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         }}
         renderItem={({ item }) => {
           const kkLine = item.textKk?.trim() ?? "";
+          const fromBundle = bundledKkTranslitOrEmpty(item.translit);
           const kirilRead =
-            MANUAL_KK_KIRIL_BY_SURAH[surahNumber]?.[item.numberInSurah] ??
-            transliterateArabicToKazakh(item.text);
+            getQuranTranslitOverride(surahNumber, item.numberInSurah) ??
+            (fromBundle || transliterateArabicToKazakh(item.text));
           const showFallbackHint = !kkLine;
           return (
             <Pressable
@@ -435,9 +414,9 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
-    en: { color: colors.text, fontWeight: "700", fontSize: 16 },
+    en: { color: colors.scriptureMeaningKk, fontWeight: "700", fontSize: 16 },
     ar: {
-      color: colors.muted,
+      color: colors.scriptureArabic,
       fontSize: 18,
       marginTop: 4,
       writingDirection: "rtl",
@@ -512,7 +491,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginRight: 10,
     },
     ayahTxt: {
-      color: colors.text,
+      color: colors.scriptureArabic,
       fontSize: 17,
       lineHeight: 30,
       writingDirection: "rtl",
@@ -534,7 +513,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     ayahKiril: {
       marginTop: 4,
-      color: colors.text,
+      color: colors.scriptureTranslit,
       fontSize: 15,
       lineHeight: 23,
       textAlign: "left",
@@ -547,7 +526,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     ayahKk: {
       marginTop: 4,
-      color: colors.text,
+      color: colors.scriptureMeaningKk,
       fontSize: 17,
       lineHeight: 27,
       textAlign: "left",

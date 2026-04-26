@@ -4,7 +4,7 @@ import { parseSurahsFromApiJson, saveQuranListCache } from "../storage/quranList
 import { saveSurahAyahsCache, type CachedAyah } from "../storage/quranSurahCache";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 
-const SEED_FLAG = "raqat_bundled_quran_seed_v6";
+const SEED_FLAG = "raqat_bundled_quran_seed_v11";
 
 /** Әр сүреден кейін UI/натив көпіршікіне қайта кіру (114 AsyncStorage жазу қатыруы) */
 function yieldToUi(): Promise<void> {

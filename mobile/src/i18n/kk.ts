@@ -39,6 +39,39 @@ export const kk = {
     tasbih: "Тәспі зікір",
     more: "Тағы",
   },
+  /** Дауыспен басқару (mic түймесі — Siri-стиль): қолданбаның орталық дауыстылығы */
+  voiceAssistant: {
+    fabA11y: "Дауыспен басқару: басып сөйлеңіз",
+    globalFabA11y: "Дауыспен: экран, артқа, мазмұн",
+    listening: "Тыңдау…",
+    needPermission: "Микрофон және дауысты тану рұқсатын қосыңыз",
+    notUnderstood:
+      "Команда түсінілмеді. Мысал: құбыла, басты бет, мазмұн, сира, хатим, халал, дұға, артқа.",
+    wentBack: "Артқа",
+    cannotGoBack: "Артқа жүріс жоқ",
+    openedHome: "Басты бет",
+    openedQibla: "Құбыла",
+    openedPrayerTimes: "Намаз уақыттары",
+    openedDuas: "Дұғалар",
+    openedTasbih: "Тәспі",
+    openedAsma: "Тоқсан тоғыз есім",
+    openedAi: "Көмекші AI",
+    openedHalal: "Халал тексеру",
+    openedQuran: "Құран",
+    openedHadith: "Хадис",
+    openedTajweed: "Тәжуид",
+    openedNamazGuide: "Намаз нұсқаулығы",
+    openedSettings: "Баптаулар",
+    openedContentHub: "Мазмұн",
+    openedSeerah: "Сира",
+    openedHatim: "Хатм",
+    openedHajj: "Хадж",
+    openedCommunityDua: "Қауым дұғасы",
+    openedEcosystem: "Экожүйе",
+    openedTelegram: "Телеграм",
+    stopped: "Дайын",
+    devBuildHint: "Дауысты тану үшін development build қажет (Expo Go емес).",
+  },
   asma: {
     screenTitle: "Аллахтың 99 есімі",
     tabShort: "99 есім · мағыналары",
@@ -106,6 +139,29 @@ export const kk = {
     scheduleTable: "Бүгінгі кесте",
     qiblaStrip: "Құбыла бағыты",
     brandTitle: "RAQAT",
+    /** Hero астындағы сілтеме: бөлшек сөздер a11y үшін */
+    morePrayerLink: "Толығырақ",
+    morePrayerLinkTarget: "намаз уақыты",
+    /** Сервис тайлдар секциясы */
+    servicesHeading: "Қызметтер",
+    /** Seerah / Quran карт — скринноттай кішіп мәтін */
+    seerahCardSub: "Пайғамбар өмірбаяны",
+    quranCardSub: "Сүрелер, аяттар",
+    hadithCardSub: "Сахих жинақтар",
+    hajjCardSub: "Үмра, қажылық",
+    tajweedCardSub: "Араб әріптері",
+    namazCardSub: "Оқулық, схема",
+    formatApproxTimeLeft: (totalMinutes: number) => {
+      const m = Math.max(0, Math.floor(totalMinutes));
+      const h = Math.floor(m / 60);
+      const rem = m % 60;
+      const bits: string[] = ["Шамамен"];
+      if (h > 0) bits.push(`${h} сағ`);
+      if (rem > 0) bits.push(`${rem} мин`);
+      if (h === 0 && rem === 0) bits.push("0 мин");
+      bits.push("қалды");
+      return bits.join(" ");
+    },
     /** Hero сол: Құран тізімі */
     heroQuranTitle: "Құран",
     /** Hero оң: хадис тізімі */
@@ -173,6 +229,8 @@ export const kk = {
       "Дұғалар: күнделікті, дәрет, саяхат, қажылық, зікір және қосымша сүннет дұғалары. Намаз ішіндегі дұғалар осы тізімде емес — олар тәсбих экранындағы «Намаздан кейін 33+33+33» бөлімінде. Араб мәтінін мүқаддас көзбен немесе ұстаздан растаңыз.",
     /** Дұғалар экранының үстіндегі қауым дұғасы жолы */
     communityDuaHint: "Платформадағы ортақ дұғалар · бөлісу · әмин",
+    translitCaption: "Оқылуы (қазақша транскрипция)",
+    meaningCaption: "Мағына (қазақша)",
   },
   qibla: {
     permLoading: "Орын рұқсаты…",
@@ -246,7 +304,12 @@ export const kk = {
       "Мұнда сұрақ қойып, жіберіңіз. Сервер Құран мен сахих хадис үзінділерін іздейді; қосымша ақпарат үшін (бапталған болса) іздеу құралын қолданады. Үкім шығармай, түсіндіру мен сілтеме стилінде жауап күтіңіз.",
     configTitle: "Сервер теңшелмеген немесе кіру жоқ",
     configBody:
-      "Платформа URL (EXPO_PUBLIC_RAQAT_API_BASE / extra.raqatApiBase) міндетті. AI сұрауы үшін: (1) «Баптаулар» арқылы кіріңіз — JWT ішінде ai scope болса, қолданбаға EXPO_PUBLIC_RAQAT_AI_SECRET қоймаса да чат жұмыс істейді; немесе (2) EXPO_PUBLIC_RAQAT_AI_SECRET пен сервердегі RAQAT_AI_PROXY_SECRET бірдей мән. Телефоннан қолжетімді желі мекенжайын қолданыңыз (localhost емес). HTTPS ұсынылады.",
+      "Платформа URL (EXPO_PUBLIC_RAQAT_API_BASE / extra.raqatApiBase) міндетті, HTTPS. Кіру болса JWT арқылы жеке режим ашылады; кірусіз де сервер рұқсат етсе жауап береді.",
+    signInRequired:
+      "Бұл функция үшін алдымен «Баптаулар» бөлімінен кіріңіз (Google / Apple / телефон / әкімші) — серверге JWT жіберіледі.",
+    /** Қонақ режим: серверден LLM болмаса қысқа локал кеңес көрсетіледі */
+    guestWebNote:
+      "🌐 Толық талдау (LLM) бұл сәтте қолжетімсіз болды. Кейінірек қайта көріңіз немесе қажет болса «Баптауларда» кіріңіз. Жоғарыда Құран, хадис, 99 есім көрсетілуі мүмкін.",
     openSettingsTab: "Баптауларға өту",
     thinking: "Жауап дайындалуда…",
     detailPreparing: "Толығырақ дайындалып жатыр…",
@@ -273,7 +336,12 @@ export const kk = {
     halalBody:
       "Мұнда өнім атауы мен құрам мәтінін жазыңыз немесе жапсырма/қаптама суретін жіберіңіз. Талдау RAQAT серверіндегі Gemini моделі арқылы жүреді: ингредиенттерді халал / күмәнді / харам / белгісіз деп жіктеу, E-кодтар, желатин, спирт, сертификат белгісі туралы ескертулер. Бұл экран фиқһтық үкім бермейді — тек ақпараттық бағдар.",
     halalLocalhostHint:
-      "Сервер мекенжайы 127.0.0.1 немесе localhost болса, нақты телефон оған қосылмайды. EXPO_PUBLIC_RAQAT_API_BASE пен AI кілтін шынайы доменге қойып, қолданбаны қайта жинаңыз; кірген болсаңыз, JWT арқылы да жұмыс істей алады.",
+      "Сервер мекенжайы 127.0.0.1 немесе localhost болса, нақты телефон оған қосылмайды. EXPO_PUBLIC_RAQAT_API_BASE үшін HTTPS және желі IP/домен қолданыңыз; кіру JWT қажет.",
+    /** Халал тек AI прокси арқылы — тек «платформа қосулы» жеткіліксіз */
+    halalConfigNeedApi:
+      "Платформа API мекенжайы жоқ. Баптауларда сервер URL қойылғанын тексеріңіз (EXPO_PUBLIC_RAQAT_API_BASE / extra.raqatApiBase).",
+    halalConfigNeedAi:
+      "API мекенжайы бар, бірақ кіру жоқ: «Баптаулар» арқылы кіріңіз — JWT ішінде ai scope болуы керек.",
     halalPlaceholder:
       "Мысалы: сүт, құрам: сүт, E471, каррагинан, натуралды ароматизатор…",
     halalSubmit: "Тексеру",
@@ -492,11 +560,13 @@ export const kk = {
     notifPermission: "Хабарлама рұқсаты сұралған жоқ немесе берілмеді.",
     platformApi: "Платформа API",
     platformApiHint:
-      "Әзірлеу: EXPO_PUBLIC_RAQAT_API_BASE (мысалы http://10.0.2.2:8787), EXPO_PUBLIC_RAQAT_CONTENT_SECRET (опция), EXPO_PUBLIC_RAQAT_AI_SECRET — API RAQAT_AI_PROXY_SECRET сәйкес. app.json → extra.",
+      "Әзірлеу: EXPO_PUBLIC_RAQAT_API_BASE (мысалы https://10.0.2.2:8787 эмуляторда). AI/контент: кіру JWT. app.json → extra.",
     platformApiNotConfigured: "Мекенжай қойылмаған — жоғарыдағы нұсқауларды қараңыз.",
     platformApiChecking: "Тексерілуде…",
     platformApiOk: "Қосулы",
     platformApiError: "Байланыс жоқ немесе қате",
+    platformApiErrorHint:
+      "HTTP + IP: release APK үшін `mobile/android/app/src/main/res/xml/network_security_config.xml` ішіне сол хост қосылып қайта жиналады. Эмулятор: API `http://10.0.2.2:8787`. Телефон браузерінен `/health` ашылады ма; HTTPS доменде сертификат пен nginx тексеріңіз.",
     platformApiRefresh: "Қайталау",
     accountSection: "Аккаунт (хатым синхроны)",
     accountHint:

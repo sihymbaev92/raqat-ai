@@ -23,13 +23,14 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { getRaqatApiBase } from "../config/raqatApiBase";
-import { getRaqatAiSecret } from "../config/raqatAiSecret";
 import { getValidAccessToken } from "../storage/authTokens";
 import {
   fetchPlatformAiChat,
   fetchPlatformAiAnalyzeImage,
+  fetchPlatformHalalCheckText,
 } from "../services/platformApiClient";
 import { formatAiApiError } from "../utils/formatAiApiError";
+import { resolveImagePickerBase64 } from "../utils/resolveImagePickerBase64";
 import { buildHalalImagePrompt, buildHalalTextPrompt } from "../content/halalAiPrompts";
 import { HalalBarcodeScannerModal } from "../components/HalalBarcodeScannerModal";
 import { HalalResultFormatted } from "../components/HalalResultFormatted";
@@ -56,9 +57,15 @@ export function HalalScreen() {
     (Platform.OS === "android" ? keyboardOffset : 0);
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
+  const [serverResult, setServerResult] = useState("");
+  const [aiResult, setAiResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
-  const [aiReady, setAiReady] = useState(false);
+  /** Диагностика: API base бар ма, AI auth бар ма */
+  const [halalDiag, setHalalDiag] = useState<{ hasBase: boolean; hasAiAuth: boolean }>({
+    hasBase: false,
+    hasAiAuth: false,
+  });
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [copiedFlash, setCopiedFlash] = useState(false);
   const [barcodeModal, setBarcodeModal] = useState(false);
@@ -83,20 +90,16 @@ export function HalalScreen() {
     Boolean(base) &&
     (base.includes("127.0.0.1") || base.toLowerCase().includes("localhost"));
 
-  /**
-   * Халал AI үшін авторизация екі жолмен:
-   * 1) X-Raqat-Ai-Secret (EXPO_PUBLIC_RAQAT_AI_SECRET / app.json extra) — RAQAT_AI_PROXY_SECRET-пен сәйкес;
-   * 2) Құпия жоқ болса — Authorization: Bearer access token (Google/Apple кіру JWT, серверде scope «ai» болуы керек).
-   * @see platform_api/ai_security.py require_ai_access
-   */
+  /** Халал AI: Authorization Bearer (кіру JWT, серверде scope «ai»). */
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       void (async () => {
         const b = getRaqatApiBase().trim();
-        const sec = getRaqatAiSecret().trim();
         const tok = (await getValidAccessToken())?.trim() ?? "";
-        if (!cancelled) setAiReady(Boolean(b && (sec || tok)));
+        if (!cancelled) {
+          setHalalDiag({ hasBase: Boolean(b), hasAiAuth: Boolean(tok) });
+        }
         const rec = await loadHalalRecent();
         if (!cancelled) setRecent(rec);
       })();
@@ -106,7 +109,7 @@ export function HalalScreen() {
     }, [])
   );
 
-  const configured = aiReady;
+  const configured = halalDiag.hasBase;
 
   useEffect(() => {
     if (!copiedFlash) return;
@@ -117,6 +120,8 @@ export function HalalScreen() {
   const clearAll = useCallback(() => {
     setText("");
     setResult("");
+    setServerResult("");
+    setAiResult("");
     setErr("");
     setPreviewUri(null);
     setLastSource(null);
@@ -141,10 +146,14 @@ export function HalalScreen() {
   );
 
   const copyResult = useCallback(async () => {
-    if (!result.trim()) return;
-    await Clipboard.setStringAsync(result);
+    const joined = [serverResult.trim(), aiResult.trim() ? `AI сараптама:\n${aiResult.trim()}` : ""]
+      .filter(Boolean)
+      .join("\n\n-----\n\n");
+    const payload = joined || result.trim();
+    if (!payload) return;
+    await Clipboard.setStringAsync(payload);
     setCopiedFlash(true);
-  }, [result]);
+  }, [aiResult, result, serverResult]);
 
   const copyManufacturerTemplate = useCallback(async () => {
     const template = [
@@ -191,26 +200,48 @@ export function HalalScreen() {
       setPreviewUri(null);
       setLoading(true);
       try {
-        const sec = getRaqatAiSecret().trim();
         const bearer = (await getValidAccessToken())?.trim() ?? "";
-        if (!sec && !bearer) {
-          setErr(kk.aiChat.configBody);
+        const localApi = await fetchPlatformHalalCheckText(base, t, {
+          authorizationBearer: bearer || undefined,
+          timeoutMs: 30_000,
+        });
+        const stage1 = localApi.data?.message?.trim() ?? "";
+        if (!localApi.success || !stage1) {
+          setErr(localApi.error?.message ?? "Halal API жауап бермеді.");
           return;
         }
-        const res = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
-          aiSecret: sec || undefined,
-          authorizationBearer: sec ? undefined : bearer || undefined,
+
+        let res = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
+          authorizationBearer: bearer || undefined,
           timeoutMs: 90_000,
         });
-        if (!res.ok || res.status === 401 || res.status === 403) {
-          setErr(formatAiApiError(res.status, res));
-          return;
+        let out = res.text?.trim() ?? "";
+        if (!out && res.status !== 401 && res.status !== 403) {
+          // Серверде full жауап бос қалса, қысқа режиммен қайта көреміз.
+          const quick = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
+            authorizationBearer: bearer || undefined,
+            timeoutMs: 45_000,
+            detailLevel: "quick",
+          });
+          if ((quick.text?.trim() ?? "").length > 0) {
+            res = quick;
+            out = quick.text?.trim() ?? "";
+          }
         }
-        if (res.text) {
-          const out = res.text.trim();
-          setResult(out);
-          void persistHalalSuccess("text", t, out);
-        } else setErr(kk.aiChat.error);
+        const merged = out ? `${stage1}\n\n-----\n🤖 AI сараптама (2-деңгей)\n\n${out}` : stage1;
+        setServerResult(stage1);
+        setAiResult(out);
+        setResult(merged);
+        void persistHalalSuccess("text", t, merged);
+        if (!out && (res.status === 401 || res.status === 403) && !bearer) {
+          setErr("AI бұл сәтте қолжетімсіз (қонақ режимі). Сервер рұқсат етсе автоматты ашылады.");
+        } else if (!out && (res.status === 401 || res.status === 403)) {
+          setErr(formatAiApiError(res.status, res));
+        } else if (!out) {
+          setErr(
+            "AI жауап бере алмады (сервер бос жауап қайтарды). Интернетті тексеріп, қайта жіберіңіз."
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -228,6 +259,7 @@ export function HalalScreen() {
       setPreviewUri(null);
       setLoading(true);
       try {
+        const bearer = (await getValidAccessToken())?.trim() ?? "";
         let off;
         try {
           off = await fetchProductByBarcodeSmart(code);
@@ -244,26 +276,47 @@ export function HalalScreen() {
         setLookupStatus(`OFF: ok (${off.code})`);
         const block = formatOpenFoodFactsForHalal(off);
         setText(block);
-        const sec = getRaqatAiSecret().trim();
-        const bearer = (await getValidAccessToken())?.trim() ?? "";
-        if (!sec && !bearer) {
-          setErr(kk.aiChat.configBody);
+
+        const localApi = await fetchPlatformHalalCheckText(base, block, {
+          authorizationBearer: bearer || undefined,
+          timeoutMs: 30_000,
+        });
+        const stage1 = localApi.data?.message?.trim() ?? "";
+        if (!localApi.success || !stage1) {
+          setErr(localApi.error?.message ?? "Halal API жауап бермеді.");
           return;
         }
-        const res = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
-          aiSecret: sec || undefined,
-          authorizationBearer: sec ? undefined : bearer || undefined,
+
+        let res = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
+          authorizationBearer: bearer || undefined,
           timeoutMs: 90_000,
         });
-        if (!res.ok || res.status === 401 || res.status === 403) {
-          setErr(formatAiApiError(res.status, res));
-          return;
+        let out = res.text?.trim() ?? "";
+        if (!out && res.status !== 401 && res.status !== 403) {
+          const quick = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
+            authorizationBearer: bearer || undefined,
+            timeoutMs: 45_000,
+            detailLevel: "quick",
+          });
+          if ((quick.text?.trim() ?? "").length > 0) {
+            res = quick;
+            out = quick.text?.trim() ?? "";
+          }
         }
-        if (res.text) {
-          const out = res.text.trim();
-          setResult(out);
-          void persistHalalSuccess("barcode", block, out);
-        } else setErr(kk.aiChat.error);
+        const merged = out ? `${stage1}\n\n-----\n🤖 AI сараптама (2-деңгей)\n\n${out}` : stage1;
+        setServerResult(stage1);
+        setAiResult(out);
+        setResult(merged);
+        void persistHalalSuccess("barcode", block, merged);
+        if (!out && (res.status === 401 || res.status === 403) && !bearer) {
+          setErr("AI бұл сәтте қолжетімсіз (қонақ режимі). Сервер рұқсат етсе автоматты ашылады.");
+        } else if (!out && (res.status === 401 || res.status === 403)) {
+          setErr(formatAiApiError(res.status, res));
+        } else if (!out) {
+          setErr(
+            "AI жауап бере алмады (сервер бос жауап қайтарды). Интернетті тексеріп, қайта жіберіңіз."
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -280,6 +333,8 @@ export function HalalScreen() {
     }
     setErr("");
     setResult("");
+    setServerResult("");
+    setAiResult("");
     const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -290,38 +345,40 @@ export function HalalScreen() {
     if (picked.canceled || !picked.assets?.[0]) return;
     const a = picked.assets[0];
     if (a.uri) setPreviewUri(a.uri);
-    const b64 = a.base64;
-    if (!b64) {
+    const resolved = await resolveImagePickerBase64(a);
+    if (!resolved) {
       setErr(kk.features.halalErrBase64);
       return;
     }
-    const mime = a.mimeType ?? "image/jpeg";
+    const { base64: b64, mime } = resolved;
     setLoading(true);
     try {
-      const sec = getRaqatAiSecret().trim();
       const bearer = (await getValidAccessToken())?.trim() ?? "";
-      if (!sec && !bearer) {
-        setErr(kk.aiChat.configBody);
-        return;
-      }
       const res = await fetchPlatformAiAnalyzeImage(
         base,
         { image_b64: b64, mime_type: mime, lang: "kk", prompt: buildHalalImagePrompt() },
         {
-          aiSecret: sec || undefined,
-          authorizationBearer: sec ? undefined : bearer || undefined,
+          authorizationBearer: bearer || undefined,
           timeoutMs: 90_000,
         }
       );
-      if (!res.ok || res.status === 401 || res.status === 403) {
-        setErr(formatAiApiError(res.status, res));
-        return;
-      }
-      if (res.text) {
-        const out = res.text.trim();
+      const out = res.text?.trim() ?? "";
+      if (out) {
+        setServerResult("");
+        setAiResult(out);
         setResult(out);
         void persistHalalSuccess("image", kk.features.halalHistoryImageInput, out);
-      } else setErr(res.error ?? kk.aiChat.error);
+        return;
+      }
+      if (res.status === 401 || res.status === 403) {
+        setErr(
+          bearer
+            ? formatAiApiError(res.status, res)
+            : "AI сурет талдауы қонақ режимінде шектелген болуы мүмкін. Сервер рұқсат етсе жұмыс істейді."
+        );
+        return;
+      }
+      setErr(res.error ?? formatAiApiError(res.status, res) ?? kk.aiChat.error);
     } finally {
       setLoading(false);
     }
@@ -336,6 +393,8 @@ export function HalalScreen() {
     }
     setErr("");
     setResult("");
+    setServerResult("");
+    setAiResult("");
     const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -346,38 +405,40 @@ export function HalalScreen() {
     if (picked.canceled || !picked.assets?.[0]) return;
     const a = picked.assets[0];
     if (a.uri) setPreviewUri(a.uri);
-    const b64 = a.base64;
-    if (!b64) {
+    const resolved = await resolveImagePickerBase64(a);
+    if (!resolved) {
       setErr(kk.features.halalErrBase64);
       return;
     }
-    const mime = a.mimeType ?? "image/jpeg";
+    const { base64: b64, mime } = resolved;
     setLoading(true);
     try {
-      const sec = getRaqatAiSecret().trim();
       const bearer = (await getValidAccessToken())?.trim() ?? "";
-      if (!sec && !bearer) {
-        setErr(kk.aiChat.configBody);
-        return;
-      }
       const res = await fetchPlatformAiAnalyzeImage(
         base,
         { image_b64: b64, mime_type: mime, lang: "kk", prompt: buildHalalImagePrompt() },
         {
-          aiSecret: sec || undefined,
-          authorizationBearer: sec ? undefined : bearer || undefined,
+          authorizationBearer: bearer || undefined,
           timeoutMs: 90_000,
         }
       );
-      if (!res.ok || res.status === 401 || res.status === 403) {
-        setErr(formatAiApiError(res.status, res));
-        return;
-      }
-      if (res.text) {
-        const out = res.text.trim();
+      const out = res.text?.trim() ?? "";
+      if (out) {
+        setServerResult("");
+        setAiResult(out);
         setResult(out);
         void persistHalalSuccess("image", kk.features.halalHistoryImageInput, out);
-      } else setErr(res.error ?? kk.aiChat.error);
+        return;
+      }
+      if (res.status === 401 || res.status === 403) {
+        setErr(
+          bearer
+            ? formatAiApiError(res.status, res)
+            : "AI сурет талдауы қонақ режимінде шектелген болуы мүмкін. Сервер рұқсат етсе жұмыс істейді."
+        );
+        return;
+      }
+      setErr(res.error ?? formatAiApiError(res.status, res) ?? kk.aiChat.error);
     } finally {
       setLoading(false);
     }
@@ -392,6 +453,8 @@ export function HalalScreen() {
     }
     setErr("");
     setResult("");
+    setServerResult("");
+    setAiResult("");
     const shot = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -401,41 +464,44 @@ export function HalalScreen() {
     if (shot.canceled || !shot.assets?.[0]) return;
     const a = shot.assets[0];
     if (a.uri) setPreviewUri(a.uri);
-    if (!a.base64) {
+    const camResolved = await resolveImagePickerBase64(a);
+    if (!camResolved) {
       setErr(kk.features.halalErrBase64);
       return;
     }
     setLoading(true);
     try {
-      const sec = getRaqatAiSecret().trim();
       const bearer = (await getValidAccessToken())?.trim() ?? "";
-      if (!sec && !bearer) {
-        setErr(kk.aiChat.configBody);
-        return;
-      }
       const res = await fetchPlatformAiAnalyzeImage(
         base,
         {
-          image_b64: a.base64,
-          mime_type: a.mimeType ?? "image/jpeg",
+          image_b64: camResolved.base64,
+          mime_type: camResolved.mime,
           lang: "kk",
           prompt: buildHalalImagePrompt(),
         },
         {
-          aiSecret: sec || undefined,
-          authorizationBearer: sec ? undefined : bearer || undefined,
+          authorizationBearer: bearer || undefined,
           timeoutMs: 90_000,
         }
       );
-      if (!res.ok || res.status === 401 || res.status === 403) {
-        setErr(formatAiApiError(res.status, res));
-        return;
-      }
-      if (res.text) {
-        const out = res.text.trim();
+      const out = res.text?.trim() ?? "";
+      if (out) {
+        setServerResult("");
+        setAiResult(out);
         setResult(out);
         void persistHalalSuccess("image", kk.features.halalHistoryImageInput, out);
-      } else setErr(res.error ?? kk.aiChat.error);
+        return;
+      }
+      if (res.status === 401 || res.status === 403) {
+        setErr(
+          bearer
+            ? formatAiApiError(res.status, res)
+            : "AI сурет талдауы қонақ режимінде шектелген болуы мүмкін. Сервер рұқсат етсе жұмыс істейді."
+        );
+        return;
+      }
+      setErr(res.error ?? formatAiApiError(res.status, res) ?? kk.aiChat.error);
     } finally {
       setLoading(false);
     }
@@ -461,10 +527,26 @@ export function HalalScreen() {
           </View>
         ) : null}
 
-        {!configured ? (
+        {!halalDiag.hasBase ? (
           <View style={styles.configBlock}>
             <Text style={styles.configTitle}>{kk.aiChat.configTitle}</Text>
-            <Text style={styles.configBodyMuted}>{kk.aiChat.configBody}</Text>
+            <Text style={styles.configBodyMuted}>{kk.features.halalConfigNeedApi}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.configNavBtn, pressed && { opacity: 0.9 }]}
+              onPress={openSettingsTab}
+              accessibilityRole="button"
+              accessibilityLabel={kk.aiChat.openSettingsTab}
+            >
+              <Text style={styles.configNavBtnTxt}>{kk.aiChat.openSettingsTab}</Text>
+            </Pressable>
+          </View>
+        ) : !halalDiag.hasAiAuth ? (
+          <View style={styles.configBlock}>
+            <Text style={styles.configTitle}>AI қосымша режимі</Text>
+            <Text style={styles.configBodyMuted}>
+              Кірусіз де Halal тексерісі жүреді. AI жауабы сервер рұқсатынa тәуелді: ашық болса қонақ режимінде де
+              шығады, шектеу болса кіру қажет.
+            </Text>
             <Pressable
               style={({ pressed }) => [styles.configNavBtn, pressed && { opacity: 0.9 }]}
               onPress={openSettingsTab}
@@ -492,6 +574,8 @@ export function HalalScreen() {
                   onPress={() => {
                     setErr("");
                     setResult("");
+                    setServerResult("");
+                    setAiResult("");
                     setLastSource(null);
                     setPreviewUri(null);
                     setText(item.inputText);
@@ -543,6 +627,21 @@ export function HalalScreen() {
         <Text style={styles.sectionLabel}>{kk.features.halalSectionImage}</Text>
         <Pressable
           style={({ pressed }) => [
+            styles.btnPrimary,
+            styles.btnCameraTop,
+            (!configured || loading) && styles.btnDisabled,
+            pressed && configured && !loading && { opacity: 0.92 },
+          ]}
+          onPress={() => void captureImage()}
+          disabled={!configured || loading}
+        >
+          <View style={styles.btnCameraTopInner}>
+            <MaterialIcons name="photo-camera" size={20} color="#fff" />
+            <Text style={styles.btnPrimaryTxt}>{kk.features.halalCameraCapture}</Text>
+          </View>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
             styles.btnSecondary,
             (!configured || loading) && styles.btnDisabled,
             pressed && configured && !loading && { opacity: 0.92 },
@@ -563,18 +662,6 @@ export function HalalScreen() {
         >
           <Text style={styles.btnSecondaryTxt}>{kk.features.halalPickImageCrop}</Text>
         </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.btnSecondary,
-            (!configured || loading) && styles.btnDisabled,
-            pressed && configured && !loading && { opacity: 0.92 },
-          ]}
-          onPress={() => void captureImage()}
-          disabled={!configured || loading}
-        >
-          <Text style={styles.btnSecondaryTxt}>{kk.features.halalCameraCapture}</Text>
-        </Pressable>
-
         <Text style={styles.sectionLabel}>{kk.features.halalSectionBarcode}</Text>
         <Pressable
           style={({ pressed }) => [
@@ -665,7 +752,20 @@ export function HalalScreen() {
                     : kk.features.halalSourceImage}
               </Text>
             ) : null}
-            <HalalResultFormatted text={result} colors={colors} />
+            {serverResult ? (
+              <View style={styles.splitBox}>
+                <Text style={styles.splitTitle}>Сервер қорытындысы (1-деңгей)</Text>
+                <HalalResultFormatted text={serverResult} colors={colors} />
+              </View>
+            ) : null}
+            {aiResult ? (
+              <View style={styles.splitBox}>
+                <Text style={styles.splitTitle}>AI қорытындысы (2-деңгей)</Text>
+                <HalalResultFormatted text={aiResult} colors={colors} />
+              </View>
+            ) : !serverResult ? (
+              <HalalResultFormatted text={result} colors={colors} />
+            ) : null}
             <View style={styles.resultActions}>
               <Pressable
                 style={({ pressed }) => [styles.resultBtn, pressed && { opacity: 0.88 }]}
@@ -775,6 +875,15 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 12,
       alignItems: "center",
     },
+    btnCameraTop: {
+      marginBottom: 10,
+    },
+    btnCameraTopInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
     btnPrimaryTxt: { color: "#fff", fontWeight: "700", fontSize: 16 },
     btnSecondary: {
       paddingVertical: 12,
@@ -806,6 +915,22 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     outTitle: { color: colors.accent, fontWeight: "800", marginBottom: 6, fontSize: 15 },
+    splitBox: {
+      marginTop: 8,
+      padding: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    splitTitle: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: "900",
+      letterSpacing: 0.3,
+      textTransform: "uppercase",
+      marginBottom: 6,
+    },
     localBox: {
       marginTop: 8,
       marginBottom: 10,

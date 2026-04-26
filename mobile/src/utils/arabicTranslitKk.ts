@@ -80,6 +80,41 @@ const PUNCT_MAP: Record<string, string> = {
 
 const BASMALA = "بسم الله الرحمن الرحيم";
 
+const SUN_LETTERS = ["т", "с", "ш", "д", "з", "р", "н"] as const;
+const MOON_AFTER_AL = ["ф", "қ", "к", "б", "ж", "х", "ғ", "м", "һ", "'", "у", "й"] as const;
+const VOWEL_ENDINGS = ["а", "у", "и"] as const;
+const PAUSAL_KEEP_WORDS = new Set(["бисми", "мадина", "медина"]);
+const PAUSAL_EXACT_REPLACE: Record<string, string> = {
+  аһдина: "иһдин",
+  "ас-сирата": "ас-сират",
+  сирата: "сират",
+};
+const GRAMMAR_WA_FA_PARTICLES: Array<[string, string]> = [
+  ["уалақад", "үә лақад"],
+  ["уалакинна", "үә лакинна"],
+  ["уалакин", "үә лакин"],
+  ["уалау", "үә лау"],
+  ["уаинна", "үә инна"],
+  ["уаиза", "үә иза"],
+  ["уақул", "үә қул"],
+  ["уама", "үә ма"],
+  ["уала", "үә ла"],
+  ["уақад", "үә қад"],
+  ["уаби", "үә би"],
+  ["уали", "үә ли"],
+  ["уанна", "үә анна"],
+  ["уаһуа", "үә һуа"],
+  ["уаһум", "үә һум"],
+  ["уаһунна", "үә һунна"],
+  ["уаһи", "үә һи"],
+  ["фаинна", "фа инна"],
+  ["фаиза", "фа иза"],
+  ["фалам", "фа лам"],
+  ["фаман", "фа ман"],
+  ["фама", "фа ма"],
+  ["фала", "фа ла"],
+];
+
 const MARK_RE = /\p{M}/u;
 
 function splitClusters(text: string): { base: string; marks: string[] }[] {
@@ -120,7 +155,42 @@ function repeatShadda(core: string, hasShadda: boolean): string {
 function endsWithVowel(parts: string[]): boolean {
   if (!parts.length) return false;
   const last = parts[parts.length - 1];
-  return /[аеёиоуыіәөүұү]$/i.test(last);
+  return VOWEL_ENDINGS.some((v) => last.endsWith(v));
+}
+
+function escapeRegExp(v: string): string {
+  return v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyPausalIrabTrim(text: string): string {
+  if (!text) return text;
+  const trimWord = (word: string): string => {
+    if (PAUSAL_KEEP_WORDS.has(word) || word.length < 3) return word;
+    if (PAUSAL_EXACT_REPLACE[word]) return PAUSAL_EXACT_REPLACE[word];
+    let w = word;
+    for (const [oldSuf, newSuf] of [
+      ["ими", "им"],
+      ["ани", "ан"],
+      ["ини", "ин"],
+      ["има", "им"],
+      ["ину", "ин"],
+      ["ина", "ин"],
+      ["ики", "ик"],
+    ] as Array<[string, string]>) {
+      if (w.length > oldSuf.length + 1 && w.endsWith(oldSuf)) {
+        w = w.slice(0, -oldSuf.length) + newSuf;
+        break;
+      }
+    }
+    if (w.endsWith("ми") && w.length > 4 && !PAUSAL_KEEP_WORDS.has(w)) {
+      w = `${w.slice(0, -2)}м`;
+    }
+    return w;
+  };
+  return text
+    .split(/(\s+)/)
+    .map((chunk) => (chunk.trim() ? trimWord(chunk) : chunk))
+    .join("");
 }
 
 function transliterateCluster(base: string, marks: string[], parts: string[]): string {
@@ -183,6 +253,32 @@ export function transliterateArabicToKazakh(text: string): string {
   result = result.replace(/([аәеёиоөұүыі])\1+/gi, "$1");
   result = result.replace(/ии(?=й)/g, "и");
   result = result.replace(/(.)\1{2,}/g, "$1$1");
+  for (const letter of SUN_LETTERS) {
+    const re = new RegExp(`\\bал${letter}${letter}`, "g");
+    result = result.replace(re, `а${letter}-${letter}`);
+  }
+  for (const moon of MOON_AFTER_AL) {
+    const esc = escapeRegExp(moon);
+    result = result.replace(new RegExp(`\\bбиал${esc}`, "g"), `би әл-${moon}`);
+    result = result.replace(new RegExp(`\\bуал${esc}`, "g"), `уа әл-${moon}`);
+    result = result.replace(new RegExp(`(^|[\\s،؛(])ал${esc}`, "g"), `$1әл-${moon}`);
+    result = result.replace(new RegExp(`\\bлил${esc}`, "g"), `ли әл-${moon}`);
+  }
+  result = result.replace(/\bбиалл/g, "би алл");
+  result = result.replace(/\bабиалл/g, "а би алл");
+  result = result.replace(/\bлилл/g, "ли алл");
+  result = result.replace(/\bкалл/g, "ка алл");
+  result = result.replace(/\bуабиалл/g, "уа би алл");
+  result = result.replace(/\bфабиалл/g, "фа би алл");
+  result = result.replace(/\bуалилл/g, "уа ли алл");
+  result = result.replace(/\bфалилл/g, "фа ли алл");
+  for (const [src, dst] of GRAMMAR_WA_FA_PARTICLES) {
+    result = result.replace(new RegExp(`\\b${escapeRegExp(src)}\\b`, "g"), dst);
+  }
+  result = applyPausalIrabTrim(result);
+  result = result.replace(/\bфиа\b/g, "фи");
+  result = result.replace(/\bуамин\b/g, "үә мин");
+  result = result.replace(/\s+([,;?.])/g, "$1");
   result = result.replace(/[\u0600-\u06FF\uFE70-\uFEFF]+/g, "");
   result = result.replace(/\s{2,}/g, " ").trim();
   return result;

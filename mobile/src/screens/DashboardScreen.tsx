@@ -3,8 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  RefreshControl,
   Pressable,
   Platform,
   InteractionManager,
@@ -12,6 +10,9 @@ import {
   useWindowDimensions,
   type ImageSourcePropType,
   StatusBar,
+  ActivityIndicator,
+  ScrollView,
+  RefreshControl,
 } from "react-native";
 import * as Haptics from "expo-haptics";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -26,23 +27,31 @@ import { useAppTheme } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
 import { getSelectedCity, getNotifEnabled, getIftarEnabled } from "../storage/prefs";
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
+import { VoiceAssistantHeaderButton } from "../components/voice/VoiceAssistantHeaderButton";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import type { HomeTabCompositeNavigation } from "../navigation/types";
 import { CompactPrayerTimesRow, shortPrayerName } from "../components/CompactPrayerTimesRow";
-import { DashboardHeroQiblaCard } from "../components/DashboardHeroQiblaCard";
+import { DashboardNextPrayerHero } from "../components/DashboardNextPrayerHero";
 import { useQiblaStable } from "../context/QiblaSensorContext";
-import { cityLabelKkForApiName } from "../constants/kzCities";
-
+import { useQiblaMotion } from "../context/QiblaSensorContext";
+import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
 /**
  * Тор + бүйір карточкалары: терезе еніне қарай максималды растр (тайл мен қақпа арасында шықпау).
  * Тор ені ≈ 31% − padding; қақпа бағанасы = сол растр ені.
  */
-function dashboardRasterBoxPx(windowWidth: number): number {
+function dashboardRasterBoxPx(windowWidth: number, windowHeight?: number): number {
   const content = Math.max(200, windowWidth - 32);
   const gridCap = Math.floor(content * 0.31 - 12);
   const heroCap = Math.floor((content - 22) / 3);
-  return Math.min(94, Math.max(58, Math.min(gridCap, heroCap)));
+  let box = Math.min(80, Math.max(46, Math.min(gridCap, heroCap)));
+  if (windowHeight != null && windowHeight < 720) {
+    box = Math.min(box, 52);
+  }
+  if (windowHeight != null && windowHeight < 640) {
+    box = Math.min(box, 44);
+  }
+  return box;
 }
 
 type Row = { key: string; label: string; time: string };
@@ -97,10 +106,123 @@ function cardShadow(isDark: boolean) {
   });
 }
 
+function HomeHeaderLeft({
+  navigation,
+  colors,
+}: {
+  navigation: HomeTabCompositeNavigation;
+  colors: ThemeColors;
+}) {
+  const { bearing, refreshBearing } = useQiblaStable();
+  const { rotateDeg } = useQiblaMotion();
+  const bearingReady = bearing != null;
+  const qiblaAligned = bearingReady && Math.abs(rotateDeg) <= 12;
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        flex: 1,
+        minWidth: 0,
+        minHeight: 42,
+        gap: 6,
+      }}
+    >
+      <Pressable
+        onPress={() =>
+          navigation.dispatch(
+            CommonActions.navigate({
+              name: "MoreStack",
+              params: { screen: "Settings" },
+            })
+          )
+        }
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: colors.accentSurfaceStrong,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={kk.settings.headerSettingsA11y}
+      >
+        <MaterialIcons name="settings" size={22} color={colors.accent} />
+      </Pressable>
+      <VoiceAssistantHeaderButton />
+      <Pressable
+        onPress={() => navigation.navigate("Qibla")}
+        onLongPress={() => void refreshBearing()}
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 21,
+          backgroundColor: qiblaAligned ? `${colors.success}33` : colors.accentSurfaceStrong,
+          borderWidth: qiblaAligned ? 2 : bearingReady ? 1 : 0,
+          borderColor: qiblaAligned ? `${colors.success}cc` : bearingReady ? `${colors.success}55` : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={kk.tabs.qibla}
+      >
+        {bearingReady ? (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 3,
+              right: 3,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: colors.success,
+              borderWidth: 1.5,
+              borderColor: qiblaAligned ? `${colors.success}ff` : `${colors.bg}`,
+              zIndex: 2,
+              ...(Platform.OS === "ios"
+                ? {
+                    shadowColor: colors.success,
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.85,
+                    shadowRadius: 3,
+                  }
+                : { elevation: 4 }),
+            }}
+          />
+        ) : null}
+        {bearing == null ? (
+          <MaterialIcons name="navigation" size={22} color={colors.accent} />
+        ) : (
+          <QiblaArrowPointer
+            colors={colors}
+            size={34}
+            rotateDeg={rotateDeg}
+            aligned={qiblaAligned}
+            showDialRing={false}
+          />
+        )}
+      </Pressable>
+      <View style={{ flex: 1, minWidth: 0, marginLeft: 4 }}>
+        <Text
+          style={{ fontSize: 16, fontWeight: "900", letterSpacing: 0.5, color: colors.text }}
+          accessibilityRole="header"
+          numberOfLines={1}
+        >
+          {kk.dashboard.brandTitle}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 export function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { width: windowWidth } = useWindowDimensions();
-  const rasterBox = dashboardRasterBoxPx(windowWidth);
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const rasterBox = dashboardRasterBoxPx(windowWidth, windowHeight);
   const { colors, isDark } = useAppTheme();
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const { refreshBearing } = useQiblaStable();
@@ -115,73 +237,45 @@ export function DashboardScreen() {
   /** Фокустағы уақыт жүктемесін шектеу — таб ауыстырып қайта кіргенде қатып қалмасын */
   const lastFocusPrayerLoadAt = useRef(0);
   /** Тор тайлдарының артқы дақы — бұрынғы көк-жасылдан сәл жұмсақ */
-  const accentSoft = isDark ? "rgba(56,189,248,0.10)" : "rgba(2,132,199,0.07)";
-
+  const accentSoft = colors.accentSurface;
   useLayoutEffect(() => {
     const headerH =
       Platform.OS === "ios"
-        ? insets.top + 36
-        : (StatusBar.currentHeight ?? 0) + 42;
+        ? insets.top + 44
+        : (StatusBar.currentHeight ?? 0) + 48;
+    /** Бір желілі тайтл — жоғары панель биіктігі */
+    const qiblaTopPad = Platform.OS === "ios" ? 4 : 2;
     navigation.setOptions({
-      headerTitleAlign: "center",
+      headerTitleAlign: "left",
+      headerTitle: () => null,
+      headerLeftContainerStyle: {
+        paddingLeft: 0,
+        marginLeft: 0,
+        marginTop: 0,
+        paddingTop: qiblaTopPad,
+        paddingBottom: 0,
+        alignItems: "flex-start" as const,
+        justifyContent: "center" as const,
+        alignSelf: "stretch" as const,
+        flexGrow: 1,
+        flexShrink: 1,
+        maxWidth: "100%",
+      },
       headerStyle: {
         backgroundColor: colors.bg,
         height: headerH,
       },
-      headerLeft: () => (
-        <View style={{ marginLeft: 8, justifyContent: "center" }}>
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "900",
-              letterSpacing: 0.6,
-              color: colors.accent,
-            }}
-            accessibilityRole="header"
-            accessibilityLabel={kk.dashboard.brandTitle}
-          >
-            RAQAT
-          </Text>
-        </View>
-      ),
-      headerTitle: () => (
-        <View
-          style={{
-            paddingHorizontal: 5,
-            paddingVertical: 0,
-            borderRadius: 10,
-            backgroundColor: isDark ? "rgba(56,189,248,0.12)" : "rgba(2,132,199,0.08)",
-          }}
-          accessibilityRole="image"
-          accessibilityLabel={kk.tabs.qibla}
-        >
-          <Image
-            source={menuIconAssets.headerQibla}
-            style={{ width: 36, height: 36 }}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-        </View>
-      ),
-      headerRight: () => (
-        <Pressable
-          onPress={() =>
-            navigation.dispatch(
-              CommonActions.navigate({
-                name: "MoreStack",
-                params: { screen: "Settings" },
-              }),
-            )
-          }
-          style={{ marginRight: 6, paddingVertical: 2, paddingHorizontal: 6 }}
-          accessibilityRole="button"
-          accessibilityLabel={kk.settings.headerSettingsA11y}
-        >
-          <MaterialIcons name="settings" size={22} color={colors.accent} />
-        </Pressable>
-      ),
+      headerRight: () => null,
+      headerLeft: () => <HomeHeaderLeft navigation={navigation} colors={colors} />,
     });
-  }, [navigation, colors.text, colors.accent, isDark, insets.top]);
+  }, [
+    navigation,
+    colors.text,
+    colors.bg,
+    colors.accent,
+    colors.accentSurfaceStrong,
+    insets.top,
+  ]);
 
   const load = useCallback(async (mode: "focus" | "full" = "full") => {
     const { city, country } = await getSelectedCity();
@@ -318,272 +412,276 @@ export function DashboardScreen() {
     }, [rows])
   );
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([load("full"), refreshBearing()]);
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [load, refreshBearing]);
 
   const next = nextPrayer(rows);
-  const cityShown = cityLabelKkForApiName(cityLabel);
   const styles = makeStyles(colors, isDark);
   const timeCells = rows.map((r) => ({ key: r.key, time: r.time }));
   const timesPending = rows.length === 0 && err === null;
+  const compactHome = windowHeight < 860;
   /** Үстіңгі қатар (Halal / AI) иконкаларын сәл кішірейту */
-  const topPromoBox = Math.max(46, rasterBox - 12);
+  const topPromoBox = Math.max(40, rasterBox - 14);
 
   const goPrayerTimes = () => navigation.navigate("PrayerTimes");
   const goQuranList = () => navigation.navigate("MoreStack", { screen: "QuranList" });
   const goHadithList = () => navigation.navigate("MoreStack", { screen: "HadithList" });
+  /** Құран / сахиһ хадис — визуалды басқа 3-бағана тайлдардан сәл кішірек */
+  const quranHadithIconBox = Math.max(38, Math.round(rasterBox * 0.72));
   const goAi = () => navigation.navigate("MoreStack", { screen: "RaqatAI" });
   const goHalal = () => navigation.navigate("MoreStack", { screen: "Halal" });
+  const goDuas = () => navigation.navigate("Duas", { screen: "DuasHome" });
+  const goTasbih = () => navigation.navigate("Tasbih", { screen: "TasbihList" });
+  const goAsma = () => navigation.navigate("AsmaAlHusna");
 
   return (
     <>
       <ScrollView
         style={styles.root}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={onRefresh}
+            onRefresh={() => void onRefresh()}
             tintColor={colors.accent}
+            colors={Platform.OS === "android" ? [colors.accent] : undefined}
           />
         }
-        showsVerticalScrollIndicator={false}
       >
-      <View style={styles.heroRow}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.heroSideCard,
-            cardShadow(isDark),
-            pressed && styles.cardPress,
-          ]}
-          onPress={goHalal}
-          accessibilityRole="button"
-          accessibilityLabel={kk.features.halalTitle}
-        >
-          <AppIconBadge
-            imageSource={menuIconAssets.tileHalal}
-            colors={colors}
-            tintBg={accentSoft}
-            size="lg"
-            boxPx={topPromoBox}
-            border={false}
-            shape="circle"
-            plain
-          />
-          <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.features.halalTitle}
+        {fromCache && err ? (
+          <Text style={styles.cacheBanner}>
+            {kk.common.offlineBadge}: {err}
           </Text>
-        </Pressable>
+        ) : null}
 
-        <DashboardHeroQiblaCard
+        {err && !fromCache ? <Text style={styles.err}>{err}</Text> : null}
+
+        <DashboardNextPrayerHero
           colors={colors}
-          columnWidth={rasterBox}
-          styles={{
-            heroQiblaCard: styles.heroQiblaCard,
-            heroArrowInner: styles.heroArrowInner,
-            heroArrowArea: styles.heroArrowArea,
-            heroArrowLift: styles.heroArrowLift,
-            heroQiblaLabel: styles.heroQiblaLabel,
-          }}
-          cardShadow={cardShadow(isDark)}
+          isDark={isDark}
+          cityApiName={cityLabel}
+          next={next}
+          allRows={rows}
+          onPress={goPrayerTimes}
+          momentBanner={momentBanner}
+          compact={compactHome}
         />
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.heroSideCard,
-            cardShadow(isDark),
-            pressed && styles.cardPress,
-          ]}
-          onPress={goAi}
-          accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.aiRowTitle}
-        >
-          <AppIconBadge
-            imageSource={menuIconAssets.promoAi}
-            colors={colors}
-            tintBg={accentSoft}
-            size="lg"
-            boxPx={topPromoBox}
-            border={false}
-            shape="circle"
-            plain
-          />
-          <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.dashboard.heroAiStripTitle}
-          </Text>
-        </Pressable>
-      </View>
-
-      {fromCache && err ? (
-        <Text style={styles.cacheBanner}>
-          {kk.common.offlineBadge}: {err}
-        </Text>
-      ) : null}
-
-      {err && !fromCache ? <Text style={styles.err}>{err}</Text> : null}
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.prayerHero,
-          cardShadow(isDark),
-          pressed && styles.cardPressStrong,
-        ]}
-        onPress={goPrayerTimes}
-        accessibilityRole="button"
-        accessibilityLabel={kk.dashboard.prayerCardA11y}
-      >
-        {momentBanner ? (
-          <View
-            style={styles.momentBanner}
-            accessibilityLiveRegion="polite"
-            accessibilityLabel={momentBanner}
-          >
-            <MaterialIcons name="notifications-active" size={18} color={colors.accent} />
-            <Text style={styles.momentBannerText} numberOfLines={2}>
-              {momentBanner}
-            </Text>
-          </View>
-        ) : null}
-        <View style={styles.cityNextRow}>
-          <Text style={styles.cityMicroCompact}>{cityShown || "—"}</Text>
-          {next && rows.length > 0 ? (
-            <Text style={styles.nextInline} numberOfLines={1}>
-              {kk.dashboard.nextPrayer}: {next.label} {next.time}
-            </Text>
-          ) : null}
-        </View>
         <CompactPrayerTimesRow
           colors={colors}
           rows={timeCells}
           pending={timesPending}
-          embedded
+          onPressOpen={goPrayerTimes}
           sixRows
           sixRowsCompact
           highlightKey={next?.key}
           isDark={isDark}
+          compact={compactHome}
         />
-      </Pressable>
 
-      <View style={styles.heroRow}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.heroSideCard,
-            cardShadow(isDark),
-            pressed && styles.cardPress,
-          ]}
-          onPress={goQuranList}
-          accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.heroQuranTitle}
-        >
-          <AppIconBadge
-            imageSource={menuIconAssets.heroQuran}
-            colors={colors}
-            tintBg={accentSoft}
-            size="lg"
-            boxPx={rasterBox}
-            border={false}
-            shape="circle"
-            plain
-          />
-          <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.dashboard.heroQuranTitle}
-          </Text>
-        </Pressable>
+        <View style={styles.promoRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.heroSideCard,
+              cardShadow(isDark),
+              pressed && styles.cardPress,
+            ]}
+            onPress={goHalal}
+            accessibilityRole="button"
+            accessibilityLabel={kk.features.halalTitle}
+          >
+            <AppIconBadge
+              imageSource={menuIconAssets.tileHalal}
+              colors={colors}
+              tintBg={accentSoft}
+              size="lg"
+              boxPx={topPromoBox}
+              border={false}
+              shape="circle"
+              plain
+            />
+            <Text style={styles.heroSideTitle} numberOfLines={2}>
+              {kk.features.halalTitle}
+            </Text>
+          </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.heroSideCard,
-            cardShadow(isDark),
-            pressed && styles.cardPress,
-          ]}
-          onPress={goHadithList}
-          accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.heroHadithTitle}
-        >
-          <AppIconBadge
-            imageSource={menuIconAssets.heroHadith}
-            colors={colors}
-            tintBg={accentSoft}
-            size="lg"
-            boxPx={rasterBox}
-            border={false}
-            shape="circle"
-            plain
-          />
-          <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.dashboard.heroHadithTitle}
-          </Text>
-        </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.heroSideCard,
+              cardShadow(isDark),
+              pressed && styles.cardPress,
+            ]}
+            onPress={goAi}
+            accessibilityRole="button"
+            accessibilityLabel={kk.dashboard.aiRowTitle}
+          >
+            <AppIconBadge
+              imageSource={menuIconAssets.promoAi}
+              colors={colors}
+              tintBg={accentSoft}
+              size="lg"
+              boxPx={topPromoBox}
+              border={false}
+              shape="circle"
+              plain
+            />
+            <Text style={styles.heroSideTitle} numberOfLines={2}>
+              {kk.dashboard.heroAiStripTitle}
+            </Text>
+          </Pressable>
+        </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.heroSideCard,
-            cardShadow(isDark),
-            pressed && styles.cardPress,
-          ]}
-          onPress={() => navigation.navigate("MoreStack", { screen: "NamazGuide" })}
-          accessibilityRole="button"
-          accessibilityLabel={kk.namazGuide.shortTitle}
-        >
-          <AppIconBadge
-            imageSource={menuIconAssets.tileNamaz}
-            colors={colors}
-            tintBg={accentSoft}
-            size="lg"
-            boxPx={rasterBox}
-            border={false}
-            shape="circle"
-            plain
-          />
-          <Text style={styles.heroSideTitle} numberOfLines={2}>
-            {kk.namazGuide.shortTitle}
-          </Text>
-        </Pressable>
-      </View>
+        <Text style={styles.servicesHeading} accessibilityRole="header">
+          {kk.dashboard.servicesHeading}
+        </Text>
 
-      <View style={styles.menuGrid}>
-        <Tile
-          iconImage={menuIconAssets.tileHajj}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.features.hajjTitle}
-          onPress={() => navigation.navigate("MoreStack", { screen: "Hajj" })}
-          styles={styles}
-          accentSoft={accentSoft}
-          imageEdgeToEdge
-        />
-        <Tile
-          iconImage={menuIconAssets.tileSeerah}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.dashboard.tileSeerah}
-          onPress={() => navigation.navigate("MoreStack", { screen: "Seerah" })}
-          styles={styles}
-          accentSoft={accentSoft}
-          imageEdgeToEdge
-        />
-        <Tile
-          iconImage={menuIconAssets.tileTajweed}
-          iconColor={colors.accent}
-          colors={colors}
-          rasterBox={rasterBox}
-          label={kk.dashboard.arabicLettersTile}
-          onPress={() => navigation.navigate("MoreStack", { screen: "TajweedGuide" })}
-          styles={styles}
-          accentSoft={accentSoft}
-          imageEdgeToEdge
-          imageLighten={0.24}
-        />
-      </View>
-
+        <View style={styles.serviceGridWrap}>
+          {/** Үстіңгі қатар: Құран — Намаз — Хадис */}
+          <View style={styles.serviceRow3}>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.heroQuran}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={quranHadithIconBox}
+                label={kk.dashboard.heroQuranTitle}
+                subLabel={kk.dashboard.quranCardSub}
+                onPress={goQuranList}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+                imageScale={0.52}
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tileNamaz}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.namazGuide.shortTitle}
+                subLabel={kk.dashboard.namazCardSub}
+                onPress={() => navigation.navigate("MoreStack", { screen: "NamazGuide" })}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.heroHadith}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={quranHadithIconBox}
+                label={kk.dashboard.heroHadithTitle}
+                subLabel={kk.dashboard.hadithCardSub}
+                onPress={goHadithList}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+                imageScale={0.52}
+              />
+            </View>
+          </View>
+          {/** Ортаңғы қатар: Сира — Тәжуид — Қажылық */}
+          <View style={styles.serviceRow3}>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tileSeerah}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.dashboard.tileSeerah}
+                subLabel={kk.dashboard.seerahCardSub}
+                onPress={() => navigation.navigate("MoreStack", { screen: "Seerah" })}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+                imageScale={1.08}
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tileTajweed}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.dashboard.arabicLettersTile}
+                subLabel={kk.dashboard.tajweedCardSub}
+                onPress={() => navigation.navigate("MoreStack", { screen: "TajweedGuide" })}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tileHajj}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.features.hajjTitle}
+                subLabel={kk.dashboard.hajjCardSub}
+                onPress={() => navigation.navigate("MoreStack", { screen: "Hajj" })}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+          </View>
+          {/** Ең төменгі қатар: Дұға — 99 есім — Тәспі */}
+          <View style={styles.serviceRow3}>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tabDuas}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.dashboard.duasShort}
+                subLabel={kk.dashboard.heroDuaSub}
+                onPress={goDuas}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tabAsma}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.tabs.asma}
+                subLabel={kk.tabs.asmaSub}
+                onPress={goAsma}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+            <View style={styles.serviceCell3}>
+              <Tile
+                iconImage={menuIconAssets.tabTasbih}
+                iconColor={colors.accent}
+                colors={colors}
+                rasterBox={rasterBox}
+                label={kk.tabs.tasbih}
+                onPress={goTasbih}
+                styles={styles}
+                accentSoft={accentSoft}
+                imageEdgeToEdge
+              />
+            </View>
+          </View>
+        </View>
       </ScrollView>
     </>
   );
@@ -598,11 +696,13 @@ function Tile({
   colors,
   rasterBox,
   label,
+  subLabel,
   onPress,
   styles,
   accentSoft,
   imageEdgeToEdge,
   imageLighten,
+  imageScale,
 }: {
   emoji?: string;
   glyph?: React.ReactNode;
@@ -612,6 +712,8 @@ function Tile({
   colors: ThemeColors;
   rasterBox: number;
   label: string;
+  /** Скриннот: кішіп субтитр */
+  subLabel?: string;
   onPress: () => void;
   styles: Record<string, object>;
   accentSoft: string;
@@ -619,12 +721,14 @@ function Tile({
   imageEdgeToEdge?: boolean;
   /** Беткі суретті ашығырақ ету үшін ақ қабат (0..1) */
   imageLighten?: number;
+  /** Тек imageEdgeToEdge суретіне scale беру (Құран/Хадис т.б.) */
+  imageScale?: number;
 }) {
   return (
     <Pressable
       style={({ pressed }) => [
         styles.tile,
-        styles.tileInGrid,
+        styles.serviceTile3,
         imageEdgeToEdge && styles.tileMedia,
         imageEdgeToEdge && styles.tileMediaOuter,
         pressed && styles.tilePress,
@@ -638,7 +742,10 @@ function Tile({
           <View style={[styles.tileMediaImageWrap, { backgroundColor: colors.card }]}>
             <Image
               source={iconImage}
-              style={styles.tileMediaImage}
+              style={[
+                styles.tileMediaImage,
+                typeof imageScale === "number" ? { transform: [{ scale: imageScale }] } : null,
+              ]}
               resizeMode="cover"
               accessibilityIgnoresInvertColors
             />
@@ -650,6 +757,11 @@ function Tile({
           <Text style={[styles.quickLabel, styles.quickLabelMedia]} numberOfLines={2}>
             {label}
           </Text>
+          {subLabel ? (
+            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={2}>
+              {subLabel}
+            </Text>
+          ) : null}
         </View>
       ) : iconImage ? (
         <AppIconBadge
@@ -683,23 +795,37 @@ function Tile({
         </View>
       )}
       {!imageEdgeToEdge || !iconImage ? (
-        <Text style={styles.quickLabel} numberOfLines={2}>
-          {label}
-        </Text>
+        <>
+          <Text style={styles.quickLabel} numberOfLines={2}>
+            {label}
+          </Text>
+          {subLabel ? (
+            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={2}>
+              {subLabel}
+            </Text>
+          ) : null}
+        </>
       ) : null}
     </Pressable>
   );
 }
 
 function makeStyles(colors: ThemeColors, isDark: boolean) {
-  const cardBorder = isDark ? "rgba(148, 163, 184, 0.12)" : colors.border;
+  const cardBorder = isDark ? "rgba(34, 197, 94, 0.16)" : colors.border;
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: {
-      paddingHorizontal: 16,
-      paddingTop: 0,
-      paddingBottom: 28,
-      flexGrow: 1,
+    scrollContent: {
+      paddingHorizontal: 8,
+      paddingTop: 2,
+      paddingBottom: 20,
+    },
+    promoRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      justifyContent: "space-between",
+      gap: 6,
+      marginTop: 4,
+      marginBottom: 2,
     },
     cardPress: {
       opacity: 0.92,
@@ -722,23 +848,15 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderColor: cardBorder,
       overflow: "hidden",
     },
-    heroRow: {
-      flexDirection: "row",
-      alignItems: "stretch",
-      justifyContent: "space-between",
-      gap: 9,
-      marginBottom: 10,
-      marginTop: 0,
-    },
     heroSideCard: {
       flex: 1,
       minWidth: 0,
       backgroundColor: colors.card,
-      borderRadius: 14,
+      borderRadius: 12,
       borderWidth: 1,
       borderColor: cardBorder,
-      paddingVertical: 6,
-      paddingHorizontal: 4,
+      paddingVertical: 2,
+      paddingHorizontal: 3,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
@@ -752,12 +870,12 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     heroSideEmoji: { fontSize: 15 },
     heroSideTitle: {
-      marginTop: 4,
+      marginTop: 2,
       color: colors.text,
       fontSize: 12,
       fontWeight: "900",
       textAlign: "center",
-      lineHeight: 15,
+      lineHeight: 14,
       letterSpacing: 0.12,
     },
     heroSideMicro: {
@@ -767,126 +885,55 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "600",
       textAlign: "center",
     },
-    /** Ені heroRow ішінде flex:1; columnWidth — тек стрелка өлшемі үшін */
-    heroQiblaCard: {
-      alignSelf: "stretch",
-      justifyContent: "center",
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: cardBorder,
-      overflow: "hidden",
-    },
-    heroArrowInner: {
-      flex: 1,
-      width: "100%",
-      flexDirection: "column",
-      justifyContent: "flex-start",
-      paddingTop: 4,
-      paddingBottom: 5,
-      paddingHorizontal: 2,
-    },
-    /** Стрелка орталыққа жақын, мәтін төменгі жақта */
-    heroArrowArea: {
-      flex: 1,
-      width: "100%",
-      minHeight: 0,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-    heroArrowLift: {
-      marginTop: 0,
-    },
-    heroQiblaLabel: {
-      marginTop: 2,
-      paddingTop: 2,
-      color: colors.accent,
-      fontSize: 12,
-      fontWeight: "900",
-      textAlign: "center",
-      lineHeight: 16,
-      letterSpacing: 0.2,
-      alignSelf: "stretch",
-    },
     err: { color: colors.error, marginBottom: 8, fontSize: 14, lineHeight: 20 },
-    prayerHero: {
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(56, 189, 248, 0.22)" : "rgba(2, 132, 199, 0.14)",
-      paddingHorizontal: 10,
-      paddingVertical: 10,
-      marginBottom: 10,
-      overflow: "hidden",
-      ...Platform.select({
-        ios: {
-          shadowColor: "#0ea5e9",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isDark ? 0.12 : 0.06,
-          shadowRadius: 10,
-        },
-        android: { elevation: 2 },
-        default: {},
-      }),
-    },
-    momentBanner: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      marginBottom: 10,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
-      borderRadius: 12,
-      backgroundColor: isDark ? "rgba(56, 189, 248, 0.12)" : "rgba(2, 132, 199, 0.08)",
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(56, 189, 248, 0.28)" : "rgba(2, 132, 199, 0.2)",
-    },
-    momentBannerText: {
-      flex: 1,
-      minWidth: 0,
+    servicesHeading: {
+      fontSize: 16,
+      fontWeight: "900",
       color: colors.text,
-      fontSize: 14,
-      fontWeight: "800",
       letterSpacing: 0.2,
-    },
-    cityNextRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
+      marginTop: 4,
       marginBottom: 6,
     },
-    cityMicroCompact: {
-      fontSize: 13,
-      fontWeight: "800",
-      color: colors.muted,
-      letterSpacing: 0.2,
-      flexShrink: 0,
-      maxWidth: "44%",
+    serviceGridWrap: {
+      width: "100%",
+      gap: 4,
     },
-    nextInline: {
+    /** 3 тайл бір қатарда (үсті: құран, намаз, хадис; астында: сира, тәжуид, қажылық) */
+    serviceRow3: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 4,
+      width: "100%",
+    },
+    serviceCell3: {
       flex: 1,
       minWidth: 0,
-      textAlign: "right",
-      color: colors.accent,
-      fontSize: 13,
-      fontWeight: "900",
-      fontVariant: ["tabular-nums"],
-      letterSpacing: 0.15,
+    },
+    serviceTile3: {
+      width: "100%",
+      minWidth: 0,
+    },
+    tileSub: {
+      fontSize: 10,
+      lineHeight: 13,
+      fontWeight: "600",
+      textAlign: "center",
+      marginTop: 2,
+      paddingHorizontal: 2,
     },
     menuGrid: {
       flexDirection: "row",
-      flexWrap: "wrap",
+      flexWrap: "nowrap",
       justifyContent: "space-between",
       alignItems: "stretch",
-      rowGap: 2,
+      gap: 6,
     },
     tile: {
       alignItems: "center",
       backgroundColor: colors.card,
-      borderRadius: 14,
-      paddingVertical: 6,
-      paddingHorizontal: 3,
+      borderRadius: 12,
+      paddingVertical: 2,
+      paddingHorizontal: 2,
       borderWidth: 1,
       borderColor: cardBorder,
       ...Platform.select({
@@ -905,8 +952,9 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       transform: [{ scale: 0.97 }],
     },
     tileInGrid: {
-      width: "31%",
-      marginBottom: 8,
+      flex: 1,
+      minWidth: 0,
+      marginBottom: 0,
       alignSelf: "stretch",
     },
     /** Қажылық / сира / тәжуид: сурет тайл шетіне дейін */
@@ -938,27 +986,27 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       height: "100%",
     },
     tileIcon: {
-      width: 39,
-      height: 39,
-      borderRadius: 19,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 3,
+      marginBottom: 2,
     },
     tileEmoji: { fontSize: 13 },
     quickLabel: {
       color: colors.text,
-      fontSize: 12,
-      lineHeight: 15,
+      fontSize: 11,
+      lineHeight: 13,
       fontWeight: "900",
       textAlign: "center",
       letterSpacing: 0.15,
-      marginTop: 2,
+      marginTop: 0,
     },
     quickLabelMedia: {
       marginTop: 0,
-      paddingTop: 5,
-      paddingBottom: 6,
+      paddingTop: 4,
+      paddingBottom: 4,
       paddingHorizontal: 3,
     },
     hint: { color: colors.muted, fontSize: 12, marginTop: 16, lineHeight: 18 },

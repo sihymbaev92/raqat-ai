@@ -136,7 +136,7 @@ function RowCells({
             <View style={[styles.cellIconBadge, { backgroundColor: pv.soft }]}>
               <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
             </View>
-            <Text style={ab} numberOfLines={1}>
+            <Text style={[ab, r.key === "isha" && styles.abbrIsha]} numberOfLines={1}>
               {shortPrayerName(r.key)}
             </Text>
             <Text style={[ck, { color: pv.fg }]} numberOfLines={1}>
@@ -195,7 +195,7 @@ export function CompactPrayerTimesRow({
                 <View style={[styles.stackIconBadge, { backgroundColor: pv.soft }]}>
                   <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
                 </View>
-                <Text style={styles.stackLabel} numberOfLines={1}>
+                <Text style={[styles.stackLabel, r.key === "isha" && styles.stackLabelIsha]} numberOfLines={1}>
                   {longPrayerName(r.key)}
                 </Text>
                 <Text
@@ -322,6 +322,11 @@ function makeStyles(colors: ThemeColors, isDark?: boolean, sixCompact?: boolean,
       letterSpacing: 0.15,
       paddingRight: sixCompact ? 6 : 8,
     },
+    /** "Құптан" визуалды салмағын басқа атаулармен теңестіру */
+    stackLabelIsha: {
+      fontSize: Math.max(11, labelFs - 2),
+      fontWeight: "700",
+    },
     stackTime: {
       fontSize: timeFs,
       fontWeight: "900",
@@ -378,6 +383,10 @@ function makeStyles(colors: ThemeColors, isDark?: boolean, sixCompact?: boolean,
       marginBottom: 1,
       textAlign: "center",
       fontWeight: "800",
+    },
+    abbrIsha: {
+      fontSize: rc ? 8 : 10,
+      fontWeight: "700",
     },
     clockCompact: {
       color: colors.accent,

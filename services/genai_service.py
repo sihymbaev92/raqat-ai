@@ -19,6 +19,24 @@ from config.settings import (
     RAQAT_PLATFORM_API_BASE,
 )
 
+
+def _accept_ai_proxy_secret_header() -> bool:
+    return (os.getenv("RAQAT_ACCEPT_AI_PROXY_SECRET_HEADER") or "1").strip().lower() not in (
+        "0",
+        "false",
+        "no",
+        "off",
+    )
+
+
+def _platform_ai_auth_headers() -> dict[str, str]:
+    """Қосымша: JWT-only режимінде RAQAT_PLATFORM_API_SERVICE_TOKEN (Bearer)."""
+    if _accept_ai_proxy_secret_header():
+        sec = (RAQAT_AI_PROXY_SECRET or "").strip()
+        return {"X-Raqat-Ai-Secret": sec} if sec else {}
+    tok = (os.getenv("RAQAT_PLATFORM_API_SERVICE_TOKEN") or "").strip()
+    return {"Authorization": f"Bearer {tok}"} if tok else {}
+
 try:
     from google import genai
     from google.genai import types as genai_types
@@ -159,7 +177,8 @@ def init_genai():
 
 
 def _platform_ai_configured() -> bool:
-    return bool(RAQAT_PLATFORM_API_BASE and RAQAT_AI_PROXY_SECRET)
+    """Платформа URL жеткілікті; AI auth — серверде (құпия, JWT, не құпиясыз anonymous)."""
+    return bool((RAQAT_PLATFORM_API_BASE or "").strip())
 
 
 def _platform_ai_post_json(path: str, payload: dict, timeout: float = 180.0) -> dict | None:
@@ -168,10 +187,11 @@ def _platform_ai_post_json(path: str, payload: dict, timeout: float = 180.0) -> 
         return None
     url = f"{RAQAT_PLATFORM_API_BASE.rstrip('/')}{path}"
     try:
+        hdr = _platform_ai_auth_headers()
         r = httpx.post(
             url,
             json=payload,
-            headers={"X-Raqat-Ai-Secret": RAQAT_AI_PROXY_SECRET},
+            headers=hdr,
             timeout=timeout,
         )
         if r.status_code == 200:
@@ -211,7 +231,9 @@ def ask_genai(prompt: str, user_id: int | None = None) -> str:
     if RAQAT_SINGLE_SOURCE_MODE:
         return (
             "AI қазір тек орталық platform API арқылы жұмыс істейді. "
-            "RAQAT_PLATFORM_API_BASE және RAQAT_AI_PROXY_SECRET баптаңыз."
+            "RAQAT_PLATFORM_API_BASE қойылғанын тексеріңіз; "
+            "серверде GEMINI_API_KEY қажет. "
+            "(Қосымша: RAQAT_AI_PROXY_SECRET, RAQAT_PLATFORM_API_SERVICE_TOKEN — міндетті емес.)"
         )
 
     if _ai_client is None:

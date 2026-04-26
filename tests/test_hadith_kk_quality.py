@@ -20,16 +20,7 @@ BUNDLE_PATH = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db.json"
 
 # Ағымдағы бандлда text_kk араб иснад болып қалған белгілі жолдар (азайтуға болады).
 # Тізім бос болғанда — мұндай еш жол қалмағанын күтеміз.
-KNOWN_ARABIC_ISNAD_IN_TEXT_KK: frozenset[str] = frozenset(
-    {
-        "bukhari-105824",
-        "bukhari-106054",
-        "bukhari-106620",
-        "bukhari-106782",
-        "muslim-114039",
-        "muslim-115445",
-    }
-)
+KNOWN_ARABIC_ISNAD_IN_TEXT_KK: frozenset[str] = frozenset()
 
 
 class HadithKkQualityTests(unittest.TestCase):

@@ -2,8 +2,6 @@ package kz.raqat.app
 
 import android.app.Application
 import android.content.res.Configuration
-import android.database.CursorWindow
-import java.lang.reflect.Field
 
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -42,14 +40,6 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
-    // AsyncStorage үлкен JSON бөліктерін оқу: CursorWindow әдепкі ~2 МБ — «Row too big» болдырмау
-    try {
-      val field: Field = CursorWindow::class.java.getDeclaredField("sCursorWindowSize")
-      field.isAccessible = true
-      field.set(null, 16 * 1024 * 1024)
-    } catch (_: Exception) {
-      // API/ROM ерекшелігі — бөліктер кішірейтілген (hadithCorpus TARGET_CHUNK_CHARS)
-    }
     DefaultNewArchitectureEntryPoint.releaseLevel = try {
       ReleaseLevel.valueOf(BuildConfig.REACT_NATIVE_RELEASE_LEVEL.uppercase())
     } catch (e: IllegalArgumentException) {

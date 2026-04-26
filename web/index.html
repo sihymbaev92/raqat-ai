@@ -11,8 +11,8 @@
     <p class="eyebrow">Исламдық құралдар мен контент</p>
     <h1>RAQAT</h1>
     <p class="lead">
-      Құран, хадис, намаз уақыты, құбыла, тәсбих және AI көмекшісі бір экожүйеде.
-      Веб — орталық бет; толық тәжірибе Telegram бот пен мобильді қосымшада.
+      RAQAT — исламдық экожүйе: Құран, хадис, сира, намаз уақыты, құбыла, тәсбих, тәжуид, AI, халал тексеру.
+      Веб — орталық бет; толық тәжірибе Telegram бот пен мобильді қосымшада (Expo, <code>mobile/</code>).
     </p>
   </header>
 
@@ -38,8 +38,10 @@
     <section class="chapter" id="api">
       <h2>3. Платформа API</h2>
       <p>
-        Келешекте барлық клиенттер осы API арқылы дерек пен AI шлюзіне қосылады. Қазіргі минималды қызмет:
-        денсаулық тексеру және ақпараттық JSON.
+        Барлық клиенттер бір <strong>дерекқор</strong> мен <strong>REST</strong> арқылы: Құран/хадис
+        <code class="inline-code">/api/v1/quran/*</code>, <code class="inline-code">/api/v1/hadith/*</code>;
+        Telegram бот опциялы түрде <code class="inline-code">RAQAT_PLATFORM_URL</code> + <code class="inline-code">RAQAT_BOT_SYNC_SECRET</code>
+        арқылы профиль мен bookmark сақтайды (<code class="inline-code">/api/v1/bot/sync/*</code>).
       </p>
       <p>
         <code class="inline-code">GET /health</code> · <code class="inline-code">GET /api/v1/info</code> ·

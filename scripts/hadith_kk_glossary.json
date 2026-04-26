@@ -1,0 +1,20 @@
+{
+  "preferred_terms": {
+    "тәуаф": ["тауаф", "тауап"],
+    "иддәт": ["иддет", "иддат"],
+    "риуаят": ["риуаятт", "роваят"],
+    "иснад": ["иснат", "иснадд"],
+    "жәннәт": ["жәннат", "жаннат"],
+    "ризық": ["рызық", "ризк"]
+  },
+  "forbidden_patterns": [
+    "The user wants",
+    "The user asked",
+    "The provided Arabic",
+    "I need to extract",
+    "as per rule",
+    "Revised Draft",
+    "No explanations, tafsir",
+    "Арабша мәтін:"
+  ]
+}

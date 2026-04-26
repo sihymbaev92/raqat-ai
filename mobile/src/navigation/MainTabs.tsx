@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DashboardScreen } from "../screens/DashboardScreen";
 import { DuasStack } from "./DuasStack";
 import { TasbihStack } from "./TasbihStack";
-import { MainTabBar } from "./MainTabBar";
+import { IslamicSideAyatRails } from "../components/IslamicSideAyatRails";
 import { useAppTheme } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
 import type { MainTabParamList } from "./types";
@@ -14,20 +14,18 @@ export function MainTabs() {
   const { colors } = useAppTheme();
 
   return (
+    <IslamicSideAyatRails>
     <Tab.Navigator
       initialRouteName="Home"
       backBehavior="initialRoute"
-      tabBar={(props) => <MainTabBar {...props} />}
       screenOptions={{
+        /** Төменгі таб жолағын өшіреміз: бөлімдер Басты беттегі тайлдарда. */
+        tabBarStyle: { display: "none" },
         /* false болса барлық таб бірден монтаждалады — алғашқы іске қосуда JS қатып қалуы мүмкін */
         lazy: true,
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
         headerTitleStyle: { fontWeight: "600", fontSize: 15 },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginBottom: 2 },
-        tabBarIconStyle: { marginTop: 4 },
       }}
     >
       <Tab.Screen
@@ -36,7 +34,7 @@ export function MainTabs() {
         options={{
           title: kk.navigation.homeTitle,
           tabBarLabel: "",
-          headerTitleAlign: "center",
+          headerTitleAlign: "left",
           /** Төменгі кастом жолда «Басты» түймесі жоқ — әдепкі таб жолынан жасырамыз */
           tabBarButton: () => null,
         }}
@@ -57,5 +55,6 @@ export function MainTabs() {
         }}
       />
     </Tab.Navigator>
+    </IslamicSideAyatRails>
   );
 }

@@ -43,7 +43,7 @@ const HUB_ITEMS: HubItem[] = [
 export function ContentHubScreen({ navigation }: Props) {
   const { colors, isDark } = useAppTheme();
   const styles = makeStyles(colors, isDark);
-  const accentHubBg = isDark ? "rgba(229,193,88,0.14)" : "rgba(184,134,11,0.11)";
+  const accentHubBg = colors.accentSurface;
 
   return (
     <ScrollView

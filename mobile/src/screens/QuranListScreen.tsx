@@ -20,8 +20,8 @@ import {
   type CachedSurah,
 } from "../storage/quranListCache";
 import { getRaqatApiBase, isRaqatApiOnlyMode } from "../config/raqatApiBase";
-import { getRaqatContentSecret } from "../config/raqatContentSecret";
 import { fetchQuranSurahs } from "../services/platformApiClient";
+import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
 import { surahArabicFromBundled } from "../constants/surahBundledMeta";
@@ -43,10 +43,10 @@ export function QuranListScreen({ navigation }: Props) {
   const fetchRemote = useCallback(async (): Promise<boolean> => {
     const base = getRaqatApiBase();
     const apiOnly = isRaqatApiOnlyMode();
-    const secret = getRaqatContentSecret();
+    const bearer = ((await getValidAccessToken()) ?? "").trim() || undefined;
     if (base) {
       try {
-        const data = await fetchQuranSurahs(base, undefined, secret || undefined);
+        const data = await fetchQuranSurahs(base, { authorizationBearer: bearer });
         const arr = parseSurahsFromPlatformIndex(data);
         if (arr?.length) {
           setList(arr);
@@ -303,14 +303,14 @@ function makeStyles(colors: import("../theme/colors").ThemeColors) {
       minWidth: 22,
     },
     kkTitle: {
-      color: colors.text,
+      color: colors.scriptureMeaningKk,
       fontWeight: "700",
       fontSize: 13,
       flex: 1,
       lineHeight: 17,
     },
     ar: {
-      color: colors.muted,
+      color: colors.scriptureArabic,
       fontSize: 11,
       writingDirection: "rtl",
       textAlign: "right",

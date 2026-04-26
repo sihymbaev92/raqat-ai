@@ -1,0 +1,2 @@
+# EAS Build runs on Linux; shell wrapper must not use CRLF.
+android/gradlew text eol=lf

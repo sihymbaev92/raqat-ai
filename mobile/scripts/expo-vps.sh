@@ -80,11 +80,7 @@ fi
 if [[ -n "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]]; then
   echo "EXPO_PUBLIC_RAQAT_API_BASE=${EXPO_PUBLIC_RAQAT_API_BASE}"
 fi
-if [[ -n "${EXPO_PUBLIC_RAQAT_AI_SECRET:-}" ]]; then
-  echo "EXPO_PUBLIC_RAQAT_AI_SECRET=***орнатылған***"
-else
-  echo "Ескерту: EXPO_PUBLIC_RAQAT_AI_SECRET бос — түбір .env-те RAQAT_AI_PROXY_SECRET немесе mobile/.env қосыңыз."
-fi
+echo "AI/content: client secret қолданылмайды, толық режим үшін JWT кіру керек."
 
 echo "Metro host (Expo Go): $REACT_NATIVE_PACKAGER_HOSTNAME"
 exec npx expo start --lan

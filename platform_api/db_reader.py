@@ -127,6 +127,21 @@ def get_content_stats() -> dict:
         else:
             out["tables"]["quran"] = None
 
+        if "hadith_fts" in tables:
+            try:
+                fts_n = int(conn.execute("SELECT COUNT(*) FROM hadith_fts").fetchone()[0])
+                out["tables"]["hadith_fts"] = {"rows": fts_n}
+            except Exception as exc:
+                out["tables"]["hadith_fts"] = {"rows": None, "error": str(exc)[:200]}
+        else:
+            out["tables"]["hadith_fts"] = None
+
+        out["import_hint_kk"] = (
+            "Импорт серверде: scripts/import_hadith_from_open_sources.py, "
+            "scripts/import_quran_kk_qurankarim.py, содан кейін create_hadith_fts.py "
+            "(немесе --db / RAQAT_DB_PATH). API тек оқу: осы stats."
+        )
+
         return out
     finally:
         conn.close()

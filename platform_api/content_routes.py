@@ -11,6 +11,7 @@ from ai_security import optional_content_read_secret
 from app.infrastructure.cache import cache_get_json, cache_set_json
 from content_reader import (
     content_fingerprint_v1,
+    hadith_random_any,
     hadith_random_for_source,
     hadith_search,
     hadith_by_id,
@@ -165,7 +166,10 @@ def quran_ayah(
 
 @router.get("/hadith/random")
 def hadith_random(
-    source: str = Query(..., min_length=1),
+    source: str | None = Query(
+        None,
+        description="Кітап атауы (мысалы bukhari). Бос болса — барлық дереккөзден кездейсоқ.",
+    ),
     strict_sahih: bool = Query(False),
     lang: str = Query("kk"),
     unique: bool = Query(
@@ -174,9 +178,15 @@ def hadith_random(
     ),
     _: None = Depends(optional_content_read_secret),
 ):
-    row = hadith_random_for_source(
-        source, strict_sahih=strict_sahih, lang=lang, unique_only=unique
-    )
+    src = (source or "").strip()
+    if src:
+        row = hadith_random_for_source(
+            src, strict_sahih=strict_sahih, lang=lang, unique_only=unique
+        )
+    else:
+        row = hadith_random_any(
+            strict_sahih=strict_sahih, lang=lang, unique_only=unique
+        )
     if not row:
         raise HTTPException(404, detail="hadith not found")
     return {"ok": True, "hadith": row}

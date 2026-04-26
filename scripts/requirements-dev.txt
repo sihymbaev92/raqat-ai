@@ -1,0 +1,4 @@
+# Даму: алдымен platform_api/requirements.txt, содан осы файл:
+#   pip install -r platform_api/requirements.txt -r scripts/requirements-dev.txt
+pytest>=8,<10
+psycopg[binary,pool]>=3.1,<4

@@ -126,7 +126,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     heroAr: {
       fontSize: 40,
       lineHeight: 52,
-      color: colors.text,
+      color: colors.scriptureArabic,
       writingDirection: "rtl",
       textAlign: "center",
       fontWeight: "700",
@@ -135,7 +135,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginTop: 10,
       fontSize: 17,
       fontWeight: "800",
-      color: colors.accent,
+      color: colors.scriptureMeaningKk,
       textAlign: "center",
     },
     intro: {
@@ -210,7 +210,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       lineHeight: 20,
     },
     flatBody: {
-      color: colors.text,
+      color: colors.scriptureMeaningKk,
       fontSize: 14,
       lineHeight: 22,
     },
@@ -221,14 +221,14 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginBottom: 6,
     },
     ar: {
-      color: colors.text,
+      color: colors.scriptureArabic,
       fontSize: 20,
       lineHeight: 34,
       textAlign: "right",
       writingDirection: "rtl",
       marginBottom: 8,
     },
-    kk: { color: colors.text, fontSize: 15, lineHeight: 22, marginBottom: 0 },
+    kk: { color: colors.scriptureMeaningKk, fontSize: 15, lineHeight: 22, marginBottom: 0 },
     muted: { color: colors.muted, textAlign: "center", marginTop: 24 },
   });
 }

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from pathlib import Path
 
 from services.prayer_visuals import PRAYER_ASSETS_DIR, get_prayer_visual, iter_visual_payloads
@@ -14,10 +15,11 @@ def test_visual_uses_remote_url_when_local_asset_missing(monkeypatch):
 
 
 def test_visual_prefers_local_asset(monkeypatch):
-    fake_path = f"{PRAYER_ASSETS_DIR}/wudu.png"
+    fake_path = os.path.join(PRAYER_ASSETS_DIR, "wudu.png")
     monkeypatch.setattr(
         "services.prayer_visuals.os.path.exists",
-        lambda path: path == fake_path,
+        lambda path, target=fake_path: os.path.normcase(os.path.normpath(path))
+        == os.path.normcase(os.path.normpath(target)),
     )
 
     visual = get_prayer_visual("visual_wudu")
@@ -29,10 +31,11 @@ def test_visual_prefers_local_asset(monkeypatch):
 
 
 def test_wudu_men_visual_uses_local_asset_when_present(monkeypatch):
-    fake_path = f"{PRAYER_ASSETS_DIR}/wudu_men.png"
+    fake_path = os.path.join(PRAYER_ASSETS_DIR, "wudu_men.png")
     monkeypatch.setattr(
         "services.prayer_visuals.os.path.exists",
-        lambda path: path == fake_path,
+        lambda path, target=fake_path: os.path.normcase(os.path.normpath(path))
+        == os.path.normcase(os.path.normpath(target)),
     )
 
     visual = get_prayer_visual("wudu_men")

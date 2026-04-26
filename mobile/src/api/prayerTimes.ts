@@ -4,6 +4,22 @@
  */
 const ALADHAN_BY_CITY = "https://api.aladhan.com/v1/timingsByCity";
 
+const FETCH_TIMEOUT_MS = 25_000;
+
+async function fetchWithTimeout(
+  input: string,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: c.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 export type PrayerTimesResult = {
   city: string;
   country: string;
@@ -65,7 +81,7 @@ export async function fetchPrayerTimesByCity(
   });
   const url = `${ALADHAN_BY_CITY}?${params.toString()}`;
   try {
-    const r = await fetch(url);
+    const r = await fetchWithTimeout(url, {}, FETCH_TIMEOUT_MS);
     if (!r.ok) {
       return {
         city,
@@ -83,7 +99,12 @@ export async function fetchPrayerTimesByCity(
     const payload = await r.json();
     return parseAladhanPayload(payload, city, country);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Network error";
+    const msg =
+      e instanceof Error
+        ? e.name === "AbortError"
+          ? "Timeout"
+          : e.message
+        : "Network error";
     return {
       city,
       country,
@@ -114,7 +135,7 @@ export async function fetchPrayerTimesByCityForDate(
   });
   const url = `${ALADHAN_BY_CITY}?${params.toString()}`;
   try {
-    const r = await fetch(url);
+    const r = await fetchWithTimeout(url, {}, FETCH_TIMEOUT_MS);
     if (!r.ok) {
       return {
         city,
@@ -132,7 +153,12 @@ export async function fetchPrayerTimesByCityForDate(
     const payload = await r.json();
     return parseAladhanPayload(payload, city, country);
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Network error";
+    const msg =
+      e instanceof Error
+        ? e.name === "AbortError"
+          ? "Timeout"
+          : e.message
+        : "Network error";
     return {
       city,
       country,

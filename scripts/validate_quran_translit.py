@@ -14,6 +14,11 @@ if _ROOT not in sys.path:
 from services.quran_translit import transliterate_arabic_to_kazakh
 
 
+def _has_translit_column(conn: sqlite3.Connection) -> bool:
+    cols = conn.execute("PRAGMA table_info(quran)").fetchall()
+    return any(str(r[1]) == "translit" for r in cols)
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--db", default="/root/bot/raqat_bot/global_clean.db")
@@ -31,6 +36,11 @@ def main() -> int:
 
     conn = sqlite3.connect(args.db)
     conn.row_factory = sqlite3.Row
+    if not _has_translit_column(conn):
+        conn.close()
+        print("quran.translit бағаны табылмады — validate өткізіліп кетті.")
+        print("Ескерту: бұл сұлбада оқылу мәтіні клиентте runtime жасалады.")
+        return 0
     rows = conn.execute(
         "SELECT id, surah, ayah, text_ar, translit FROM quran ORDER BY surah, ayah"
     ).fetchall()

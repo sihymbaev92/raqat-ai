@@ -14,6 +14,11 @@ describe("findEcodesInText", () => {
     const entries = findEcodesInText("Құрамы: E999, E1200.");
     expect(entries).toHaveLength(0);
   });
+
+  it("әріп жалғанған E-кодты таниды (мыс: E150a)", () => {
+    const entries = findEcodesInText("Құрамы: бояғыш E150a.");
+    expect(entries.map((e) => e.code)).toEqual(["E150a"]);
+  });
 });
 
 describe("formatEcodeAppendixForPrompt", () => {

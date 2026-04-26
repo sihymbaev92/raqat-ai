@@ -816,6 +816,82 @@ def _migration_015_hadith_repeat_tracking(conn) -> None:
     )
 
 
+def _migration_016_hadith_translation_quality_fields(conn) -> None:
+    """
+    Хадис аударма pipeline өрістері мен сапа метадеректері.
+    """
+    tables = _table_names(conn)
+    if "hadith" not in tables:
+        return
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+
+    if "text_kk_literal" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN text_kk_literal TEXT")
+    if "text_kk_clean" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN text_kk_clean TEXT")
+    if "text_kk_explanation" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN text_kk_explanation TEXT")
+    if "translation_status" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN translation_status TEXT DEFAULT 'draft'")
+    if "quality_score" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN quality_score REAL DEFAULT 0")
+    if "reviewed_by" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN reviewed_by TEXT")
+    if "review_notes" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN review_notes TEXT")
+    if "hadith_no" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN hadith_no TEXT")
+    if "chapter" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN chapter TEXT")
+    if "is_sahih" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN is_sahih INTEGER NOT NULL DEFAULT 0")
+    if "grade" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN grade TEXT")
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hadith_translation_status ON hadith(translation_status)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hadith_quality_score ON hadith(quality_score)"
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_hadith_is_sahih ON hadith(is_sahih)")
+
+    conn.execute(
+        """
+        UPDATE hadith
+        SET is_sahih = 1
+        WHERE COALESCE(is_sahih, 0) = 0
+          AND (
+              source IN ('Sahih al-Bukhari', 'Sahih Muslim')
+              OR lower(COALESCE(grade, '')) LIKE '%sahih%'
+          )
+        """
+    )
+
+
+def _migration_017_quran_api_columns(conn) -> None:
+    """
+    API `content_reader` күтетін бағандар: surah_name, translit, updated_at (болмаса).
+    Сүре атауларын арабша толтырады (`db.quran_surah_titles_ar`).
+    """
+    tables = _table_names(conn)
+    if "quran" not in tables:
+        return
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(quran)").fetchall()}
+    if "surah_name" not in cols:
+        conn.execute("ALTER TABLE quran ADD COLUMN surah_name TEXT")
+    if "translit" not in cols:
+        conn.execute("ALTER TABLE quran ADD COLUMN translit TEXT")
+    if "updated_at" not in cols:
+        conn.execute("ALTER TABLE quran ADD COLUMN updated_at TEXT")
+        conn.execute("UPDATE quran SET updated_at = datetime('now') WHERE updated_at IS NULL")
+    from db.quran_surah_titles_ar import backfill_quran_surah_names_sqlite
+
+    backfill_quran_surah_names_sqlite(conn)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_quran_surah_ayah ON quran(surah, ayah)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_quran_updated_at ON quran(updated_at)")
+
+
 def _migration_014_repair_user_data_tables(conn) -> None:
     """
     Кейбір снапшоттарда 12 нұсқа қолданылған деп жазылған, бірақ
@@ -846,6 +922,8 @@ MIGRATIONS: list[tuple[int, str, Callable]] = [
     (13, "oauth_and_phone_login", _migration_013_oauth_and_phone_login),
     (14, "repair_user_data_tables_if_missing", _migration_014_repair_user_data_tables),
     (15, "hadith_repeat_tracking", _migration_015_hadith_repeat_tracking),
+    (16, "hadith_translation_quality_fields", _migration_016_hadith_translation_quality_fields),
+    (17, "quran_api_columns", _migration_017_quran_api_columns),
 ]
 
 

@@ -1,10 +1,13 @@
 node_modules/
 .env
+.env.production
 .expo/
 dist/
 dist-export/
 npm-debug.*
 *.jks
+android/keystore/
+keystore/
 *.p8
 *.p12
 *.key
@@ -12,3 +15,5 @@ npm-debug.*
 *.orig.*
 web-build/
 .DS_Store
+# Ескі: build-тар .gradle-ascii репо ішіндегі кэш (қазір D:/raqat-gradle default)
+.gradle-ascii/

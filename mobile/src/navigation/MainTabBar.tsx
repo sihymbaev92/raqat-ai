@@ -27,15 +27,17 @@ function tabBarPaddingBottom(bottom: number): number {
   return Math.max(bottom - Platform.select({ ios: 10, default: 2 }), 0);
 }
 
+/** Үстіңгі сызудан айырып, иконкалар+мәтінді төменірек (экран астына) жылжыту. */
+const TAB_BAR_TOP_PAD = Platform.select({ ios: 10, default: 8 });
+const TAB_BAR_EXTRA_BOTTOM = 4;
+
 export function MainTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const { width: windowWidth } = useWindowDimensions();
   /** Төменгі қатар: иконкаларды айқынырақ үлкейту */
   const tabRasterSize = Math.min(78, Math.max(58, Math.round(windowWidth * 0.2)));
   const { colors } = useAppTheme();
-  const tabPadBottom = Math.max(
-    tabBarPaddingBottom(insets.bottom),
-    Platform.OS === "android" ? 0 : 0
-  );
+  const tabPadBottom =
+    tabBarPaddingBottom(insets.bottom) + TAB_BAR_EXTRA_BOTTOM;
   const styles = makeStyles(colors);
 
   const duasRoute = state.routes.find((r) => r.name === "Duas");
@@ -85,8 +87,9 @@ export function MainTabBar({ state, descriptors, navigation, insets }: BottomTab
       style={[
         styles.wrap,
         {
+          paddingTop: TAB_BAR_TOP_PAD,
           paddingBottom: tabPadBottom,
-          backgroundColor: colors.card,
+          backgroundColor: colors.bg,
           borderTopColor: colors.border,
         },
       ]}
@@ -172,31 +175,67 @@ function TabIconWrap({
   colors: ThemeColors;
   iconName?: MciName;
   imageSource?: React.ComponentProps<typeof Image>["source"];
-  iconStyles: { iconWrap: ViewStyle; iconWrapFocused: ViewStyle };
+  iconStyles: { iconWrap: ViewStyle };
   /** Дұғалар / тәспі сияқты нақты бейнелерді сәл үлкінірек көрсету */
   iconSize?: number;
 }) {
   const tint = focused ? colors.accent : colors.muted;
+  /** Сыртқы шеңбер: фокус жиек + ішкі дөңгелек клип */
+  const ringPad = 4;
+  const outer = iconSize + ringPad * 2;
+  const outerR = outer / 2;
+  const innerR = iconSize / 2;
   return (
     <View
       style={[
         iconStyles.iconWrap,
         {
+          width: outer,
+          height: outer,
+          borderRadius: outerR,
+          borderWidth: focused ? 1.5 : 0,
           borderColor: focused ? colors.accent : "transparent",
-          backgroundColor: focused ? "rgba(229, 193, 88, 0.12)" : "transparent",
+          backgroundColor: focused ? colors.accentSurface : "transparent",
+          alignItems: "center",
+          justifyContent: "center",
         },
-        focused && iconStyles.iconWrapFocused,
       ]}
     >
       {imageSource != null ? (
-        <Image
-          source={imageSource}
-          style={{ width: iconSize, height: iconSize, opacity: focused ? 1 : 0.72 }}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
-        />
+        <View
+          style={{
+            width: iconSize,
+            height: iconSize,
+            borderRadius: innerR,
+            overflow: "hidden",
+            backgroundColor: colors.bg,
+          }}
+        >
+          <Image
+            source={imageSource}
+            style={{
+              width: iconSize,
+              height: iconSize,
+              opacity: focused ? 1 : 0.72,
+            }}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+          />
+        </View>
       ) : iconName ? (
-        <MaterialCommunityIcons name={iconName} size={iconSize} color={tint} />
+        <View
+          style={{
+            width: iconSize,
+            height: iconSize,
+            borderRadius: innerR,
+            overflow: "hidden",
+            backgroundColor: "transparent",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <MaterialCommunityIcons name={iconName} size={Math.round(iconSize * 0.62)} color={tint} />
+        </View>
       ) : null}
     </View>
   );
@@ -239,18 +278,10 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 12,
       textAlign: "center",
     },
+    /** Негізгі өлшемдер TabIconWrap ішінде iconSize бойынша есептеледі */
     iconWrap: {
       alignItems: "center",
       justifyContent: "center",
-      minWidth: 58,
-      minHeight: 0,
-      paddingVertical: 0,
-      paddingHorizontal: 2,
-      borderRadius: 18,
-      borderWidth: 0,
-    },
-    iconWrapFocused: {
-      borderWidth: 1.5,
     },
   });
 }

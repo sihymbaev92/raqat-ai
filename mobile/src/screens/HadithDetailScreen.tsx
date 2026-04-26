@@ -8,7 +8,6 @@ import type { MoreStackParamList } from "../navigation/types";
 import { loadHadithCorpus, findHadith, type HadithCorpus } from "../storage/hadithCorpus";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import { getRaqatApiBase } from "../config/raqatApiBase";
-import { getRaqatContentSecret } from "../config/raqatContentSecret";
 import { fetchPlatformHadith } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 
@@ -61,11 +60,9 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       const dbId = typeof h.dbId === "number" && h.dbId > 0 ? h.dbId : null;
       if (!base || !dbId) return;
       const bearer = await getValidAccessToken();
-      const secret = getRaqatContentSecret() || undefined;
       try {
         const r = await fetchPlatformHadith(base, dbId, {
           timeoutMs: 12_000,
-          contentSecret: secret,
           authorizationBearer: bearer || undefined,
         });
         if (cancelled || !r.ok || !r.hadith || typeof r.hadith !== "object") return;
@@ -191,7 +188,7 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 6,
     },
     arabic: {
-      color: colors.text,
+      color: colors.scriptureArabic,
       fontSize: 16,
       lineHeight: 28,
       writingDirection: "rtl",
@@ -204,7 +201,7 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 10,
       fontStyle: "italic",
     },
-    body: { color: colors.text, fontSize: 16, lineHeight: 26 },
+    body: { color: colors.scriptureMeaningKk, fontSize: 16, lineHeight: 26 },
     bodyMuted: { color: colors.muted, fontSize: 15, lineHeight: 24, fontStyle: "italic" },
     prov: {
       marginTop: 20,
