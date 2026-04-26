@@ -130,29 +130,6 @@ function HomeHeaderLeft({
       }}
     >
       <Pressable
-        onPress={() =>
-          navigation.dispatch(
-            CommonActions.navigate({
-              name: "MoreStack",
-              params: { screen: "Settings" },
-            })
-          )
-        }
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: colors.accentSurfaceStrong,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={kk.settings.headerSettingsA11y}
-      >
-        <MaterialIcons name="settings" size={22} color={colors.accent} />
-      </Pressable>
-      <VoiceAssistantHeaderButton />
-      <Pressable
         onPress={() => navigation.navigate("Qibla")}
         onLongPress={() => void refreshBearing()}
         style={{
@@ -202,19 +179,49 @@ function HomeHeaderLeft({
             size={34}
             rotateDeg={rotateDeg}
             aligned={qiblaAligned}
-            showDialRing={false}
+            showDialRing
           />
         )}
       </Pressable>
-      <View style={{ flex: 1, minWidth: 0, marginLeft: 4 }}>
+      <View style={{ flex: 1, minWidth: 0, marginHorizontal: 4, alignItems: "center" }}>
         <Text
-          style={{ fontSize: 16, fontWeight: "900", letterSpacing: 0.5, color: colors.text }}
+          style={{
+            fontSize: 16,
+            fontWeight: "900",
+            letterSpacing: 0.5,
+            color: colors.text,
+            textAlign: "center",
+            width: "100%",
+          }}
           accessibilityRole="header"
           numberOfLines={1}
         >
           {kk.dashboard.brandTitle}
         </Text>
       </View>
+      <VoiceAssistantHeaderButton />
+      <Pressable
+        onPress={() =>
+          navigation.dispatch(
+            CommonActions.navigate({
+              name: "MoreStack",
+              params: { screen: "Settings" },
+            })
+          )
+        }
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 20,
+          backgroundColor: colors.accentSurfaceStrong,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={kk.settings.headerSettingsA11y}
+      >
+        <MaterialIcons name="settings" size={22} color={colors.accent} />
+      </Pressable>
     </View>
   );
 }

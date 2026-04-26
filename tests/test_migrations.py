@@ -79,7 +79,7 @@ def test_migrations_apply_and_idempotent(tmp_path):
     run_schema_migrations(str(db))
     with db_conn(str(db)) as conn:
         n = conn.execute("SELECT COUNT(*) AS c FROM schema_migrations").fetchone()["c"]
-        assert int(n) == 16
+        assert int(n) == 17
         qcols = {r[1] for r in conn.execute("PRAGMA table_info(quran)").fetchall()}
         assert "updated_at" in qcols
         tabs = {
@@ -134,5 +134,5 @@ def test_merge_skips_when_no_users_table(tmp_path):
     run_schema_migrations(str(db))
     with db_conn(str(db)) as conn:
         assert (
-            conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 16
+            conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0] == 17
         )

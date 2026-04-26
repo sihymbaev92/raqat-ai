@@ -14,6 +14,8 @@ platform_api/.venv.linux_backup/
 # Databases (жергілікті SQLite; өндірісте RAQAT_DB_PATH қолданыңыз)
 *.db
 *.db.*
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 
@@ -25,7 +27,9 @@ backups/
 
 # Logs / telemetry
 logs/
+.logs/
 *.log
+*.log.out
 scripts/asyldin_apply_log.txt
 scripts/asyldin_scrape_err.txt
 

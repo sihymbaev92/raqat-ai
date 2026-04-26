@@ -6,7 +6,7 @@ import { kk } from "../../i18n/kk";
 import { useVoiceAssistant } from "./voiceAssistantCore";
 
 /**
- * Басты экран app bar-ы: микрофон (баптаудан кейін, сол жақ шеттегі қатарда).
+ * Басты экран app bar-ы: микрофон (оң жақта — баптаулардың сол жағы).
  */
 export function VoiceAssistantHeaderButton() {
   const { colors } = useAppTheme();
