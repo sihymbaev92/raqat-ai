@@ -18,6 +18,8 @@ Use this right before deploy or APK handoff.
 
 ## 4) Bot and mobile connectivity
 - `bot_main.py` process is running (if bot release includes backend updates).
+- **One `BOT_TOKEN` => one polling bot** (stop the bot on VPS or locally — not both).
+- Windows: `powershell -ExecutionPolicy Bypass -File .\scripts\diagnostics_raqat_processes.ps1` if you see duplicate `uvicorn` / `bot_main` (do not mass-kill; parent/child PIDs may be linked).
 - Mobile API base points to reachable host/IP.
 - Smoke check: AI response, Qibla screen opens, Settings shows healthy backend.
 

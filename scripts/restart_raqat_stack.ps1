@@ -151,4 +151,18 @@ if (Test-Path $VerifyScript) {
     Write-Host (Invoke-RestMethod -Uri "$base/ready" -TimeoutSec 12 | ConvertTo-Json -Compress)
 }
 
+function Write-RaqatProcessHints {
+    $uv = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
+        | Where-Object { $_.CommandLine -like "*uvicorn*" })
+    if ($uv.Count -gt 1) {
+        Write-Warning "Multiple uvicorn ($($uv.Count)); only one should bind :8787. Run: .\scripts\diagnostics_raqat_processes.ps1"
+    }
+    $botN = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
+        | Where-Object { $_.CommandLine -like "*bot_main.py*" }).Count
+    if ($botN -gt 1) {
+        Write-Warning "Multiple bot_main.py ($botN); one BOT_TOKEN => one poller (stop VPS or local). Run: .\scripts\diagnostics_raqat_processes.ps1"
+    }
+}
+
+Write-RaqatProcessHints
 Write-Host "Done. Logs: $LogDir"
