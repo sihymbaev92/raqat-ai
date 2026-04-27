@@ -19,16 +19,9 @@ New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 function Test-PythonHasPsycopg {
     param([string]$PythonExe)
     if (-not (Test-Path $PythonExe)) { return $false }
-    $old = $PSNativeCommandUseErrorActionPreference
-    $PSNativeCommandUseErrorActionPreference = $false
-    try {
-        & $PythonExe -c "import psycopg" *> $null
-        return ($LASTEXITCODE -eq 0)
-    } catch {
-        return $false
-    } finally {
-        $PSNativeCommandUseErrorActionPreference = $old
-    }
+    # PS 5.1 / 7 үйлесімділігі: stderr stdout native error preference PS5.1-де жоқ.
+    cmd /c """$PythonExe"" -c ""import psycopg"" >nul 2>nul"
+    return ($LASTEXITCODE -eq 0)
 }
 
 function Import-DotEnv {
