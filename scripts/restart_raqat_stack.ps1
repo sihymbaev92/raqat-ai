@@ -68,12 +68,21 @@ foreach ($procId in $portPids) {
 Start-Sleep -Seconds 2
 
 $sysPython = (Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1)
-$ApiPyCandidates = @(
-    (Join-Path $Root ".venv\Scripts\python.exe"),
-    (Join-Path $ApiDir ".venv\Scripts\python.exe"),
-    $sysPython
-)
 $needsPg = (($env:DATABASE_URL + "").Trim().ToLower().StartsWith("postgres"))
+# PostgreSQL: platform_api\.venv бірінші (API + бот бір venv — psycopg + aiogram); әйтпесе түбір .venv, содан жүйелік python.
+$ApiPyCandidates = if ($needsPg) {
+    @(
+        (Join-Path $ApiDir ".venv\Scripts\python.exe"),
+        (Join-Path $Root ".venv\Scripts\python.exe"),
+        $sysPython
+    )
+} else {
+    @(
+        (Join-Path $Root ".venv\Scripts\python.exe"),
+        (Join-Path $ApiDir ".venv\Scripts\python.exe"),
+        $sysPython
+    )
+}
 $ApiPy = $null
 foreach ($cand in $ApiPyCandidates) {
     if (-not (Test-Path $cand)) { continue }
@@ -104,7 +113,11 @@ if (-not $SkipBot) {
         | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }
     Start-Sleep -Seconds 1
 
-    $BotPy = Join-Path $Root ".venv\Scripts\python.exe"
+    # Бот пен API бір Python қолданған дұрыс (PG режимінде psycopg бір venv-те).
+    $BotPy = $ApiPy
+    if (-not (Test-Path $BotPy)) {
+        $BotPy = Join-Path $Root ".venv\Scripts\python.exe"
+    }
     if (-not (Test-Path $BotPy)) {
         $BotPy = Join-Path $ApiDir ".venv\Scripts\python.exe"
     }
