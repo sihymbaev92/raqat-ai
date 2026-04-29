@@ -24,6 +24,7 @@ import { getRaqatApiBase, saveRaqatApiBaseOverride } from "../config/raqatApiBas
 import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
 import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
 import { runContentSyncWithIncrementalPatches } from "../services/contentSync";
+import { readContentSyncState } from "../services/contentSync";
 import {
   fetchPlatformLiveness,
   fetchPlatformReadiness,
@@ -47,6 +48,8 @@ import {
   setIftarEnabled,
 } from "../storage/prefs";
 import { loadPrayerCache } from "../storage/prayerCache";
+import { loadQuranListCache } from "../storage/quranListCache";
+import { loadHadithCorpus } from "../storage/hadithCorpus";
 import {
   requestNotificationPermissions,
   reschedulePrayerNotifications,
@@ -69,6 +72,15 @@ type SettingsMoreLink = keyof Pick<
   MoreStackParamList,
   "TelegramInfo" | "Ecosystem" | "Halal" | "RaqatAI"
 >;
+
+type OfflineQualitySnapshot = {
+  hadithRows: number;
+  quranSurahRows: number;
+  quranSavedAt: string | null;
+  syncEtag: string | null;
+  syncSince: string | null;
+  checkedAt: string;
+};
 
 export function SettingsScreen() {
   const { colors, mode, setMode } = useAppTheme();
@@ -99,6 +111,8 @@ export function SettingsScreen() {
   const [voiceDiagCopied, setVoiceDiagCopied] = useState(false);
   const [voiceHealthBusy, setVoiceHealthBusy] = useState(false);
   const [voiceHealthReport, setVoiceHealthReport] = useState<string | null>(null);
+  const [offlineQualityLoading, setOfflineQualityLoading] = useState(false);
+  const [offlineQuality, setOfflineQuality] = useState<OfflineQualitySnapshot | null>(null);
 
   const load = useCallback(async () => {
     const c = await getSelectedCity();
@@ -106,6 +120,27 @@ export function SettingsScreen() {
     setCountry(c.country);
     setNotif(await getNotifEnabled());
     setIftar(await getIftarEnabled());
+  }, []);
+
+  const refreshOfflineQuality = useCallback(async () => {
+    setOfflineQualityLoading(true);
+    try {
+      const [quranList, hadithCorpus, syncState] = await Promise.all([
+        loadQuranListCache(),
+        loadHadithCorpus(),
+        readContentSyncState(),
+      ]);
+      setOfflineQuality({
+        hadithRows: hadithCorpus?.hadiths?.length ?? 0,
+        quranSurahRows: quranList?.list?.length ?? 0,
+        quranSavedAt: quranList?.savedAt ?? null,
+        syncEtag: syncState.etag,
+        syncSince: syncState.since,
+        checkedAt: new Date().toISOString(),
+      });
+    } finally {
+      setOfflineQualityLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -190,6 +225,7 @@ export function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       void checkPlatformApi();
+      void refreshOfflineQuality();
       void (async () => {
         setPlatformPid(await getStoredPlatformUserId());
         try {
@@ -200,7 +236,7 @@ export function SettingsScreen() {
           setVoiceDiag([]);
         }
       })();
-    }, [checkPlatformApi])
+    }, [checkPlatformApi, refreshOfflineQuality])
   );
 
   const styles = makeStyles(colors);
@@ -626,6 +662,48 @@ export function SettingsScreen() {
         </>
       )}
 
+      <Text style={styles.label}>{kk.settings.offlineQualityTitle}</Text>
+      <Text style={styles.hint}>{kk.settings.offlineQualityHint}</Text>
+      <View style={styles.offlineCard}>
+        <View style={styles.rowBetween}>
+          <Text style={styles.rowTxt}>{kk.settings.offlineQualityApiStatus}</Text>
+          <Text style={apiOk ? styles.okTxt : styles.warnTxt}>
+            {apiOk == null ? "—" : apiOk ? kk.settings.offlineQualityApiOk : kk.settings.offlineQualityApiDown}
+          </Text>
+        </View>
+        <View style={styles.rowBetween}>
+          <Text style={styles.rowTxt}>{kk.settings.offlineQualityHadithRows}</Text>
+          <Text style={styles.boxStatTxt}>{offlineQuality?.hadithRows ?? "—"}</Text>
+        </View>
+        <View style={styles.rowBetween}>
+          <Text style={styles.rowTxt}>{kk.settings.offlineQualityQuranRows}</Text>
+          <Text style={styles.boxStatTxt}>{offlineQuality?.quranSurahRows ?? "—"}</Text>
+        </View>
+        <Text style={styles.hint}>
+          {kk.settings.offlineQualitySyncState(
+            offlineQuality?.syncSince ?? null,
+            offlineQuality?.syncEtag ?? null
+          )}
+        </Text>
+        <Text style={styles.hint}>
+          {kk.settings.offlineQualitySavedAt(
+            offlineQuality?.quranSavedAt ?? null,
+            offlineQuality?.checkedAt ?? null
+          )}
+        </Text>
+        <Pressable
+          style={({ pressed }) => [styles.smallBtn, pressed && { opacity: 0.85 }]}
+          onPress={() => void refreshOfflineQuality()}
+          disabled={offlineQualityLoading}
+        >
+          {offlineQualityLoading ? (
+            <ActivityIndicator color={colors.accent} size="small" />
+          ) : (
+            <Text style={styles.smallBtnTxt}>{kk.settings.offlineQualityRefresh}</Text>
+          )}
+        </Pressable>
+      </View>
+
       <Text style={[styles.label, styles.linksSectionLabel]}>{kk.settings.linksSection}</Text>
       <Pressable
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
@@ -886,6 +964,18 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 10,
       lineHeight: 18,
     },
+    offlineCard: {
+      marginTop: 8,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      marginBottom: 6,
+    },
+    boxStatTxt: { color: colors.text, fontSize: 14, fontWeight: "700" },
+    okTxt: { color: colors.success, fontSize: 13, fontWeight: "700" },
+    warnTxt: { color: colors.error, fontSize: 13, fontWeight: "700" },
     supportBlock: {
       marginTop: 28,
       padding: 16,

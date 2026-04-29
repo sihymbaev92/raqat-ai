@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -44,12 +44,40 @@ export function QiblaScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const alignHint = qiblaAlignHint(rotateDeg, bearing);
   const mainHint = screenHint(alignHint, bearing);
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrationSecLeft, setCalibrationSecLeft] = useState(20);
+  const [calibrationResult, setCalibrationResult] = useState<"high" | "medium" | "low" | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       void refreshBearing();
     }, [refreshBearing])
   );
+
+  useEffect(() => {
+    if (!calibrating) return;
+    setCalibrationSecLeft(20);
+    const tick = setInterval(() => {
+      setCalibrationSecLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(tick);
+          setCalibrating(false);
+          void refreshBearing();
+          const diff = Math.abs(rotateDeg);
+          if (diff <= 8) {
+            setCalibrationResult("high");
+          } else if (diff <= 18) {
+            setCalibrationResult("medium");
+          } else {
+            setCalibrationResult("low");
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [calibrating, refreshBearing, rotateDeg]);
 
   const openAppSettings = () => {
     void Linking.openSettings();
@@ -192,6 +220,48 @@ export function QiblaScreen() {
         </Pressable>
       </View>
 
+      <View style={styles.calibrationCard}>
+        <Text style={styles.calibrationTitle}>{kk.qibla.calibrationTitle}</Text>
+        <Text style={styles.calibrationBody}>
+          {calibrating
+            ? kk.qibla.calibrationRunning(calibrationSecLeft)
+            : kk.qibla.calibrationBody}
+        </Text>
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryBtn,
+            calibrating && styles.calibrationBtnActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => {
+            setCalibrationResult(null);
+            setCalibrating((p) => !p);
+          }}
+        >
+          <Text style={styles.secondaryBtnTxt}>
+            {calibrating ? kk.qibla.calibrationStop : kk.qibla.calibrationStart}
+          </Text>
+        </Pressable>
+        {calibrationResult ? (
+          <Text
+            style={[
+              styles.calibrationBadge,
+              calibrationResult === "high"
+                ? styles.calibrationHigh
+                : calibrationResult === "medium"
+                  ? styles.calibrationMedium
+                  : styles.calibrationLow,
+            ]}
+          >
+            {calibrationResult === "high"
+              ? kk.qibla.calibrationHigh
+              : calibrationResult === "medium"
+                ? kk.qibla.calibrationMedium
+                : kk.qibla.calibrationLow}
+          </Text>
+        ) : null}
+      </View>
+
       <Pressable
         style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
         onPress={() => void refreshBearing()}
@@ -283,6 +353,33 @@ function makeStyles(colors: ThemeColors) {
     },
     modeTxt: { color: colors.muted, fontSize: 13, fontWeight: "700" },
     modeTxtActive: { color: colors.accent },
+    calibrationCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 12,
+      backgroundColor: colors.card,
+      marginBottom: 12,
+      gap: 8,
+    },
+    calibrationTitle: { color: colors.text, fontWeight: "700", fontSize: 15 },
+    calibrationBody: { color: colors.muted, lineHeight: 20, fontSize: 13 },
+    calibrationBtnActive: {
+      borderColor: colors.success,
+      backgroundColor: `${colors.success}14`,
+    },
+    calibrationBadge: {
+      alignSelf: "flex-start",
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      fontSize: 12,
+      fontWeight: "700",
+      overflow: "hidden",
+    },
+    calibrationHigh: { color: colors.success, backgroundColor: `${colors.success}1f` },
+    calibrationMedium: { color: "#b08900", backgroundColor: "#b089001f" },
+    calibrationLow: { color: "#c0392b", backgroundColor: "#c0392b1f" },
     arrowPanel: {
       alignSelf: "center",
       alignItems: "center",

@@ -80,21 +80,29 @@ function headingFromMagnetometer(m: { x: number; y: number; z: number }): number
   return (a + 360) % 360;
 }
 
-/** expo-location компасы: trueHeading (iOS) / magHeading — Magnetometer-ден дәлірек. */
+/** expo-location компасы: trueHeading = географиялық солтүстікке жақын (bearingToKaaba сияқты). */
 function headingFromLocationHeading(h: Location.LocationHeadingObject): number {
   const t = h.trueHeading;
   const m = h.magHeading;
+  const acc = h.accuracy;
+  const tOk = typeof t === "number" && Number.isFinite(t) && t >= 0;
+  const mOk = typeof m === "number" && Number.isFinite(m) && m >= 0;
+
   /**
-   * Android-та trueHeading кей құрылғыларда сенімсіз/тұрақсыз келеді.
-   * Сол үшін iOS + жақсы калибровкада ғана trueHeading аламыз, әйтпесе magHeading.
+   * magHeading — магниттік солтүстік; bearingToKaaba — географиялық азимут.
+   * Егер тек mag қолдансақ, Қазақстанда әдетте бірнеше градус–ондаған градусқа дейін ауытқу болады.
+   * iOS: дәлдік жақсы болғанда trueHeading; Android: trueHeading >= 0 болса қолданамыз (жергілікті API).
    */
-  const useTrue =
-    Platform.OS === "ios" &&
-    typeof t === "number" &&
-    t >= 0 &&
-    typeof h.accuracy === "number" &&
-    h.accuracy >= 2;
-  const v = useTrue ? t : m;
+  let useTrue = false;
+  if (tOk) {
+    if (Platform.OS === "ios") {
+      useTrue = typeof acc === "number" && acc >= 2 && acc < 120;
+    } else {
+      /** Android: trueHeading берілсе географиялық солтүстік — құбыламен сәйкес. */
+      useTrue = true;
+    }
+  }
+  const v = useTrue ? t : mOk ? m : 0;
   if (!Number.isFinite(v)) {
     return 0;
   }
@@ -192,8 +200,12 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         requiredAccuracy: 8_000,
       });
       if (last) {
-        apply(last.coords.latitude, last.coords.longitude, "gps");
-        return;
+        const la = last.coords.accuracy;
+        /** 8 км «соңғы орын» құбыла үшін тым нашар — қате бағыт береді. */
+        if (la == null || la <= 2_500) {
+          apply(last.coords.latitude, last.coords.longitude, "gps");
+          return;
+        }
       }
     } catch {
       /* next */

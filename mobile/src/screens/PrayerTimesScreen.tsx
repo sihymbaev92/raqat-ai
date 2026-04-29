@@ -22,6 +22,11 @@ import {
   setNotifEnabled,
   getIftarEnabled,
   setIftarEnabled,
+  getPrayerSourceMode,
+  setPrayerSourceMode,
+  getPrayerMosqueShiftMin,
+  setPrayerMosqueShiftMin,
+  type PrayerSourceMode,
 } from "../storage/prefs";
 import { savePrayerCache } from "../storage/prayerCache";
 import {
@@ -55,27 +60,60 @@ export function PrayerTimesScreen() {
   > | null>(null);
   const [notif, setNotif] = useState(true);
   const [iftar, setIftar] = useState(false);
+  const [sourceMode, setSourceMode] = useState<PrayerSourceMode>("calc");
+  const [mosqueShiftMin, setMosqueShiftMin] = useState(0);
+
+  const shiftTime = useCallback((hhmm: string, shiftMin: number): string => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec((hhmm || "").trim());
+    if (!m) return hhmm;
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return hhmm;
+    let total = hh * 60 + mm + shiftMin;
+    while (total < 0) total += 24 * 60;
+    total %= 24 * 60;
+    const nh = String(Math.floor(total / 60)).padStart(2, "0");
+    const nm = String(total % 60).padStart(2, "0");
+    return `${nh}:${nm}`;
+  }, []);
+
+  const applyMosqueShift = useCallback(
+    (data: NonNullable<Awaited<ReturnType<typeof fetchPrayerTimesByCity>>>) => {
+      if (sourceMode !== "mosque" || data.error || mosqueShiftMin === 0) return data;
+      return {
+        ...data,
+        fajr: shiftTime(data.fajr, mosqueShiftMin),
+        sunrise: shiftTime(data.sunrise, mosqueShiftMin),
+        dhuhr: shiftTime(data.dhuhr, mosqueShiftMin),
+        asr: shiftTime(data.asr, mosqueShiftMin),
+        maghrib: shiftTime(data.maghrib, mosqueShiftMin),
+        isha: shiftTime(data.isha, mosqueShiftMin),
+      };
+    },
+    [mosqueShiftMin, shiftTime, sourceMode]
+  );
 
   const fetchAndSave = useCallback(
     async (c: string, co: string) => {
       setLoading(true);
       const data = await fetchPrayerTimesByCity(c, co, 3);
-      setResult(data);
+      const out = applyMosqueShift(data);
+      setResult(out);
       setCity(c);
       setCountry(co);
-      if (!data.error) {
+      if (!out.error) {
         await setSelectedCity(c, co);
         await addSavedCity(c, co);
-        await savePrayerCache(data);
+        await savePrayerCache(out);
         const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
-        await reschedulePrayerNotifications(data, {
+        await reschedulePrayerNotifications(out, {
           enabled: en,
           iftarExtra: ift,
         });
       }
       setLoading(false);
     },
-    []
+    [applyMosqueShift]
   );
 
   useFocusEffect(
@@ -85,11 +123,15 @@ export function PrayerTimesScreen() {
         const prefs = await getSelectedCity();
         const n = await getNotifEnabled();
         const i = await getIftarEnabled();
+        const mode = await getPrayerSourceMode();
+        const shift = await getPrayerMosqueShiftMin();
         if (cancelled) return;
         setCity(prefs.city);
         setCountry(prefs.country);
         setNotif(n);
         setIftar(i);
+        setSourceMode(mode);
+        setMosqueShiftMin(shift);
         await fetchAndSave(prefs.city, prefs.country);
       })();
       return () => {
@@ -128,11 +170,70 @@ export function PrayerTimesScreen() {
     }
   };
 
+  const onSourceMode = async (mode: PrayerSourceMode) => {
+    setSourceMode(mode);
+    await setPrayerSourceMode(mode);
+    await fetchAndSave(city, country);
+  };
+
+  const onMosqueShift = async (delta: number) => {
+    const next = Math.max(-30, Math.min(30, mosqueShiftMin + delta));
+    if (next === mosqueShiftMin) return;
+    setMosqueShiftMin(next);
+    await setPrayerMosqueShiftMin(next);
+    await fetchAndSave(city, country);
+  };
+
   const styles = makeStyles(colors);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.hint}>{kk.prayer.hint}</Text>
+
+      <Text style={styles.label}>{kk.prayer.sourceMode}</Text>
+      <View style={styles.chips}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.chip,
+            sourceMode === "calc" && styles.chipActive,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={() => void onSourceMode("calc")}
+        >
+          <Text style={[styles.chipTxt, sourceMode === "calc" && styles.chipTxtActive]}>
+            {kk.prayer.sourceCalc}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.chip,
+            sourceMode === "mosque" && styles.chipActive,
+            pressed && { opacity: 0.85 },
+          ]}
+          onPress={() => void onSourceMode("mosque")}
+        >
+          <Text style={[styles.chipTxt, sourceMode === "mosque" && styles.chipTxtActive]}>
+            {kk.prayer.sourceMosque}
+          </Text>
+        </Pressable>
+      </View>
+      {sourceMode === "mosque" ? (
+        <View style={styles.shiftCard}>
+          <Text style={styles.rowTxt}>{kk.prayer.mosqueShiftLabel(mosqueShiftMin)}</Text>
+          <View style={styles.shiftBtns}>
+            <Pressable style={styles.shiftBtn} onPress={() => void onMosqueShift(-1)}>
+              <Text style={styles.shiftBtnTxt}>-1</Text>
+            </Pressable>
+            <Pressable style={styles.shiftBtn} onPress={() => void onMosqueShift(1)}>
+              <Text style={styles.shiftBtnTxt}>+1</Text>
+            </Pressable>
+            <Pressable style={styles.shiftBtn} onPress={() => void onMosqueShift(5)}>
+              <Text style={styles.shiftBtnTxt}>+5</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.subHint}>{kk.prayer.mosqueShiftHint}</Text>
+        </View>
+      ) : null}
 
       <Text style={styles.label}>{kk.prayer.city}</Text>
       <TextInput
@@ -239,6 +340,8 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 8,
     },
     chipTxt: { color: colors.text, fontSize: 13 },
+    chipActive: { borderColor: colors.accent, backgroundColor: `${colors.accent}1a` },
+    chipTxtActive: { color: colors.accent, fontWeight: "700" },
     btn: {
       backgroundColor: colors.accent,
       paddingVertical: 14,
@@ -260,6 +363,24 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     rowTxt: { color: colors.text, fontSize: 14, flex: 1, paddingRight: 12 },
+    shiftCard: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 14,
+    },
+    shiftBtns: { flexDirection: "row", gap: 8, marginTop: 8, marginBottom: 8 },
+    shiftBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    shiftBtnTxt: { color: colors.text, fontWeight: "700" },
     err: { color: colors.error, marginBottom: 12 },
     table: {
       marginBottom: 8,

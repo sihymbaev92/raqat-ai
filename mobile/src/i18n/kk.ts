@@ -222,6 +222,15 @@ export const kk = {
     imageTapHint: "Суретті басыңыз — толық экранда ірі қарауға болады.",
     closeImageLightbox: "Жабу",
     openImageA11y: "Суретті ірі қарау",
+    coachTitle: "Namaz Coach (қадамдық оқу)",
+    coachIntro:
+      "Бастаушы режим: ханафи үлгісінде ретті қадаммен жүресіз. Әр «Келесі» басқанда қысқа вибро белгі беріледі.",
+    coachStart: "Coach бастау",
+    coachStop: "Coach тоқтату",
+    coachPrev: "Артқа",
+    coachNext: "Келесі",
+    coachDone: "Аяқтау",
+    coachStepLabel: (i: number, total: number) => `Қадам ${i}/${total}`,
   },
   tajweedGuide: {
     shortTitle: "Тәжуид",
@@ -265,6 +274,15 @@ export const kk = {
       `Тура аймақта (±${maxDeg}°). Магнит пен метал әсер етуі мүмкін — қажет болса телефонды «секіру» қимылымен калибрлеңіз.`,
     offsetPreciseCw: (deg: number) => `≈${deg}° қалды — сағат тілі бойынша бұраңыз.`,
     offsetPreciseCcw: (deg: number) => `≈${deg}° қалды — сағат тіліне қарсы бұраңыз.`,
+    calibrationTitle: "Компас калибрлеу шебері",
+    calibrationBody:
+      "20 секунд бойы телефонды ауада «8» пішінінде баяу айналдырыңыз. Металлдан алыс ұстаңыз.",
+    calibrationRunning: (sec: number) => `Калибрлеу жүріп жатыр… ${sec} с`,
+    calibrationStart: "Калибрлеуді бастау",
+    calibrationStop: "Тоқтату",
+    calibrationHigh: "Дәлдік: жоғары",
+    calibrationMedium: "Дәлдік: орта",
+    calibrationLow: "Дәлдік: төмен",
     magnetHint: "Дәлдікке металл заттар мен қапсырма әсер етуі мүмкін.",
   },
   seerah: {
@@ -327,6 +345,8 @@ export const kk = {
     thinking: "Жауап дайындалуда…",
     detailPreparing: "Толығырақ дайындалып жатыр…",
     detailSection: "Толығырақ",
+    detailShow: "Дәлелді ашу",
+    detailHide: "Дәлелді жасыру",
     detailUnavailable:
       "Толық талдау жүктелмеді — жоғарыдағы қысқа жауапты пайдаланыңыз немесе қайта жіберіңіз.",
     error: "Сұрау орындалмады",
@@ -446,6 +466,12 @@ export const kk = {
   prayer: {
     title: "Намаз уақыттары",
     hint: "Қала мен елді таңдаңыз немесе енгізіңіз, содан жаңартыңыз.",
+    sourceMode: "Уақыт көзі",
+    sourceCalc: "Есеп (API)",
+    sourceMosque: "Мешітке теңестірілген",
+    mosqueShiftLabel: (min: number) => `Мешіт ығысуы: ${min >= 0 ? `+${min}` : min} мин`,
+    mosqueShiftHint:
+      "Жергілікті мешіт кестесіне сәйкестеу үшін минут ығысуын өзгертіңіз. Бұл түзету барлық намаз уақытына қолданылады.",
     city: "Қала",
     country: "Ел",
     refresh: "Жаңарту",
@@ -545,6 +571,13 @@ export const kk = {
     /** Тізім әріп бойынша бөліктерге бөлінеді */
     letterIndexHint:
       "Тізім қазақша мағына (немесе араб түпнұсқа) мәтінінің алғашқы әрпі бойынша бөліктерге бөлінеді. Санмен басталса — «0–9» бөлімі.",
+    reliabilityTitle: "Сенімділік меткасы",
+    sourceBadge: (v: string) => `Дерек: ${v}`,
+    gradeBadge: (v: string) => `Дәреже: ${v}`,
+    gradeUnknown: "көрсетілмеген",
+    gradeDefaultSahih: "сахих жинақ (Бұхари/Муслим)",
+    translationBadgeReady: "Аударма: KK бар",
+    translationBadgeMissing: "Аударма: KK жоқ",
   },
   settings: {
     title: "Баптаулар",
@@ -609,6 +642,19 @@ export const kk = {
       `Дайын: Құран ${q} аят жаңартылды, хадис ${h} жазба.`,
     contentSyncUnchanged: "Өзгеріс жоқ (304) немесе жаңарту қажет емес.",
     contentSyncError: "Синхрон сәтсіз — API немесе желі.",
+    offlineQualityTitle: "Офлайн сапа орталығы",
+    offlineQualityHint:
+      "Құрылғыдағы контент күйі: пакет толықтығы, соңғы sync белгісі және API қолжетімділігі.",
+    offlineQualityApiStatus: "API күйі",
+    offlineQualityApiOk: "қосулы",
+    offlineQualityApiDown: "жоқ/өшік",
+    offlineQualityHadithRows: "Хадис (жол саны)",
+    offlineQualityQuranRows: "Құран (сүре саны)",
+    offlineQualitySyncState: (since: string | null, etag: string | null) =>
+      `Sync: since=${since ?? "—"} · etag=${etag ? `${etag.slice(0, 14)}…` : "—"}`,
+    offlineQualitySavedAt: (quranSavedAt: string | null, checkedAt: string | null) =>
+      `Құран кэші: ${quranSavedAt ?? "—"} · тексерілгені: ${checkedAt ?? "—"}`,
+    offlineQualityRefresh: "Орталықты жаңарту",
     /** Ең астындағы «жобаға үлес» блогы */
     supportProjectTitle: "Жобаға үлес",
     supportProjectBody:

@@ -27,7 +27,21 @@ from services.hadith_kk_quality import (  # noqa: E402
 )
 
 
+def _stdio_utf8() -> None:
+    """Windows cp1251 консолында қазақша print үшін UTF-8 (қате болмаса өткіземіз)."""
+    if sys.platform != "win32":
+        return
+    for stream in (sys.stdout, sys.stderr):
+        reconf = getattr(stream, "reconfigure", None)
+        if callable(reconf):
+            try:
+                reconf(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
 def main() -> int:
+    _stdio_utf8()
     p = argparse.ArgumentParser(description="Hadith textKk sanity check on JSON bundle")
     p.add_argument(
         "--json",

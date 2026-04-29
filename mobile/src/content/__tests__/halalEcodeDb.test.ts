@@ -11,7 +11,7 @@ describe("findEcodesInText", () => {
   });
 
   it("базада жоқ E-кодтарды өткізіп жібереді", () => {
-    const entries = findEcodesInText("Құрамы: E999, E1200.");
+    const entries = findEcodesInText("Құрамы: E7777, E1200.");
     expect(entries).toHaveLength(0);
   });
 

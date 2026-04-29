@@ -207,6 +207,19 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     coll: { color: colors.accent, fontSize: 12, fontWeight: "700" },
     ref: { color: colors.muted, fontSize: 12, marginTop: 4 },
+    badgesRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 8 },
+    badge: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: "700",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: colors.bg,
+      overflow: "hidden",
+    },
     preview: { color: colors.scriptureMeaningKk, fontSize: 14, marginTop: 8, lineHeight: 20 },
     previewAr: {
       fontSize: 12,
@@ -323,6 +336,9 @@ const HadithRow = memo(function HadithRow({
   styles: HadithStyles;
   onOpen: (id: string) => void;
 }) {
+  const gradeRaw = (item.grade || "").trim();
+  const gradeText = gradeRaw || kk.hadith.gradeDefaultSahih;
+  const hasKk = Boolean(item.textKk?.trim());
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
@@ -333,6 +349,11 @@ const HadithRow = memo(function HadithRow({
         №{item.reference}
         {item.bookTitleKk?.trim() ? ` · ${item.bookTitleKk}` : ""}
       </Text>
+      <View style={styles.badgesRow}>
+        <Text style={styles.badge}>{kk.hadith.sourceBadge(item.collectionNameKk || "—")}</Text>
+        <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
+        <Text style={styles.badge}>{hasKk ? kk.hadith.translationBadgeReady : kk.hadith.translationBadgeMissing}</Text>
+      </View>
       <Text
         style={item.textKk?.trim() ? styles.preview : [styles.preview, styles.previewAr]}
         numberOfLines={3}

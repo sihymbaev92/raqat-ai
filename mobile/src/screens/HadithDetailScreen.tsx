@@ -43,6 +43,8 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   const h = corpus ? findHadith(corpus, hadithId) : undefined;
   const narratorKk = h?.narratorKk?.trim() ?? "";
+  const gradeRaw = (h?.grade || "").trim();
+  const gradeText = gradeRaw || kk.hadith.gradeDefaultSahih;
 
   useEffect(() => {
     if (!h) return;
@@ -118,6 +120,12 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       <Text style={styles.ref}>
         {kk.hadith.refLabel} №{h.reference}
       </Text>
+      <Text style={styles.section}>{kk.hadith.reliabilityTitle}</Text>
+      <View style={styles.badgesRow}>
+        <Text style={styles.badge}>{kk.hadith.sourceBadge(h.collectionNameKk || "—")}</Text>
+        <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText || kk.hadith.gradeUnknown)}</Text>
+        <Text style={styles.badge}>{textKk ? kk.hadith.translationBadgeReady : kk.hadith.translationBadgeMissing}</Text>
+      </View>
 
       <Text style={styles.section}>{kk.hadith.arabic}</Text>
       <Text style={styles.arabic}>{arabic || h.arabic}</Text>
@@ -180,6 +188,19 @@ function makeStyles(colors: ThemeColors) {
     meta: { color: colors.accent, fontWeight: "700", fontSize: 14 },
     book: { color: colors.muted, fontSize: 13, marginTop: 4 },
     ref: { color: colors.muted, fontSize: 12, marginBottom: 8 },
+    badgesRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginBottom: 8 },
+    badge: {
+      color: colors.accent,
+      fontSize: 11,
+      fontWeight: "700",
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      backgroundColor: colors.card,
+      overflow: "hidden",
+    },
     section: {
       color: colors.accent,
       fontSize: 12,

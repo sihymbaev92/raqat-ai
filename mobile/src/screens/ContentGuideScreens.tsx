@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, type ImageSourcePropType } from "react-native";
 import * as Speech from "expo-speech";
+import * as Haptics from "expo-haptics";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -99,10 +100,88 @@ export function NamazGuideScreen() {
   const namazRest = NAMAZ_GUIDE_SECTIONS.slice(2);
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
   const toggleAcc = (key: string) => setAccOpen((o) => ({ ...o, [key]: !o[key] }));
+  const coachSteps = [
+    { title: "Ниет + тәкбір", detail: "Намазға ниет етіп, «Аллаһу әкбар» деп қиямға тұру." },
+    { title: "Қиям", detail: "Субханака, Фатиха және қысқа сүре оқу." },
+    { title: "Рукуғ", detail: "Белді иіп, «Субхана раббиял-азыйм» (кемі 3 рет)." },
+    { title: "Қаумә", detail: "Тік тұрып: «Сами'аллаһу лиман хамидаһ», «Раббана лакәл-хамд»." },
+    { title: "Сәжде 1", detail: "«Субхана раббиял-ағлә» (кемі 3 рет)." },
+    { title: "Екі сәжде арасы", detail: "Отырыста «Раббиғфир ли» дұғасы." },
+    { title: "Сәжде 2", detail: "Екінші сәжде — сол зікірмен." },
+    { title: "Келесі рәкәғат", detail: "Тұрып келесі рәкәғатқа өту; соңғысында тәшәһһудқа отыру." },
+    { title: "Соңғы отырыс", detail: "Әттахият, салауат, дұға." },
+    { title: "Сәлем", detail: "Оңға және солға: «Әссәләму аләйкум уә рахматуллаһ»." },
+  ] as const;
+  const [coachActive, setCoachActive] = useState(false);
+  const [coachIdx, setCoachIdx] = useState(0);
+
+  const stepCoach = useCallback(
+    async (delta: number) => {
+      const next = Math.max(0, Math.min(coachSteps.length - 1, coachIdx + delta));
+      if (next === coachIdx) return;
+      setCoachIdx(next);
+      try {
+        await Haptics.selectionAsync();
+      } catch {
+        // вибро қолжетімсіз болса, үнсіз өткіземіз
+      }
+    },
+    [coachIdx, coachSteps.length]
+  );
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.intro}>{kk.namazGuide.intro}</Text>
+      <View style={styles.coachCard}>
+        <Text style={styles.coachTitle}>{kk.namazGuide.coachTitle}</Text>
+        <Text style={styles.coachIntro}>{kk.namazGuide.coachIntro}</Text>
+        {!coachActive ? (
+          <Pressable
+            onPress={() => {
+              setCoachIdx(0);
+              setCoachActive(true);
+            }}
+            style={({ pressed }) => [styles.coachPrimaryBtn, pressed && { opacity: 0.9 }]}
+          >
+            <Text style={styles.coachPrimaryBtnTxt}>{kk.namazGuide.coachStart}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.coachFlow}>
+            <Text style={styles.coachStepLabel}>{kk.namazGuide.coachStepLabel(coachIdx + 1, coachSteps.length)}</Text>
+            <Text style={styles.coachStepTitle}>{coachSteps[coachIdx].title}</Text>
+            <Text style={styles.coachStepDetail}>{coachSteps[coachIdx].detail}</Text>
+            <View style={styles.coachBtnsRow}>
+              <Pressable style={styles.coachGhostBtn} onPress={() => void stepCoach(-1)}>
+                <Text style={styles.coachGhostBtnTxt}>{kk.namazGuide.coachPrev}</Text>
+              </Pressable>
+              {coachIdx < coachSteps.length - 1 ? (
+                <Pressable style={styles.coachPrimaryBtn} onPress={() => void stepCoach(1)}>
+                  <Text style={styles.coachPrimaryBtnTxt}>{kk.namazGuide.coachNext}</Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  style={styles.coachPrimaryBtn}
+                  onPress={() => {
+                    setCoachActive(false);
+                    setCoachIdx(0);
+                  }}
+                >
+                  <Text style={styles.coachPrimaryBtnTxt}>{kk.namazGuide.coachDone}</Text>
+                </Pressable>
+              )}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.coachStopBtn, pressed && { opacity: 0.88 }]}
+              onPress={() => {
+                setCoachActive(false);
+                setCoachIdx(0);
+              }}
+            >
+              <Text style={styles.coachStopBtnTxt}>{kk.namazGuide.coachStop}</Text>
+            </Pressable>
+          </View>
+        )}
+      </View>
 
       <Pressable
         onPress={() => setWuduOpen((o) => !o)}
@@ -354,6 +433,45 @@ function makeStyles(colors: ThemeColors) {
     root: { flex: 1, backgroundColor: colors.bg },
     content: { padding: 18, paddingBottom: 40 },
     intro: { color: colors.muted, marginBottom: 16, lineHeight: 22, fontSize: 14 },
+    coachCard: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    coachTitle: { color: colors.accent, fontWeight: "900", fontSize: 16, marginBottom: 6 },
+    coachIntro: { color: colors.muted, fontSize: 13, lineHeight: 20, marginBottom: 10 },
+    coachFlow: { gap: 8 },
+    coachStepLabel: { color: colors.muted, fontSize: 12, fontWeight: "700" },
+    coachStepTitle: { color: colors.text, fontSize: 16, fontWeight: "800" },
+    coachStepDetail: { color: colors.text, fontSize: 14, lineHeight: 21 },
+    coachBtnsRow: { flexDirection: "row", gap: 8, marginTop: 2 },
+    coachPrimaryBtn: {
+      flex: 1,
+      backgroundColor: colors.accent,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    coachPrimaryBtnTxt: { color: "#fff", fontSize: 13, fontWeight: "800" },
+    coachGhostBtn: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    coachGhostBtnTxt: { color: colors.text, fontSize: 13, fontWeight: "700" },
+    coachStopBtn: { alignSelf: "flex-start", paddingVertical: 4, paddingHorizontal: 2 },
+    coachStopBtnTxt: { color: colors.muted, fontSize: 12, textDecorationLine: "underline" },
     block: {
       backgroundColor: colors.card,
       borderRadius: 14,

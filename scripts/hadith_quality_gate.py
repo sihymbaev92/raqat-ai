@@ -3,6 +3,7 @@
 """Single entrypoint for hadith KK quality gate."""
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -13,7 +14,8 @@ PY = ROOT / ".venv" / "Scripts" / "python.exe"
 
 def run_step(cmd: list[str]) -> int:
     print(">", " ".join(cmd))
-    r = subprocess.run(cmd, cwd=str(ROOT))
+    env = {**os.environ, "PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"}
+    r = subprocess.run(cmd, cwd=str(ROOT), env=env)
     return int(r.returncode or 0)
 
 

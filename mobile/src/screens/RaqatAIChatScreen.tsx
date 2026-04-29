@@ -49,6 +49,7 @@ export type ChatMsg = {
   /** Толық фаза сәтсіз — тек қысқа жауап қалды */
   detailLoadError?: boolean;
   retryPrompt?: string;
+  detailExpanded?: boolean;
 };
 
 function newId(): string {
@@ -483,7 +484,7 @@ export function RaqatAIChatScreen() {
         setMessages((m) =>
           m.map((x) =>
             x.id === assistantId
-              ? { ...x, detailText: fullText, detailLoading: false }
+              ? { ...x, detailText: fullText, detailLoading: false, detailExpanded: false }
               : x
           )
         );
@@ -556,7 +557,15 @@ export function RaqatAIChatScreen() {
         if (fullRes.ok !== false && (fullRes.status === undefined || fullRes.status === 200) && fullText) {
           setMessages((m) =>
             m.map((x) =>
-              x.id === item.id ? { ...x, detailLoading: false, detailText: fullText, detailLoadError: false } : x
+              x.id === item.id
+                ? {
+                    ...x,
+                    detailLoading: false,
+                    detailText: normalizeAiNarrative(fullText),
+                    detailLoadError: false,
+                    detailExpanded: true,
+                  }
+                : x
             )
           );
           return;
@@ -572,6 +581,14 @@ export function RaqatAIChatScreen() {
     },
     [base, loading]
   );
+
+  const toggleDetail = useCallback((itemId: string) => {
+    setMessages((m) =>
+      m.map((x) =>
+        x.id === itemId ? { ...x, detailExpanded: !x.detailExpanded } : x
+      )
+    );
+  }, []);
 
   const renderItem: ListRenderItem<ChatMsg> = ({ item }) => (
     <View
@@ -604,10 +621,21 @@ export function RaqatAIChatScreen() {
         ) : null}
         {item.role === "assistant" && item.detailText ? (
           <>
-            <Text style={styles.detailHead}>{kk.aiChat.detailSection}</Text>
-            <Text selectable style={styles.bubbleText}>
-              {item.detailText}
-            </Text>
+            <Pressable
+              style={({ pressed }) => [styles.detailToggle, pressed && { opacity: 0.9 }]}
+              onPress={() => toggleDetail(item.id)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: Boolean(item.detailExpanded) }}
+            >
+              <Text style={styles.detailHead}>
+                {item.detailExpanded ? kk.aiChat.detailHide : kk.aiChat.detailShow}
+              </Text>
+            </Pressable>
+            {item.detailExpanded ? (
+              <Text selectable style={styles.bubbleText}>
+                {item.detailText}
+              </Text>
+            ) : null}
           </>
         ) : null}
         {item.role === "assistant" && item.detailLoadError ? (
@@ -826,12 +854,21 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 8,
     },
     detailLoadingTxt: { color: colors.muted, fontSize: 13 },
+    detailToggle: {
+      alignSelf: "flex-start",
+      marginTop: 10,
+      marginBottom: 6,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 10,
+      backgroundColor: colors.bg,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+    },
     detailHead: {
       color: colors.accent,
       fontWeight: "800",
       fontSize: 13,
-      marginTop: 10,
-      marginBottom: 6,
     },
     detailMuted: {
       color: colors.muted,

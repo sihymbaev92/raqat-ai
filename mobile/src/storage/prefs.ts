@@ -7,6 +7,8 @@ const K = {
   savedCities: "raqat_saved_cities",
   notifEnabled: "raqat_notif_enabled",
   iftarEnabled: "raqat_iftar_enabled",
+  prayerSourceMode: "raqat_prayer_source_mode",
+  prayerMosqueShiftMin: "raqat_prayer_mosque_shift_min",
   tasbihDhikrId: "raqat_tasbih_dhikr_id",
   tasbihGoalMode: "raqat_tasbih_goal_mode",
   tasbihCount: "raqat_tasbih_count",
@@ -15,6 +17,7 @@ const K = {
 } as const;
 
 export type TasbihGoalMode = "33" | "99" | "default";
+export type PrayerSourceMode = "calc" | "mosque";
 
 export type SavedCity = { city: string; country: string };
 
@@ -83,6 +86,27 @@ export async function getIftarEnabled(): Promise<boolean> {
 
 export async function setIftarEnabled(on: boolean): Promise<void> {
   await AsyncStorage.setItem(K.iftarEnabled, on ? "1" : "0");
+}
+
+export async function getPrayerSourceMode(): Promise<PrayerSourceMode> {
+  const v = await AsyncStorage.getItem(K.prayerSourceMode);
+  return v === "mosque" ? "mosque" : "calc";
+}
+
+export async function setPrayerSourceMode(mode: PrayerSourceMode): Promise<void> {
+  await AsyncStorage.setItem(K.prayerSourceMode, mode);
+}
+
+export async function getPrayerMosqueShiftMin(): Promise<number> {
+  const raw = await AsyncStorage.getItem(K.prayerMosqueShiftMin);
+  const n = raw == null ? 0 : parseInt(raw, 10);
+  if (!Number.isFinite(n)) return 0;
+  return Math.max(-30, Math.min(30, n));
+}
+
+export async function setPrayerMosqueShiftMin(shiftMin: number): Promise<void> {
+  const n = Math.max(-30, Math.min(30, Math.trunc(shiftMin)));
+  await AsyncStorage.setItem(K.prayerMosqueShiftMin, String(n));
 }
 
 export async function getTasbihPrefs(): Promise<{
