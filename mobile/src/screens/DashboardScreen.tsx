@@ -37,6 +37,7 @@ import { DashboardPrayerWidget } from "../components/DashboardPrayerWidget";
 import { useQiblaStable } from "../context/QiblaSensorContext";
 import { useQiblaMotion } from "../context/QiblaSensorContext";
 import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
+import { qiblaAlignHint } from "../lib/qiblaHints";
 /**
  * Тор + бүйір карточкалары: терезе еніне қарай максималды растр (тайл мен қақпа арасында шықпау).
  * Тор ені ≈ 31% − padding; қақпа бағанасы = сол растр ені.
@@ -163,7 +164,7 @@ function HomeHeaderCenter({
   const { bearing, refreshBearing } = useQiblaStable();
   const { rotateDeg } = useQiblaMotion();
   const bearingReady = bearing != null;
-  const qiblaAligned = bearingReady && Math.abs(rotateDeg) <= 12;
+  const qiblaAligned = bearingReady && qiblaAlignHint(rotateDeg, bearing) === "aligned";
 
   return (
     <Pressable

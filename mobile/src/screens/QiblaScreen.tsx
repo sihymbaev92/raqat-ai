@@ -18,7 +18,7 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { menuIconAssets } from "../theme/menuIconAssets";
 import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
-import { qiblaAlignHint, type QiblaAlignHint } from "../lib/qiblaHints";
+import { qiblaAlignHint, QIBLA_ALIGN_THRESHOLD_DEG, type QiblaAlignHint } from "../lib/qiblaHints";
 
 const { width } = Dimensions.get("window");
 
@@ -135,7 +135,7 @@ export function QiblaScreen() {
           size={dialSize}
           rotateDeg={rotateDeg}
           aligned={alignHint === "aligned" && bearing != null}
-          showDialRing={false}
+          showDialRing
         />
         <Image
           source={menuIconAssets.headerQibla}
@@ -158,6 +158,16 @@ export function QiblaScreen() {
       >
         {mainHint}
       </Text>
+
+      {bearing != null ? (
+        <Text style={styles.offsetLine} accessibilityLiveRegion="polite">
+          {alignHint === "aligned"
+            ? kk.qibla.offsetInZone(QIBLA_ALIGN_THRESHOLD_DEG)
+            : alignHint === "turn_cw"
+              ? kk.qibla.offsetPreciseCw(Math.max(1, Math.round(Math.abs(rotateDeg))))
+              : kk.qibla.offsetPreciseCcw(Math.max(1, Math.round(Math.abs(rotateDeg))))}
+        </Text>
+      ) : null}
 
       <View style={styles.modeRow}>
         <Pressable
@@ -221,8 +231,18 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 16,
       fontWeight: "700",
       lineHeight: 24,
-      marginBottom: 16,
+      marginBottom: 8,
       textAlign: "center",
+    },
+    offsetLine: {
+      color: colors.muted,
+      fontSize: 15,
+      fontWeight: "600",
+      lineHeight: 22,
+      marginBottom: 14,
+      textAlign: "center",
+      letterSpacing: 0.2,
+      ...(Platform.OS === "ios" ? ({ fontVariant: ["tabular-nums"] } as const) : {}),
     },
     errTitle: { color: colors.text, fontWeight: "700", fontSize: 18, marginBottom: 8 },
     err: { color: colors.muted, lineHeight: 22, marginBottom: 16 },
