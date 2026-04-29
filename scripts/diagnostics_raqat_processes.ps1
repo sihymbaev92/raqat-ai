@@ -10,34 +10,53 @@ function Get-PythonCmdlines {
 
 Write-Host "== RAQAT Python processes =="
 
-$uv = @(Get-PythonCmdlines | Where-Object { $_.CommandLine -like "*uvicorn*" })
-$bot = @(Get-PythonCmdlines | Where-Object { $_.CommandLine -like "*bot_main.py*" })
+$allPy = @(Get-PythonCmdlines)
+$uv = @($allPy | Where-Object { $_.CommandLine -like "*uvicorn*" })
+$bot = @($allPy | Where-Object { $_.CommandLine -like "*bot_main.py*" })
+
+function Count-TopLevelProcesses {
+    param(
+        [array]$procs
+    )
+    if ($procs.Count -eq 0) { return 0 }
+    $byId = @{}
+    foreach ($p in $procs) { $byId[[uint32]$p.ProcessId] = $p }
+    $n = 0
+    foreach ($p in $procs) {
+        $ppid = [uint32]$p.ParentProcessId
+        if ($byId.ContainsKey($ppid)) { continue } # child of another listed python
+        $n++
+    }
+    return $n
+}
 
 if ($uv.Count -eq 0) {
     Write-Host "uvicorn: none"
 } else {
-    Write-Host "uvicorn: $($uv.Count) process(es)"
+    $uvTop = Count-TopLevelProcesses -procs $uv
+    Write-Host "uvicorn: $uvTop top-level, $($uv.Count) total (Windows may show a venv + system-python child)"
     foreach ($p in $uv) {
         $c = $p.CommandLine
         if ($c.Length -gt 120) { $c = $c.Substring(0, 120) + "..." }
-        Write-Host "  PID $($p.ProcessId): $c"
+        Write-Host "  PID $($p.ProcessId) (parent $($p.ParentProcessId)) : $c"
     }
-    if ($uv.Count -gt 1) {
-        Write-Warning "Only one uvicorn should listen on 8787. Stop extras in Task Manager, then re-run restart_raqat_stack.ps1"
+    if ($uvTop -gt 1) {
+        Write-Warning "Multiple independent uvicorn starters detected. Only one should bind :8787. Stop extras, then re-run restart_raqat_stack.ps1"
     }
 }
 
 if ($bot.Count -eq 0) {
     Write-Host "bot_main.py: none"
 } else {
-    Write-Host "bot_main.py: $($bot.Count) process(es)"
+    $botTop = Count-TopLevelProcesses -procs $bot
+    Write-Host "bot_main.py: $botTop top-level, $($bot.Count) total (child python.exe is often normal on Windows)"
     foreach ($p in $bot) {
         $c = $p.CommandLine
         if ($c.Length -gt 120) { $c = $c.Substring(0, 120) + "..." }
-        Write-Host "  PID $($p.ProcessId): $c"
+        Write-Host "  PID $($p.ProcessId) (parent $($p.ParentProcessId)) : $c"
     }
-    if ($bot.Count -gt 1) {
-        Write-Warning "One BOT_TOKEN => one polling bot. Stop VPS or local duplicate. On Windows you may see 2 PIDs (parent/child); if both are bot_main, stop one and test."
+    if ($botTop -gt 1) {
+        Write-Warning "Multiple independent bot starters detected. One BOT_TOKEN => one poller. Stop the extra bot (VPS/second shell)."
     }
 }
 

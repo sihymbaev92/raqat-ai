@@ -1,5 +1,5 @@
 /**
- * Зікірлер тізімін тарауларға бөлу (199 нұсқа).
+ * Зікірлер тізімін тарауларға бөлу (220 нұсқа).
  * Әр тараудағы рет нөмірлері dhikr-list.json id-ларына сәйкес.
  */
 
@@ -14,7 +14,7 @@ export type DhikrChapterMeta = {
 const r = (from: number, to: number) =>
   Array.from({ length: to - from + 1 }, (_, i) => from + i);
 
-/** Барлық id 1..199 дәл бір рет қамтылады. */
+/** Барлық id 1..220 дәл бір рет қамтылады. */
 export const DHIKR_CHAPTERS: DhikrChapterMeta[] = [
   {
     titleKk: "1. Намаздан кейін",
@@ -65,5 +65,10 @@ export const DHIKR_CHAPTERS: DhikrChapterMeta[] = [
     titleKk: "10. Қосымша зікірлер II",
     subtitleKk: "Қосымша жинақ: келесі 50 зікір.",
     ids: r(150, 199),
+  },
+  {
+    titleKk: "11. Қосымша зікірлер III",
+    subtitleKk: "Жаңа толықтыру: жүрек, тәубе, хидаят және дұға зікірлері.",
+    ids: r(200, 220),
   },
 ];

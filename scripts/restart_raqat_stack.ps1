@@ -62,7 +62,10 @@ Start-Sleep -Seconds 2
 
 $sysPython = (Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1)
 $needsPg = (($env:DATABASE_URL + "").Trim().ToLower().StartsWith("postgres"))
-# PostgreSQL: platform_api\.venv бірінші (API + бот бір venv — psycopg + aiogram); әйтпесе түбір .venv, содан жүйелік python.
+# PostgreSQL: platform_api\.venv — API/бот бір venv (psycopg + aiogram). Кей жүйелік python да psycopg
+# орнатқан болуы мүмкін, сонда ол «бірінші сәйкес кандидат» болып қалып, .venv-ке дейін тексермей кетуі
+# 2x uvicorn қатесіне әкеледі. Сондықтан PG кезінде: platform_api\.venv → repo .venv → тек соңында жүйелік python.
+# SQLite кезінде: repo .venv → platform_api\.venv → жүйелік python.
 $ApiPyCandidates = if ($needsPg) {
     @(
         (Join-Path $ApiDir ".venv\Scripts\python.exe"),
@@ -79,9 +82,19 @@ $ApiPyCandidates = if ($needsPg) {
 $ApiPy = $null
 foreach ($cand in $ApiPyCandidates) {
     if (-not (Test-Path $cand)) { continue }
-    if ($needsPg -and -not (Test-PythonHasPsycopg -PythonExe $cand)) { continue }
-    $ApiPy = $cand
-    break
+    if ($needsPg) {
+        # .venv кандидаттарын әрқашан алдымен бағалаймыз; psycopg жоқ болса осы веткеде
+        # жүйелік python-ға өтпейміз (бос .venv / бұзылған venv мәселесін жасырып кету).
+        $inVenv = $cand -like "*\.venv\Scripts\python.exe"
+        if ($inVenv) {
+            if (Test-PythonHasPsycopg -PythonExe $cand) { $ApiPy = $cand; break }
+            continue
+        }
+        if (Test-PythonHasPsycopg -PythonExe $cand) { $ApiPy = $cand; break }
+    } else {
+        $ApiPy = $cand
+        break
+    }
 }
 if (-not $ApiPy) {
     if ($needsPg) {
@@ -152,15 +165,28 @@ if (Test-Path $VerifyScript) {
 }
 
 function Write-RaqatProcessHints {
+    function Count-TopLevelPython {
+        param([array]$procs)
+        if ($procs.Count -le 1) { return $procs.Count }
+        $byId = @{}
+        foreach ($p in $procs) { $byId[[uint32]$p.ProcessId] = $p }
+        $n = 0
+        foreach ($p in $procs) {
+            if ($byId.ContainsKey([uint32]$p.ParentProcessId)) { continue }
+            $n++
+        }
+        return $n
+    }
+
     $uv = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
         | Where-Object { $_.CommandLine -like "*uvicorn*" })
-    if ($uv.Count -gt 1) {
-        Write-Warning "Multiple uvicorn ($($uv.Count)); only one should bind :8787. Run: .\scripts\diagnostics_raqat_processes.ps1"
+    if ((Count-TopLevelPython -procs $uv) -gt 1) {
+        Write-Warning "Multiple top-level uvicorn ($($uv.Count) total PIDs). Only one should bind :8787. Run: .\scripts\diagnostics_raqat_processes.ps1"
     }
-    $botN = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
-        | Where-Object { $_.CommandLine -like "*bot_main.py*" }).Count
-    if ($botN -gt 1) {
-        Write-Warning "Multiple bot_main.py ($botN); one BOT_TOKEN => one poller (stop VPS or local). Run: .\scripts\diagnostics_raqat_processes.ps1"
+    $bot = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
+        | Where-Object { $_.CommandLine -like "*bot_main.py*" })
+    if ((Count-TopLevelPython -procs $bot) -gt 1) {
+        Write-Warning "Multiple top-level bot_main.py ($($bot.Count) total PIDs); one BOT_TOKEN => one poller (stop VPS or local). Run: .\scripts\diagnostics_raqat_processes.ps1"
     }
 }
 

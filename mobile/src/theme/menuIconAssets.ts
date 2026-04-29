@@ -10,7 +10,7 @@ export const menuIconAssets = {
   tabTasbih: require("../../assets/menu-icons/tab-tasbih.png"),
   heroQuran: require("../../assets/menu-icons/hero-quran.png"),
   heroHadith: require("../../assets/menu-icons/hero-hadith.png"),
-  promoAi: require("../../assets/menu-icons/promo-ai.png"),
+  promoAi: require("../../assets/menu-icons/promo-ai-custom.png"),
   tileNamaz: require("../../assets/menu-icons/tile-namaz.png"),
   /** Басты бет / мазмұн хабы: қажылық тайлы (Кағба) */
   tileHajj: require("../../assets/menu-icons/tile-hajj.png"),
@@ -26,7 +26,7 @@ export const menuIconAssets = {
   /** Қауым дұғасы экраны: иллюстрация (фонсыз PNG) */
   communityDuaHero: require("../../assets/menu-icons/community-dua-hero.png"),
   /** Хедер: Құбыла (Кағба PNG) */
-  headerQibla: require("../../assets/menu-icons/header-qibla.png"),
+  headerQibla: require("../../assets/menu-icons/header-qibla-custom.png"),
   /** Хедер: «Басты» / Дұғалар·Тәспі (тәспі суреті) */
   headerHome: require("../../assets/menu-icons/header-home.png"),
 } as const;

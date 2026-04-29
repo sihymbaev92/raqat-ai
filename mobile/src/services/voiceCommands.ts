@@ -19,6 +19,8 @@ type Rule = {
   keywords: string[];
   /** Егер true болса, keywords-тың бәрі болуы керек */
   requireAll?: boolean;
+  /** Басымдық (үлкен болса — алдымен) */
+  priority?: number;
   outcome: () => VoiceCommandOutcome;
 };
 
@@ -64,6 +66,23 @@ function hasRuleMatch(t: string, tf: string, rule: Rule): boolean {
   return rule.requireAll ? checks.every(Boolean) : checks.some(Boolean);
 }
 
+function scoreRule(t: string, tf: string, rule: Rule): number {
+  const hits = rule.keywords
+    .map((k) => {
+      const nk = norm(k);
+      const fk = foldForVoice(k);
+      const matched = t.includes(nk) || tf.includes(fk);
+      return matched ? Math.max(nk.length, fk.length) : 0;
+    })
+    .filter((n) => n > 0);
+  if (!hits.length) return -1;
+  if (rule.requireAll && hits.length !== rule.keywords.length) return -1;
+  const bestLen = Math.max(...hits);
+  const hitCount = hits.length;
+  const priority = rule.priority ?? 0;
+  return bestLen * 100 + hitCount * 10 + priority;
+}
+
 const RULES: readonly Rule[] = [
   {
     id: "back",
@@ -86,8 +105,9 @@ const RULES: readonly Rule[] = [
   },
   {
     id: "prayer_times_short",
-    keywords: ["уақыт", "время", "намаз"],
+    keywords: ["намаз уақыты", "время намаза", "prayer times"],
     requireAll: false,
+    priority: -20,
     outcome: () => nav("PrayerTimes"),
   },
   {
@@ -113,12 +133,18 @@ const RULES: readonly Rule[] = [
   },
   { id: "halal", keywords: ["халал", "харам", "helal", "halal", "харам емес"], outcome: () => nav("MoreStack", { screen: "Halal" }) },
   { id: "halal_scan", keywords: ["скан", "scan", "штрихкод", "barcode", "этикетка"], outcome: () => nav("MoreStack", { screen: "Halal" }) },
-  { id: "quran", keywords: ["құран", "куран", "quran", "коран", "сура"], outcome: () => nav("MoreStack", { screen: "QuranList" }) },
+  {
+    id: "quran",
+    keywords: ["құран", "куран", "quran", "коран", "сура", "сүре", "ayat", "аят"],
+    priority: 10,
+    outcome: () => nav("MoreStack", { screen: "QuranList" }),
+  },
   { id: "hadith", keywords: ["хадис", "hadith", "hadis", "әдис"], outcome: () => nav("MoreStack", { screen: "HadithList" }) },
   { id: "tajweed", keywords: ["тәжуид", "тажвид", "tajweed", "тәжуід", "араб әріп"], outcome: () => nav("MoreStack", { screen: "TajweedGuide" }) },
   {
     id: "namaz_guide",
-    keywords: ["намаз нұсқау", "намаз оқу", "намаз үйрен", "wudu", "уәду", "вуду", "ғұсыл", "у инструкц"],
+    keywords: ["намаз нұсқау", "намаз оқу", "намаз үйрен", "wudu", "уәду", "вуду", "ғұсыл", "инструкция намаза", "намаз қалай оқу"],
+    priority: 25,
     outcome: () => nav("MoreStack", { screen: "NamazGuide" }),
   },
   { id: "settings", keywords: ["баптау", "параметр", "настройк", "settings", "setting"], outcome: () => nav("MoreStack", { screen: "Settings" }) },
@@ -129,11 +155,22 @@ const RULES: readonly Rule[] = [
   { id: "community_dua", keywords: ["қауым дұғас", "community dua", "жалпы дұға"], outcome: () => nav("MoreStack", { screen: "CommunityDua" }) },
   { id: "ecosystem", keywords: ["экожүйе", "ecosystem", "экосистем", "тұтас"], outcome: () => nav("MoreStack", { screen: "Ecosystem" }) },
   { id: "telegram", keywords: ["телеграм", "telegram", "канал", "тг"], outcome: () => nav("MoreStack", { screen: "TelegramInfo" }) },
-  { id: "voice_settings", keywords: ["микрофон", "дауыс", "voice control", "голос"], outcome: () => nav("MoreStack", { screen: "Settings" }) },
+  {
+    id: "voice_settings",
+    keywords: ["микрофон", "дауыс", "voice control", "голос", "дауыспен басқару", "голосовое управление"],
+    priority: 12,
+    outcome: () => nav("MoreStack", { screen: "Settings" }),
+  },
 ];
 
 function hasTokenAi(t: string): boolean {
+  const tf = foldForVoice(t);
   if (t.includes("raqat") && t.includes("ai")) return true;
+  if (tf.includes("ракат") && (tf.includes(" ай") || tf.endsWith("ай"))) return true;
+  if (tf.includes("ракат ai") || tf.includes("raqat ai")) return true;
+  if (tf.includes("рахат ай") || tf.includes("рагат ай")) return true;
+  if (tf.includes("ракат аи") || tf.includes("ракат эй")) return true;
+  if (tf.includes("ракат aiy") || tf.includes("ракат ai")) return true;
   return /(^|[\s,;:])(аи|ai)($|[\s,.;:!?])/i.test(t);
 }
 
@@ -153,11 +190,16 @@ export function matchVoiceCommand(transcript: string): VoiceCommandOutcome {
     return nav("MoreStack", { screen: "RaqatAI" });
   }
 
+  let bestRule: Rule | null = null;
+  let bestScore = -1;
   for (const rule of RULES) {
-    if (hasRuleMatch(t, tf, rule)) {
-      return rule.outcome();
+    const score = scoreRule(t, tf, rule);
+    if (score > bestScore) {
+      bestScore = score;
+      bestRule = rule;
     }
   }
+  if (bestRule && bestScore >= 0) return bestRule.outcome();
   if ((t.includes("ai") || t.includes("аи")) && t.length < 20) {
     return nav("MoreStack", { screen: "RaqatAI" });
   }

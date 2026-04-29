@@ -8,72 +8,12 @@ import type { DuaBlock } from "../content/duasCatalog";
 import { kk } from "../i18n/kk";
 import type { DuasStackParamList, MoreStackParamList } from "../navigation/types";
 import { menuIconAssets } from "../theme/menuIconAssets";
+import { pickBestTranslit } from "../utils/translitKk";
 
 /** Таб ішіндегі DuasStack және MoreStack-тегі «extra-duas» бір экран */
 type Props =
   | NativeStackScreenProps<DuasStackParamList, "DuasHome">
   | NativeStackScreenProps<MoreStackParamList, "Duas">;
-
-const ARABIC_TO_KK_CYR_MAP: Record<string, string> = {
-  ا: "а",
-  أ: "а",
-  إ: "и",
-  آ: "аа",
-  ب: "б",
-  ت: "т",
-  ث: "с",
-  ج: "ж",
-  ح: "х",
-  خ: "х",
-  د: "д",
-  ذ: "з",
-  ر: "р",
-  ز: "з",
-  س: "с",
-  ش: "ш",
-  ص: "с",
-  ض: "д",
-  ط: "т",
-  ظ: "з",
-  ع: "ғ",
-  غ: "ғ",
-  ف: "ф",
-  ق: "қ",
-  ك: "к",
-  ل: "л",
-  م: "м",
-  ن: "н",
-  ه: "һ",
-  ة: "а",
-  و: "у",
-  ي: "й",
-  ى: "а",
-  ء: "ъ",
-  ئ: "й",
-  ؤ: "у",
-  لا: "лә",
-  " ": " ",
-};
-
-/** Экранда тек көмек: каталогда translitKk жоқ eski сақталған кеңестер болса ғана. */
-function arabicToKkCyrillicFallback(ar: string): string {
-  const clean = ar
-    .replace(/[\u064B-\u065F\u0670]/g, "")
-    .replace(/\u0640/g, "")
-    .trim();
-  if (!clean) return "";
-  let out = "";
-  for (let i = 0; i < clean.length; i += 1) {
-    const pair = clean.slice(i, i + 2);
-    if (ARABIC_TO_KK_CYR_MAP[pair]) {
-      out += ARABIC_TO_KK_CYR_MAP[pair];
-      i += 1;
-      continue;
-    }
-    out += ARABIC_TO_KK_CYR_MAP[clean[i]] ?? clean[i];
-  }
-  return out.replace(/\s+/g, " ").trim();
-}
 
 export function DuasScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
@@ -116,7 +56,7 @@ export function DuasScreen({ navigation }: Props) {
               <Text style={styles.ar}>{b.ar}</Text>
               <Text style={styles.caption}>{kk.duas.translitCaption}</Text>
               <Text style={styles.kiril}>
-                {b.translitKk?.trim() ? b.translitKk : arabicToKkCyrillicFallback(b.ar)}
+                {pickBestTranslit(b.ar, b.translitKk)}
               </Text>
               <Text style={styles.caption}>{kk.duas.meaningCaption}</Text>
               <Text style={styles.kk}>{b.meaningKk}</Text>

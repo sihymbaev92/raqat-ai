@@ -15,10 +15,11 @@ import * as Haptics from "expo-haptics";
 import * as ImagePicker from "expo-image-picker";
 import * as Clipboard from "expo-clipboard";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { CommonActions, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { CommonActions, useFocusEffect, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -36,13 +37,67 @@ import { HalalBarcodeScannerModal } from "../components/HalalBarcodeScannerModal
 import { HalalResultFormatted } from "../components/HalalResultFormatted";
 import { fetchProductByBarcodeSmart, formatOpenFoodFactsForHalal } from "../services/openFoodFacts";
 import { halalEcodeEntriesSorted } from "../content/halalEcodeDb";
-import { runHalalLocalChecks } from "../services/halalLocalChecks";
+import { runHalalLocalChecks, type HalalLocalChecks } from "../services/halalLocalChecks";
 import {
   loadHalalRecent,
   saveHalalRecentPush,
   type HalalCheckSource,
   type HalalRecentItem,
 } from "../storage/halalRecentChecks";
+import type { MoreStackParamList } from "../navigation/types";
+
+const HALAL_TEXT_CACHE_KEY = "raqat_halal_text_cache_v1";
+const HALAL_TEXT_CACHE_TTL_MS = 15 * 60 * 1000;
+
+type HalalCacheValue = {
+  at: number;
+  serverResult: string;
+  aiResult: string;
+  merged: string;
+};
+
+type HalalTextCache = Record<string, HalalCacheValue>;
+
+function normalizeHalalCacheKey(input: string): string {
+  return input.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+async function readHalalTextCache(): Promise<HalalTextCache> {
+  try {
+    const raw = await AsyncStorage.getItem(HALAL_TEXT_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as HalalTextCache;
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+async function writeHalalTextCache(cache: HalalTextCache): Promise<void> {
+  try {
+    await AsyncStorage.setItem(HALAL_TEXT_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // cache write must not break UX
+  }
+}
+
+async function getHalalCachedResult(input: string): Promise<HalalCacheValue | null> {
+  const key = normalizeHalalCacheKey(input);
+  if (!key) return null;
+  const cache = await readHalalTextCache();
+  const hit = cache[key];
+  if (!hit) return null;
+  if (Date.now() - hit.at > HALAL_TEXT_CACHE_TTL_MS) return null;
+  return hit;
+}
+
+async function setHalalCachedResult(input: string, value: HalalCacheValue): Promise<void> {
+  const key = normalizeHalalCacheKey(input);
+  if (!key) return;
+  const cache = await readHalalTextCache();
+  cache[key] = value;
+  await writeHalalTextCache(cache);
+}
 
 export function HalalScreen() {
   const { colors } = useAppTheme();
@@ -51,6 +106,7 @@ export function HalalScreen() {
   const headerHeight = useHeaderHeight();
   const keyboardOffset = useKeyboardOffset();
   const styles = makeStyles(colors);
+  const route = useRoute<RouteProp<MoreStackParamList, "Halal">>();
   const scrollBottomPad =
     28 +
     Math.max(insets.bottom, Platform.OS === "android" ? 24 : 0) +
@@ -74,6 +130,77 @@ export function HalalScreen() {
   const [glossaryOpen, setGlossaryOpen] = useState(false);
   const [lookupStatus, setLookupStatus] = useState("");
   const [localSummary, setLocalSummary] = useState("");
+  const handledVoiceTokenRef = React.useRef<string>("");
+
+  const buildHalalAssessment = useCallback(
+    (
+      inputText: string,
+      s1: string,
+      s2: string
+    ): { status: string; why: string; evidence: string[]; confidencePct: number; nextSteps: string[] } => {
+      const local: HalalLocalChecks = runHalalLocalChecks(inputText);
+      const joined = `${s1}\n${s2}`.toLowerCase();
+      const hasHaramWord = /\b(харам|haram|тыйым|forbidden)\b/i.test(joined);
+      const hasDoubtWord = /\b(күмән|doubt|mushbooh|сақтық)\b/i.test(joined);
+      const hasHalalWord = /\b(халал|halal|рұқсат)\b/i.test(joined);
+      const serverSaysHaram = /\b(харам|haram|тыйым)\b/i.test(s1.toLowerCase());
+      const aiSaysHaram = /\b(харам|haram|тыйым)\b/i.test(s2.toLowerCase());
+      const serverSaysHalal = /\b(халал|halal|рұқсат)\b/i.test(s1.toLowerCase());
+      const aiSaysHalal = /\b(халал|halal|рұқсат)\b/i.test(s2.toLowerCase());
+      const disagreement =
+        (serverSaysHaram && aiSaysHalal) ||
+        (serverSaysHalal && aiSaysHaram) ||
+        (hasHaramWord && hasHalalWord);
+      const baseNextSteps = [
+        "Құрамның нақты шығу тегін өндірушіден жазбаша сұраңыз.",
+        "Халал сертификат ұйымы мен мерзімін тексеріңіз.",
+      ];
+      if (hasHaramWord || local.highRiskTerms.length > 0) {
+        return {
+          status: "Қауіпті (харамға жақын)",
+          why:
+            local.highRiskTerms.length > 0
+              ? "Жоғары тәуекел маркерлері табылды."
+              : "Сервер/AI мәтінінде харамға қатысты ескерту бар.",
+          evidence: [...local.highRiskTerms, ...local.matchedEcodes].slice(0, 6),
+          confidencePct: disagreement ? 72 : 88,
+          nextSteps: [...baseNextSteps, "Өнімді қолдануды уақытша тоқтатып, ресми халал орталықпен растаңыз."],
+        };
+      }
+      if (hasDoubtWord || local.suspiciousTerms.length > 0) {
+        return {
+          status: "Күмәнді (нақтылау керек)",
+          why:
+            local.suspiciousTerms.length > 0
+              ? "Күмәнді ингредиенттер немесе қосымшалар кездесті."
+              : "Сервер/AI жауабы күмәнді деп бағалады.",
+          evidence: [...local.suspiciousTerms, ...local.matchedEcodes].slice(0, 6),
+          confidencePct: disagreement ? 60 : 74,
+          nextSteps: [...baseNextSteps, "Жануар тегі бар қоспаларға (желатин, E471, фермент) бөлек растау алыңыз."],
+        };
+      }
+      if (hasHalalWord) {
+        return {
+          status: "Шартты түрде халал",
+          why: "Айқын қауіп маркерлері табылмады.",
+          evidence: local.matchedEcodes.slice(0, 6),
+          confidencePct: disagreement ? 58 : 81,
+          nextSteps: [
+            "Сертификат бар болса, партия/зауыт сәйкестігін тексеріңіз.",
+            "Жаңартылған құрамды мерзім сайын қайта тексеріңіз.",
+          ],
+        };
+      }
+      return {
+        status: "Қосымша тексеру керек",
+        why: "Нәтиже мәтіні бар, бірақ үкім айқын емес.",
+        evidence: local.matchedEcodes.slice(0, 6),
+        confidencePct: 52,
+        nextSteps: [...baseNextSteps],
+      };
+    },
+    []
+  );
 
   const offErrText = useCallback((reason?: string, status?: number): string => {
     if (reason === "timeout") return "Open Food Facts: сұрау уақыты бітті (timeout). Қайта көріңіз.";
@@ -200,6 +327,15 @@ export function HalalScreen() {
       setPreviewUri(null);
       setLoading(true);
       try {
+        const cached = await getHalalCachedResult(t);
+        if (cached) {
+          setServerResult(cached.serverResult);
+          setAiResult(cached.aiResult);
+          setResult(cached.merged);
+          setLookupStatus("Кэштен жылдам нәтиже");
+          setLoading(false);
+          return;
+        }
         const bearer = (await getValidAccessToken())?.trim() ?? "";
         const localApi = await fetchPlatformHalalCheckText(base, t, {
           authorizationBearer: bearer || undefined,
@@ -210,28 +346,39 @@ export function HalalScreen() {
           setErr(localApi.error?.message ?? "Halal API жауап бермеді.");
           return;
         }
+        setServerResult(stage1);
+        setAiResult("");
+        setResult(stage1);
+        setLookupStatus("1-кезең дайын, AI жылдам жауабы күтілуде...");
 
         let res = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
           authorizationBearer: bearer || undefined,
-          timeoutMs: 90_000,
+          timeoutMs: 22_000,
+          detailLevel: "quick",
         });
         let out = res.text?.trim() ?? "";
         if (!out && res.status !== 401 && res.status !== 403) {
-          // Серверде full жауап бос қалса, қысқа режиммен қайта көреміз.
-          const quick = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
+          // Quick жауап бос болса, бір рет longer timeout-пен қайталаймыз.
+          const quickRetry = await fetchPlatformAiChat(base, buildHalalTextPrompt(t), {
             authorizationBearer: bearer || undefined,
             timeoutMs: 45_000,
             detailLevel: "quick",
           });
-          if ((quick.text?.trim() ?? "").length > 0) {
-            res = quick;
-            out = quick.text?.trim() ?? "";
+          if ((quickRetry.text?.trim() ?? "").length > 0) {
+            res = quickRetry;
+            out = quickRetry.text?.trim() ?? "";
           }
         }
         const merged = out ? `${stage1}\n\n-----\n🤖 AI сараптама (2-деңгей)\n\n${out}` : stage1;
         setServerResult(stage1);
         setAiResult(out);
         setResult(merged);
+        await setHalalCachedResult(t, {
+          at: Date.now(),
+          serverResult: stage1,
+          aiResult: out,
+          merged,
+        });
         void persistHalalSuccess("text", t, merged);
         if (!out && (res.status === 401 || res.status === 403) && !bearer) {
           setErr("AI бұл сәтте қолжетімсіз (қонақ режимі). Сервер рұқсат етсе автоматты ашылады.");
@@ -248,6 +395,18 @@ export function HalalScreen() {
     },
     [base, configured, persistHalalSuccess, text]
   );
+
+  useEffect(() => {
+    const p = route.params;
+    if (!p?.initialText?.trim()) return;
+    const token = p.voiceActionToken ?? p.initialText;
+    if (handledVoiceTokenRef.current === token) return;
+    handledVoiceTokenRef.current = token;
+    setText(p.initialText.trim());
+    if (p.autoRunText) {
+      void runText(p.initialText.trim());
+    }
+  }, [route.params, runText]);
 
   const onBarcodeScanned = useCallback(
     async (code: string) => {
@@ -276,6 +435,14 @@ export function HalalScreen() {
         setLookupStatus(`OFF: ok (${off.code})`);
         const block = formatOpenFoodFactsForHalal(off);
         setText(block);
+        const cached = await getHalalCachedResult(block);
+        if (cached) {
+          setServerResult(cached.serverResult);
+          setAiResult(cached.aiResult);
+          setResult(cached.merged);
+          setLookupStatus("OFF: ok (кэштен)");
+          return;
+        }
 
         const localApi = await fetchPlatformHalalCheckText(base, block, {
           authorizationBearer: bearer || undefined,
@@ -286,27 +453,38 @@ export function HalalScreen() {
           setErr(localApi.error?.message ?? "Halal API жауап бермеді.");
           return;
         }
+        setServerResult(stage1);
+        setAiResult("");
+        setResult(stage1);
+        setLookupStatus(`OFF: ok (${off.code}) · AI жылдам жауабы күтілуде...`);
 
         let res = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
           authorizationBearer: bearer || undefined,
-          timeoutMs: 90_000,
+          timeoutMs: 22_000,
+          detailLevel: "quick",
         });
         let out = res.text?.trim() ?? "";
         if (!out && res.status !== 401 && res.status !== 403) {
-          const quick = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
+          const quickRetry = await fetchPlatformAiChat(base, buildHalalTextPrompt(block), {
             authorizationBearer: bearer || undefined,
             timeoutMs: 45_000,
             detailLevel: "quick",
           });
-          if ((quick.text?.trim() ?? "").length > 0) {
-            res = quick;
-            out = quick.text?.trim() ?? "";
+          if ((quickRetry.text?.trim() ?? "").length > 0) {
+            res = quickRetry;
+            out = quickRetry.text?.trim() ?? "";
           }
         }
         const merged = out ? `${stage1}\n\n-----\n🤖 AI сараптама (2-деңгей)\n\n${out}` : stage1;
         setServerResult(stage1);
         setAiResult(out);
         setResult(merged);
+        await setHalalCachedResult(block, {
+          at: Date.now(),
+          serverResult: stage1,
+          aiResult: out,
+          merged,
+        });
         void persistHalalSuccess("barcode", block, merged);
         if (!out && (res.status === 401 || res.status === 403) && !bearer) {
           setErr("AI бұл сәтте қолжетімсіз (қонақ режимі). Сервер рұқсат етсе автоматты ашылады.");
@@ -742,6 +920,22 @@ export function HalalScreen() {
         {result ? (
           <View style={styles.outBox}>
             <Text style={styles.outTitle}>{kk.features.halalResultTitle}</Text>
+            {(() => {
+              const a = buildHalalAssessment(text, serverResult, aiResult || result);
+              return (
+                <View style={styles.assessBox}>
+                  <Text style={styles.assessStatus}>{a.status}</Text>
+                  <Text style={styles.assessWhy}>Неге: {a.why}</Text>
+                  <Text style={styles.assessConfidence}>Сенімділік: {a.confidencePct}%</Text>
+                  {a.evidence.length ? (
+                    <Text style={styles.assessEvidence}>Дәлел: {a.evidence.join(", ")}</Text>
+                  ) : null}
+                  {a.nextSteps.length ? (
+                    <Text style={styles.assessSteps}>Келесі қадам: {a.nextSteps.join(" ")}</Text>
+                  ) : null}
+                </View>
+              );
+            })()}
             {lastSource ? (
               <Text style={styles.sourceBadge}>
                 {kk.features.halalSourceLabel}{" "}
@@ -915,6 +1109,26 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
     },
     outTitle: { color: colors.accent, fontWeight: "800", marginBottom: 6, fontSize: 15 },
+    assessBox: {
+      marginTop: 2,
+      marginBottom: 8,
+      padding: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    assessStatus: { color: colors.accent, fontSize: 14, fontWeight: "900", marginBottom: 4 },
+    assessWhy: { color: colors.text, fontSize: 13, lineHeight: 19 },
+    assessConfidence: {
+      color: colors.accent,
+      fontSize: 12,
+      lineHeight: 18,
+      fontWeight: "800",
+      marginTop: 4,
+    },
+    assessEvidence: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 4 },
+    assessSteps: { color: colors.text, fontSize: 12, lineHeight: 18, marginTop: 6 },
     splitBox: {
       marginTop: 8,
       padding: 10,

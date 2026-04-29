@@ -2,7 +2,7 @@
   "expo": {
     "name": "RAQAT",
     "slug": "raqat-mobile",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -89,6 +89,7 @@
     "android": {
       "softwareKeyboardLayoutMode": "resize",
       "usesCleartextTraffic": false,
+      "versionCode": 6,
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#000000"
@@ -104,7 +105,7 @@
     },
     "scheme": "raqat",
     "extra": {
-      "raqatApiBase": "http://5.75.162.140:8787",
+      "raqatApiBase": "http://192.168.0.148:8787",
       "raqatDonationUrl": "https://t.me/my_islamic_ai_bot",
       "raqatSupportAccount": "",
       "googleWebClientId": "",

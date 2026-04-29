@@ -3,7 +3,11 @@
  * 1) EXPO_PUBLIC_RAQAT_API_BASE — .env немесе іске қосу алдында
  * 2) app.json → expo.extra.raqatApiBase
  */
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getExpoExtra } from "./expoExtra";
+
+const API_BASE_OVERRIDE_KEY = "raqat_api_base_override_v1";
+let apiBaseOverride = "";
 
 function normalizeBase(raw: string): string {
   const t = raw.trim();
@@ -12,6 +16,7 @@ function normalizeBase(raw: string): string {
 }
 
 export function getRaqatApiBase(): string {
+  if (apiBaseOverride) return apiBaseOverride;
   const env =
     typeof process !== "undefined" && process.env?.EXPO_PUBLIC_RAQAT_API_BASE
       ? String(process.env.EXPO_PUBLIC_RAQAT_API_BASE)
@@ -20,6 +25,27 @@ export function getRaqatApiBase(): string {
   const raw = getExpoExtra()?.raqatApiBase;
   if (raw != null && String(raw).trim()) return normalizeBase(String(raw));
   return "";
+}
+
+export async function hydrateRaqatApiBaseOverride(): Promise<void> {
+  try {
+    const raw = await AsyncStorage.getItem(API_BASE_OVERRIDE_KEY);
+    apiBaseOverride = raw ? normalizeBase(raw) : "";
+  } catch {
+    apiBaseOverride = "";
+  }
+}
+
+export async function saveRaqatApiBaseOverride(nextBase: string): Promise<string> {
+  const normalized = normalizeBase(nextBase);
+  if (!normalized) {
+    apiBaseOverride = "";
+    await AsyncStorage.removeItem(API_BASE_OVERRIDE_KEY);
+    return "";
+  }
+  apiBaseOverride = normalized;
+  await AsyncStorage.setItem(API_BASE_OVERRIDE_KEY, normalized);
+  return normalized;
 }
 
 function truthy(v: string): boolean {

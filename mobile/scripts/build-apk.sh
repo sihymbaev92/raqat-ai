@@ -159,16 +159,16 @@ fi
 if [[ "$TARGET" == "debug" ]]; then
   echo "=== assembleDebug (JAVA_HOME=${JAVA_HOME:-auto}) ==="
   ./gradlew --stop >/dev/null 2>&1 || true
-  ./gradlew --no-daemon assembleDebug
+  ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 assembleDebug
   echo "APK: $ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 elif [[ "$TARGET" == "aab" ]]; then
   echo "=== bundleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
   ./gradlew --stop >/dev/null 2>&1 || true
-  ./gradlew --no-daemon bundleRelease
+  ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 bundleRelease
   echo "AAB: $ROOT/android/app/build/outputs/bundle/release/app-release.aab"
 else
   echo "=== assembleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
   ./gradlew --stop >/dev/null 2>&1 || true
-  ./gradlew --no-daemon assembleRelease
+  ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 assembleRelease
   echo "APK: $ROOT/android/app/build/outputs/apk/release/app-release.apk"
 fi

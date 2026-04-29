@@ -48,7 +48,6 @@ function smoothHeading(
   prev: number,
   next: number
 ): number {
-  const a = mode === "fast" ? 0.4 : 0.14;
   if (!Number.isFinite(next)) {
     return prev;
   }
@@ -56,8 +55,17 @@ function smoothHeading(
     return ((next % 360) + 360) % 360;
   }
   /** 359° -> 1° шекарасында "кері секіру" болмауы үшін шеңберлік тегістеу. */
-  const step = angleDiff(prev, next);
-  const blended = prev + step * a;
+  const rawStep = angleDiff(prev, next);
+  const absStep = Math.abs(rawStep);
+  const deadZone = mode === "fast" ? 0.55 : 0.8;
+  if (absStep <= deadZone) {
+    return prev;
+  }
+  /** Бір кадрда тым үлкен секіруді шектейміз (магнит шу/қолдың дірілі). */
+  const maxStep = mode === "fast" ? 24 : 14;
+  const clampedStep = Math.max(-maxStep, Math.min(maxStep, rawStep));
+  const alpha = mode === "fast" ? 0.52 : 0.3;
+  const blended = prev + clampedStep * alpha;
   return ((blended % 360) + 360) % 360;
 }
 
@@ -321,7 +329,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       if (!(await Magnetometer.isAvailableAsync())) {
         return;
       }
-      Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 80 : 200);
+      Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 60 : 120);
       smHeadRef.current = Number.NaN;
       const sub = Magnetometer.addListener((e) => {
         const raw = headingFromMagnetometer(e);
@@ -347,7 +355,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
             return;
           }
           if (magSubRef.current) {
-            Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 80 : 200);
+            Magnetometer.setUpdateInterval(motionModeRef.current === "fast" ? 60 : 120);
             return;
           }
         }
@@ -381,7 +389,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (magSubRef.current) {
-      Magnetometer.setUpdateInterval(motionMode === "fast" ? 80 : 200);
+      Magnetometer.setUpdateInterval(motionMode === "fast" ? 60 : 120);
     }
   }, [motionMode]);
 

@@ -4,9 +4,9 @@
 HTTP API хосттарын `mobile/android/.../network_security_config.xml` ішіне қосады
 (release APK cleartext allowlist).
 
-1) `RAQAT_ANDROID_CLEARTEXT_HOSTS` — үтірмен бөлінген хосттар: алдымен орта айнымалы, әйтпесе түбір/ `mobile/.env`.
-2) Әйтпесе `EXPO_PUBLIC_RAQAT_API_BASE` — орта, содан .env, тек `http://` hostname.
-3) `.env` ішіндегі `mobile` мәндері бірдей кілтте түбірді басып тұрады.
+1) `RAQAT_ANDROID_CLEARTEXT_HOSTS` — үтірмен бөлінген хосттар: алдымен орта айнымалы, әйтпесе .env.
+2) Әйтпесе `EXPO_PUBLIC_RAQAT_API_BASE` — орта, түбір `/ .env` / `mobile/.env` / `mobile/.env.production` (релиз хосты жиі соңғыда), тек `http://` hostname.
+3) Соңғы мән бірдей кілтте алдыңғысын басып тұрады.
 
 HTTPS-only болса хост қосылмайды (skip). Қайта орындау idempotent.
 
@@ -58,6 +58,7 @@ def _merged_dotenv() -> dict[str, str]:
     merged: dict[str, str] = {}
     merged.update(_parse_dotenv(root / ".env"))
     merged.update(_parse_dotenv(root / "mobile" / ".env"))
+    merged.update(_parse_dotenv(root / "mobile" / ".env.production"))
     return merged
 
 

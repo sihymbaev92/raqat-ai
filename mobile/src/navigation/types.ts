@@ -22,8 +22,20 @@ export type MoreStackParamList = {
   Hatim: undefined;
   CommunityDua: undefined;
   Hajj: undefined;
-  Halal: undefined;
-  RaqatAI: undefined;
+  Halal:
+    | undefined
+    | {
+        initialText?: string;
+        autoRunText?: boolean;
+        voiceActionToken?: string;
+      };
+  RaqatAI:
+    | undefined
+    | {
+        initialPrompt?: string;
+        autoSend?: boolean;
+        voiceActionToken?: string;
+      };
   Ecosystem: undefined;
   HadithList: undefined;
   HadithDetail: { hadithId: string };

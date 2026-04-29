@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
@@ -11,8 +11,15 @@ import { ThemeProvider } from "./src/theme/ThemeContext";
 import { VoiceAssistantProvider } from "./src/components/voice/VoiceAssistantContext";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
+import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
+import { initNotificationQuickActions } from "./src/services/notificationQuickActions";
 
 export default function App() {
+  useEffect(() => {
+    void hydrateRaqatApiBaseOverride();
+    void initNotificationQuickActions();
+  }, []);
+
   return (
     <View testID="raqat-app-root" style={{ flex: 1 }}>
     <AppErrorBoundary>

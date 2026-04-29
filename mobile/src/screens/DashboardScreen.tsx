@@ -29,10 +29,11 @@ import { getSelectedCity, getNotifEnabled, getIftarEnabled } from "../storage/pr
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
 import { VoiceAssistantHeaderButton } from "../components/voice/VoiceAssistantHeaderButton";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
+import { fireInAppPrayerAlert } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import type { HomeTabCompositeNavigation } from "../navigation/types";
-import { CompactPrayerTimesRow, shortPrayerName } from "../components/CompactPrayerTimesRow";
-import { DashboardNextPrayerHero } from "../components/DashboardNextPrayerHero";
+import { shortPrayerName } from "../components/CompactPrayerTimesRow";
+import { DashboardPrayerWidget } from "../components/DashboardPrayerWidget";
 import { useQiblaStable } from "../context/QiblaSensorContext";
 import { useQiblaMotion } from "../context/QiblaSensorContext";
 import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
@@ -44,12 +45,12 @@ function dashboardRasterBoxPx(windowWidth: number, windowHeight?: number): numbe
   const content = Math.max(200, windowWidth - 32);
   const gridCap = Math.floor(content * 0.31 - 12);
   const heroCap = Math.floor((content - 22) / 3);
-  let box = Math.min(80, Math.max(46, Math.min(gridCap, heroCap)));
+  let box = Math.min(50, Math.max(26, Math.min(gridCap, heroCap)));
   if (windowHeight != null && windowHeight < 720) {
-    box = Math.min(box, 52);
+    box = Math.min(box, 36);
   }
   if (windowHeight != null && windowHeight < 640) {
-    box = Math.min(box, 44);
+    box = Math.min(box, 30);
   }
   return box;
 }
@@ -113,11 +114,6 @@ function HomeHeaderLeft({
   navigation: HomeTabCompositeNavigation;
   colors: ThemeColors;
 }) {
-  const { bearing, refreshBearing } = useQiblaStable();
-  const { rotateDeg } = useQiblaMotion();
-  const bearingReady = bearing != null;
-  const qiblaAligned = bearingReady && Math.abs(rotateDeg) <= 12;
-
   return (
     <View
       style={{
@@ -127,71 +123,25 @@ function HomeHeaderLeft({
         minWidth: 0,
         minHeight: 42,
         gap: 6,
+        justifyContent: "flex-start",
       }}
     >
-      <Pressable
-        onPress={() => navigation.navigate("Qibla")}
-        onLongPress={() => void refreshBearing()}
+      <View
         style={{
-          width: 42,
-          height: 42,
-          borderRadius: 21,
-          backgroundColor: qiblaAligned ? `${colors.success}33` : colors.accentSurfaceStrong,
-          borderWidth: qiblaAligned ? 2 : bearingReady ? 1 : 0,
-          borderColor: qiblaAligned ? `${colors.success}cc` : bearingReady ? `${colors.success}55` : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
+          minWidth: 0,
+          marginLeft: 0,
+          marginRight: 6,
+          alignItems: "flex-start",
+          flex: 1,
         }}
-        accessibilityRole="button"
-        accessibilityLabel={kk.tabs.qibla}
       >
-        {bearingReady ? (
-          <View
-            pointerEvents="none"
-            style={{
-              position: "absolute",
-              top: 3,
-              right: 3,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: colors.success,
-              borderWidth: 1.5,
-              borderColor: qiblaAligned ? `${colors.success}ff` : `${colors.bg}`,
-              zIndex: 2,
-              ...(Platform.OS === "ios"
-                ? {
-                    shadowColor: colors.success,
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.85,
-                    shadowRadius: 3,
-                  }
-                : { elevation: 4 }),
-            }}
-          />
-        ) : null}
-        {bearing == null ? (
-          <MaterialIcons name="navigation" size={22} color={colors.accent} />
-        ) : (
-          <QiblaArrowPointer
-            colors={colors}
-            size={34}
-            rotateDeg={rotateDeg}
-            aligned={qiblaAligned}
-            showDialRing
-          />
-        )}
-      </Pressable>
-      <View style={{ flex: 1, minWidth: 0, marginHorizontal: 4, alignItems: "center" }}>
         <Text
           style={{
             fontSize: 16,
             fontWeight: "900",
             letterSpacing: 0.5,
             color: colors.text,
-            textAlign: "center",
-            width: "100%",
+            textAlign: "left",
           }}
           accessibilityRole="header"
           numberOfLines={1}
@@ -199,6 +149,89 @@ function HomeHeaderLeft({
           {kk.dashboard.brandTitle}
         </Text>
       </View>
+    </View>
+  );
+}
+
+function HomeHeaderCenter({
+  navigation,
+  colors,
+}: {
+  navigation: HomeTabCompositeNavigation;
+  colors: ThemeColors;
+}) {
+  const { bearing, refreshBearing } = useQiblaStable();
+  const { rotateDeg } = useQiblaMotion();
+  const bearingReady = bearing != null;
+  const qiblaAligned = bearingReady && Math.abs(rotateDeg) <= 12;
+
+  return (
+    <Pressable
+      onPress={() => navigation.navigate("Qibla")}
+      onLongPress={() => void refreshBearing()}
+      style={{
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: qiblaAligned ? `${colors.success}33` : colors.accentSurfaceStrong,
+        borderWidth: qiblaAligned ? 2 : bearingReady ? 1 : 0,
+        borderColor: qiblaAligned ? `${colors.success}cc` : bearingReady ? `${colors.success}55` : "transparent",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={kk.tabs.qibla}
+    >
+      {bearingReady ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 3,
+            right: 3,
+            width: 8,
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.success,
+            borderWidth: 1.5,
+            borderColor: qiblaAligned ? `${colors.success}ff` : `${colors.bg}`,
+            zIndex: 2,
+            ...(Platform.OS === "ios"
+              ? {
+                  shadowColor: colors.success,
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0.85,
+                  shadowRadius: 3,
+                }
+              : { elevation: 4 }),
+          }}
+        />
+      ) : null}
+      {bearing == null ? (
+        <MaterialIcons name="navigation" size={22} color={colors.accent} />
+      ) : (
+        <QiblaArrowPointer
+          colors={colors}
+          size={34}
+          rotateDeg={rotateDeg}
+          aligned={qiblaAligned}
+          showDialRing={false}
+        />
+      )}
+    </Pressable>
+  );
+}
+
+function HomeHeaderRight({
+  navigation,
+  colors,
+}: {
+  navigation: HomeTabCompositeNavigation;
+  colors: ThemeColors;
+}) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <VoiceAssistantHeaderButton />
       <Pressable
         onPress={() =>
@@ -253,8 +286,8 @@ export function DashboardScreen() {
     /** Бір желілі тайтл — жоғары панель биіктігі */
     const qiblaTopPad = Platform.OS === "ios" ? 4 : 2;
     navigation.setOptions({
-      headerTitleAlign: "left",
-      headerTitle: () => null,
+      headerTitleAlign: "center",
+      headerTitle: () => <HomeHeaderCenter navigation={navigation} colors={colors} />,
       headerLeftContainerStyle: {
         paddingLeft: 0,
         marginLeft: 0,
@@ -272,7 +305,13 @@ export function DashboardScreen() {
         backgroundColor: colors.bg,
         height: headerH,
       },
-      headerRight: () => null,
+      headerRightContainerStyle: {
+        paddingRight: 0,
+        marginRight: 0,
+        alignItems: "center" as const,
+        justifyContent: "center" as const,
+      },
+      headerRight: () => <HomeHeaderRight navigation={navigation} colors={colors} />,
       headerLeft: () => <HomeHeaderLeft navigation={navigation} colors={colors} />,
     });
   }, [
@@ -408,6 +447,7 @@ export function DashboardScreen() {
         if (momentPulseId.current !== pulse) {
           momentPulseId.current = pulse;
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+          void fireInAppPrayerAlert(hit.label, hit.time).catch(() => {});
         }
       };
       tick();
@@ -430,17 +470,15 @@ export function DashboardScreen() {
 
   const next = nextPrayer(rows);
   const styles = makeStyles(colors, isDark);
-  const timeCells = rows.map((r) => ({ key: r.key, time: r.time }));
   const timesPending = rows.length === 0 && err === null;
   const compactHome = windowHeight < 860;
-  /** Үстіңгі қатар (Halal / AI) иконкаларын сәл кішірейту */
-  const topPromoBox = Math.max(40, rasterBox - 14);
+  /** Үстіңгі қатар (Halal / AI) — ірі суреттер */
+  const topPromoBox = Math.max(56, rasterBox + 4);
 
-  const goPrayerTimes = () => navigation.navigate("PrayerTimes");
   const goQuranList = () => navigation.navigate("MoreStack", { screen: "QuranList" });
   const goHadithList = () => navigation.navigate("MoreStack", { screen: "HadithList" });
   /** Құран / сахиһ хадис — визуалды басқа 3-бағана тайлдардан сәл кішірек */
-  const quranHadithIconBox = Math.max(38, Math.round(rasterBox * 0.72));
+  const quranHadithIconBox = Math.max(24, Math.round(rasterBox * 0.56));
   const goAi = () => navigation.navigate("MoreStack", { screen: "RaqatAI" });
   const goHalal = () => navigation.navigate("MoreStack", { screen: "Halal" });
   const goDuas = () => navigation.navigate("Duas", { screen: "DuasHome" });
@@ -471,27 +509,13 @@ export function DashboardScreen() {
 
         {err && !fromCache ? <Text style={styles.err}>{err}</Text> : null}
 
-        <DashboardNextPrayerHero
+        <DashboardPrayerWidget
           colors={colors}
           isDark={isDark}
-          cityApiName={cityLabel}
+          rows={rows}
           next={next}
-          allRows={rows}
-          onPress={goPrayerTimes}
-          momentBanner={momentBanner}
-          compact={compactHome}
-        />
-
-        <CompactPrayerTimesRow
-          colors={colors}
-          rows={timeCells}
           pending={timesPending}
-          onPressOpen={goPrayerTimes}
-          sixRows
-          sixRowsCompact
-          highlightKey={next?.key}
-          isDark={isDark}
-          compact={compactHome}
+          momentBanner={momentBanner}
         />
 
         <View style={styles.promoRow}>
@@ -545,10 +569,6 @@ export function DashboardScreen() {
             </Text>
           </Pressable>
         </View>
-
-        <Text style={styles.servicesHeading} accessibilityRole="header">
-          {kk.dashboard.servicesHeading}
-        </Text>
 
         <View style={styles.serviceGridWrap}>
           {/** Үстіңгі қатар: Құран — Намаз — Хадис */}
@@ -761,11 +781,11 @@ function Tile({
             ) : null}
           </View>
           <View style={styles.tileMediaSpacer} />
-          <Text style={[styles.quickLabel, styles.quickLabelMedia]} numberOfLines={2}>
+          <Text style={[styles.quickLabel, styles.quickLabelMedia]} numberOfLines={1}>
             {label}
           </Text>
           {subLabel ? (
-            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={2}>
+            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={1}>
               {subLabel}
             </Text>
           ) : null}
@@ -803,11 +823,11 @@ function Tile({
       )}
       {!imageEdgeToEdge || !iconImage ? (
         <>
-          <Text style={styles.quickLabel} numberOfLines={2}>
+          <Text style={styles.quickLabel} numberOfLines={1}>
             {label}
           </Text>
           {subLabel ? (
-            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={2}>
+            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={1}>
               {subLabel}
             </Text>
           ) : null}
@@ -823,16 +843,16 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     root: { flex: 1, backgroundColor: colors.bg },
     scrollContent: {
       paddingHorizontal: 8,
-      paddingTop: 2,
-      paddingBottom: 20,
+      paddingTop: 0,
+      paddingBottom: 8,
     },
     promoRow: {
       flexDirection: "row",
       alignItems: "stretch",
       justifyContent: "space-between",
-      gap: 6,
-      marginTop: 4,
-      marginBottom: 2,
+      gap: 2,
+      marginTop: 1,
+      marginBottom: 0,
     },
     cardPress: {
       opacity: 0.92,
@@ -862,24 +882,24 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderRadius: 12,
       borderWidth: 1,
       borderColor: cardBorder,
-      paddingVertical: 2,
+      paddingVertical: 1,
       paddingHorizontal: 3,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
     },
     heroSideIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
+      width: 42,
+      height: 42,
+      borderRadius: 21,
       alignItems: "center",
       justifyContent: "center",
     },
     heroSideEmoji: { fontSize: 15 },
     heroSideTitle: {
-      marginTop: 2,
+      marginTop: 1,
       color: colors.text,
-      fontSize: 12,
+      fontSize: 13,
       fontWeight: "900",
       textAlign: "center",
       lineHeight: 14,
@@ -893,23 +913,16 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       textAlign: "center",
     },
     err: { color: colors.error, marginBottom: 8, fontSize: 14, lineHeight: 20 },
-    servicesHeading: {
-      fontSize: 16,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: 0.2,
-      marginTop: 4,
-      marginBottom: 6,
-    },
     serviceGridWrap: {
       width: "100%",
-      gap: 4,
+      gap: 2,
+      marginTop: 2,
     },
     /** 3 тайл бір қатарда (үсті: құран, намаз, хадис; астында: сира, тәжуид, қажылық) */
     serviceRow3: {
       flexDirection: "row",
       alignItems: "stretch",
-      gap: 4,
+      gap: 2,
       width: "100%",
     },
     serviceCell3: {
@@ -922,10 +935,10 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     tileSub: {
       fontSize: 10,
-      lineHeight: 13,
+      lineHeight: 12,
       fontWeight: "600",
       textAlign: "center",
-      marginTop: 2,
+      marginTop: 0,
       paddingHorizontal: 2,
     },
     menuGrid: {
@@ -939,8 +952,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       alignItems: "center",
       backgroundColor: colors.card,
       borderRadius: 12,
-      paddingVertical: 2,
-      paddingHorizontal: 2,
+      paddingVertical: 0,
+      paddingHorizontal: 1,
       borderWidth: 1,
       borderColor: cardBorder,
       ...Platform.select({
@@ -1003,17 +1016,17 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     tileEmoji: { fontSize: 13 },
     quickLabel: {
       color: colors.text,
-      fontSize: 11,
-      lineHeight: 13,
+      fontSize: 12,
+      lineHeight: 15,
       fontWeight: "900",
       textAlign: "center",
-      letterSpacing: 0.15,
+      letterSpacing: 0.1,
       marginTop: 0,
     },
     quickLabelMedia: {
       marginTop: 0,
-      paddingTop: 4,
-      paddingBottom: 4,
+      paddingTop: 2,
+      paddingBottom: 1,
       paddingHorizontal: 3,
     },
     hint: { color: colors.muted, fontSize: 12, marginTop: 16, lineHeight: 18 },

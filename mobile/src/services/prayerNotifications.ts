@@ -5,6 +5,7 @@ import { kk } from "../i18n/kk";
 import { getIftarEnabled, getNotifEnabled } from "../storage/prefs";
 import { loadPrayerCache } from "../storage/prayerCache";
 import { AndroidNotificationPriority } from "expo-notifications";
+import { getQuickActionCategoryId } from "./notificationQuickActions";
 
 let Notifications: typeof import("expo-notifications") | null = null;
 
@@ -126,6 +127,7 @@ export async function reschedulePrayerNotifications(
           body,
           sound: true,
           priority: AndroidNotificationPriority.MAX,
+          categoryIdentifier: getQuickActionCategoryId(),
         },
         trigger: {
           type: N.SchedulableTriggerInputTypes.DATE,
@@ -152,4 +154,27 @@ export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
 export async function cancelAllPrayerNotifications(): Promise<void> {
   const N = await loadNotifications();
   if (N) await N.cancelAllScheduledNotificationsAsync();
+}
+
+/**
+ * Қолданба ашық кезде де намаз минуты кірген сәтте дыбыспен жедел ескерту.
+ * Dashboard-тан бір реттік pulse-пен шақырылады (қайталанып кетпеуі үшін).
+ */
+export async function fireInAppPrayerAlert(prayerLabel: string, timeLabel?: string): Promise<void> {
+  const N = await loadNotifications();
+  if (!N) return;
+  await ensureAndroidChannel(N);
+  const body = timeLabel
+    ? kk.prayer.notifPushBody(prayerLabel, timeLabel)
+    : `${prayerLabel} уақыты кірді.`;
+  await N.scheduleNotificationAsync({
+    content: {
+      title: kk.prayer.notifPushTitle,
+      body,
+      sound: true,
+      priority: AndroidNotificationPriority.MAX,
+      categoryIdentifier: getQuickActionCategoryId(),
+    },
+    trigger: null,
+  });
 }

@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { useKeyboardOffset } from "../hooks/useKeyboardOffset";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { CommonActions, useNavigation } from "@react-navigation/native";
+import { CommonActions, useNavigation, useRoute, type RouteProp } from "@react-navigation/native";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -30,7 +30,9 @@ import {
   type PlatformQuranSearchItem,
 } from "../services/platformApiClient";
 import { getGuestLocalHint } from "../utils/guestAiLocalHints";
+import { formatAiApiError } from "../utils/formatAiApiError";
 import { getValidAccessToken } from "../storage/authTokens";
+import type { MoreStackParamList } from "../navigation/types";
 
 const STORAGE_KEY = "raqat_ai_chat_messages_v1";
 const LAST_AI_FAIL_KEY = "raqat_ai_last_failed_v1";
@@ -72,9 +74,8 @@ const ASMA_ROWS = loadAsmaRows();
 function buildPromptWithHistory(prev: ChatMsg[], nextUserText: string): string {
   const lines: string[] = [
     "Төменде сұрақ-жауап тарихы (қысқа), содан кейін жаңа сұрақ.",
-    "Жауап саясаты (міндетті): 35% Құран, 35% Хадис, 10% Алланың 99 есімі, 20% интернет/сыртқы дерек.",
-    "Пішім: әр бөлімді бөлек бер: [Құран 35%], [Хадис 35%], [99 есім 10%], [Интернет 20%].",
-    "Интернет жоқ болса да локал 80% құрылымды сақта, интернет бөліміне жоқ екенін нақты жаз.",
+    "Жауап қысқа, түсінікті және табиғи мәтінмен берілсін.",
+    "Қажет жерде Құран/хадис дереккөзін ата, бірақ пайыздық бөлініс пен формалды бөлім атауларын қолданба.",
   ];
   const tail = prev.slice(-18);
   for (const m of tail) {
@@ -102,33 +103,48 @@ function truncateText(s: string, max = 180): string {
   return `${t.slice(0, max).trim()}…`;
 }
 
+function normalizeAiNarrative(raw: string): string {
+  const lines = raw
+    .split(/\r?\n/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .filter((line) => {
+      const l = line.toLowerCase();
+      if (/^\[(құран|хадис|99\s*есім|интернет).*(\d{1,3}\s*%)\]$/i.test(line)) return false;
+      if (/^(құран|хадис|99\s*есім|интернет).*(\d{1,3}\s*%)\s*[:\-]?\s*$/i.test(line)) return false;
+      if (l.includes("жауап саясаты") && l.includes("%")) return false;
+      return true;
+    });
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 function formatQuranBlock(items: PlatformQuranSearchItem[] | undefined): string {
   if (!items?.length) {
-    return "📖 Құран 35%: осы сұраққа лайық қысқа аят үзіндісі көрсетілмеді.";
+    return "📖 Осы сұраққа лайық қысқа аят үзіндісі көрсетілмеді.";
   }
   const top = items.slice(0, 2).map((row) => {
     const ref = `${row.surah ?? "?"}:${row.ayah ?? "?"}`;
     const text = truncateText((row.text_tr || row.text_ar || "").toString(), 170);
     return `- ${ref} — ${text}`;
   });
-  return ["📖 Құран 35% — үзінді:", ...top].join("\n");
+  return ["📖 Құраннан үзінді:", ...top].join("\n");
 }
 
 function formatHadithBlock(items: PlatformHadithSearchItem[] | undefined): string {
   if (!items?.length) {
-    return "📚 Хадис 35%: осы сұраққа лайық қысқа хадис үзіндісі көрсетілмеді.";
+    return "📚 Осы сұраққа лайық қысқа хадис үзіндісі көрсетілмеді.";
   }
   const top = items.slice(0, 2).map((row) => {
     const src = (row.source || "hadith").toString();
     const text = truncateText((row.text_tr || row.text_ar || "").toString(), 170);
     return `- ${src}: ${text}`;
   });
-  return ["📚 Хадис 35% — үзінді:", ...top].join("\n");
+  return ["📚 Хадистен үзінді:", ...top].join("\n");
 }
 
 function formatAsmaBlock(query: string): string {
   if (!ASMA_ROWS.length) {
-    return "🕋 99 есім 10%: локал тізім жүктелмеді.";
+    return "🕋 Алланың есімдері тізімі жүктелмеді.";
   }
   const q = query.trim().toLowerCase();
   const tokens = q.split(/\s+/).filter((x) => x.length >= 2).slice(0, 5);
@@ -144,11 +160,36 @@ function formatAsmaBlock(query: string): string {
   const top = (matched.length ? matched : fallback).map(
     (row) => `- №${row.n} ${row.ar} — ${truncateText(row.kk, 120)}`
   );
-  return ["🕋 99 есім 10% — Алланың есімдерінен:", ...top].join("\n");
+  return ["🕋 Алланың есімдерінен:", ...top].join("\n");
 }
 
 function joinStageBlocks(blocks: Array<string | null | undefined>): string {
   return blocks.map((x) => (x ?? "").trim()).filter(Boolean).join("\n\n");
+}
+
+function buildGroundedAiPrompt(
+  userQuestion: string,
+  historyPrompt: string,
+  stage: { quran: string; hadith: string; asma: string }
+): string {
+  const refs = [stage.quran, stage.hadith, stage.asma].map((x) => x.trim()).filter(Boolean);
+  if (!refs.length) return historyPrompt;
+  const mergedRefs = refs.join("\n\n");
+  const grounded = [
+    "Төмендегі деректерді тірек ретінде пайдалан.",
+    "Егер дерек жеткіліксіз болса, оны ашық айт; ойдан қоспа.",
+    "",
+    "=== Тірек дерек ===",
+    mergedRefs,
+    "",
+    "=== Негізгі сұрақ ===",
+    userQuestion.trim(),
+    "",
+    "=== Контекст (чат тарихы) ===",
+    historyPrompt,
+  ].join("\n");
+  if (grounded.length <= MAX_PROMPT_CHARS) return grounded;
+  return grounded.slice(-MAX_PROMPT_CHARS);
 }
 
 function pickPrimaryStageText(stage: { quran: string; hadith: string; asma: string; web: string }): string {
@@ -163,6 +204,7 @@ export function RaqatAIChatScreen() {
   const keyboardOffset = useKeyboardOffset();
   const { width: winW } = useWindowDimensions();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const route = useRoute<RouteProp<MoreStackParamList, "RaqatAI">>();
   /** Төменгі жүйелік навигация + клавиатура: Android-да жазу жолы клавиатура үстінде қалуы үшін kb қосылады. */
   const inputBottomPad =
     10 +
@@ -172,6 +214,7 @@ export function RaqatAIChatScreen() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const handledVoiceTokenRef = useRef<string>("");
   const listRef = useRef<FlatList<ChatMsg>>(null);
   const messagesRef = useRef<ChatMsg[]>([]);
   messagesRef.current = messages;
@@ -183,7 +226,7 @@ export function RaqatAIChatScreen() {
       headerTitle: () => (
         <View style={[styles.headerTitleRow, { maxWidth: Math.min(winW - 88, 400) }]}>
           <Image
-            source={require("../../assets/raqat-ai-header.png")}
+            source={require("../../assets/menu-icons/promo-ai-custom.png")}
             style={styles.headerLogo}
             resizeMode="contain"
             accessibilityIgnoresInvertColors
@@ -238,8 +281,8 @@ export function RaqatAIChatScreen() {
     );
   }, [navigation]);
 
-  const send = useCallback(async () => {
-    const t = input.trim();
+  const send = useCallback(async (overrideText?: string) => {
+    const t = (overrideText ?? input).trim();
     if (!t || loading || !canChat) return;
     setInput("");
     const promptForApi = buildPromptWithHistory(messagesRef.current, t);
@@ -337,38 +380,45 @@ export function RaqatAIChatScreen() {
       stage.hadith = "";
     }
     updateStage();
+    const groundedPrompt = buildGroundedAiPrompt(t, promptForApi, {
+      quran: stage.quran,
+      hadith: stage.hadith,
+      asma: stage.asma,
+    });
 
     /** Кірусіз де LLM сұрауын жібереміз; сервер саясатына қарай жауап береді. */
 
     try {
-      const quickPrimary = await aiChatWithAuthFallback(promptForApi, {
+      const quickPrimary = await aiChatWithAuthFallback(groundedPrompt, {
         timeoutMs: 25_000,
         detailLevel: "quick",
       });
       let quickRes = quickPrimary;
       let quickText =
         typeof quickRes.text === "string" && quickRes.text.trim()
-          ? quickRes.text.trim()
+          ? normalizeAiNarrative(quickRes.text.trim())
           : "";
       let httpOkQuick = quickRes.status === undefined || quickRes.status === 200;
 
       /** Бірінші quick жауап бос/қате болса — қысқа prompt-пен бір рет қайта көреміз. */
       if (!httpOkQuick || !quickText || quickRes.ok === false) {
-        const quickRetry = await aiChatWithAuthFallback(t, {
+        const quickRetry = await aiChatWithAuthFallback(groundedPrompt, {
           timeoutMs: 15_000,
           detailLevel: "quick",
         });
         quickRes = quickRetry;
         quickText =
           typeof quickRes.text === "string" && quickRes.text.trim()
-            ? quickRes.text.trim()
+            ? normalizeAiNarrative(quickRes.text.trim())
             : "";
         httpOkQuick = quickRes.status === undefined || quickRes.status === 200;
       }
 
       if (!httpOkQuick || !quickText || quickRes.ok === false) {
+        const errLine = formatAiApiError(quickRes.status, quickRes);
         const guestHint = getGuestLocalHint(t);
         const fallbackText = joinStageBlocks([
+          errLine,
           guestHint,
           stage.quran,
           stage.hadith,
@@ -388,11 +438,15 @@ export function RaqatAIChatScreen() {
         return;
       }
 
-      stage.web = `🌐 Интернет 20%:\n${quickText}`;
+      stage.web = `🌐 ${quickText}`;
       updateStage();
-    } catch {
+    } catch (e) {
+      const errLine = formatAiApiError(undefined, {
+        detail: e instanceof Error ? e.message : String(e),
+      });
       const guestHint = getGuestLocalHint(t);
       const fallbackText = joinStageBlocks([
+        errLine,
         guestHint,
         stage.quran,
         stage.hadith,
@@ -415,14 +469,14 @@ export function RaqatAIChatScreen() {
     }
 
     try {
-      const fullRes = await aiChatWithAuthFallback(promptForApi, {
+      const fullRes = await aiChatWithAuthFallback(groundedPrompt, {
         timeoutMs: 80_000,
         detailLevel: "full",
         stagedPipeline: true,
       });
       const fullText =
         typeof fullRes.text === "string" && fullRes.text.trim()
-          ? fullRes.text.trim()
+          ? normalizeAiNarrative(fullRes.text.trim())
           : "";
       const httpOkFull = fullRes.status === undefined || fullRes.status === 200;
       if (httpOkFull && fullText && fullRes.ok !== false) {
@@ -437,13 +491,13 @@ export function RaqatAIChatScreen() {
         setMessages((m) =>
           m.map((x) =>
             x.id === assistantId
-              ? { ...x, detailLoading: false, detailLoadError: true, retryPrompt: promptForApi }
+              ? { ...x, detailLoading: false, detailLoadError: true, retryPrompt: groundedPrompt }
               : x
           )
         );
         void AsyncStorage.setItem(
           LAST_AI_FAIL_KEY,
-          JSON.stringify({ at: Date.now(), prompt: promptForApi, reason: "full_response_failed" })
+          JSON.stringify({ at: Date.now(), prompt: groundedPrompt, reason: "full_response_failed" })
         );
       }
     } catch {
@@ -456,10 +510,19 @@ export function RaqatAIChatScreen() {
       );
       void AsyncStorage.setItem(
         LAST_AI_FAIL_KEY,
-        JSON.stringify({ at: Date.now(), prompt: promptForApi, reason: "network_or_timeout" })
+        JSON.stringify({ at: Date.now(), prompt: groundedPrompt, reason: "network_or_timeout" })
       );
     }
   }, [base, canChat, input, loading]);
+
+  useEffect(() => {
+    const p = route.params;
+    if (!p?.autoSend || !p.initialPrompt?.trim()) return;
+    const token = p.voiceActionToken ?? p.initialPrompt;
+    if (handledVoiceTokenRef.current === token) return;
+    handledVoiceTokenRef.current = token;
+    void send(p.initialPrompt.trim());
+  }, [route.params, send]);
 
   const retryDetail = useCallback(
     async (item: ChatMsg) => {

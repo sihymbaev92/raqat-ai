@@ -11,6 +11,7 @@ import { DHIKR_CHAPTERS } from "../content/dhikrChapters";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TasbihStackParamList } from "../navigation/types";
 import { loadDhikrItems, effectiveGoalForItem } from "./tasbihShared";
+import { pickBestTranslit } from "../utils/translitKk";
 
 type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihList">;
 
@@ -81,6 +82,7 @@ export function TasbihListScreen({ navigation }: Props) {
               const g = effectiveGoalForItem(d, null);
               const c = dhikrCounts[id] ?? 0;
               const show = `${c} / ${g}`;
+              const translit = pickBestTranslit(d.textAr || "", d.translitKk);
               return (
                 <View key={id} style={styles.listRowWrap}>
                   <Pressable
@@ -107,9 +109,9 @@ export function TasbihListScreen({ navigation }: Props) {
                       <Text style={styles.listRowTitle} numberOfLines={2}>
                         {d.textKk}
                       </Text>
-                      {d.translitKk ? (
+                      {translit ? (
                         <Text style={styles.listRowTranslit} numberOfLines={2}>
-                          {d.translitKk}
+                          {translit}
                         </Text>
                       ) : null}
                       <Text style={styles.listRowProgress}>{show}</Text>

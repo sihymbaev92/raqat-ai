@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,8 +9,10 @@ import {
   ActivityIndicator,
   TextInput,
   Linking,
+  Platform,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +20,7 @@ import type { ThemeColors } from "../theme/colors";
 import type { MoreStackParamList } from "../navigation/types";
 import { useAppTheme, type ThemeMode } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
-import { getRaqatApiBase } from "../config/raqatApiBase";
+import { getRaqatApiBase, saveRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
 import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
 import { runContentSyncWithIncrementalPatches } from "../services/contentSync";
@@ -53,6 +55,15 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { AppleSignInButton, GoogleSignInBlock } from "../components/AccountLoginModal";
 import { PhoneAuthBlock } from "../components/PhoneAuthBlock";
 import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
+import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
+
+const VOICE_DIAG_KEY = "raqat_voice_diag_v1";
+type VoiceDiagEntry = {
+  at: number;
+  transcript: string;
+  action: string;
+  lang: "kk-KZ" | "ru-RU";
+};
 
 type SettingsMoreLink = keyof Pick<
   MoreStackParamList,
@@ -69,6 +80,7 @@ export function SettingsScreen() {
   const [iftar, setIftar] = useState(false);
   const [permHint, setPermHint] = useState(false);
   const [apiBase, setApiBase] = useState(() => getRaqatApiBase());
+  const [apiBaseInput, setApiBaseInput] = useState(() => getRaqatApiBase());
   const [apiLoading, setApiLoading] = useState(false);
   const [apiOk, setApiOk] = useState<boolean | null>(null);
   const [health, setHealth] = useState<HealthPayload | null>(null);
@@ -83,7 +95,10 @@ export function SettingsScreen() {
   const [oauthMsg, setOauthMsg] = useState<string | null>(null);
   const [platformPid, setPlatformPid] = useState<string | null>(null);
   const [supportAccountCopied, setSupportAccountCopied] = useState(false);
-  const lastPlatformCheckAt = useRef(0);
+  const [voiceDiag, setVoiceDiag] = useState<VoiceDiagEntry[]>([]);
+  const [voiceDiagCopied, setVoiceDiagCopied] = useState(false);
+  const [voiceHealthBusy, setVoiceHealthBusy] = useState(false);
+  const [voiceHealthReport, setVoiceHealthReport] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const c = await getSelectedCity();
@@ -130,6 +145,7 @@ export function SettingsScreen() {
   const checkPlatformApi = useCallback(async () => {
     const base = getRaqatApiBase();
     setApiBase(base);
+    setApiBaseInput(base);
     if (!base) {
       setApiOk(null);
       setHealth(null);
@@ -165,15 +181,24 @@ export function SettingsScreen() {
     }
   }, []);
 
+  const applyApiBase = useCallback(async () => {
+    const next = await saveRaqatApiBaseOverride(apiBaseInput);
+    setApiBase(next);
+    await checkPlatformApi();
+  }, [apiBaseInput, checkPlatformApi]);
+
   useFocusEffect(
     useCallback(() => {
-      const now = Date.now();
-      if (now - lastPlatformCheckAt.current >= 45_000) {
-        lastPlatformCheckAt.current = now;
-        checkPlatformApi();
-      }
+      void checkPlatformApi();
       void (async () => {
         setPlatformPid(await getStoredPlatformUserId());
+        try {
+          const rawDiag = await AsyncStorage.getItem(VOICE_DIAG_KEY);
+          const parsed = rawDiag ? (JSON.parse(rawDiag) as VoiceDiagEntry[]) : [];
+          setVoiceDiag(Array.isArray(parsed) ? parsed.slice(-8).reverse() : []);
+        } catch {
+          setVoiceDiag([]);
+        }
       })();
     }, [checkPlatformApi])
   );
@@ -241,6 +266,72 @@ export function SettingsScreen() {
     setSupportAccountCopied(true);
     setTimeout(() => setSupportAccountCopied(false), 2000);
   }, [supportAccount]);
+
+  const copyVoiceDiag = useCallback(async () => {
+    const payload =
+      voiceDiag.length === 0
+        ? kk.settings.voiceDebugEmpty
+        : voiceDiag
+            .map((x) => {
+              const ts = new Date(x.at).toLocaleString();
+              return `[${ts}] (${x.lang}) ${x.action} :: ${x.transcript || "<empty>"}`;
+            })
+            .join("\n");
+    await Clipboard.setStringAsync(payload);
+    setVoiceDiagCopied(true);
+    setTimeout(() => setVoiceDiagCopied(false), 2000);
+  }, [voiceDiag]);
+
+  const runVoiceEngineHealthCheck = useCallback(async () => {
+    setVoiceHealthBusy(true);
+    try {
+      const M = ExpoSpeechRecognitionModule as unknown as {
+        getPermissionsAsync?: () => Promise<{ granted?: boolean; status?: string }>;
+        requestPermissionsAsync?: () => Promise<{ granted?: boolean; status?: string }>;
+        isRecognitionAvailableAsync?: () => Promise<boolean>;
+        getSupportedLocalesAsync?: () => Promise<string[]>;
+      };
+      const lines: string[] = [];
+      lines.push(`Platform: ${Platform.OS}`);
+      let permLine = "Permission: unknown";
+      try {
+        const p = (await M.getPermissionsAsync?.()) ?? (await M.requestPermissionsAsync?.());
+        if (p) {
+          const st = p.status ?? "unknown";
+          permLine = `Permission: ${st}${p.granted ? " (granted)" : ""}`;
+        }
+      } catch (e) {
+        permLine = `Permission check error: ${e instanceof Error ? e.message : String(e)}`;
+      }
+      lines.push(permLine);
+      try {
+        if (M.isRecognitionAvailableAsync) {
+          const ok = await M.isRecognitionAvailableAsync();
+          lines.push(`Recognition service: ${ok ? "available" : "unavailable"}`);
+        } else {
+          lines.push("Recognition service: method not exposed");
+        }
+      } catch (e) {
+        lines.push(`Recognition check error: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      try {
+        if (M.getSupportedLocalesAsync) {
+          const locales = await M.getSupportedLocalesAsync();
+          const hasKk = locales.includes("kk-KZ");
+          const hasRu = locales.includes("ru-RU");
+          lines.push(`Locales: kk-KZ=${hasKk ? "yes" : "no"}, ru-RU=${hasRu ? "yes" : "no"}`);
+          lines.push(`Locales count: ${locales.length}`);
+        } else {
+          lines.push("Locales: method not exposed");
+        }
+      } catch (e) {
+        lines.push(`Locales check error: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      setVoiceHealthReport(lines.join("\n"));
+    } finally {
+      setVoiceHealthBusy(false);
+    }
+  }, []);
 
   return (
     <ScrollView
@@ -419,6 +510,27 @@ export function SettingsScreen() {
       <Text style={styles.hint}>{kk.prayer.iftarHint}</Text>
 
       <Text style={styles.label}>{kk.settings.platformApi}</Text>
+      <TextInput
+        style={styles.textIn}
+        value={apiBaseInput}
+        onChangeText={setApiBaseInput}
+        autoCapitalize="none"
+        autoCorrect={false}
+        keyboardType="url"
+        placeholder="http://192.168.0.148:8787"
+        placeholderTextColor={colors.muted}
+      />
+      <Pressable
+        style={({ pressed }) => [
+          styles.smallBtn,
+          { marginLeft: 0, alignSelf: "flex-start", marginTop: 8 },
+          pressed && { opacity: 0.85 },
+        ]}
+        onPress={() => void applyApiBase()}
+        disabled={apiLoading}
+      >
+        <Text style={styles.smallBtnTxt}>API сақтау</Text>
+      </Pressable>
       {!apiBase ? (
         <>
           <Text style={styles.boxMuted}>{kk.settings.platformApiNotConfigured}</Text>
@@ -563,6 +675,51 @@ export function SettingsScreen() {
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
+
+      <View style={styles.supportBlock}>
+        <Text style={[styles.supportTitle, { marginBottom: 10 }]}>{kk.settings.voiceDebugTitle}</Text>
+        {voiceDiag.length === 0 ? (
+          <Text style={styles.supportBody}>{kk.settings.voiceDebugEmpty}</Text>
+        ) : (
+          <View style={styles.voiceDiagList}>
+            {voiceDiag.map((x, idx) => (
+              <View key={`${x.at}-${idx}`} style={styles.voiceDiagItem}>
+                <Text style={styles.voiceDiagMeta}>
+                  {new Date(x.at).toLocaleTimeString()} · {x.lang} · {x.action}
+                </Text>
+                <Text style={styles.voiceDiagText} numberOfLines={2}>
+                  {x.transcript || "<empty>"}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+        <Pressable
+          style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
+          onPress={() => void copyVoiceDiag()}
+          accessibilityRole="button"
+          accessibilityLabel={kk.settings.voiceDebugCopy}
+        >
+          <Text style={styles.supportCopyBtnTxt}>
+            {voiceDiagCopied ? kk.settings.voiceDebugCopied : kk.settings.voiceDebugCopy}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
+          onPress={() => void runVoiceEngineHealthCheck()}
+          accessibilityRole="button"
+          accessibilityLabel="Voice Engine Health Check"
+        >
+          <Text style={styles.supportCopyBtnTxt}>
+            {voiceHealthBusy ? "Тексерілуде..." : "Engine health check"}
+          </Text>
+        </Pressable>
+        {voiceHealthReport ? (
+          <View style={styles.voiceHealthBox}>
+            <Text style={styles.voiceHealthText}>{voiceHealthReport}</Text>
+          </View>
+        ) : null}
+      </View>
 
       <View style={styles.supportBlock}>
         <Text style={styles.supportTitle}>{kk.settings.supportProjectTitle}</Text>
@@ -799,5 +956,44 @@ function makeStyles(colors: ThemeColors) {
       alignItems: "center",
     },
     supportBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
+    voiceDiagList: {
+      marginTop: 4,
+      gap: 8,
+    },
+    voiceDiagItem: {
+      backgroundColor: colors.bg,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+    },
+    voiceDiagMeta: {
+      color: colors.muted,
+      fontSize: 11,
+      lineHeight: 16,
+      marginBottom: 2,
+    },
+    voiceDiagText: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "600",
+    },
+    voiceHealthBox: {
+      marginTop: 10,
+      backgroundColor: colors.bg,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+    },
+    voiceHealthText: {
+      color: colors.text,
+      fontSize: 12,
+      lineHeight: 17,
+      fontFamily: "monospace",
+    },
   });
 }

@@ -12,6 +12,7 @@ export function formatAiApiError(status: number | undefined, res: { detail?: unk
     return String((d[0] as { msg?: string }).msg ?? kk.aiChat.error);
   }
   if (status === 401 || status === 403) return kk.aiChat.errorAuth;
+  if (status === 429) return kk.aiChat.errorRateLimit;
   if (status === 503) return kk.aiChat.errorServer;
   return kk.aiChat.error;
 }
