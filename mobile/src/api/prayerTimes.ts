@@ -1,6 +1,8 @@
 /**
  * Aladhan ашық API (токенсіз) — боттағы логикамен үйлесімді.
  * https://aladhan.com/prayer-times-api
+ * school=1 (Hanafi) — бесіннен кейінгі екінті (Asr) шафи есебінен гөрі ханафиға сәйкес;
+ *   әлі де есеп әдісі (method) мен мешіт/ресми күнтізбеден шақырым болуы мүмкін — мешітке сүйену ұсынылады.
  */
 const ALADHAN_BY_CITY = "https://api.aladhan.com/v1/timingsByCity";
 
@@ -78,6 +80,7 @@ export async function fetchPrayerTimesByCity(
     city: city.trim(),
     country: country.trim(),
     method: String(method),
+    school: "1", // Aladhan: 0=Shafi, 1=Hanafi (Imam Azam jamaat practice)
   });
   const url = `${ALADHAN_BY_CITY}?${params.toString()}`;
   try {
@@ -131,6 +134,7 @@ export async function fetchPrayerTimesByCityForDate(
     city: city.trim(),
     country: country.trim(),
     method: String(method),
+    school: "1",
     date: formatDateParam(when),
   });
   const url = `${ALADHAN_BY_CITY}?${params.toString()}`;

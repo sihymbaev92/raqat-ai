@@ -26,8 +26,8 @@ def _normalize_time(value: str) -> str:
     return value.split()[0].strip()
 
 
-def _cache_key(city: str, country: str, method: int) -> tuple[str, str, int]:
-    return (city.lower(), country.lower(), int(method))
+def _cache_key(city: str, country: str, method: int, school: int) -> tuple[str, str, int, int]:
+    return (city.lower(), country.lower(), int(method), int(school))
 
 
 def _checked_at_label(now_ts: float) -> str:
@@ -48,12 +48,14 @@ def fetch_prayer_times_by_city(
     city: str,
     country: str,
     method: int = 3,
+    school: int = 1,
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     """
     Қала/ел бойынша бүгінгі намаз уақыттарын алады.
 
     method: Aladhan есеп әдісі (әдепкі 3 = Muslim World League).
+    school: 1 = ханафи (Имам Әбу Ханифа) — екінті уақыты; 0 = шафи. Әдепкі: 1.
     Сәтсіз болса None.
     """
     city = (city or "").strip()
@@ -63,7 +65,7 @@ def fetch_prayer_times_by_city(
 
     timeout = PRAYER_TIMES_TIMEOUT_SECONDS if timeout is None else timeout
     now_ts = time.time()
-    key = _cache_key(city, country, method)
+    key = _cache_key(city, country, method, school)
     cached = _PRAYER_TIMES_CACHE.get(key)
 
     if cached and now_ts < cached["expires_at"]:
@@ -73,6 +75,7 @@ def fetch_prayer_times_by_city(
         "city": city,
         "country": country,
         "method": method,
+        "school": int(school),
     }
     try:
         r = requests.get(ALADHAN_BY_CITY, params=params, timeout=timeout)
@@ -106,6 +109,7 @@ def fetch_prayer_times_by_city(
         "date": readable,
         "source": "Aladhan API",
         "method": method,
+        "school": int(school),
         "checked_at_utc": _checked_at_label(now_ts),
         "cache_status": "live",
         "Фаджр": _normalize_time(timings.get("Fajr", "")),

@@ -49,6 +49,32 @@ def test_fetch_parses_aladhan_json():
     assert out["Бесін"] == "12:15"
     assert out["source"] == "Aladhan API"
     assert out["cache_status"] == "live"
+    assert out.get("school") == 1
+
+
+def test_fetch_sends_hanafi_school_to_aladhan():
+    clear_prayer_times_cache()
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status = MagicMock()
+    mock_resp.json.return_value = {
+        "data": {
+            "timings": {
+                "Fajr": "05:10",
+                "Sunrise": "06:40",
+                "Dhuhr": "12:15",
+                "Asr": "15:30",
+                "Maghrib": "18:00",
+                "Isha": "19:30",
+            },
+            "date": {"readable": "11 Apr 2026"},
+        }
+    }
+    with patch("services.prayer_times_service.requests.get", return_value=mock_resp) as get_mock:
+        fetch_prayer_times_by_city("Oskemen", "Kazakhstan")
+    assert get_mock.call_count == 1
+    _args, call_kw = get_mock.call_args
+    assert call_kw["params"]["school"] == 1
+    assert call_kw["params"]["method"] == 3
 
 
 def test_fetch_empty_city_returns_none():
