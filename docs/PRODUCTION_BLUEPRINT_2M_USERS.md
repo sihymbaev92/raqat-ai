@@ -55,7 +55,7 @@ raqat/
   docs/
 ```
 
-- `apps/api` — негізгі Platform API.
+- `apps/api` — **карта**; нақты Platform API коды [`platform_api/`](../platform_api/), іске қосу: `scripts/run_platform_api.sh` немесе `apps/api/dev.sh` / `apps/api/dev.ps1`.
 - `packages/*` — домендік модульдер (бір кодбаза, таза шекара, қарапайым deploy).
 
 ---

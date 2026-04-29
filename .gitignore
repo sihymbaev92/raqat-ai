@@ -25,6 +25,10 @@ platform_api/.venv.linux_backup/
 backup/
 backups/
 
+# Deploy / local archive bundles (репоға кірмейді)
+platform_api/*.tar.gz
+platform_api/*.zip
+
 # Logs / telemetry
 logs/
 .logs/

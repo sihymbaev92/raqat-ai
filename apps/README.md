@@ -16,7 +16,7 @@
 
 ## Жергілікті іске қосу (қысқа)
 
-- API: `bash scripts/run_platform_api.sh` немесе `docs/DEV_LOCAL_CHECKLIST.md`
+- API: `bash scripts/run_platform_api.sh` немесе `cd apps/api && bash dev.sh` (Windows: `cd apps\api; .\dev.ps1`), толығы: [`api/README.md`](./api/README.md) және `docs/DEV_LOCAL_CHECKLIST.md`
 - Бот: `python bot_main.py` (түбірден)
 - Mobile: `cd mobile && npm run start`
 - Web: `cd web && python3 -m http.server 8080`
