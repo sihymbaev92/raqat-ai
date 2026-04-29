@@ -1,5 +1,5 @@
-/** Құбылаға тура келу үшін ауытқу шегі (градус көрсетілмейді, тек ішкі есеп). */
-export const QIBLA_ALIGN_THRESHOLD_DEG = 12;
+/** Құбылаға «тура» деп саналу үшін макс. ауытқу (градус). 8° — 12°-қа қарағанда тар «жасыл» аймақ. */
+export const QIBLA_ALIGN_THRESHOLD_DEG = 8;
 
 export type QiblaAlignHint = "none" | "aligned" | "turn_cw" | "turn_ccw";
 
