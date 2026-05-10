@@ -2,7 +2,7 @@
 
 Бұл құжатты басқа модельге немесе серіктеске **бірден жіберуге** болады: веб, мобильді, Telegram бот, `platform_api`, SQLite, скрипттер мен қауіпсіздік моделі. **`.env` құпиялары осы мәтінге енгізілмейді.**
 
-**Соңғы жинақ (бір сессияда жеткілікті минимум):** **§22** (ops / API / мобильді UI принциптері) → **§23** (SQLite auth схемасы, миграция 012–014) → **§24** (барлық тақырып бойынша **толық сілтеме картасы**). Өндіріс шегі мен аудит жауаптары: **`docs/PRODUCTION_POSTURE.md`**. Ұзын мәтінді толық оқудың орнына: §22–§24 + `PRODUCTION_POSTURE` + қажет құжат (кесте §24).
+**Соңғы жинақ (бір сессияда жеткілікті минимум):** **§22** (ops / API / мобильді UI принциптері) → **§23** (SQLite auth схемасы, миграция 012–014) → **§24** (барлық тақырып бойынша **толық сілтеме картасы**) → **§26** (2026-05: хатым кітап UI, Құран оқу ландшафты, мұсаф араб тығыздығы). Өндіріс шегі мен аудит жауаптары: **`docs/PRODUCTION_POSTURE.md`**. Ұзын мәтінді толық оқудың орнына: §22–§24 + §26 + `PRODUCTION_POSTURE` + қажет құжат (кесте §24).
 
 ---
 
@@ -59,6 +59,58 @@
 1. Реал құрылғыда Qibla sensor calibration UX (fast vs stable toggle) қосу.  
 2. OFF rate-limit (`429`) үшін adaptive backoff + telemetry өрісін қосу.  
 3. Halal E-code базасын JSON/remote config-ке шығарып, кодсыз жаңарту арнасын ашу.
+
+## 26. Mobile update (2026-05-09) — Хатым кітап UI, Құран экран бағыты, мұсаф араб тығыздығы
+
+Бұл бөлім **мобильді** соңғы UX/типография жұмыстарын бекітеді (Expo SDK 54). Платформа API өзгерісі **қажет емес**; натив қайта жинау: `orientation` / `MainActivity` өзгерген соң **толық Android build** (`expo run:android` немесе APK скрипті).
+
+### 26.1 Хатым (`Hatim`) — мұсаф кітап хромы
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/src/screens/HatimScreen.tsx` | Сүре тізімі **кітап үстелі** (`#EBE4D4`) + **бет** (`#FDF6E9`) ішінде: көлеңке, жиек, қараңғы темада `#0D0C0B` / `#161513` палитрасы; прогресс карточкасы мен жолдар «қағаз» бетіне сәйкес surface түстері |
+| `mobile/src/navigation/MoreStack.tsx` | `Hatim` экраны: `headerStyle` / `contentStyle` жарық режимде үстел түсі; `headerTintColor` / `headerTitleStyle` — `#5C4D3D` (мәтін кітап сиясында) |
+
+Хатымнан сүреге өту бұрынғыдай: `QuranSurah` с `mushafLayout: true`.
+
+### 26.2 Құран сүре оқу: экранды бұру (портрет / ландшафт)
+
+| Файл | Өзгеріс |
+|------|---------|
+| `mobile/package.json` | Тәуелділік: **`expo-screen-orientation`** (~SDK 54 үйлесімді нұсқа) |
+| `mobile/app.json` | `"orientation": "default"` — натив деңгейде бұруға жол; әдепкі қолданба портреті JS арқылы бекітіледі |
+| `mobile/android/app/src/main/AndroidManifest.xml` | `MainActivity` үшін қатты **`android:screenOrientation="portrait"`** алынып тасталды (ландшафт `setRequestedOrientation` / expo модулімен жұмыс істеу үшін) |
+| `mobile/App.tsx` | `bootReady` кейін **`ScreenOrientation.lockAsync(PORTRAIT_UP)`** — Құраннан тыс экрандар әдепкі тік |
+| `mobile/src/screens/QuranSurahScreen.tsx` | **`useFocusEffect`**: оқу экранында баптауға қарай `unlockAsync()` немесе портрет құлыбы; шыққанда портретке қайта бекіту. AsyncStorage: **`quran_reader_allow_rotation_v1`** (`1` = ландшафтқа рұқсат) |
+| `mobile/src/i18n/kk.ts` | `quran.readerAllowRotationLabel` / `readerAllowRotationHint` (қазақша түсіндірме: жатық оқу үшін өшік ұсынылады) |
+
+**Ескерту:** iOS үшін `prebuild` кейін `Info.plist` бағыттары `app.json`-мен үйлесуін тексеру керек.
+
+### 26.3 Мушаф (`mushafLayout`) — араб мәтінін тығыздау
+
+Барлығы **`QuranSurahScreen.tsx`** ішіндегі `makeStyles` / mushaf константалары: аят арабының **`letterSpacing: 0`**, жол биіктігі множителінің азайтылуы (`mushafArabLineHeight`), қаріп өлшемі коэффициенті (`mushafArabSize`), **`mushafAyahArabicCluster` gap** (маркер ↔ мәтін), **`mushafAyahRow`** төменгі/ішкі padding, **`mushafListPad`** горизонталь padding, сүре тақырыбы арабы (`mushafSurahTitleAr` fontSize/lineHeight), бисмилля баннері (`mushafBismillahBanner` padding + `mushafBismillahBannerTxt` lineHeight/fontSize), аят маркері сақинасының өлшемі.
+
+Мақсаты: хатымнан ашылатын мұсаф оқуда **әріп пен жол арасы ашық тұрмау**.
+
+### 26.4 Git commit (қысқа)
+
+| Элемент | Мазмұны |
+|---------|--------|
+| Commit | **`a6d447f`** — хабарлама: `mobile: hatim book chrome, Quran rotation toggle, mushaf spacing` |
+| Файлдар (9) | `App.tsx`, `app.json`, `AndroidManifest.xml`, `package.json`, `package-lock.json`, `QuranSurahScreen.tsx`, `HatimScreen.tsx`, `MoreStack.tsx`, `kk.ts` |
+| Ескерту | `QuranSurahScreen.tsx` / `kk.ts` diff үлкен болуы мүмкін — сол commitке **басқа WIP өзгерістері** де кірген болса; кейінгі PR-да тармақтау ұсынылады |
+
+### 26.5 Тексеру
+
+| Тексеру | Нәтиже (сұрау бойынша) |
+|---------|-------------------------|
+| `npm run lint` (`mobile/`) | `tsc --noEmit` OK |
+
+### 26.6 Қысқа next steps
+
+1. Реал құрылғыда мұсаф оқу: бисмилля/ұзын аяттарда жол қиылысуын тексеру; қажет болса `mushafBismillahBannerTxt` lineHeight множителін **1.0**-ға жақындату.  
+2. Хатым тізімінде қосымша орнамент (мысалы `KazakhOrnamentBand`) — өнім шешімі бойынша.  
+3. `expo prebuild` кейін Android manifest бағыт өрістерін қайта валидациялау.
 
 ## GPT-ге қалай жіберу (ChatGPT, Claude, Cursor, т.б.)
 
@@ -528,7 +580,7 @@ Cutover / rollback / нұсқа жауаптар (A·sync·pool·FTS): `docs/MIG
 
 ---
 
-*Файл жолы: `docs/PLATFORM_GPT_HANDOFF.md`. Құран тереңдігі: `docs/QURAN_GPT_HANDOFF.md`. Өнім жол картасы: `docs/RAQAT_PLATFORM.md` (XI–XII). Жинақтау: **§22** (ops) · **§23** (auth/DB) · **§24** (карта); өндіріс шегі: **`PRODUCTION_POSTURE.md`**.*
+*Файл жолы: `docs/PLATFORM_GPT_HANDOFF.md`. Құран тереңдігі: `docs/QURAN_GPT_HANDOFF.md`. Өнім жол картасы: `docs/RAQAT_PLATFORM.md` (XI–XII). Жинақтау: **§22** (ops) · **§23** (auth/DB) · **§24** (карта) · **§26** (мобильді хатым/Құран мұсаф/бағыт); өндіріс шегі: **`PRODUCTION_POSTURE.md`**.*
 
 ---
 
@@ -1226,7 +1278,7 @@ bash scripts/dev_restart_platform.sh
 
 ## 22. Жинақтау нұсқауы (2026-04-18) — GPT / SRE үшін бір сурет
 
-Бұл бөлім жоғарыдағы **§1–§21** мен тыс құжаттарды **бір экранға** жинайды; SQLite auth/схема нақтылығы үшін **§23**; барлық тақырып бойынша **толық сілтеме картасы** — **§24**. Жаңа сессияда **§22 + §23 + §24** (және қажет болса **`PRODUCTION_POSTURE.md`**) жеткілікті.
+Бұл бөлім жоғарыдағы **§1–§21** мен тыс құжаттарды **бір экранға** жинайды; SQLite auth/схема нақтылығы үшін **§23**; барлық тақырып бойынша **толық сілтеме картасы** — **§24**; соңғы мобильді mushaf/хатым/rotation — **§26**. Жаңа сессияда **§22 + §23 + §24** (+ мобильді UX үшін **§26**, қажет болса) және **`PRODUCTION_POSTURE.md`** жеткілікті.
 
 ### 22.1 Бір бетте не бар
 
@@ -1378,6 +1430,7 @@ bash scripts/dev_restart_platform.sh
 | 99 есім UI (басты промо + экран) | `DashboardScreen.tsx` (промо), `AsmaAlHusnaScreen.tsx`; таб ортасы жоқ |
 | Баптаулар, логин, донат URL | `SettingsScreen.tsx`, `raqatDonationUrl.ts`, `app.json` extra |
 | Офлайн Құран, UI defer | **§22.3**, `utils/uiDefer.ts` |
+| Хатым кітап UI, Құран ландшафт баптауы, мұсаф араб тығыздығы | **§26**, `HatimScreen.tsx`, `MoreStack.tsx`, `QuranSurahScreen.tsx`, `App.tsx`, `expo-screen-orientation` |
 
 ### 24.7 Runbook және ops біріктірілген
 
