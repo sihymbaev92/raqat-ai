@@ -1,9 +1,9 @@
 {
   "expo": {
     "name": "RAQAT",
-    "slug": "raqat-mobile",
+    "slug": "imam-ai",
     "version": "1.0.6",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -54,7 +54,11 @@
         {
           "icon": "./assets/icon.png",
           "color": "#c9a227",
-          "sounds": [],
+          "sounds": [
+            "./assets/sounds/prayer_bell.wav",
+            "./assets/sounds/prayer_chime.wav",
+            "./assets/sounds/prayer_azan_soft.wav"
+          ],
           "mode": "production"
         }
       ],
@@ -73,9 +77,31 @@
       "usesAppleSignIn": true,
       "bundleIdentifier": "kz.raqat.app",
       "infoPlist": {
+        "CFBundleSpokenName": "Raqat",
+        "LSApplicationQueriesSchemes": [
+          "shortcuts"
+        ],
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
             "5.75.162.140": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "192.168.0.148": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "10.191.110.203": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "192.168.1.100": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "10.0.2.2": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "127.0.0.1": {
               "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
@@ -100,12 +126,14 @@
         "ACCESS_NETWORK_STATE",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "POST_NOTIFICATIONS"
+        "POST_NOTIFICATIONS",
+        "SCHEDULE_EXACT_ALARM"
       ]
     },
-    "scheme": "raqat",
+    "scheme": "imamai",
     "extra": {
-      "raqatApiBase": "http://192.168.0.148:8787",
+      "imamAiApiBase": "http://5.75.162.140",
+      "raqatApiBase": "http://5.75.162.140",
       "raqatDonationUrl": "https://t.me/my_islamic_ai_bot",
       "raqatSupportAccount": "",
       "googleWebClientId": "",
@@ -113,7 +141,8 @@
       "googleAndroidClientId": "",
       "eas": {
         "projectId": "94f161ec-5ac3-4bbb-8d6a-7694ecdb20ef"
-      }
+      },
+      "halalDamuUrl": "https://halaldamu.kz/kz/"
     }
   }
 }
