@@ -142,12 +142,12 @@ fi
 # `java -cp` сынып, ClassNotFoundException: com.google.prefab.cli.AppKt болады.
 # Репо жолы (transfer/.../mobile) ұзын болса, кэшті сонда ұстау C++/ninja «260 таңбадан ұзар» деген қате береді.
 # Сондықтан MINGW/MSYS-та кэшті қысқа ASCII дискі жолына қоямыз (RAQAT_GRADLE_USER_HOME тексеріледі).
-if [[ -z "${GRADLE_USER_HOME:-}" ]]; then
-  if [[ -n "${WINDIR:-}" ]] && [[ "$(uname -s 2>/dev/null)" = MINGW* || "$(uname -s 2>/dev/null)" = MSYS* ]]; then
-    export GRADLE_USER_HOME="${RAQAT_GRADLE_USER_HOME:-D:/raqat-gradle}"
-  else
-    export GRADLE_USER_HOME="${HOME}/.gradle"
-  fi
+# Ескерту: GRADLE_USER_HOME репо ішінде болса «Could not move temporary workspace … transforms» жиі шығады —
+# сондықтан Git Bash-та әрқашан қысқа жол (немесе RAQAT_GRADLE_USER_HOME) қолданылады.
+if [[ -n "${WINDIR:-}" ]] && [[ "$(uname -s 2>/dev/null)" = MINGW* || "$(uname -s 2>/dev/null)" = MSYS* ]]; then
+  export GRADLE_USER_HOME="${RAQAT_GRADLE_USER_HOME:-D:/raqat-gradle}"
+elif [[ -z "${GRADLE_USER_HOME:-}" ]]; then
+  export GRADLE_USER_HOME="${HOME}/.gradle"
 fi
 export ANDROID_GRADLE_USER_HOME="${ANDROID_GRADLE_USER_HOME:-$GRADLE_USER_HOME}"
 export TMPDIR="${TMPDIR:-$HOME/.tmp}"

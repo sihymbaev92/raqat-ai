@@ -18,6 +18,8 @@ export const kk = {
     next: "Келесі",
     skip: "Кейінірек",
     done: "Дайын",
+    /** Артқа қайту (скринридер) */
+    back: "Артқа",
     offlineBadge: "Офлайн дерек",
     fromCache: "Соңғы сақталған уақыттар көрсетілуде",
   },
@@ -239,6 +241,9 @@ export const kk = {
     prayerCardA11y: "Намаз уақыты мен кесте",
     /** Басты беттегі намаз блогын басқанда — толық экран ашылады */
     openPrayerDetailA11y: "Толық намаз уақыты және хижра күнтізбесі",
+    /** Намаз карточкасы: орталық ауа райы (скринридер) */
+    prayerWeatherA11y: (tempLine: string) => `Ауа райы: ${tempLine}`,
+    prayerWeatherUnavailableA11y: "Ауа райы: дерек жоқ",
     prayerCtaSub: "Кесте және ескертулер",
     seerahCta: "Сира",
     seerahCtaSub: "Нұрсұлтан ұстаз — 38 сабақ (YouTube)",
@@ -568,6 +573,25 @@ export const kk = {
     guideHide: "Нұсқауды жасыру",
     guideToggle: "Нұсқауды ашу немесе жасыру",
     markReadA11y: "{n}-сүре оқылды деп белгілеу",
+    /** Бисмилля баннерін басқанда оқу экранына өту */
+    basmalaOpenReaderA11y:
+      "Оқу экранын ашу: соңғы оқу орны немесе келесі белгісіз сүре. Бисмилля жолы.",
+    /** Сүре жолы: тізімнен мұсаф оқуға */
+    openSurahRowA11y: (n: number, title: string) => `${n}-сүре, ${title}. Мұсаф оқуын ашу`,
+    reminderTitle: "Күнделікті ескерту",
+    reminderHint: "Белгіленген уақытта хатымды жалғастыруды еске саламыз. Намаз хабарламаларын жаңартқанда да қайта қосылады.",
+    reminderNotifChannelName: "Хатым оқуы",
+    reminderNotifTitle: "Хатым",
+    reminderNotifBody: "Бүгінгі оқуды жалғастырыңыз — Құран хатымы.",
+    reminderPermNeeded: "Хабарлама рұқсаты қажет. Жүйе баптауларынан қосыңыз.",
+    reminderTimeLabel: "Уақыт",
+    reminderTimeMinusA11y: "Уақытты 30 минутқа артқа жылжыту",
+    reminderTimePlusA11y: "Уақытты 30 минутқа алға жылжыту",
+    /** Джуз торы: сүре «оқылды» белгісі джуз ішіндегі сүрелердің қаншасына тарағаны (шамамен) */
+    juzProgressTitle: "30 джуз",
+    juzProgressHint:
+      "Әр ұяшықта осы джузға кіретін сүрелердің қаншасы толық оқылды деп белгіленгені көрсетіледі (бір сүре бірнеше джузға саналуы мүмкін). Ұяшықты басып, сол джуздың басынан мұсафта ашыңыз.",
+    juzOpenA11y: (juz: number) => `Джуз ${juz}: осы джуздың басынан мұсаф оқуын ашу`,
   },
   communityDua: {
     screenTitle: "Қауым дұғасы",
@@ -742,6 +766,10 @@ export const kk = {
     ayahAudioReciterHint: "▶ Аят дыбысы — таңдалған қари (интернет, CDN).",
     ayahs: "аят",
     hatimInQuranHint: "Құран оқу жоспары — осы бөлімнен",
+    continueReadingTitle: "Соңғы оқуға оралу",
+    continueReadingSubtitle: (surahTitle: string, ayah: number) => `${surahTitle} · ${ayah}-аят`,
+    continueReadingA11y: (surahTitle: string, ayah: number) =>
+      `Соңғы оқуға оралу: ${surahTitle}, ${ayah}-аят`,
     kkApiHint:
       "Толық қазақша мағына платформа дерекқорында толтырылғанда барлық сүре үшін көрінеді. RAQAT платформа API қосыңыз; офлайн бандлда әдетте Құран мәтіні ғана.",
     meaningKk: "Мағына (қазақша)",
@@ -760,6 +788,9 @@ export const kk = {
     readerShowTranslitLabel: "Транскрипция (оқылуы)",
     readerShowMeaningLabel: "Мағына (қазақша аударма)",
     readerAllowRotationLabel: "Экранды бұруға рұқсат (ландшафт)",
+    /** Хатым мұсаф: жоғарғы панельдегі экран бұру батырмасы (a11y) */
+    readerAllowRotationTopA11y:
+      "Экранды бұруға рұқсат: қосу немесе өшіру. Өшіккенде тек портрет; қосылғанда ландшафтқа ауыса алады.",
     readerAllowRotationHint:
       "Өшіккенде оқу экранында тек портрет — телефонды үстелде жатық ұстап оққанда экран қайта-қайта бұрыла қоймайды. Қосқанда телефонды бұрып кең көрініспен оқуға болады.",
     readerAtLeastOneBlock: "Кем дегенде бірін қосып тұрыңыз.",
@@ -769,6 +800,46 @@ export const kk = {
     readerArabicFontTitle: "Араб мәтін стилі",
     readerArabicFontHint:
       "Өлшем мен қаріп түрі. «Geeza Pro» тек iOS-та қолданылады; Android жүйелік қарипен көрсетеді. «Кітап» үш түрі — Amiri, Lateef, Scheherazade (Google Fonts, қолданба ішінде бір рет жүктеледі).",
+    readerMushafScaleTitle: "Мұсаф: арап мәтіні өлшемі",
+    readerMushafScaleHint:
+      "Хатым кітап көрінісінде арап жолдарының өлшемі. Баптау сақталады — келесі оқуға кіргенде солай қалады.",
+    readerNavTitle: "Мұсаф: оқу режимі",
+    readerNavScroll: "Тік скролл (барлық аяттар)",
+    readerNavPage: "Беттер (солға/оңға)",
+    readerNavPageHint:
+      "Әр «бетте» бірнеше аят; саусақпен солға/оңға сырғытыңыз. Соңғы оқу орны беттің бірінші аяты бойынша сақталады.",
+    readerMushafDensityTitle: "Мұсаф: тығыздық",
+    readerMushafDensityHint:
+      "Аяттар арасындағы бостық пен араб жол биіктігі (бисмиллә үшін де). Таңдау сақталады.",
+    readerMushafDensityTight: "Ықшам",
+    readerMushafDensityMedium: "Орташа",
+    readerMushafDensityComfort: "Ыңғайлы",
+    readerAyahMarkerStyleTitle: "Аят нөмірі стилі",
+    readerAyahMarkerStyleHint: "Сол жақтағы нөмір белгісі: SVG сақина немесе классикалық шеңбер.",
+    readerAyahMarkerRingSvg: "SVG + үстемани",
+    readerAyahMarkerClassic: "Классикалық",
+    readerMushafPageEditionTitle: "Мұсаф бет нумерациясы",
+    readerMushafPageEditionHint:
+      "Мадина (King Fahd / KFGQPC, Хафс, 604 бет) және түрік басылымдарының көбі қолданатын Хафс 604 жүйесі. Екі режимде де дәл сол бет картасы көрсетіледі; басқа басылым болса, кітаппен салыстырыңыз.",
+    readerMushafPageEditionMedina: "Мадина (604, Хафс)",
+    readerMushafPageEditionTurkish: "Түрік басылымы (604, Хафс)",
+    mushafFooterEditionMedina: "Мадина",
+    mushafFooterEditionTurkish: "Түрік / Хафс",
+    ayahMenuTitle: (surah: number, ayah: number) => `Сүре ${surah} · аят ${ayah}`,
+    ayahMenuPlay: "Осыдан ойнату",
+    ayahMenuCopy: "Көшірру (араб + мағына)",
+    ayahMenuCopyWithTranslation: "Көшірру (аударма мен транскрипция)",
+    ayahMenuShare: "Бөлісу",
+    ayahMenuNote: "Ескертпа…",
+    ayahMenuBookmarkColors: "Түсті белгі",
+    ayahMenuRemoveMarker: "Белгіні жою",
+    ayahMenuCopied: "Көшірілді",
+    ayahMenuNotePlaceholder: "Ескертпа мәтіні…",
+    ayahMenuSaveNote: "Сақтау",
+    ayahMenuCancel: "Болдырмау",
+    readerMushafScaleSmallerA11y: "Араб мәтінін кішірейту",
+    readerMushafScaleLargerA11y: "Араб мәтінін үлкейту",
+    readerMushafScaleValueA11y: (pct: number) => `Масштаб шамамен ${pct} пайыз`,
     readerOpenLegend: "Тәжуид түстерінің анықтамасы",
     readerTajweedExplainShort:
       "Түстер мәтіндегі тәжуид ережелерін көрсетеді: қызғылт — ұзарту (медд), көк — қалқала, жасыл — ғунна/ихфа/идғам т.б. Толық мысалдармен төмендегі «Анықтама» батырмасын басыңыз.",
@@ -780,7 +851,7 @@ export const kk = {
     mushafFooterPageA11y: "Шамамен бет нөмірі",
     /** Сүре тізімінің үстіндегі мушаф стиліндегі бисмилля жолы (скринридер) */
     readerBismillahBannerA11y:
-      "Сүре алдындағы بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ — Құран кітабындағыдай бастау жолы",
+      "Сүре алдындағы бисмиллә — бастау: بسم الله الرحمن الرحيم",
     tajweedModeLabel: "Тәжуид түстері",
     tajweedModeHint:
       "Al Quran Cloud «quran-tajweed» дерегі: ұзарту (медд), ғунна, ихфа, қалқала, тыныш әріптер және т.б. түспен белгіленеді. Қосқанда интернет қажет (бір рет жүктеліп кештеледі).",
@@ -890,6 +961,28 @@ export const kk = {
     themeDark: "Қараңғы",
     themeLight: "Жарық",
     themeSystem: "Жүйе бойынша",
+    quranReadSection: "Құран оқу",
+    quranReadLastPos: "Соңғы орынын сақтау",
+    quranReadLastPosHint:
+      "Сүре ашылғанда соңғы қараған аятқа скролл жасалады. Оқу орны құрылғыда сақталады; желіден синхрондалмайды.",
+    quranReadClear: "Сақталған оқу орнын жою",
+    quranReadClearHint: "Барлық сүрелер үшін сақталған аят орны тазартылады.",
+    quranMushafDensityTitle: "Мұсаф тығыздығы",
+    quranMushafDensityHint:
+      "Хатым кітап көрінісіндегі араб жолдары арасы. Құран оқу баптамаларымен бір AsyncStorage кілті — қай экраннан өзгертсеңіз де синхрондалады.",
+    quranMushafDensityOption: (id: "tight" | "medium" | "comfort") =>
+      id === "tight" ? "Тығыз" : id === "medium" ? "Орташа" : "Жайлы",
+    quranReaderInterfaceTitle: "Құран оқу интерфейсі",
+    quranReaderInterfaceHint:
+      "Сүре/мұсаф экранына кіргенде қолданылады (AsyncStorage; баптамалар синхрондалады).",
+    quranReaderNavScrollShort: "Тік скролл",
+    quranReaderNavPageShort: "Кітап беттері",
+    quranReaderMarkerRing: "SVG сақина",
+    quranReaderMarkerClassic: "Классикалық",
+    quranReaderMushafPageMedina: "Мадина 604",
+    quranReaderMushafPageTurkish: "Түрік 604 (Хафс)",
+    quranReaderMushafPageHint:
+      "Бет нөмірі Quran.com (Хафс 604) картасымен есептеледі. Көп түрік басылымдары осымен сәйкес.",
     cityTitle: "Негізгі қала",
     androidPrayerWidgetTitle: "Бастапқы экран виджеті (Android)",
     androidPrayerWidgetHint:

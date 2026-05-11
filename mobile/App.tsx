@@ -1,10 +1,14 @@
+import "react-native-gesture-handler";
+import "react-native-reanimated";
 import "./src/theme/applyGlobalFontDefaults";
+import { registerPrayerNotificationBackgroundFetch } from "./src/services/prayerNotificationBackgroundTask";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, AppState, type AppStateStatus, Platform, useColorScheme, View } from "react-native";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QiblaSensorProvider } from "./src/context/QiblaSensorContext";
 import { appDeepLinking } from "./src/navigation/linking";
 import { RootNavigator } from "./src/navigation/RootNavigator";
@@ -12,6 +16,7 @@ import { rootNavigationRef } from "./src/navigation/rootNavigationRef";
 import { darkColors, lightColors } from "./src/theme/colors";
 import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
 import { VoiceAssistantProvider } from "./src/components/voice/VoiceAssistantContext";
+import { VoiceAssistantStubProvider } from "./src/components/voice/VoiceAssistantStubProvider";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
@@ -55,6 +60,7 @@ export default function App() {
       setBootReady(true);
       void initNotificationQuickActions();
       void reschedulePrayerNotificationsFromCache();
+      void registerPrayerNotificationBackgroundFetch();
       void syncAndroidPrayerWidgetFromStorage();
     })();
   }, []);
@@ -88,35 +94,43 @@ export default function App() {
     );
   }
 
+  /** Qibla — Nav ішінде: onReady/state алдында үстімен тұрмайды. */
+  const appNavigation = (
+    <>
+      <NavigationContainer
+        ref={rootNavigationRef}
+        linking={appDeepLinking}
+        onReady={() => {
+          setRootNavReady(true, rootNavigationRef.getRootState() ?? undefined);
+        }}
+        onStateChange={(state) => {
+          setRootNavState(state);
+        }}
+      >
+        <QiblaSensorProvider>
+          <RootNavigator />
+        </QiblaSensorProvider>
+      </NavigationContainer>
+      <ThemedStatusBar />
+    </>
+  );
+
   return (
-    <View testID="raqat-app-root" style={{ flex: 1 }}>
+    <GestureHandlerRootView testID="raqat-app-root" style={{ flex: 1 }}>
     <AppErrorBoundary>
       <SafeAreaProvider>
         <ThemeProvider>
-          <VoiceAssistantProvider>
-            {/**
-             * Qibla — Nav ішінде: onReady/ state алдында үстімен тұрмайды, іске қосу/«қатты қатып»
-             * кідірісі азаяды.
-             */}
-            <NavigationContainer
-              ref={rootNavigationRef}
-              linking={appDeepLinking}
-              onReady={() => {
-                setRootNavReady(true, rootNavigationRef.getRootState() ?? undefined);
-              }}
-              onStateChange={(state) => {
-                setRootNavState(state);
-              }}
-            >
-              <QiblaSensorProvider>
-                <RootNavigator />
-              </QiblaSensorProvider>
-            </NavigationContainer>
-            <ThemedStatusBar />
-          </VoiceAssistantProvider>
+          {/**
+           * Веб: expo-speech-recognition native модулінде addListener жоқ — толық провайдер қате береді.
+           */}
+          {Platform.OS === "web" ? (
+            <VoiceAssistantStubProvider>{appNavigation}</VoiceAssistantStubProvider>
+          ) : (
+            <VoiceAssistantProvider>{appNavigation}</VoiceAssistantProvider>
+          )}
         </ThemeProvider>
       </SafeAreaProvider>
     </AppErrorBoundary>
-    </View>
+    </GestureHandlerRootView>
   );
 }

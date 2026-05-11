@@ -7,7 +7,9 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Switch,
 } from "react-native";
+import { KazakhOrnamentBand } from "../components/KazakhOrnamentBand";
 import { Pressable } from "@/ui/Pressable";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -15,9 +17,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { QURAN_BASMALA_READER_AR } from "../constants/quranUthmani";
 import type { MoreStackParamList } from "../navigation/types";
 import { HATIM_SECTIONS } from "../content/spiritualContent";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { QURAN_JUZ_STARTS } from "../data/quranJuzBoundaries";
+import { computeHatimJuzStats } from "../hatim/hatimJuzProgress";
 import {
   hatimProgressFraction,
   loadHatimProgress,
@@ -26,6 +31,14 @@ import {
   toggleHatimSurah,
   type HatimResume,
 } from "../storage/hatimProgress";
+import { requestNotificationPermissions } from "../services/prayerNotifications";
+import {
+  getHatimReminderClock,
+  getHatimReminderEnabled,
+  setHatimReminderClock,
+  setHatimReminderEnabled,
+  syncHatimReminderSchedule,
+} from "../services/hatimReminderNotifications";
 
 /** QuranSurah mushafLayout-пен бір кітап палитрасы. */
 const MUSHAF_LIGHT_TAUPE = "#A68E74";
@@ -49,11 +62,23 @@ export function HatimScreen({ navigation }: Props) {
   const [read, setRead] = useState<Set<number>>(new Set());
   const [resume, setResume] = useState<HatimResume | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderHour, setReminderHour] = useState(20);
+  const [reminderMinute, setReminderMinute] = useState(0);
+  const [reminderErr, setReminderErr] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const [s, r] = await Promise.all([loadHatimProgress(), loadHatimResume()]);
+    const [s, r, en, clock] = await Promise.all([
+      loadHatimProgress(),
+      loadHatimResume(),
+      getHatimReminderEnabled(),
+      getHatimReminderClock(),
+    ]);
     setRead(s);
     setResume(r);
+    setReminderEnabled(en);
+    setReminderHour(clock.hour);
+    setReminderMinute(clock.minute);
   }, []);
 
   useFocusEffect(
@@ -61,6 +86,9 @@ export function HatimScreen({ navigation }: Props) {
       void (async () => {
         await syncHatimWithServerBidirectional();
         await reload();
+        if (Platform.OS !== "web") {
+          await syncHatimReminderSchedule();
+        }
       })();
     }, [reload])
   );
@@ -76,6 +104,22 @@ export function HatimScreen({ navigation }: Props) {
 
   const { read: readCount, total, pct } = hatimProgressFraction(read);
 
+  const juzStats = useMemo(() => computeHatimJuzStats(read), [read]);
+
+  const openJuzFromGrid = useCallback(
+    (juz: number) => {
+      const row = QURAN_JUZ_STARTS.find((x) => x.juz === juz);
+      if (!row) return;
+      navigation.navigate("QuranSurah", {
+        surahNumber: row.startSurah,
+        initialAyah: row.startAyah,
+        mushafLayout: true,
+        englishName: surahDisplayTitle(row.startSurah, ""),
+      });
+    },
+    [navigation]
+  );
+
   const goResume = () => {
     if (!resume) return;
     navigation.navigate("QuranSurah", {
@@ -84,6 +128,63 @@ export function HatimScreen({ navigation }: Props) {
       initialAyah: resume.ayah,
       mushafLayout: true,
     });
+  };
+
+  const goFromBasmala = useCallback(() => {
+    if (resume) {
+      navigation.navigate("QuranSurah", {
+        surahNumber: resume.surah,
+        englishName: surahDisplayTitle(resume.surah, ""),
+        initialAyah: resume.ayah,
+        mushafLayout: true,
+      });
+      return;
+    }
+    for (let n = 1; n <= 114; n += 1) {
+      if (!read.has(n)) {
+        navigation.navigate("QuranSurah", {
+          surahNumber: n,
+          englishName: surahDisplayTitle(n, ""),
+          mushafLayout: true,
+        });
+        return;
+      }
+    }
+    navigation.navigate("QuranSurah", {
+      surahNumber: 1,
+      englishName: surahDisplayTitle(1, ""),
+      mushafLayout: true,
+    });
+  }, [resume, read, navigation]);
+
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+
+  const bumpReminderClock = async (deltaMin: number) => {
+    let t = reminderHour * 60 + reminderMinute + deltaMin;
+    t = Math.max(6 * 60, Math.min(23 * 60 + 59, t));
+    const h = Math.floor(t / 60);
+    const m = t % 60;
+    await setHatimReminderClock(h, m);
+    setReminderHour(h);
+    setReminderMinute(m);
+    if (reminderEnabled && Platform.OS !== "web") {
+      await syncHatimReminderSchedule();
+    }
+  };
+
+  const onReminderToggle = async (v: boolean) => {
+    setReminderErr(null);
+    if (Platform.OS === "web") return;
+    if (v) {
+      const ok = await requestNotificationPermissions();
+      if (!ok) {
+        setReminderErr(kk.hatim.reminderPermNeeded);
+        return;
+      }
+    }
+    await setHatimReminderEnabled(v);
+    setReminderEnabled(v);
+    await syncHatimReminderSchedule();
   };
 
   const onToggle = async (n: number) => {
@@ -101,9 +202,68 @@ export function HatimScreen({ navigation }: Props) {
             style={styles.listFlex}
             data={data}
             keyExtractor={(it) => String(it.number)}
+            extraData={{ readSig: [...read].sort((a, b) => a - b).join(",") }}
             contentContainerStyle={[styles.pad, { paddingBottom: listBottomPad }]}
             ListHeaderComponent={
               <View style={styles.headerBlock}>
+                <View style={styles.basmalaSection}>
+                  <KazakhOrnamentBand colors={colors} compact tone="quranGold" bleed={12} translucent />
+                  <Pressable
+                    onPress={goFromBasmala}
+                    style={({ pressed }) => [styles.basmalaBanner, pressed && { opacity: 0.92 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={kk.hatim.basmalaOpenReaderA11y}
+                  >
+                    <Text style={styles.basmalaArabic} importantForAccessibility="no">
+                      {QURAN_BASMALA_READER_AR}
+                    </Text>
+                  </Pressable>
+                </View>
+                {Platform.OS !== "web" ? (
+                  <View style={styles.reminderCard}>
+                    <View style={styles.reminderHeadRow}>
+                      <Text style={styles.reminderTitle}>{kk.hatim.reminderTitle}</Text>
+                      <Switch
+                        value={reminderEnabled}
+                        onValueChange={(v) => void onReminderToggle(v)}
+                        trackColor={{
+                          false: colors.border,
+                          true: isDark ? "rgba(77,182,172,0.45)" : "rgba(21,128,61,0.35)",
+                        }}
+                        thumbColor={reminderEnabled ? colors.accent : colors.muted}
+                        accessibilityLabel={kk.hatim.reminderTitle}
+                      />
+                    </View>
+                    <Text style={styles.reminderHint}>{kk.hatim.reminderHint}</Text>
+                    {reminderErr ? <Text style={styles.reminderErr}>{reminderErr}</Text> : null}
+                    {reminderEnabled ? (
+                      <View style={styles.reminderTimeBlock}>
+                        <Text style={styles.reminderTimeLabel}>{kk.hatim.reminderTimeLabel}</Text>
+                        <View style={styles.reminderTimeRow}>
+                          <Pressable
+                            style={({ pressed }) => [styles.reminderTimeBtn, pressed && { opacity: 0.88 }]}
+                            onPress={() => void bumpReminderClock(-30)}
+                            accessibilityRole="button"
+                            accessibilityLabel={kk.hatim.reminderTimeMinusA11y}
+                          >
+                            <Text style={styles.reminderTimeBtnTxt}>−</Text>
+                          </Pressable>
+                          <Text style={styles.reminderTimeValue} accessibilityRole="text">
+                            {pad2(reminderHour)}:{pad2(reminderMinute)}
+                          </Text>
+                          <Pressable
+                            style={({ pressed }) => [styles.reminderTimeBtn, pressed && { opacity: 0.88 }]}
+                            onPress={() => void bumpReminderClock(30)}
+                            accessibilityRole="button"
+                            accessibilityLabel={kk.hatim.reminderTimePlusA11y}
+                          >
+                            <Text style={styles.reminderTimeBtnTxt}>+</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
                 <Pressable
                   onPress={goResume}
                   disabled={!resume}
@@ -135,6 +295,32 @@ export function HatimScreen({ navigation }: Props) {
                     <Text style={styles.tapHint}>{kk.hatim.tapAyahHint}</Text>
                   )}
                 </Pressable>
+                <View style={styles.juzSection}>
+                  <Text style={styles.juzSectionTitle}>{kk.hatim.juzProgressTitle}</Text>
+                  <Text style={styles.juzSectionHint}>{kk.hatim.juzProgressHint}</Text>
+                  <View style={styles.juzGrid}>
+                    {juzStats.map((st) => (
+                      <View key={st.juz} style={styles.juzCellWrap}>
+                        <Pressable
+                          onPress={() => openJuzFromGrid(st.juz)}
+                          accessibilityRole="button"
+                          accessibilityLabel={kk.hatim.juzOpenA11y(st.juz)}
+                          style={({ pressed }) => [styles.juzCellPress, pressed && { opacity: 0.9 }]}
+                        >
+                          <View style={styles.juzBarTrack}>
+                            <View
+                              style={[
+                                styles.juzBarFill,
+                                { height: `${Math.round(st.fraction * 100)}%` },
+                              ]}
+                            />
+                          </View>
+                          <Text style={styles.juzNum}>{st.juz}</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
+                </View>
                 <Pressable
                   style={({ pressed }) => [styles.guideToggle, pressed && { opacity: 0.92 }]}
                   onPress={() => {
@@ -185,6 +371,8 @@ export function HatimScreen({ navigation }: Props) {
                         ...(inProgress && resume ? { initialAyah: resume.ayah } : {}),
                       })
                     }
+                    accessibilityRole="button"
+                    accessibilityLabel={kk.hatim.openSurahRowA11y(item.number, item.title)}
                   >
                     <Text style={styles.rowNum}>{item.number}</Text>
                     <Text style={styles.rowTitle} numberOfLines={2}>
@@ -240,6 +428,77 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     listFlex: { flex: 1 },
     pad: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 8 },
     headerBlock: { marginBottom: 10 },
+    basmalaSection: {
+      alignSelf: "stretch",
+      marginBottom: 10,
+    },
+    reminderCard: {
+      alignSelf: "stretch",
+      backgroundColor: surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: surfaceBorder,
+      padding: 12,
+      marginBottom: 10,
+    },
+    reminderHeadRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    reminderTitle: { fontSize: 15, fontWeight: "800", color: inkStrong, flex: 1 },
+    reminderHint: { marginTop: 8, fontSize: 12, lineHeight: 17, color: inkMuted },
+    reminderErr: { marginTop: 8, fontSize: 12, fontWeight: "700", color: colors.error },
+    reminderTimeBlock: { marginTop: 12 },
+    reminderTimeLabel: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: inkMuted,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    reminderTimeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 14,
+    },
+    reminderTimeBtn: {
+      minWidth: 44,
+      height: 40,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: surfaceBorder,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: checkBg,
+    },
+    reminderTimeBtnTxt: { fontSize: 20, fontWeight: "800", color: colors.accent },
+    reminderTimeValue: { fontSize: 17, fontWeight: "900", color: inkStrong, minWidth: 96, textAlign: "center" },
+    basmalaBanner: {
+      marginTop: 6,
+      alignSelf: "stretch",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(212, 175, 55, 0.42)" : "rgba(166, 142, 116, 0.4)",
+      backgroundColor: isDark ? "rgba(212, 175, 55, 0.1)" : "rgba(253, 246, 233, 0.72)",
+    },
+    basmalaArabic: {
+      textAlign: "center",
+      writingDirection: "rtl",
+      color: isDark ? "#FAFAFA" : "#000000",
+      fontSize: 24,
+      lineHeight: 40,
+      fontWeight: "500",
+      letterSpacing: 0,
+      ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
+    },
     progressCard: {
       backgroundColor: surface,
       borderRadius: 12,
@@ -278,6 +537,50 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.accent,
     },
     tapHint: { marginTop: 10, fontSize: 12, lineHeight: 17, color: inkMuted },
+    juzSection: {
+      alignSelf: "stretch",
+      backgroundColor: surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: surfaceBorder,
+      padding: 12,
+      marginBottom: 10,
+    },
+    juzSectionTitle: { fontSize: 15, fontWeight: "800", color: inkStrong, marginBottom: 6 },
+    juzSectionHint: { fontSize: 11, lineHeight: 16, color: inkMuted, marginBottom: 10 },
+    juzGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginHorizontal: -3,
+    },
+    juzCellWrap: {
+      width: "16.666%",
+      padding: 3,
+    },
+    juzCellPress: {
+      alignItems: "center",
+    },
+    juzBarTrack: {
+      width: "100%",
+      height: 34,
+      borderRadius: 8,
+      overflow: "hidden",
+      backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(166, 142, 116, 0.22)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: surfaceBorder,
+      justifyContent: "flex-end",
+    },
+    juzBarFill: {
+      width: "100%",
+      backgroundColor: colors.accent,
+      minHeight: 0,
+    },
+    juzNum: {
+      marginTop: 4,
+      fontSize: 11,
+      fontWeight: "800",
+      color: inkStrong,
+    },
     guideToggle: {
       flexDirection: "row",
       alignItems: "center",
