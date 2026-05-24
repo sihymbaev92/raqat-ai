@@ -32,6 +32,7 @@ import {
   sortHadithRowsByReference,
   type HadithLetterSection,
 } from "../utils/hadithLetterSections";
+import { resolveHadithGradeText } from "../content/hadithGrade";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "HadithList">;
@@ -336,8 +337,7 @@ const HadithRow = memo(function HadithRow({
   styles: HadithStyles;
   onOpen: (id: string) => void;
 }) {
-  const gradeRaw = (item.grade || "").trim();
-  const gradeText = gradeRaw || kk.hadith.gradeDefaultSahih;
+  const gradeText = resolveHadithGradeText(item.grade);
   const hasKk = Boolean(item.textKk?.trim());
   return (
     <Pressable

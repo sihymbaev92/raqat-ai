@@ -573,9 +573,9 @@ def _migration_009_dhikr(conn) -> None:
             1,
             "after_salah",
             "سُبْحَانَ اللَّهِ · الْحَمْدُ لِلَّهِ · اللَّهُ أَكْبَرُ",
-            "Намаздан кейінгі тәсбих (33+33+33)",
-            "Тасбих после намаза (33+33+33)",
-            "Post-prayer tasbih (33+33+33)",
+            "Намаздан кейінгі тәспі",
+            "Тасбих после намаза",
+            "Post-prayer tasbih",
             99,
             "triple_salah",
             0,
@@ -672,7 +672,7 @@ def _migration_009_dhikr(conn) -> None:
             10,
             "salawat_ibrahimiyya",
             "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-            "Аллаһумма салли 'алә Мухаммад",
+            "Аллаһ тағалам, салли 'алә Мухаммад",
             "Аллахумма салли 'аля Мухаммад",
             "Allahumma salli 'ala Muhammad",
             10,
@@ -727,7 +727,7 @@ def _migration_009_dhikr(conn) -> None:
             15,
             "allahumma_barik",
             "اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ",
-            "Аллаһумма барик 'алә Мухаммад",
+            "Аллаһ тағалам, барик 'алә Мухаммад",
             "Аллахумма барик 'аля Мухаммад",
             "Allahumma barik 'ala Muhammad",
             10,
@@ -869,6 +869,28 @@ def _migration_016_hadith_translation_quality_fields(conn) -> None:
     )
 
 
+def _migration_018_platform_link_codes(conn) -> None:
+    """Мобильді ↔ Telegram 6 таңбалы байланыс коды."""
+    from db.platform_link_code_schema import ensure_platform_link_code_tables
+
+    ensure_platform_link_code_tables(conn)
+
+
+def _migration_019_hadith_kk_source_provenance(conn) -> None:
+    """Қазақша аударма қай 4 KK сайттан алынғаны (дереккөз URL)."""
+    tables = _table_names(conn)
+    if "hadith" not in tables:
+        return
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(hadith)").fetchall()}
+    if "kk_source_site" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN kk_source_site TEXT")
+    if "kk_source_url" not in cols:
+        conn.execute("ALTER TABLE hadith ADD COLUMN kk_source_url TEXT")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_hadith_kk_source_site ON hadith(kk_source_site)"
+    )
+
+
 def _migration_017_quran_api_columns(conn) -> None:
     """
     API `content_reader` күтетін бағандар: surah_name, translit, updated_at (болмаса).
@@ -906,6 +928,13 @@ def _migration_014_repair_user_data_tables(conn) -> None:
     ensure_user_data_tables(conn)
 
 
+def _migration_020_genealogy_clans(conn) -> None:
+    """Қазақ шежіресі: иерархиялық ру ағашы (genealogy_clans + source_refs)."""
+    from db.genealogy_schema import ensure_genealogy_tables
+
+    ensure_genealogy_tables(conn)
+
+
 MIGRATIONS: list[tuple[int, str, Callable]] = [
     (1, "indexes_and_fts_supporting", _migration_001_indexes),
     (2, "merge_legacy_users", _migration_002_merge_legacy_users),
@@ -924,6 +953,9 @@ MIGRATIONS: list[tuple[int, str, Callable]] = [
     (15, "hadith_repeat_tracking", _migration_015_hadith_repeat_tracking),
     (16, "hadith_translation_quality_fields", _migration_016_hadith_translation_quality_fields),
     (17, "quran_api_columns", _migration_017_quran_api_columns),
+    (18, "platform_link_codes", _migration_018_platform_link_codes),
+    (19, "hadith_kk_source_provenance", _migration_019_hadith_kk_source_provenance),
+    (20, "genealogy_clans_schema", _migration_020_genealogy_clans),
 ]
 
 

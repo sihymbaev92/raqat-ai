@@ -10,6 +10,7 @@ import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { fetchPlatformHadith } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
+import { resolveHadithGradeText } from "../content/hadithGrade";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "HadithDetail">;
 
@@ -43,8 +44,7 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   const h = corpus ? findHadith(corpus, hadithId) : undefined;
   const narratorKk = h?.narratorKk?.trim() ?? "";
-  const gradeRaw = (h?.grade || "").trim();
-  const gradeText = gradeRaw || kk.hadith.gradeDefaultSahih;
+  const gradeText = resolveHadithGradeText(h?.grade);
 
   useEffect(() => {
     if (!h) return;
@@ -123,7 +123,7 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       <Text style={styles.section}>{kk.hadith.reliabilityTitle}</Text>
       <View style={styles.badgesRow}>
         <Text style={styles.badge}>{kk.hadith.sourceBadge(h.collectionNameKk || "—")}</Text>
-        <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText || kk.hadith.gradeUnknown)}</Text>
+        <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
         <Text style={styles.badge}>{textKk ? kk.hadith.translationBadgeReady : kk.hadith.translationBadgeMissing}</Text>
       </View>
 
