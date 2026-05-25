@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -47,6 +47,11 @@ export function QiblaScreen() {
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationSecLeft, setCalibrationSecLeft] = useState(20);
   const [calibrationResult, setCalibrationResult] = useState<"high" | "medium" | "low" | null>(null);
+  const rotateDegRef = useRef(rotateDeg);
+
+  useEffect(() => {
+    rotateDegRef.current = rotateDeg;
+  }, [rotateDeg]);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,7 +68,7 @@ export function QiblaScreen() {
           clearInterval(tick);
           setCalibrating(false);
           void refreshBearing();
-          const diff = Math.abs(rotateDeg);
+          const diff = Math.abs(rotateDegRef.current);
           if (diff <= 8) {
             setCalibrationResult("high");
           } else if (diff <= 18) {
@@ -77,7 +82,7 @@ export function QiblaScreen() {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [calibrating, refreshBearing, rotateDeg]);
+  }, [calibrating, refreshBearing]);
 
   const openAppSettings = () => {
     void Linking.openSettings();
