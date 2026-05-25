@@ -43,6 +43,7 @@ from roadmap_routes import router as roadmap_router
 from usage_routes import router as usage_router
 from app.api.v1.endpoints.halal import router as halal_text_router
 from bot_sync_routes import router as bot_sync_router
+from family_tree_routes import router as family_tree_router
 
 APP_NAME = "RAQAT Platform API"
 VERSION = "0.1.0"
@@ -129,6 +130,7 @@ async def lifespan(_app: FastAPI):
             logger.info("PostgreSQL: oauth_phone tables OK.")
         except Exception:
             logger.exception("PostgreSQL: ensure_oauth_phone_tables failed")
+
     else:
         db_path = sqlite_database_path()
         run_schema_migrations(db_path)
@@ -151,6 +153,7 @@ app.include_router(roadmap_router)
 app.include_router(usage_router)
 # Мәтіндік халал сүзгі (мобильді: POST/GET /api/v1/halal/*) — бұрын тек app.api.v1.router ішінде болған, main-ге тіркелмеген.
 app.include_router(halal_text_router, prefix="/api/v1")
+app.include_router(family_tree_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),

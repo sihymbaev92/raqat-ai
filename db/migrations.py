@@ -921,7 +921,11 @@ def _migration_014_repair_user_data_tables(conn) -> None:
     CREATE IF NOT EXISTS — қайта құру қауіпсіз.
     """
     tables = _table_names(conn)
-    if "platform_password_logins" in tables and "platform_hatim_read" in tables:
+    if (
+        "platform_password_logins" in tables
+        and "platform_hatim_read" in tables
+        and "platform_quran_last_read" in tables
+    ):
         return
     from db.user_data_schema import ensure_user_data_tables
 
@@ -933,6 +937,27 @@ def _migration_020_genealogy_clans(conn) -> None:
     from db.genealogy_schema import ensure_genealogy_tables
 
     ensure_genealogy_tables(conn)
+
+
+def _migration_021_platform_quran_last_read(conn) -> None:
+    """Құран соңғы оқу нүктесі — серверлік sync (#104)."""
+    from db.user_data_schema import ensure_user_data_tables
+
+    ensure_user_data_tables(conn)
+
+
+def _migration_022_genealogy_persons(conn) -> None:
+    """Шежіре P2: атақты/қazірgi тұлғalar (genealogy_persons)."""
+    from db.genealogy_persons_schema import ensure_genealogy_persons_tables
+
+    ensure_genealogy_persons_tables(conn)
+
+
+def _migration_023_family_tree(conn) -> None:
+    """GENEALOGY-P3: жеке отбасылық шежіре."""
+    from db.family_tree_schema import ensure_family_tree_tables
+
+    ensure_family_tree_tables(conn)
 
 
 MIGRATIONS: list[tuple[int, str, Callable]] = [
@@ -956,6 +981,9 @@ MIGRATIONS: list[tuple[int, str, Callable]] = [
     (18, "platform_link_codes", _migration_018_platform_link_codes),
     (19, "hadith_kk_source_provenance", _migration_019_hadith_kk_source_provenance),
     (20, "genealogy_clans_schema", _migration_020_genealogy_clans),
+    (21, "platform_quran_last_read", _migration_021_platform_quran_last_read),
+    (22, "genealogy_persons", _migration_022_genealogy_persons),
+    (23, "family_tree", _migration_023_family_tree),
 ]
 
 
