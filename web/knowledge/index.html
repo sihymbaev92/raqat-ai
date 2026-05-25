@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="kk" data-api-base="https://api.rahatomir.com">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Діни білім порталы — RAHAT OMIR AI</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="stylesheet" href="knowledge.css" />
+</head>
+<body>
+  <header class="site-header knowledge-header">
+    <p class="eyebrow">RAHAT OMIR AI · ҚМДБ ресми дереккөздері</p>
+    <h1>Діни білім порталы</h1>
+    <p class="lead">
+      <a href="https://fatua.kz/kk/" rel="noopener noreferrer">Fatua.kz</a> мен
+      <a href="https://www.muftyat.kz/kk/" rel="noopener noreferrer">Muftyat.kz</a>
+      — бір ортада: пәтуалар, жаңалықтар, сұрақ-жауап. Мазмұн ресми сайттардан; толық мәтін — түпнұсқа сілтемеде.
+    </p>
+    <p class="partner-links">
+      <a class="btn" href="https://fatua.kz/kk/" rel="noopener noreferrer">Fatua.kz</a>
+      <a class="btn" href="https://www.muftyat.kz/kk/" rel="noopener noreferrer">Muftyat.kz</a>
+      <a class="btn primary" href="https://rahatomir.com/more/ai" rel="noopener noreferrer">RAHAT OMIR AI</a>
+    </p>
+  </header>
+
+  <main class="chapters knowledge-main">
+    <section class="chapter knowledge-controls">
+      <h2>Іздеу және сүзгі</h2>
+      <div class="chip-row" role="tablist" aria-label="Сайт бойынша сүзгі">
+        <button type="button" class="chip chip-active" data-site="">Барлығы</button>
+        <button type="button" class="chip" data-site="fatua">Fatua.kz</button>
+        <button type="button" class="chip" data-site="muftyat">Muftyat.kz</button>
+      </div>
+      <form id="search-form" class="search-row">
+        <input id="search-input" type="search" placeholder="Мысалы: намаз, зекет, пәтуа…" autocomplete="off" />
+        <button type="submit" class="btn primary">Іздеу</button>
+      </form>
+      <p id="feed-status" class="api-pill muted" aria-live="polite">Жүктелуде…</p>
+    </section>
+
+    <section class="chapter">
+      <h2>Соңғы мақалалар</h2>
+      <ul id="feed-list" class="feed-list"></ul>
+      <p id="feed-empty" class="muted" hidden>Мазмұн табылмады.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>
+      AI жауаптары ақпараттық сипатта; фиқһтық үкім үшін білікті мүфтилер мен
+      <a href="https://fatua.kz/kk/" rel="noopener noreferrer">Fatua.kz</a> /
+      <a href="https://www.muftyat.kz/kk/" rel="noopener noreferrer">Muftyat.kz</a> ресми материалдарына жүгініңіз.
+    </p>
+    <p><a href="../index.html">← RAQAT платформасы</a></p>
+  </footer>
+
+  <script src="portal.js"></script>
+</body>
+</html>
