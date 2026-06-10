@@ -107,6 +107,17 @@ export function hadithTextForLocale(
   return (entry.textKk ?? "").trim();
 }
 
+function isCompactSourceOnlyBundle(c: HadithCorpus | null): boolean {
+  const rows = c?.hadiths ?? [];
+  return rows.length > 0 && rows.length <= 2_000 && rows.every((h) => h.sourceOnly);
+}
+
+function isStoredSourceOnlyCorpus(c: HadithCorpus | null): boolean {
+  const rows = c?.hadiths ?? [];
+  if (!rows.length) return false;
+  return rows.every((h) => h.sourceOnly);
+}
+
 /** Тізім бөлу / санау — API немесе экспорттағы өзге жазылулар мен id префикстері */
 export function hadithCollectionBucket(
   h: Pick<SahihHadithEntry, "id" | "collection">
@@ -213,6 +224,11 @@ export async function loadHadithCorpus(opts?: { force?: boolean }): Promise<Hadi
   const bundled = await resolveBundledFullCorpus();
   const ns = stored?.hadiths?.length ?? 0;
   const nb = bundled?.hadiths?.length ?? 0;
+  if (ns > nb && isCompactSourceOnlyBundle(bundled) && isStoredSourceOnlyCorpus(stored)) {
+    await clearHadithCorpusStorage();
+    memoryCorpus = bundled;
+    return bundled;
+  }
   let c: HadithCorpus | null = null;
   if (nb > ns) c = bundled;
   else if (stored?.hadiths?.length) c = stored;

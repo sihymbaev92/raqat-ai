@@ -1,6 +1,6 @@
 /**
- * Web: толық хадис корпусын JS бандлға кіргізбей, runtime fetch арқылы аламыз.
- * Егер generated full corpus deploy-да жоқ болса, tracked compact seed-ке fallback жасаймыз.
+ * Web: app startup/list ашылғанда 50MB+ full corpus parse қылмаймыз.
+ * Compact seed жылдам ашылады; full corpus generated runtime asset ретінде deploy-да қала береді.
  */
 import type { HadithCorpus } from "./hadithCorpus";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
@@ -19,8 +19,8 @@ export async function loadBundledHadithCorpusJson(): Promise<HadithCorpus | null
   if (cache !== undefined) return cache;
   try {
     cache =
-      (await fetchCorpusAsset("hadith-from-db.json")) ??
-      (await fetchCorpusAsset("hadith-from-db-seed.json"));
+      (await fetchCorpusAsset("hadith-from-db-seed.json")) ??
+      (await fetchCorpusAsset("hadith-from-db.json"));
     return cache ?? null;
   } catch {
     cache = null;

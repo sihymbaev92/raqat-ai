@@ -1122,6 +1122,63 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     [showReaderArabic, ayahs.length, surahNumber]
   );
 
+  const mushafPagerExtraData = useMemo(
+    () => ({
+      playingAyahInSurah,
+      loadingAyahAudio,
+      ayahAudioIsPlaying,
+      showTajweedColors,
+      showTajweedForDisplay,
+      tajweedLoading,
+      showReaderArabic,
+      showReaderTranslit,
+      showReaderMeaning,
+      arabicFontPreset,
+      arabicScriptEdition,
+      reciterEdition,
+      showMushafBismillahBanner,
+      mushafLayout,
+      mushafFooterHizb,
+      mushafFooterPage,
+      readerAllowRotation,
+      mushafTextScale,
+      mushafHighlightAyah,
+      ayahMarkers,
+      readerNavMode: effectiveReaderNavMode,
+      surahNumber,
+      mushafPageWidth,
+      mushafDensity,
+      ayahMarkerStyleId,
+    }),
+    [
+      playingAyahInSurah,
+      loadingAyahAudio,
+      ayahAudioIsPlaying,
+      showTajweedColors,
+      showTajweedForDisplay,
+      tajweedLoading,
+      showReaderArabic,
+      showReaderTranslit,
+      showReaderMeaning,
+      arabicFontPreset,
+      arabicScriptEdition,
+      reciterEdition,
+      showMushafBismillahBanner,
+      mushafLayout,
+      mushafFooterHizb,
+      mushafFooterPage,
+      readerAllowRotation,
+      mushafTextScale,
+      mushafHighlightAyah,
+      ayahMarkers,
+      effectiveReaderNavMode,
+      surahNumber,
+      mushafPageWidth,
+      mushafDensity,
+      ayahMarkerStyleId,
+    ]
+  );
+
   const lastAyahInSurah = ayahs.length ? ayahs[ayahs.length - 1]!.numberInSurah : 0;
   const handlePlayUntilJuz = useCallback(
     (ayahInSurah: number) => {
@@ -1540,33 +1597,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
             onScrollBeginDrag={onMushafPagerScrollBeginDrag}
             onMomentumScrollEnd={onMushafPagerScrollEnd}
             onScrollEndDrag={Platform.OS === "web" ? onMushafPagerScrollEnd : undefined}
-            extraData={{
-              playingAyahInSurah,
-              loadingAyahAudio,
-              ayahAudioIsPlaying,
-              showTajweedColors,
-              showTajweedForDisplay,
-              tajweedLoading,
-              showReaderArabic,
-              showReaderTranslit,
-              showReaderMeaning,
-              arabicFontPreset,
-              arabicScriptEdition,
-              reciterEdition,
-              showMushafBismillahBanner,
-              mushafLayout,
-              mushafFooterHizb,
-              mushafFooterPage,
-              readerAllowRotation,
-              mushafTextScale,
-              mushafHighlightAyah,
-              ayahMarkers,
-              readerNavMode: effectiveReaderNavMode,
-              surahNumber,
-              mushafPageWidth,
-              mushafDensity,
-              ayahMarkerStyleId,
-            }}
+            extraData={mushafPagerExtraData}
             onScrollToIndexFailed={(info) => {
               const off = Math.max(0, info.index * mushafPageWidth);
               setTimeout(() => {

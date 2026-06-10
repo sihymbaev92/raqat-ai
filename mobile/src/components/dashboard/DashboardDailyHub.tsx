@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
@@ -7,8 +7,7 @@ import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import type { HomeTabCompositeNavigation } from "../../navigation/types";
 import type { ThemeColors } from "../../theme/colors";
 import { surahDisplayTitle } from "../../constants/surahTitleKk";
-import { getDailyAyahCard, getDailyHadithSnippet, getDailySpiritQuote } from "../../utils/dailyRetentionContent";
-import type { SpiritLiftQuote } from "../../content/spiritLift";
+import { getDailyAyahCard, getDailySpiritQuote } from "../../utils/dailyRetentionContent";
 import { getDailyAiPrompt } from "../../content/dailyAiPrompts";
 import { navigateToQuranMushafBook, navigateToMoreStackScreen } from "../../navigation/navigateToMoreStack";
 
@@ -23,21 +22,7 @@ export function DashboardDailyHub({ colors, isDark, navigation }: Props) {
   const d = kk.dashboard;
   const ayah = useMemo(() => getDailyAyahCard(), []);
   const aiPrompt = useMemo(() => getDailyAiPrompt(), []);
-  const [hadith, setHadith] = useState<{ id: string; text: string; label: string } | null>(null);
-  const [quote, setQuote] = useState<SpiritLiftQuote | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      const [h, q] = await Promise.all([getDailyHadithSnippet("kk"), Promise.resolve(getDailySpiritQuote())]);
-      if (!alive) return;
-      setHadith(h);
-      setQuote(q);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const quote = useMemo(() => getDailySpiritQuote(), []);
 
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const surahTitle = surahDisplayTitle(ayah.surah, "");
@@ -85,24 +70,6 @@ export function DashboardDailyHub({ colors, isDark, navigation }: Props) {
         </View>
         <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
       </Pressable>
-
-      {hadith ? (
-        <Pressable
-          style={({ pressed }) => [styles.card, pressed && { opacity: 0.92 }]}
-          onPress={() => navigateToMoreStackScreen("HadithHub", undefined, navigation)}
-          accessibilityRole="button"
-          accessibilityLabel={d.dailyHadithA11y}
-        >
-          <MaterialIcons name="menu-book" size={22} color={colors.accent} />
-          <View style={styles.cardBody}>
-            <Text style={styles.cardLabel}>{tr(d.dailyHadithLabel)}</Text>
-            <Text style={styles.cardSub} numberOfLines={2}>
-              {hadith.text}
-            </Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
-        </Pressable>
-      ) : null}
 
       {quote ? (
         <Pressable

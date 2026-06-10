@@ -22,13 +22,14 @@ import { kk } from "../../i18n/kk";
 import { menuIconAssets } from "../../theme/menuIconAssets";
 import type { ThemeColors } from "../../theme/colors";
 import { halalCertBadgeColors, halalCertTone } from "../../utils/halalCertDisplay";
+import { runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
 
 const ROTATOR_LIMIT = 50;
 const RECENT_COMPANY_IMAGE_SCAN_LIMIT = 90;
 const PRODUCT_CARD_GAP = 8;
 const VISIBLE_PRODUCT_CARDS = 4.5;
-const MARQUEE_TICK_MS = 32;
-const MARQUEE_STEP_PX = 0.85;
+const MARQUEE_TICK_MS = 80;
+const MARQUEE_STEP_PX = 2.1;
 
 type Props = {
   colors: ThemeColors;
@@ -153,7 +154,11 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
   useEffect(() => {
     let alive = true;
     setLoadState("loading");
-    void fetchDashboardHalalImageProducts()
+    void (async () => {
+      await runWhenHeavyWorkAllowed();
+      const nextItems = await fetchDashboardHalalImageProducts();
+      return nextItems;
+    })()
       .then((nextItems) => {
         if (!alive) return;
         setItems(nextItems);
@@ -277,6 +282,9 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
         scrollEventThrottle={64}
         style={styles.list}
         contentContainerStyle={styles.listContent}
+        initialNumToRender={8}
+        maxToRenderPerBatch={8}
+        windowSize={3}
       />
       <Pressable
         oyuBackdrop={false}

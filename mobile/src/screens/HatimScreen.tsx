@@ -180,6 +180,7 @@ export function HatimScreen({ navigation }: Props) {
   );
 
   const { read: readCount, total, pct } = hatimProgressFraction(read);
+  const readSig = useMemo(() => [...read].sort((a, b) => a - b).join(","), [read]);
 
   const navPickerInitial = useMemo((): QuranNavCoords => {
     if (resume) return coordsFromSurah(resume.surah);
@@ -334,7 +335,7 @@ export function HatimScreen({ navigation }: Props) {
           keyExtractor={(it) =>
             it.kind === "juzHeader" ? `jh-${it.juz}` : `s-${it.row.number}`
           }
-          extraData={{ readSig: [...read].sort((a, b) => a - b).join(",") }}
+          extraData={readSig}
           getItemLayout={(_, index) => {
             const row = listLayouts[index];
             if (!row) {
@@ -476,6 +477,10 @@ export function HatimScreen({ navigation }: Props) {
               />
             );
           }}
+          initialNumToRender={14}
+          maxToRenderPerBatch={12}
+          windowSize={7}
+          removeClippedSubviews={Platform.OS === "android"}
         />
       </View>
     </View>

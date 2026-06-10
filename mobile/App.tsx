@@ -34,7 +34,6 @@ import { loadQuranBookFonts } from "./src/fonts/quranBookFonts";
 import { loadBrandFont } from "./src/fonts/brandFont";
 import { prefetchHalalDamuHub } from "./src/services/halalHubBootstrap";
 import { prefetchOfficialHomeNewsFeed } from "./src/services/officialSitesBootstrap";
-import { scheduleBundledHadithSeed } from "./src/services/bundledHadithSeed";
 import { runAfterInteractions } from "./src/utils/uiDefer";
 import { trackNavigationPlausible } from "./src/navigation/navigationPlausible";
 import { isPlausibleEnabled, trackPlausiblePageview } from "./src/services/plausible";
@@ -110,9 +109,6 @@ export default function App() {
         setTimeout(() => {
           void prefetchOfficialHomeNewsFeed();
         }, 4000);
-        setTimeout(() => {
-          scheduleBundledHadithSeed();
-        }, 6000);
 
         void (async () => {
           await seedBundledQuranCachesIfNeeded().catch(() => {
