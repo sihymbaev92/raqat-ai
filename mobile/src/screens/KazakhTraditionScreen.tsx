@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RasterImage } from "@/ui/RasterImage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -86,6 +86,8 @@ const HUB_CARDS: HubCard[] = [
   },
 ];
 
+const FEATURED_TOPIC_IDS = ["bata-beru", "qonaq-kutu", "jeti-ata", "asar", "tusaukeser", "besikke-salu"];
+
 export function KazakhTraditionScreen() {
   const { isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -99,6 +101,7 @@ export function KazakhTraditionScreen() {
   const understandingSteps = useMemo(() => getTraditionUnderstandingSteps(), []);
   const [activeCategory, setActiveCategory] = useState<TraditionTopicCategory | "all">("all");
   const [showTopicList, setShowTopicList] = useState(false);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     const category = route.params?.scrollToCategory;
@@ -127,19 +130,38 @@ export function KazakhTraditionScreen() {
     }, [nav, route.params?.scrollToBlockTitle])
   );
 
+  const featuredTopics = useMemo(
+    () => FEATURED_TOPIC_IDS.map((topicId) => getTraditionTopicById(topicId)).filter(Boolean).slice(0, 6),
+    []
+  );
+  const queryNorm = query.trim().toLocaleLowerCase("kk-KZ");
   const filteredTopics = useMemo(() => {
-    if (activeCategory === "all") return [];
-    return topics.filter((topic) => topic.categories.includes(activeCategory));
-  }, [activeCategory, topics]);
+    const base =
+      activeCategory === "all" || showTopicList
+        ? topics
+        : topics.filter((topic) => topic.categories.includes(activeCategory));
+    if (!queryNorm) return showTopicList || activeCategory !== "all" ? base : [];
+    return base.filter((topic) => {
+      const haystack = [
+        topic.title,
+        topic.subtitle,
+        topic.summary,
+        topic.categories.map((c) => traditionCategoryLabel(c)).join(" "),
+      ]
+        .join(" ")
+        .toLocaleLowerCase("kk-KZ");
+      return haystack.includes(queryNorm);
+    });
+  }, [activeCategory, queryNorm, showTopicList, topics]);
 
   const openTopic = (topicId: string) => nav.navigate("KazakhTraditionTopicDetail", { topicId });
   const openLane = (lane: TraditionPracticeLane) => {
     setActiveCategory(lane.category);
     setShowTopicList(false);
   };
-  const visibleTopics = showTopicList ? topics : filteredTopics;
-  const queryActive = showTopicList || activeCategory !== "all";
-  const topicListTitle = showTopicList ? "Салт-дәстүрлер" : "Іздеу нәтижелері";
+  const visibleTopics = filteredTopics;
+  const queryActive = showTopicList || activeCategory !== "all" || Boolean(queryNorm);
+  const topicListTitle = queryNorm ? "Іздеу нәтижелері" : showTopicList ? "Салт-дәстүрлер" : "Іздеу нәтижелері";
   const activeCategoryLabel =
     showTopicList || activeCategory === "all"
       ? "Барлық салт-дәстүрлер"
@@ -172,10 +194,54 @@ export function KazakhTraditionScreen() {
         </View>
         <View style={styles.heroCard}>
           <View style={styles.heroMedia}>
-            <Image source={traditionHeroImage} style={styles.heroImage} resizeMode="cover" />
+            <RasterImage source={traditionHeroImage} style={styles.heroImage} resizeMode="cover" />
             <View style={styles.heroOverlay} />
           </View>
         </View>
+      </View>
+
+      <View style={styles.searchCard}>
+        <View style={styles.searchIcon}>
+          <MaterialIcons name="search" size={18} color={palette.goldMuted} />
+        </View>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder={tr("Дәстүр, әдеп, бата іздеу")}
+          placeholderTextColor={palette.muted}
+          style={styles.searchInput}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {query ? (
+          <Pressable oyuBackdrop={false} onPress={() => setQuery("")} hitSlop={8}>
+            <MaterialIcons name="close" size={18} color={palette.muted} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View style={styles.statsRow}>
+        <View style={styles.statPill}>
+          <Text style={styles.statNo}>{topics.length}</Text>
+          <Text style={styles.statLabel}>{tr("тақырып")}</Text>
+        </View>
+        <View style={styles.statPill}>
+          <Text style={styles.statNo}>{practiceLanes.length}</Text>
+          <Text style={styles.statLabel}>{tr("бағыт")}</Text>
+        </View>
+        <Pressable
+          oyuBackdrop={false}
+          onPress={() => {
+            setActiveCategory("all");
+            setShowTopicList(true);
+          }}
+          style={({ pressed }) => [styles.allTopicsPill, pressed && { opacity: 0.9 }]}
+          accessibilityRole="button"
+          accessibilityLabel={tr("Барлық салт-дәстүрлер")}
+        >
+          <Text style={styles.allTopicsText}>{tr("Барлығын ашу")}</Text>
+          <MaterialIcons name="arrow-forward" size={15} color={palette.buttonGoldText} />
+        </Pressable>
       </View>
 
       {queryActive ? (
@@ -186,6 +252,7 @@ export function KazakhTraditionScreen() {
             onPress={() => {
               setActiveCategory("all");
               setShowTopicList(false);
+              setQuery("");
             }}
             hitSlop={8}
           >
@@ -206,6 +273,35 @@ export function KazakhTraditionScreen() {
             onOpenTopic={openTopic}
             nav={nav}
           />
+          <View style={styles.featuredBlock}>
+            <Text style={styles.resultsTitle}>{tr("Бастауға ұсынылған")}</Text>
+            <Text style={styles.featuredHint}>
+              {tr("Алдымен көп қолданылатын, дінмен шегі анық тақырыптарды қарап шығыңыз.")}
+            </Text>
+            <View style={styles.featuredGrid}>
+              {featuredTopics.map((topic) =>
+                topic ? (
+                  <Pressable
+                    key={topic.id}
+                    oyuBackdrop={false}
+                    onPress={() => openTopic(topic.id)}
+                    style={({ pressed }) => [styles.featuredTopicCard, pressed && { opacity: 0.92 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr(topic.title)}
+                  >
+                    <Text style={styles.featuredTopicTitle} numberOfLines={1}>{tr(topic.title)}</Text>
+                    <Text style={styles.featuredTopicSub} numberOfLines={2}>{tr(topic.subtitle)}</Text>
+                    <View style={styles.featuredTopicFoot}>
+                      <Text style={styles.featuredTopicMeta} numberOfLines={1}>
+                        {topic.categories.map((c) => tr(traditionCategoryLabel(c))).join(" · ")}
+                      </Text>
+                      <MaterialIcons name="chevron-right" size={17} color={palette.goldMuted} />
+                    </View>
+                  </Pressable>
+                ) : null
+              )}
+            </View>
+          </View>
         </>
       ) : (
         <>
@@ -481,6 +577,65 @@ function makeStyles(p: TraditionKazakhPalette) {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: "rgba(245,237,224,0.06)",
     },
+    searchCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: p.border,
+      backgroundColor: p.cardBg,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      marginBottom: 10,
+    },
+    searchIcon: {
+      width: 30,
+      height: 30,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: p.goldSurface,
+    },
+    searchInput: {
+      flex: 1,
+      minWidth: 0,
+      color: p.text,
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: "700",
+      paddingVertical: 4,
+    },
+    statsRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 8,
+      marginBottom: 12,
+    },
+    statPill: {
+      minWidth: 72,
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+      backgroundColor: p.cardBg,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+    },
+    statNo: { color: p.text, fontSize: 17, lineHeight: 20, fontWeight: "900" },
+    statLabel: { color: p.muted, fontSize: 10.5, lineHeight: 14, fontWeight: "800" },
+    allTopicsPill: {
+      flex: 1,
+      minWidth: 0,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      backgroundColor: p.buttonGoldBg,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    allTopicsText: { color: p.buttonGoldText, fontSize: 12, lineHeight: 16, fontWeight: "900" },
     filterPill: {
       alignSelf: "flex-start",
       flexDirection: "row",
@@ -707,6 +862,37 @@ function makeStyles(p: TraditionKazakhPalette) {
       gap: 7,
       alignItems: "stretch",
     },
+    featuredBlock: {
+      marginTop: 2,
+      marginBottom: 12,
+    },
+    featuredHint: {
+      color: p.muted,
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "700",
+      marginTop: -5,
+      marginBottom: 8,
+    },
+    featuredGrid: {
+      gap: 8,
+    },
+    featuredTopicCard: {
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+      backgroundColor: p.cardBg,
+      padding: 11,
+    },
+    featuredTopicTitle: { color: p.text, fontSize: 14, lineHeight: 18, fontWeight: "900" },
+    featuredTopicSub: { color: p.muted, fontSize: 12, lineHeight: 17, marginTop: 3, fontWeight: "700" },
+    featuredTopicFoot: {
+      marginTop: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    featuredTopicMeta: { flex: 1, color: p.goldMuted, fontSize: 10.5, lineHeight: 14, fontWeight: "900" },
     featureCard: {
       width: "47.5%",
       minWidth: 132,

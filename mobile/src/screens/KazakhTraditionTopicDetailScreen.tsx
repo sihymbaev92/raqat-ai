@@ -66,24 +66,34 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
     }, [topic])
   );
 
-  const religionSource = topic ? splitReligionLink(topic.religionLink) : { harmony: "", limit: "" };
-  const howToSource = topic?.howTo ?? [];
+  const religionSource = useMemo(
+    () => (topic ? splitReligionLink(topic.religionLink) : { harmony: "", limit: "" }),
+    [topic]
+  );
+  const howToSource = useMemo(() => topic?.howTo ?? [], [topic]);
   /** Тұрақты рет: 0 title, 1 subtitle, 2 summary, 3 origin, 4 harmony, 5 limit, 6 blessing, 7 quote, 8.. howTo */
-  const sourceFields = topic
-    ? [
-        topic.title,
-        topic.subtitle,
-        topic.summary,
-        topic.origin,
-        religionSource.harmony,
-        religionSource.limit,
-        topic.blessing,
-        topic.quote,
-        ...howToSource,
-      ]
-    : [];
+  const sourceFields = useMemo(
+    () =>
+      topic
+        ? [
+            topic.title,
+            topic.subtitle,
+            topic.summary,
+            topic.origin,
+            religionSource.harmony,
+            religionSource.limit,
+            topic.blessing,
+            topic.quote,
+            ...howToSource,
+          ]
+        : [],
+    [howToSource, religionSource.harmony, religionSource.limit, topic]
+  );
   const { values: tFields, translated } = useAutoTranslatedFields(sourceFields);
   const { tr } = useKkAutoTranslator();
+  const articles = useMemo(() => (topic ? getRelatedTraditionArticles(topic.id) : []), [topic]);
+  const audios = useMemo(() => (topic ? getRelatedTraditionAudios(topic.id) : []), [topic]);
+  const evidenceCount = useMemo(() => (topic ? traditionEvidenceRefCount(topic.id) : 0), [topic]);
 
   if (!topic) {
     return (
@@ -93,9 +103,6 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
     );
   }
 
-  const articles = getRelatedTraditionArticles(topic.id);
-  const audios = getRelatedTraditionAudios(topic.id);
-  const evidenceCount = traditionEvidenceRefCount(topic.id);
   const tTitle = tFields[0] ?? topic.title;
   const tSubtitle = tFields[1] ?? topic.subtitle;
   const tSummary = tFields[2] ?? topic.summary;
