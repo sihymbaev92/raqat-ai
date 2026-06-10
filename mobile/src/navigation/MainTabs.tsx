@@ -1,60 +1,41 @@
 import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { DashboardScreen } from "../screens/DashboardScreen";
-import { DuasStack } from "./DuasStack";
-import { TasbihStack } from "./TasbihStack";
-import { IslamicSideAyatRails } from "../components/IslamicSideAyatRails";
 import { useAppTheme } from "../theme/ThemeContext";
-import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 import type { MainTabParamList } from "./types";
+import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
+import { lazyScreen } from "./lazyScreen";
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createNativeStackNavigator<MainTabParamList>();
 
+const OfficialKnowledgePortalScreen = lazyScreen(() => import("../screens/OfficialKnowledgePortalScreen").then((m) => ({ default: m.OfficialKnowledgePortalScreen })));
+const PrayerTimesScreen = lazyScreen(() => import("../screens/PrayerTimesScreen").then((m) => ({ default: m.PrayerTimesScreen })));
+const SavedTabScreen = lazyScreen(() => import("../screens/SavedTabScreen").then((m) => ({ default: m.SavedTabScreen })));
+const SettingsScreen = lazyScreen(() => import("../screens/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
+const DuasStack = lazyScreen(() => import("./DuasStack").then((m) => ({ default: m.DuasStack })));
+const TasbihStack = lazyScreen(() => import("./TasbihStack").then((m) => ({ default: m.TasbihStack })));
+
+/** Негізгі экрандар — таб жолағы жоқ, тек stack навигация. */
 export function MainTabs() {
   const { colors } = useAppTheme();
+  useAppLocale();
 
   return (
-    <IslamicSideAyatRails>
-    <Tab.Navigator
+    <Stack.Navigator
       initialRouteName="Home"
-      backBehavior="initialRoute"
       screenOptions={{
-        /** Төменгі таб жолағын өшіреміз: бөлімдер Басты беттегі тайлдарда. */
-        tabBarStyle: { display: "none" },
-        /* false болса барлық таб бірден монтаждалады — алғашқы іске қосуда JS қатып қалуы мүмкін */
-        lazy: true,
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: "600", fontSize: 15 },
+        ...hiddenStackHeaderOptions,
+        contentStyle: { backgroundColor: colors.bg },
       }}
     >
-      <Tab.Screen
-        name="Home"
-        component={DashboardScreen}
-        options={{
-          title: kk.navigation.homeTitle,
-          tabBarLabel: "",
-          headerTitleAlign: "left",
-          /** Төменгі кастом жолда «Басты» түймесі жоқ — әдепкі таб жолынан жасырамыз */
-          tabBarButton: () => null,
-        }}
-      />
-      <Tab.Screen
-        name="Duas"
-        component={DuasStack}
-        options={{
-          headerShown: false,
-          tabBarLabel: kk.dashboard.duasShort,
-        }}
-      />
-      <Tab.Screen
-        name="Tasbih"
-        component={TasbihStack}
-        options={{
-          headerShown: false,
-        }}
-      />
-    </Tab.Navigator>
-    </IslamicSideAyatRails>
+      <Stack.Screen name="Home" component={DashboardScreen} />
+      <Stack.Screen name="Articles" component={OfficialKnowledgePortalScreen} />
+      <Stack.Screen name="PrayerTab" component={PrayerTimesScreen} />
+      <Stack.Screen name="Saved" component={SavedTabScreen} />
+      <Stack.Screen name="Profile" component={SettingsScreen} />
+      <Stack.Screen name="Duas" component={DuasStack} />
+      <Stack.Screen name="Tasbih" component={TasbihStack} />
+    </Stack.Navigator>
   );
 }

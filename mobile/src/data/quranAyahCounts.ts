@@ -11,6 +11,18 @@ export const AYAH_COUNTS_PER_SURAH: readonly number[] = [
 
 export const TOTAL_AYAHS = 6236;
 
+/** Сүре (1..114) + аят → глобалды аят нөмірі 1..6236 */
+export function surahAyahToGlobalOneBased(surah: number, ayahInSurah: number): number {
+  const s = Math.max(1, Math.min(114, Math.floor(surah)));
+  const a = Math.max(1, Math.floor(ayahInSurah));
+  let sum = 0;
+  for (let i = 0; i < s - 1; i++) {
+    sum += AYAH_COUNTS_PER_SURAH[i] ?? 0;
+  }
+  const cap = AYAH_COUNTS_PER_SURAH[s - 1] ?? a;
+  return sum + Math.min(a, cap);
+}
+
 /** Глобалды аят нөмірі 1..6236 → сүре + аят */
 export function globalAyahToRef(globalOneBased: number): { surah: number; ayah: number } {
   let n = Math.max(1, Math.min(TOTAL_AYAHS, globalOneBased)) - 1;

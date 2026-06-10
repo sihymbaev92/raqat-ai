@@ -5,11 +5,13 @@ __pycache__/
 *.pyd
 .venv/
 venv/
+.pytest_cache/
 # Платформа API: жүйелік / сақтық venv (репоға кірмейді)
 platform_api/.venv.linux_backup/
 
 # Env
 .env
+.env.deploy
 
 # Databases (жергілікті SQLite; өндірісте RAQAT_DB_PATH қолданыңыз)
 *.db
@@ -28,6 +30,9 @@ backups/
 # Deploy / local archive bundles (репоға кірмейді)
 platform_api/*.tar.gz
 platform_api/*.zip
+*.tar.gz
+*.tgz
+*.zip
 
 # Logs / telemetry
 logs/
@@ -37,9 +42,34 @@ logs/
 scripts/asyldin_apply_log.txt
 scripts/asyldin_scrape_err.txt
 
-# JS (түбірде болса)
-node_modules/
+# Лицензиялық Құран аудармасы (Ерлан Алимулы — толық 6224 аят JSON; репоға кірмейді)
+data/quran_kk_verified.json
 
+# Scrape/sync probe artifacts (fixtures → tests/fixtures/)
+data/*-probe*
+data/*-sample.html
+data/sync-*-log.txt
+data/kb-test.txt
+data/kb-fts.txt
+data/fatua-pages-probe.txt
+mobile/.tmp-*.json
+
+# Release APK (mirror build output; index.html ғана track)
+mobile/apk-download/*.apk
+mobile/android/app/build/outputs/apk/**/*.apk
+mobile/android/app/build/outputs/bundle/**/*.aab
+mobile/*.apk
+mobile/*.aab
+mobile/*.tar.gz
+*.apk
+*.aab
+
+
+# Windows: Gradle кэші кирилл user profile жолында prefab/Java қатесіне ұшыраса — жергілікті ASCII кэш
+.gradle-user-home-ascii/
+.gradle-user-home/
+.tmp/
+mobile/.tmp/
 
 # OS
 .DS_Store
@@ -47,3 +77,13 @@ Thumbs.db
 
 # Локальды workspace (қосалқы multi-root жолдар; репоға кіргізбеу)
 *.code-workspace
+
+# Hafs 604 mushaf CDN assets (sync scripts; VPS-ке deploy)
+mobile/assets/quran/svg/
+mobile/assets/quran/pages/
+mobile/assets/quran/qcf4/
+mobile/assets/quran/ayah_map.json
+
+# Superseded offline translation generator output; app uses *-core.json.
+mobile/assets/bundled/offline-auto-translations.json
+node_modules

@@ -581,6 +581,12 @@ async def voice_command_handler(message: types.Message):
             await _send_voice_reply(message, _voice_text("open_khatm", lang), lang)
             return
 
+        if "хадис" in normalized or "hadith" in normalized:
+            await _update_wait(wait_msg, transcript, lang, _voice_text("open_hadith", lang))
+            await hadith_show(message)
+            await _send_voice_reply(message, _voice_text("open_hadith", lang), lang)
+            return
+
         if "ер дәрет" in normalized or "еркек дәрет" in normalized or "дәрет ер" in normalized:
             await _update_wait(wait_msg, transcript, lang, _voice_text("open_wudu", lang))
             await send_prayer_section_message(message, "wudu_men")
@@ -664,12 +670,6 @@ async def voice_command_handler(message: types.Message):
             await _update_wait(wait_msg, transcript, lang, _voice_text("open_quran", lang))
             await quran_handler(message)
             await _send_voice_reply(message, _voice_text("open_quran", lang), lang)
-            return
-
-        if "хадис" in normalized or "hadith" in normalized:
-            await _update_wait(wait_msg, transcript, lang, _voice_text("open_hadith", lang))
-            await hadith_show(message)
-            await _send_voice_reply(message, _voice_text("open_hadith", lang), lang)
             return
 
         if "намаз" in normalized or "prayer" in normalized:

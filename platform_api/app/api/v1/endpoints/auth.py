@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+DEPRECATED scaffold — mounted router емес.
+Нақты auth: platform_api/auth_routes.py (main.py арқылы).
+"""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException

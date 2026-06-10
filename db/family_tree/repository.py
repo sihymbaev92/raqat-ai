@@ -375,3 +375,367 @@ def add_related_person(
     person = _get_person_in_tree(conn, tree_id, person_id)
     assert person is not None
     return person
+
+
+def _tree_updated_at(conn: Any, tree_id: str) -> str | None:
+    row = execute(
+        conn,
+        "SELECT updated_at FROM family_trees WHERE id = ? LIMIT 1",
+        (tree_id,),
+    ).fetchone()
+    if not row:
+        return None
+    try:
+        return str(row["updated_at"])
+    except Exception:
+        return str(row[0])
+
+
+def export_tree_sync_payload(conn: Any, platform_user_id: str) -> dict[str, Any]:
+    """Толық ағаш — мобильді LocalFamilyTree v1 форматына сәйкес."""
+    tree = get_or_create_tree(conn, platform_user_id)
+    tree_id = tree["id"]
+    self_id = tree.get("self_person_id")
+    rows = execute(
+        conn,
+        """
+        SELECT id, name_kk, gender, birth_year, death_year, clan_slug, notes_kk
+        FROM family_persons WHERE tree_id = ?
+        """,
+        (tree_id,),
+    ).fetchall()
+    edge_rows = execute(
+        conn,
+        """
+        SELECT parent_id, child_id, relation FROM family_edges WHERE tree_id = ?
+        """,
+        (tree_id,),
+    ).fetchall()
+    father_of: dict[str, str] = {}
+    mother_of: dict[str, str] = {}
+    for er in edge_rows:
+        if isinstance(er, dict):
+            pid, cid, rel = er["parent_id"], er["child_id"], er["relation"]
+        else:
+            pid, cid, rel = er[0], er[1], er[2]
+        if rel == "father":
+            father_of[cid] = pid
+        elif rel == "mother":
+            mother_of[cid] = pid
+    persons: list[dict[str, Any]] = []
+    for r in rows:
+        p = _row_person(r)
+        pid = p["id"]
+        persons.append(
+            {
+                **p,
+                "father_id": father_of.get(pid),
+                "mother_id": mother_of.get(pid),
+                "is_self": pid == self_id,
+            }
+        )
+    return {
+        "tree_id": tree_id,
+        "self_id": self_id,
+        "has_self": bool(self_id),
+        "persons": persons,
+        "updated_at": _tree_updated_at(conn, tree_id),
+    }
+
+
+def replace_tree_sync_payload(
+    conn: Any,
+    platform_user_id: str,
+    *,
+    self_id: str | None,
+    persons: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Мобильді толық ағашты серверге жазу (барлық адамдарды ауыстырады)."""
+    tree = get_or_create_tree(conn, platform_user_id)
+    tree_id = tree["id"]
+    execute(conn, "DELETE FROM family_edges WHERE tree_id = ?", (tree_id,))
+    execute(conn, "DELETE FROM family_persons WHERE tree_id = ?", (tree_id,))
+
+    valid_self: str | None = None
+    seen: set[str] = set()
+    normalized: list[dict[str, Any]] = []
+    for raw in persons or []:
+        if not isinstance(raw, dict):
+            continue
+        pid = str(raw.get("id") or "").strip()
+        name = str(raw.get("name_kk") or raw.get("name") or "").strip()
+        if not pid or not name or pid in seen:
+            continue
+        seen.add(pid)
+        g = str(raw.get("gender") or "unknown").strip().lower()
+        if g not in VALID_GENDERS:
+            g = "unknown"
+        normalized.append(
+            {
+                "id": pid,
+                "name_kk": name,
+                "gender": g,
+                "birth_year": raw.get("birth_year"),
+                "death_year": raw.get("death_year"),
+                "clan_slug": (str(raw.get("clan_slug") or "").strip().lower() or None),
+                "notes_kk": raw.get("notes_kk"),
+                "father_id": raw.get("father_id"),
+                "mother_id": raw.get("mother_id"),
+                "is_self": bool(raw.get("is_self")),
+            }
+        )
+
+    if self_id and self_id in seen:
+        valid_self = self_id
+    else:
+        for p in normalized:
+            if p["is_self"]:
+                valid_self = p["id"]
+                break
+
+    for p in normalized:
+        by = p.get("birth_year")
+        dy = p.get("death_year")
+        try:
+            by_i = int(by) if by is not None else None
+        except (TypeError, ValueError):
+            by_i = None
+        try:
+            dy_i = int(dy) if dy is not None else None
+        except (TypeError, ValueError):
+            dy_i = None
+        execute(
+            conn,
+            """
+            INSERT INTO family_persons (
+                id, tree_id, name_kk, gender, birth_year, death_year, clan_slug, notes_kk, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            """,
+            (
+                p["id"],
+                tree_id,
+                p["name_kk"],
+                p["gender"],
+                by_i,
+                dy_i,
+                p["clan_slug"],
+                p.get("notes_kk"),
+            ),
+        )
+
+    id_set = {p["id"] for p in normalized}
+    for p in normalized:
+        cid = p["id"]
+        fid = p.get("father_id")
+        mid = p.get("mother_id")
+        if fid and fid in id_set and fid != cid:
+            execute(
+                conn,
+                """
+                INSERT INTO family_edges (tree_id, parent_id, child_id, relation)
+                VALUES (?, ?, ?, 'father')
+                """,
+                (tree_id, fid, cid),
+            )
+        if mid and mid in id_set and mid != cid:
+            execute(
+                conn,
+                """
+                INSERT INTO family_edges (tree_id, parent_id, child_id, relation)
+                VALUES (?, ?, ?, 'mother')
+                """,
+                (tree_id, mid, cid),
+            )
+
+    execute(
+        conn,
+        """
+        UPDATE family_trees
+        SET self_person_id = ?, updated_at = datetime('now')
+        WHERE id = ?
+        """,
+        (valid_self, tree_id),
+    )
+    return export_tree_sync_payload(conn, platform_user_id)
+
+
+def _tree_updated_at(conn: Any, tree_id: str) -> str | None:
+    row = execute(
+        conn,
+        "SELECT updated_at FROM family_trees WHERE id = ? LIMIT 1",
+        (tree_id,),
+    ).fetchone()
+    if not row:
+        return None
+    try:
+        return str(row["updated_at"])
+    except Exception:
+        return str(row[0])
+
+
+def export_tree_sync_payload(conn: Any, platform_user_id: str) -> dict[str, Any]:
+    """Толық ағаш — мобильді LocalFamilyTree v1 форматына сәйкес."""
+    tree = get_or_create_tree(conn, platform_user_id)
+    tree_id = tree["id"]
+    self_id = tree.get("self_person_id")
+    rows = execute(
+        conn,
+        """
+        SELECT id, name_kk, gender, birth_year, death_year, clan_slug, notes_kk
+        FROM family_persons WHERE tree_id = ?
+        """,
+        (tree_id,),
+    ).fetchall()
+    edge_rows = execute(
+        conn,
+        """
+        SELECT parent_id, child_id, relation FROM family_edges WHERE tree_id = ?
+        """,
+        (tree_id,),
+    ).fetchall()
+    father_of: dict[str, str] = {}
+    mother_of: dict[str, str] = {}
+    for er in edge_rows:
+        if isinstance(er, dict):
+            pid, cid, rel = er["parent_id"], er["child_id"], er["relation"]
+        else:
+            pid, cid, rel = er[0], er[1], er[2]
+        if rel == "father":
+            father_of[cid] = pid
+        elif rel == "mother":
+            mother_of[cid] = pid
+    persons: list[dict[str, Any]] = []
+    for r in rows:
+        p = _row_person(r)
+        pid = p["id"]
+        persons.append(
+            {
+                **p,
+                "father_id": father_of.get(pid),
+                "mother_id": mother_of.get(pid),
+                "is_self": pid == self_id,
+            }
+        )
+    return {
+        "tree_id": tree_id,
+        "self_id": self_id,
+        "has_self": bool(self_id),
+        "persons": persons,
+        "updated_at": _tree_updated_at(conn, tree_id),
+    }
+
+
+def replace_tree_sync_payload(
+    conn: Any,
+    platform_user_id: str,
+    *,
+    self_id: str | None,
+    persons: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Мобильді толық ағашты серверге жазу (барлық адамдарды ауыстырады)."""
+    tree = get_or_create_tree(conn, platform_user_id)
+    tree_id = tree["id"]
+    execute(conn, "DELETE FROM family_edges WHERE tree_id = ?", (tree_id,))
+    execute(conn, "DELETE FROM family_persons WHERE tree_id = ?", (tree_id,))
+
+    valid_self: str | None = None
+    seen: set[str] = set()
+    normalized: list[dict[str, Any]] = []
+    for raw in persons or []:
+        if not isinstance(raw, dict):
+            continue
+        pid = str(raw.get("id") or "").strip()
+        name = str(raw.get("name_kk") or raw.get("name") or "").strip()
+        if not pid or not name or pid in seen:
+            continue
+        seen.add(pid)
+        g = str(raw.get("gender") or "unknown").strip().lower()
+        if g not in VALID_GENDERS:
+            g = "unknown"
+        normalized.append(
+            {
+                "id": pid,
+                "name_kk": name,
+                "gender": g,
+                "birth_year": raw.get("birth_year"),
+                "death_year": raw.get("death_year"),
+                "clan_slug": (str(raw.get("clan_slug") or "").strip().lower() or None),
+                "notes_kk": raw.get("notes_kk"),
+                "father_id": raw.get("father_id"),
+                "mother_id": raw.get("mother_id"),
+                "is_self": bool(raw.get("is_self")),
+            }
+        )
+
+    if self_id and self_id in seen:
+        valid_self = self_id
+    else:
+        for p in normalized:
+            if p["is_self"]:
+                valid_self = p["id"]
+                break
+
+    for p in normalized:
+        by = p.get("birth_year")
+        dy = p.get("death_year")
+        try:
+            by_i = int(by) if by is not None else None
+        except (TypeError, ValueError):
+            by_i = None
+        try:
+            dy_i = int(dy) if dy is not None else None
+        except (TypeError, ValueError):
+            dy_i = None
+        execute(
+            conn,
+            """
+            INSERT INTO family_persons (
+                id, tree_id, name_kk, gender, birth_year, death_year, clan_slug, notes_kk, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            """,
+            (
+                p["id"],
+                tree_id,
+                p["name_kk"],
+                p["gender"],
+                by_i,
+                dy_i,
+                p["clan_slug"],
+                p.get("notes_kk"),
+            ),
+        )
+
+    id_set = {p["id"] for p in normalized}
+    for p in normalized:
+        cid = p["id"]
+        fid = p.get("father_id")
+        mid = p.get("mother_id")
+        if fid and fid in id_set and fid != cid:
+            execute(
+                conn,
+                """
+                INSERT INTO family_edges (tree_id, parent_id, child_id, relation)
+                VALUES (?, ?, ?, 'father')
+                """,
+                (tree_id, fid, cid),
+            )
+        if mid and mid in id_set and mid != cid:
+            execute(
+                conn,
+                """
+                INSERT INTO family_edges (tree_id, parent_id, child_id, relation)
+                VALUES (?, ?, ?, 'mother')
+                """,
+                (tree_id, mid, cid),
+            )
+
+    execute(
+        conn,
+        """
+        UPDATE family_trees
+        SET self_person_id = ?, updated_at = datetime('now')
+        WHERE id = ?
+        """,
+        (valid_self, tree_id),
+    )
+    return export_tree_sync_payload(conn, platform_user_id)

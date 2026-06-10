@@ -26,10 +26,12 @@ if [[ -n "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]]; then
 fi
 echo "Клиент бандлы: AI/content үшін тек JWT (client secret қолданылмайды)."
 
-# HTTP API хосттарын network_security_config.xml ішіне автоматты қосу (cleartext allowlist).
+# HTTP API хосттарын network_security_config.xml ішіне автоматты қосу (debug/local cleartext allowlist).
 REPO_ROOT="$(cd "$ROOT/.." && pwd)"
 _patch="$REPO_ROOT/scripts/patch_android_network_security.py"
-if [[ -f "$_patch" ]]; then
+if [[ "${RAQAT_EXPO_RELEASE_BUILD:-0}" == "1" ]]; then
+  echo "cleartext patch: release build — skipped (Play AAB ships HTTPS-only)."
+elif [[ -f "$_patch" ]]; then
   # Windows Git Bash: PATH-тегі python3 көбінесе WindowsApps түйіндемесі — код 49 қайтарады; алдымен python.
   if command -v python >/dev/null 2>&1; then
     python "$_patch"
@@ -137,6 +139,42 @@ if [[ -z "${ANDROID_HOME}" || ! -d "${ANDROID_HOME}/platforms" ]]; then
   exit 1
 fi
 
+artifact_info() {
+  local artifact="$1"
+  if [[ ! -f "$artifact" ]]; then
+    return 0
+  fi
+  if command -v python >/dev/null 2>&1; then
+    python -c "import hashlib, pathlib, sys; p=pathlib.Path(sys.argv[1]); data=p.read_bytes(); print(f'Artifact: {p}'); print(f'Size: {len(data)/1024/1024:.2f} MB'); print(f'SHA256: {hashlib.sha256(data).hexdigest()}')" "$artifact"
+  else
+    echo "Artifact: $artifact"
+  fi
+}
+
+if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
+  _missing_sounds=()
+  for i in 01 02 03 04 05; do
+    if [[ ! -f "$ROOT/assets/sounds/prayer_azan_user_${i}.mp3" ]]; then
+      _missing_sounds+=("prayer_azan_user_${i}.mp3")
+    fi
+  done
+  if [[ "${#_missing_sounds[@]}" -gt 0 ]]; then
+    echo "Азан MP3 файлдары жоқ: ${_missing_sounds[*]}" >&2
+    echo "  mobile/assets/sounds/prayer_azan_user_01.mp3..05.mp3 қалпына келтіріңіз." >&2
+    exit 1
+  fi
+  if [[ ! -f "$ROOT/android/keystore.properties" ]]; then
+    echo "Play release signing жоқ: mobile/android/keystore.properties табылмады." >&2
+    echo "  mobile/android/keystore.properties.example файлын көшіріп, upload key JKS мәндерін толтырыңыз." >&2
+    exit 1
+  fi
+  _store_file="$(sed -n 's/^[[:space:]]*storeFile=//p' "$ROOT/android/keystore.properties" | tr -d '\r' | head -1)"
+  if [[ -z "$_store_file" || ! -f "$ROOT/android/$_store_file" ]]; then
+    echo "Play release signing жоқ: storeFile табылмады ($ROOT/android/${_store_file:-<empty>})." >&2
+    exit 1
+  fi
+fi
+
 # Gradle кэшін /tmp-ке (cursor sandbox cache) жібермеу — диск толып build құлауы мүмкін.
 # Windows Git Bash: %USERPROFILE% ішіндегі .gradle (кирилл/unicode) — prefab
 # `java -cp` сынып, ClassNotFoundException: com.google.prefab.cli.AppKt болады.
@@ -161,14 +199,17 @@ if [[ "$TARGET" == "debug" ]]; then
   ./gradlew --stop >/dev/null 2>&1 || true
   ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 assembleDebug
   echo "APK: $ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
+  artifact_info "$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 elif [[ "$TARGET" == "aab" ]]; then
   echo "=== bundleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
   ./gradlew --stop >/dev/null 2>&1 || true
   ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 bundleRelease
   echo "AAB: $ROOT/android/app/build/outputs/bundle/release/app-release.aab"
+  artifact_info "$ROOT/android/app/build/outputs/bundle/release/app-release.aab"
 else
   echo "=== assembleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
   ./gradlew --stop >/dev/null 2>&1 || true
   ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 assembleRelease
   echo "APK: $ROOT/android/app/build/outputs/apk/release/app-release.apk"
+  artifact_info "$ROOT/android/app/build/outputs/apk/release/app-release.apk"
 fi

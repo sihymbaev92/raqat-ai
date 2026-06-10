@@ -11,4 +11,6 @@ Production сызбасында: **Cloudflare (CDN/WAF)** → **Nginx немес
 - Ұзақ AI сұраулары үшін `proxy_read_timeout` арттыру  
 - `/health` — load balancer health check үшін жеңіл жол
 
-Кейін: `nginx.conf.example` файлын нақты upstream host-пен толтыру.
+**VPS қадамдар (HTTP 80 + Certbot HTTPS):** [docs/operations/nginx-certbot-vps.md](../docs/operations/nginx-certbot-vps.md)
+
+Репо түбірінен **мысал server блоктары**: `scripts/server_snippets/nginx_raqat_api_http80.conf`, `scripts/server_snippets/nginx_raqat_api_https443.conf` (`server_name` мен `proxy_pass` портына сәйкес өзгертіңіз; Hetzner VPS әдетте **8000**).

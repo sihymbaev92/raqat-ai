@@ -61,10 +61,10 @@ describe("deriveGlobalVoiceEntryLayout", () => {
     expect(l).toEqual({ showGlobalFab: false, bottomInset: 0 });
   });
 
-  it("Main → Duas → FAB бар, standard inset", () => {
+  it("Main → Duas → FAB жоқ (микрофон header оң жақта)", () => {
     const s = mockRootState(1);
     const l = deriveGlobalVoiceEntryLayout(s, true);
-    expect(l).toEqual({ showGlobalFab: true, bottomInset: 16 });
+    expect(l).toEqual({ showGlobalFab: false, bottomInset: 0 });
   });
 
   it("Құбыла толық экран → FAB бар", () => {
@@ -96,7 +96,7 @@ describe("shouldRunQiblaMotionSensors", () => {
     expect(shouldRunQiblaMotionSensors(mockRootState(0), true)).toBe(true);
   });
 
-  it("Main Duas → false", () => {
+  it("Main Duas → құбыла сенсорлары өшеді", () => {
     expect(shouldRunQiblaMotionSensors(mockRootState(1), true)).toBe(false);
   });
 

@@ -4,15 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Pressable,
   Linking,
   Alert,
   Platform,
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RasterImage } from "@/ui/RasterImage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { MoreStackParamList } from "../navigation/types";
 import { SEERAH_LESSON_COUNT, urlForSeerahLesson } from "../config/seerahVideos";
 import { loadSeerahProgress, saveSeerahLessonViewed } from "../storage/seerahProgress";
@@ -22,6 +25,7 @@ type Props = NativeStackScreenProps<MoreStackParamList, "Seerah">;
 export function SeerahScreen(_props: Props) {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
+  const { tr, translated } = useKkAutoTranslator();
 
   const lessons = useMemo(
     () => Array.from({ length: SEERAH_LESSON_COUNT }, (_, i) => i + 1),
@@ -46,10 +50,14 @@ export function SeerahScreen(_props: Props) {
   const openLesson = useCallback(async (lesson: number) => {
     const url = urlForSeerahLesson(lesson);
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (!supported) {
-        Alert.alert(kk.common.error, kk.seerah.openError);
-        return;
+      // Android 11+ / iOS: canOpenURL https жиі қате false қайтарады; http(s) — тіке openURL.
+      const isWeb = /^https?:\/\//i.test(url);
+      if (!isWeb) {
+        const supported = await Linking.canOpenURL(url);
+        if (!supported) {
+          Alert.alert(kk.common.error, kk.seerah.openError);
+          return;
+        }
       }
       await Linking.openURL(url);
       const next = await saveSeerahLessonViewed(lesson);
@@ -62,15 +70,23 @@ export function SeerahScreen(_props: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.h1}>{kk.seerah.title}</Text>
-      <Text style={styles.intro}>{kk.seerah.intro}</Text>
+      <RasterImage
+        source={require("../../assets/seerah/seerah-life-banner.png")}
+        style={styles.hero}
+        resizeMode="cover"
+        accessibilityIgnoresInvertColors
+        accessibilityRole="image"
+        accessibilityLabel={kk.seerah.title}
+      />
+      <Text style={styles.h1}>{tr(kk.seerah.title)}</Text>
+      <Text style={styles.intro}>{tr(kk.seerah.intro)}</Text>
       {lastLesson ? (
         <Text style={styles.progressHint}>
-          Соңғы ашылған сабақ: {lastLesson} · Прогресс: {viewedLessons.length}/{SEERAH_LESSON_COUNT}
+          {tr("Соңғы ашылған сабақ")}: {lastLesson} · {tr("Прогресс")}: {viewedLessons.length}/{SEERAH_LESSON_COUNT}
         </Text>
       ) : null}
 
-      <Text style={styles.sectionLabel}>{kk.seerah.lessonsSection}</Text>
+      <Text style={styles.sectionLabel}>{tr(kk.seerah.lessonsSection)}</Text>
       <View style={styles.lessonGrid} accessibilityRole="list">
         {lessons.map((lesson) => (
           <Pressable
@@ -84,13 +100,14 @@ export function SeerahScreen(_props: Props) {
             accessibilityRole="button"
             accessibilityLabel={kk.seerah.lessonA11y(lesson)}
           >
-            {lastLesson === lesson ? <Text style={styles.lastBadge}>Соңғы</Text> : null}
+            {lastLesson === lesson ? <Text style={styles.lastBadge}>{tr("Соңғы")}</Text> : null}
             <Text style={styles.chipTitle} numberOfLines={1}>
-              {kk.seerah.lessonTitle(lesson)}
+              {tr(kk.seerah.lessonTitle(lesson))}
             </Text>
           </Pressable>
         ))}
       </View>
+      <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </ScrollView>
   );
 }
@@ -99,6 +116,13 @@ function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     content: { padding: 18, paddingBottom: 40 },
+    hero: {
+      width: "100%",
+      height: 200,
+      borderRadius: 16,
+      marginBottom: 16,
+      backgroundColor: colors.card,
+    },
     h1: {
       color: colors.text,
       fontSize: 22,

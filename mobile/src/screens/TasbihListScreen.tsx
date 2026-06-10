@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
-import * as Haptics from "expo-haptics";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -10,6 +10,7 @@ import { GuideAccordionSection } from "../components/GuideAccordion";
 import { DHIKR_CHAPTERS } from "../content/dhikrChapters";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TasbihStackParamList } from "../navigation/types";
+import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
 import { loadDhikrItems, effectiveGoalForItem } from "./tasbihShared";
 import { pickBestTranslit } from "../utils/translitKk";
 
@@ -18,6 +19,7 @@ type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihList">;
 export function TasbihListScreen({ navigation }: Props) {
   const items = useMemo(() => loadDhikrItems(), []);
   const { colors, isDark } = useAppTheme();
+  useTabHomeBackHeader(navigation, colors);
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
 
@@ -48,10 +50,64 @@ export function TasbihListScreen({ navigation }: Props) {
 
   const scrollBottomPad = Math.max(insets.bottom, 16) + 8;
 
+  useEffect(() => {
+    if (expandedChapterIndex == null) {
+      setExpandedChapterIndex(0);
+    }
+  }, [expandedChapterIndex]);
+
+  const renderDhikrRows = (ids: number[]) =>
+    ids.map((id) => {
+      const d = items.find((i) => i.id === id);
+      if (!d) return null;
+      const g = effectiveGoalForItem(d, null);
+      const c = dhikrCounts[id] ?? 0;
+      const show = `${c} / ${g}`;
+      const translit = pickBestTranslit(d.textAr || "", d.translitKk);
+      return (
+        <View key={id} style={styles.listRowWrap}>
+          <Pressable
+            onPress={() => {
+              navigation.navigate("TasbihCounter", {
+                dhikrId: d.id,
+                titleKk: d.textKk,
+              });
+            }}
+            style={({ pressed }) => [styles.listRow, pressed && styles.listRowPressed]}
+            accessibilityRole="button"
+            accessibilityLabel={`${d.textKk}. ${show}. ${kk.tasbih.openCounterA11y}`}
+          >
+            <View style={styles.listBadge}>
+              <Text style={styles.listBadgeTxt}>{id}</Text>
+            </View>
+            <View style={styles.listRowMain}>
+              {d.textAr ? (
+                <Text style={styles.listRowAr} numberOfLines={2}>
+                  {d.textAr}
+                </Text>
+              ) : null}
+              <Text style={styles.listRowTitle} numberOfLines={2}>
+                {d.textKk}
+              </Text>
+              {translit ? (
+                <Text style={styles.listRowTranslit} numberOfLines={2}>
+                  {translit}
+                </Text>
+              ) : null}
+              <Text style={styles.listRowProgress}>{show}</Text>
+            </View>
+            <Text style={styles.listRowChev}>›</Text>
+          </Pressable>
+        </View>
+      );
+    });
+
   if (!items.length) {
     return (
-      <View style={styles.scroll}>
-        <Text style={styles.muted}>Зікір тізімі жүктелмеді.</Text>
+      <View style={styles.root}>
+        <View style={[styles.emptyWrap, { paddingTop: Math.max(16, insets.top) }]}>
+          <Text style={styles.muted}>{kk.tasbih.loadFailedHint}</Text>
+        </View>
       </View>
     );
   }
@@ -64,65 +120,24 @@ export function TasbihListScreen({ navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.listHero}>{kk.tasbih.zikirSection}</Text>
-        <Text style={styles.listIntro}>{kk.tasbih.listIntro}</Text>
-
-        {DHIKR_CHAPTERS.map((ch, idx) => (
-          <GuideAccordionSection
-            key={ch.titleKk}
-            title={ch.titleKk}
-            subtitle={ch.subtitleKk}
-            expanded={expandedChapterIndex === idx}
-            onToggle={() => setExpandedChapterIndex(expandedChapterIndex === idx ? null : idx)}
-            colors={colors}
-          >
-            {ch.ids.map((id) => {
-              const d = items.find((i) => i.id === id);
-              if (!d) return null;
-              const g = effectiveGoalForItem(d, null);
-              const c = dhikrCounts[id] ?? 0;
-              const show = `${c} / ${g}`;
-              const translit = pickBestTranslit(d.textAr || "", d.translitKk);
-              return (
-                <View key={id} style={styles.listRowWrap}>
-                  <Pressable
-                    onPress={() => {
-                      Haptics.selectionAsync();
-                      navigation.navigate("TasbihCounter", {
-                        dhikrId: d.id,
-                        titleKk: d.textKk,
-                      });
-                    }}
-                    style={({ pressed }) => [styles.listRow, pressed && styles.listRowPressed]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${d.textKk}. ${show}. ${kk.tasbih.openCounterA11y}`}
-                  >
-                    <View style={styles.listBadge}>
-                      <Text style={styles.listBadgeTxt}>{id}</Text>
-                    </View>
-                    <View style={styles.listRowMain}>
-                      {d.textAr ? (
-                        <Text style={styles.listRowAr} numberOfLines={2}>
-                          {d.textAr}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.listRowTitle} numberOfLines={2}>
-                        {d.textKk}
-                      </Text>
-                      {translit ? (
-                        <Text style={styles.listRowTranslit} numberOfLines={2}>
-                          {translit}
-                        </Text>
-                      ) : null}
-                      <Text style={styles.listRowProgress}>{show}</Text>
-                    </View>
-                    <Text style={styles.listRowChev}>›</Text>
-                  </Pressable>
-                </View>
-              );
-            })}
-          </GuideAccordionSection>
-        ))}
+        {DHIKR_CHAPTERS.map((ch, idx) => {
+          const isMainTasbih = ch.ids.length === 1 && ch.ids[0] === 1;
+          if (isMainTasbih) {
+            return <View key="main-tasbih">{renderDhikrRows(ch.ids)}</View>;
+          }
+          return (
+            <GuideAccordionSection
+              key={ch.titleKk}
+              title={ch.titleKk}
+              subtitle={ch.subtitleKk}
+              expanded={expandedChapterIndex === idx}
+              onToggle={() => setExpandedChapterIndex(expandedChapterIndex === idx ? null : idx)}
+              colors={colors}
+            >
+              {renderDhikrRows(ch.ids)}
+            </GuideAccordionSection>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -136,19 +151,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       padding: 20,
       paddingBottom: 16,
     },
-    muted: { color: colors.muted, textAlign: "center", marginTop: 24 },
-    listHero: {
-      color: colors.text,
-      fontSize: 22,
-      fontWeight: "800",
-      marginBottom: 8,
-    },
-    listIntro: {
-      color: colors.muted,
-      fontSize: 14,
-      lineHeight: 21,
-      marginBottom: 16,
-    },
+    emptyWrap: { flex: 1, padding: 24, justifyContent: "center" },
+    muted: { color: colors.muted, textAlign: "center", fontSize: 15, lineHeight: 22 },
     listRowWrap: {
       marginBottom: 10,
       borderRadius: 14,

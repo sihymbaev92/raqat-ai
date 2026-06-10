@@ -7,7 +7,13 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from db.family_tree.repository import add_related_person, get_tree_view, upsert_self_person
+from db.family_tree.repository import (
+    add_related_person,
+    export_tree_sync_payload,
+    get_tree_view,
+    replace_tree_sync_payload,
+    upsert_self_person,
+)
 from db.get_db import get_db
 from jwt_auth import platform_user_id_from_payload
 from jwt_deps import get_current_user
@@ -24,6 +30,24 @@ class SelfPersonBody(BaseModel):
     death_year: int | None = Field(default=None, ge=1000, le=2200)
     clan_slug: str | None = Field(default=None, max_length=64)
     notes_kk: str | None = Field(default=None, max_length=2000)
+
+
+class FamilyPersonSyncRow(BaseModel):
+    id: str = Field(..., min_length=1, max_length=64)
+    name_kk: str = Field(..., min_length=1, max_length=200)
+    gender: str = Field(default="unknown", max_length=16)
+    birth_year: int | None = Field(default=None, ge=1000, le=2200)
+    death_year: int | None = Field(default=None, ge=1000, le=2200)
+    clan_slug: str | None = Field(default=None, max_length=64)
+    notes_kk: str | None = Field(default=None, max_length=2000)
+    father_id: str | None = Field(default=None, max_length=64)
+    mother_id: str | None = Field(default=None, max_length=64)
+    is_self: bool = False
+
+
+class FamilyTreeSyncPutBody(BaseModel):
+    self_id: str | None = Field(default=None, max_length=64)
+    persons: list[FamilyPersonSyncRow] = Field(default_factory=list)
 
 
 class AddPersonBody(BaseModel):
@@ -69,8 +93,9 @@ def me_genealogy_get(user: dict = Depends(get_current_user)):
 
             ensure_tables(conn)
             view = get_tree_view(conn, pid)
+            sync = export_tree_sync_payload(conn, pid)
             conn.commit()
-        return {"ok": True, **view}
+        return {"ok": True, **view, "sync": sync}
     except Exception:
         logger.exception("get family tree failed platform_user_id=%s", pid)
         raise HTTPException(status_code=503, detail="database_error") from None
@@ -131,4 +156,30 @@ def me_genealogy_add_person(body: AddPersonBody, user: dict = Depends(get_curren
         raise _map_value_error(e) from e
     except Exception:
         logger.exception("add family person failed platform_user_id=%s", pid)
+        raise HTTPException(status_code=503, detail="database_error") from None
+
+
+@router.put("/genealogy/tree")
+def me_genealogy_put_tree(body: FamilyTreeSyncPutBody, user: dict = Depends(get_current_user)):
+    """Толық жеке ағаш — мобильді offline ағашпен синхрон."""
+    pid = _require_platform_user(user)
+    try:
+        with get_db() as conn:
+            from db.family_tree.repository import ensure_tables
+
+            ensure_tables(conn)
+            persons = [p.model_dump() for p in body.persons]
+            sync = replace_tree_sync_payload(
+                conn,
+                pid,
+                self_id=body.self_id,
+                persons=persons,
+            )
+            view = get_tree_view(conn, pid)
+            conn.commit()
+        return {"ok": True, "sync": sync, **view}
+    except ValueError as e:
+        raise _map_value_error(e) from e
+    except Exception:
+        logger.exception("put family tree sync failed platform_user_id=%s", pid)
         raise HTTPException(status_code=503, detail="database_error") from None

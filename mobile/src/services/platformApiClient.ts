@@ -1,12 +1,163 @@
+import {
+  AI_HTTP_RETRY_MAX_DEFAULT,
+  AI_RETRY_BASE_DELAY_MS,
+  HALAL_PHOTO_ANALYZE_MS,
+} from "../config/aiRequestPolicy";
+
 /**
- * RAQAT platform_api (FastAPI) — тек оқу шақырулар.
+ * Imam Ai платформа API (platform_api / FastAPI) — тек оқу шақырулар.
  */
+
 const DEFAULT_TIMEOUT_MS = 10_000;
 
 function joinUrl(base: string, path: string): string {
   const b = base.replace(/\/+$/, "");
   const p = path.startsWith("/") ? path : `/${path}`;
   return `${b}${p}`;
+}
+
+export type HealthPayload = {
+  status?: string;
+  version?: string;
+  service?: string;
+};
+
+function isJsonRecord(x: unknown): x is Record<string, unknown> {
+  return typeof x === "object" && x !== null && !Array.isArray(x);
+}
+
+export type PlatformLivenessFailureCode =
+  | "timeout"
+  | "network"
+  | "ssl"
+  | "cleartext"
+  | "http"
+  | "not_json"
+  | "unexpected";
+
+export type PlatformLivenessProbe =
+  | { ok: true; health: HealthPayload }
+  | { ok: false; health: null; code: PlatformLivenessFailureCode; httpStatus?: number };
+
+type JsonTry =
+  | { kind: "json"; status: number; body: unknown }
+  | { kind: "error"; code: PlatformLivenessFailureCode; status?: number };
+
+const LIVENESS_ERR_PRIORITY: Record<PlatformLivenessFailureCode, number> = {
+  timeout: 0,
+  cleartext: 1,
+  ssl: 2,
+  not_json: 3,
+  http: 4,
+  network: 5,
+  unexpected: 6,
+};
+
+async function tryGetJsonForLiveness(base: string, path: string, timeoutMs: number): Promise<JsonTry> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    let r: Response;
+    try {
+      r = await fetch(joinUrl(base, path), {
+        method: "GET",
+        signal: ctrl.signal,
+        headers: { Accept: "application/json" },
+      });
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      if (err?.name === "AbortError") {
+        return { kind: "error", code: "timeout" };
+      }
+      const msg = String(err?.message ?? e ?? "");
+      if (/cleartext|CLEARTEXT|not permitted by network security policy/i.test(msg)) {
+        return { kind: "error", code: "cleartext" };
+      }
+      if (/SSL|certificate|CERT|TLS|handshake|Trust anchor/i.test(msg)) {
+        return { kind: "error", code: "ssl" };
+      }
+      return { kind: "error", code: "network" };
+    }
+
+    const text = await r.text();
+    if (!r.ok) {
+      return { kind: "error", code: "http", status: r.status };
+    }
+    const trimmed = text.trim();
+    if (trimmed.startsWith("<")) {
+      return { kind: "error", code: "not_json", status: r.status };
+    }
+    let body: unknown;
+    try {
+      body = JSON.parse(text) as unknown;
+    } catch {
+      return { kind: "error", code: "not_json", status: r.status };
+    }
+    return { kind: "json", status: r.status, body };
+  } catch (e) {
+    const err = e as { name?: string };
+    if (err?.name === "AbortError") {
+      return { kind: "error", code: "timeout" };
+    }
+    return { kind: "error", code: "network" };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/**
+ * Баптаулар экраны үшін: /health және /api/v1/info бойынша нақты сәтсіздік коды.
+ */
+export async function probePlatformLiveness(
+  base: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<PlatformLivenessProbe> {
+  const h = await tryGetJsonForLiveness(base, "/health", timeoutMs);
+  if (h.kind === "json" && isJsonRecord(h.body) && h.body["status"] === "ok") {
+    return { ok: true, health: h.body as HealthPayload };
+  }
+
+  const i = await tryGetJsonForLiveness(base, "/api/v1/info", timeoutMs);
+  if (i.kind === "json" && isJsonRecord(i.body)) {
+    const name = i.body["name"];
+    const version = i.body["version"];
+    if (version != null || (typeof name === "string" && name.length > 0)) {
+      return {
+        ok: true,
+        health: {
+          status: "ok",
+          service: typeof name === "string" ? name : undefined,
+          version: version != null ? String(version) : undefined,
+        },
+      };
+    }
+  }
+
+  if (h.kind === "json" && i.kind === "json") {
+    return { ok: false, health: null, code: "unexpected" };
+  }
+  if (h.kind === "json" && i.kind === "error") {
+    return { ok: false, health: null, code: i.code, httpStatus: i.status };
+  }
+  if (h.kind === "error" && i.kind === "json") {
+    return { ok: false, health: null, code: h.code, httpStatus: h.status };
+  }
+  if (h.kind === "error" && i.kind === "error") {
+    const pick =
+      LIVENESS_ERR_PRIORITY[h.code] <= LIVENESS_ERR_PRIORITY[i.code]
+        ? { code: h.code, httpStatus: h.status }
+        : { code: i.code, httpStatus: i.status };
+    return { ok: false, health: null, ...pick };
+  }
+  return { ok: false, health: null, code: "unexpected" };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((res) => setTimeout(res, ms));
+}
+
+function isAiHttpRetriable(status: number): boolean {
+  return status === 429 || status === 502 || status === 503 || status === 504;
 }
 
 export type FetchHeaders = Record<string, string>;
@@ -35,12 +186,6 @@ async function fetchJson<T>(
     clearTimeout(id);
   }
 }
-
-export type HealthPayload = {
-  status?: string;
-  version?: string;
-  service?: string;
-};
 
 /** GET /ready — дерекқорға қосылу (503 = ok:false) */
 export type ReadinessPayload = {
@@ -113,21 +258,8 @@ export async function fetchPlatformLiveness(
   base: string,
   timeoutMs: number = DEFAULT_TIMEOUT_MS
 ): Promise<HealthPayload | null> {
-  try {
-    const h = await fetchJson<HealthPayload>(base, "/health", timeoutMs);
-    if (h?.status === "ok") return h;
-  } catch {
-    // fallback
-  }
-  try {
-    const info = await fetchJson<{ name?: string; version?: string }>(base, "/api/v1/info", timeoutMs);
-    if (info && (info.version != null || (info.name != null && String(info.name).length > 0))) {
-      return { status: "ok", service: info.name, version: info.version };
-    }
-  } catch {
-    // желі қатесі немесе жауап жоқ
-  }
-  return null;
+  const p = await probePlatformLiveness(base, timeoutMs);
+  return p.ok ? p.health : null;
 }
 
 export function fetchContentStats(
@@ -308,12 +440,231 @@ export function fetchPlatformQuranAyah(
   );
 }
 
+export type AiChatSource = {
+  site?: string;
+  title?: string;
+  url?: string;
+};
+
 /** POST /api/v1/ai/chat — X-Raqat-Ai-Secret немесе Bearer JWT (scope ai) */
 export type AiChatResponse = {
   ok?: boolean;
   text?: string;
+  error?: string;
   detail?: unknown;
+  sources?: AiChatSource[];
 };
+
+export type PlatformAiKbStatus = {
+  ok?: boolean;
+  enabled?: boolean;
+  /** RAQAT_AI_KB_ONLY=1 — тек Fatua/Muftyat RAG */
+  kb_only?: boolean;
+  documents?: number;
+  chunks?: number;
+  by_site?: Record<string, number>;
+  /** GET /ai/kb/status жоқ (404) — API ескі нұсқа */
+  endpointMissing?: boolean;
+};
+
+/** GET /api/v1/ai/kb/status — Fatua/Muftyat индекс күйі */
+export type PlatformIslamicKbArticle = {
+  document_id: number;
+  site: string;
+  source_label: string;
+  title: string;
+  excerpt: string;
+  url: string;
+  score?: number;
+  published_at?: string | null;
+  image_url?: string | null;
+};
+
+export type PlatformIslamicKbSearchResponse = {
+  ok?: boolean;
+  query?: string;
+  rag_enabled?: boolean;
+  results?: PlatformIslamicKbArticle[];
+  error?: string;
+};
+
+export type PlatformIslamicKbBrowseResponse = {
+  ok?: boolean;
+  site?: string | null;
+  rag_enabled?: boolean;
+  results?: PlatformIslamicKbArticle[];
+  error?: string;
+};
+
+export type PlatformHomeFeedItem = {
+  site: "fatua" | "muftyat";
+  source_label: string;
+  title: string;
+  subtitle?: string;
+  url: string;
+  image_url: string;
+};
+
+export type PlatformHomeFeedResponse = {
+  ok?: boolean;
+  results?: PlatformHomeFeedItem[];
+  error?: string;
+};
+
+/** GET /api/v1/ai/kb/home-feed — fatua.kz + muftyat.kz басты бет (API proxy). */
+export async function fetchPlatformHomeNewsFeed(
+  base: string,
+  opts?: {
+    limit?: number;
+    timeoutMs?: number;
+    aiSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<PlatformHomeFeedResponse> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts?.aiSecret) headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  const params = new URLSearchParams();
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
+  const timeoutMs = opts?.timeoutMs ?? 15_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, `/api/v1/ai/kb/home-feed?${params}`), {
+      headers,
+      signal: ctrl.signal,
+    });
+    if (r.status === 404) {
+      return { ok: false, error: "endpoint_missing", results: [] };
+    }
+    if (!r.ok) {
+      return { ok: false, error: `http_${r.status}`, results: [] };
+    }
+    return (await r.json()) as PlatformHomeFeedResponse;
+  } catch {
+    return { ok: false, error: "network", results: [] };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/** GET /api/v1/ai/kb/browse — каталог (сат), іздеусіз соңғы мақалалар */
+export async function fetchPlatformIslamicKbBrowse(
+  base: string,
+  opts?: {
+    site?: "fatua" | "muftyat" | "";
+    limit?: number;
+    offset?: number;
+    timeoutMs?: number;
+    aiSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<PlatformIslamicKbBrowseResponse> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts?.aiSecret) headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  const params = new URLSearchParams();
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
+  if (opts?.offset != null) params.set("offset", String(opts.offset));
+  if (opts?.site) params.set("site", opts.site);
+  const timeoutMs = opts?.timeoutMs ?? 12_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, `/api/v1/ai/kb/browse?${params}`), {
+      headers,
+      signal: ctrl.signal,
+    });
+    if (r.status === 404) {
+      return { ok: false, error: "endpoint_missing", results: [] };
+    }
+    if (!r.ok) {
+      return { ok: false, error: `http_${r.status}`, results: [] };
+    }
+    return (await r.json()) as PlatformIslamicKbBrowseResponse;
+  } catch {
+    return { ok: false, error: "network", results: [] };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+/** GET /api/v1/ai/kb/search — локальды FTS (Fatua/Muftyat индексі) */
+export async function fetchPlatformIslamicKbSearch(
+  base: string,
+  query: string,
+  opts?: {
+    limit?: number;
+    site?: string;
+    timeoutMs?: number;
+    aiSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<PlatformIslamicKbSearchResponse> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts?.aiSecret) headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  const params = new URLSearchParams({ q: query.trim() });
+  if (opts?.limit != null) params.set("limit", String(opts.limit));
+  if (opts?.site) params.set("site", opts.site);
+  const timeoutMs = opts?.timeoutMs ?? 12_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, `/api/v1/ai/kb/search?${params}`), {
+      headers,
+      signal: ctrl.signal,
+    });
+    if (r.status === 404) {
+      return { ok: false, error: "endpoint_missing", results: [] };
+    }
+    if (!r.ok) {
+      return { ok: false, error: `http_${r.status}`, results: [] };
+    }
+    return (await r.json()) as PlatformIslamicKbSearchResponse;
+  } catch {
+    return { ok: false, error: "network", results: [] };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function fetchPlatformAiKbStatus(
+  base: string,
+  opts?: {
+    timeoutMs?: number;
+    aiSecret?: string;
+    authorizationBearer?: string;
+  }
+): Promise<PlatformAiKbStatus> {
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (opts?.aiSecret) headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
+  if (opts?.authorizationBearer) {
+    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
+  }
+  const timeoutMs = opts?.timeoutMs ?? 8_000;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/ai/kb/status"), {
+      headers,
+      signal: ctrl.signal,
+    });
+    if (r.status === 404) return { ok: false, enabled: false, endpointMissing: true };
+    if (!r.ok) return { ok: false, enabled: false };
+    return (await r.json()) as PlatformAiKbStatus;
+  } catch {
+    return { ok: false, enabled: false };
+  } finally {
+    clearTimeout(id);
+  }
+}
 
 export async function fetchPlatformAiChat(
   base: string,
@@ -324,13 +675,16 @@ export async function fetchPlatformAiChat(
     authorizationBearer?: string;
     /** quick — қысқа жауап (алдымен жылдам); full — әдепкі толық */
     detailLevel?: "full" | "quick";
-    /** Серверде Құран→хадис→іздеу конвейері (тек Raqat AI толық жауабы) */
+    /** Серверде Құран→хадис→іздеу конвейері (Imam Ai толық жауап) */
     stagedPipeline?: boolean;
+    /** Тек ресми KB (Fatua.kz + Muftyat.kz) — серверге kb_only жіберу. */
+    kbOnly?: boolean;
+    /** HTTP 429/502/503/504 және желі қатесінде қайталау саны (әдепкі: 2 = барлығы 3 әрекет) */
+    maxRetries?: number;
   }
 ): Promise<AiChatResponse & { status?: number }> {
   const timeoutMs = opts?.timeoutMs ?? 120_000;
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const maxAttempts = Math.max(1, (opts?.maxRetries ?? AI_HTTP_RETRY_MAX_DEFAULT) + 1);
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
@@ -341,187 +695,141 @@ export async function fetchPlatformAiChat(
   if (opts?.authorizationBearer) {
     headers.Authorization = `Bearer ${opts.authorizationBearer}`;
   }
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-    const r = await fetch(joinUrl(base, "/api/v1/ai/chat"), {
-      method: "POST",
-      signal: ctrl.signal,
-      headers,
-      body: JSON.stringify({
-        prompt: prompt.trim(),
-        detail_level: opts?.detailLevel ?? "full",
-        staged_pipeline: opts?.stagedPipeline ?? false,
-      }),
-    });
-    let j: AiChatResponse;
-    try {
-      j = (await r.json()) as AiChatResponse;
-    } catch {
-      return { ok: false, detail: "parse_error", status: r.status };
+      const r = await fetch(joinUrl(base, "/api/v1/ai/chat"), {
+        method: "POST",
+        signal: ctrl.signal,
+        headers,
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          detail_level: opts?.detailLevel ?? "full",
+          staged_pipeline: opts?.stagedPipeline ?? false,
+          ...(opts?.kbOnly != null ? { kb_only: opts.kbOnly } : {}),
+        }),
+      });
+      let j: AiChatResponse;
+      try {
+        j = (await r.json()) as AiChatResponse;
+      } catch {
+        return { ok: false, detail: "parse_error", status: r.status };
+      }
+      if (r.ok) {
+        if (j.ok === false) {
+          const failed = { ...j, ok: false, status: r.status };
+          const geminiBusy = j.error === "gemini_busy";
+          if (attempt < maxAttempts - 1 && geminiBusy) {
+            const retryAfter =
+              j.detail &&
+              typeof j.detail === "object" &&
+              "retry_after_s" in j.detail &&
+              typeof (j.detail as { retry_after_s?: unknown }).retry_after_s === "number"
+                ? Math.min(120, Math.max(2, (j.detail as { retry_after_s: number }).retry_after_s)) *
+                  1000
+                : 3_000;
+            await sleep(retryAfter);
+            continue;
+          }
+          return failed;
+        }
+        return { ...j, status: r.status };
+      }
+      const failed = { ...j, ok: false, status: r.status };
+      if (attempt >= maxAttempts - 1 || !isAiHttpRetriable(r.status)) {
+        return failed;
+      }
+      const delay = r.status === 429 ? 2_500 : AI_RETRY_BASE_DELAY_MS * 2 ** attempt;
+      await sleep(delay);
+    } catch (e) {
+      if (attempt >= maxAttempts - 1) {
+        return { ok: false, detail: String(e) };
+      }
+      await sleep(AI_RETRY_BASE_DELAY_MS * 2 ** attempt);
+    } finally {
+      clearTimeout(id);
     }
-    if (!r.ok) {
-      return { ...j, ok: false, status: r.status };
-    }
-    return { ...j, status: r.status };
-  } catch (e) {
-    return { ok: false, detail: String(e) };
-  } finally {
-    clearTimeout(id);
   }
+  return { ok: false, detail: "max_retries" };
 }
 
+/** POST /api/v1/ai/analyze-image — серверде analyze_halal_image (Gemini, жылдам режим) */
 export type AiAnalyzeImageResponse = {
   ok?: boolean;
   text?: string;
   error?: string;
-  detail?: unknown;
+  detail?: string;
 };
 
-export type HalalCheckTextResponse = {
-  success?: boolean;
-  data?: {
-    status?: "haram" | "doubtful" | "halal_possible" | "empty" | string;
-    message?: string;
-  };
-  error?: { code?: string; message?: string };
-  meta?: { request_id?: string };
-  status?: number;
-};
-
-export type HalalReferenceResponse = {
-  success?: boolean;
-  data?: {
-    message?: string;
-    counts?: { haram?: number; doubtful?: number };
-    haram_keywords?: Array<{ keyword: string; reason_kk: string }>;
-    doubtful_keywords?: Array<{ keyword: string; reason_kk: string }>;
-  };
-  error?: { code?: string; message?: string };
-  meta?: { request_id?: string };
-  status?: number;
-};
-
-/** POST /api/v1/halal/check-text — серверлік 1-деңгей сүзгісі */
-export async function fetchPlatformHalalCheckText(
-  base: string,
-  text: string,
-  opts?: {
-    timeoutMs?: number;
-    authorizationBearer?: string;
-  }
-): Promise<HalalCheckTextResponse> {
-  const timeoutMs = opts?.timeoutMs ?? 30_000;
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-  if (opts?.authorizationBearer) {
-    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
-  }
-  try {
-    const r = await fetch(joinUrl(base, "/api/v1/halal/check-text"), {
-      method: "POST",
-      signal: ctrl.signal,
-      headers,
-      body: JSON.stringify({ text: text.trim() }),
-    });
-    let j: HalalCheckTextResponse;
-    try {
-      j = (await r.json()) as HalalCheckTextResponse;
-    } catch {
-      return { success: false, error: { code: "parse_error", message: "parse_error" }, status: r.status };
-    }
-    return { ...j, status: r.status };
-  } catch (e) {
-    return { success: false, error: { code: "network", message: String(e) } };
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-/** GET /api/v1/halal/reference — server dictionary */
-export async function fetchPlatformHalalReference(
-  base: string,
-  opts?: {
-    timeoutMs?: number;
-    authorizationBearer?: string;
-  }
-): Promise<HalalReferenceResponse> {
-  const timeoutMs = opts?.timeoutMs ?? 20_000;
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (opts?.authorizationBearer) {
-    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
-  }
-  try {
-    const r = await fetch(joinUrl(base, "/api/v1/halal/reference"), {
-      method: "GET",
-      signal: ctrl.signal,
-      headers,
-    });
-    let j: HalalReferenceResponse;
-    try {
-      j = (await r.json()) as HalalReferenceResponse;
-    } catch {
-      return { success: false, error: { code: "parse_error", message: "parse_error" }, status: r.status };
-    }
-    return { ...j, status: r.status };
-  } catch (e) {
-    return { success: false, error: { code: "network", message: String(e) } };
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-/** POST /api/v1/ai/analyze-image — халал сурет (X-Raqat-Ai-Secret немесе JWT) */
 export async function fetchPlatformAiAnalyzeImage(
   base: string,
-  body: { image_b64: string; mime_type: string; lang?: string; prompt?: string },
-  opts?: {
+  opts: {
+    imageB64: string;
+    mimeType: string;
+    lang?: string;
+    prompt?: string;
     timeoutMs?: number;
     aiSecret?: string;
     authorizationBearer?: string;
+    maxRetries?: number;
   }
 ): Promise<AiAnalyzeImageResponse & { status?: number }> {
-  const timeoutMs = opts?.timeoutMs ?? 120_000;
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const timeoutMs = opts.timeoutMs ?? HALAL_PHOTO_ANALYZE_MS;
+  const maxAttempts = Math.max(1, (opts.maxRetries ?? AI_HTTP_RETRY_MAX_DEFAULT) + 1);
   const headers: Record<string, string> = {
     Accept: "application/json",
     "Content-Type": "application/json",
   };
-  if (opts?.aiSecret) {
+  if (opts.aiSecret) {
     headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
   }
-  if (opts?.authorizationBearer) {
+  if (opts.authorizationBearer) {
     headers.Authorization = `Bearer ${opts.authorizationBearer}`;
   }
-  try {
-    const r = await fetch(joinUrl(base, "/api/v1/ai/analyze-image"), {
-      method: "POST",
-      signal: ctrl.signal,
-      headers,
-      body: JSON.stringify({
-        image_b64: body.image_b64,
-        mime_type: body.mime_type,
-        lang: body.lang ?? "kk",
-        ...(body.prompt ? { prompt: body.prompt } : {}),
-      }),
-    });
-    let j: AiAnalyzeImageResponse;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
-      j = (await r.json()) as AiAnalyzeImageResponse;
-    } catch {
-      return { ok: false, detail: "parse_error", status: r.status };
+      const r = await fetch(joinUrl(base, "/api/v1/ai/analyze-image"), {
+        method: "POST",
+        signal: ctrl.signal,
+        headers,
+        body: JSON.stringify({
+          image_b64: opts.imageB64,
+          mime_type: opts.mimeType || "image/jpeg",
+          lang: (opts.lang ?? "kk").trim() || "kk",
+          prompt: opts.prompt?.trim() || undefined,
+          async_mode: false,
+        }),
+      });
+      let j: AiAnalyzeImageResponse;
+      try {
+        j = (await r.json()) as AiAnalyzeImageResponse;
+      } catch {
+        return { ok: false, error: "parse_error", status: r.status };
+      }
+      if (r.ok) {
+        return { ...j, status: r.status };
+      }
+      const failed = { ...j, ok: false, status: r.status };
+      if (attempt >= maxAttempts - 1 || !isAiHttpRetriable(r.status)) {
+        return failed;
+      }
+      const delay = r.status === 429 ? 2_500 : AI_RETRY_BASE_DELAY_MS * 2 ** attempt;
+      await sleep(delay);
+    } catch (e) {
+      if (attempt >= maxAttempts - 1) {
+        return { ok: false, error: String(e) };
+      }
+      await sleep(AI_RETRY_BASE_DELAY_MS * 2 ** attempt);
+    } finally {
+      clearTimeout(id);
     }
-    return { ...j, status: r.status };
-  } catch (e) {
-    return { ok: false, detail: String(e) };
-  } finally {
-    clearTimeout(id);
   }
+  return { ok: false, error: "max_retries" };
 }
 
 /** GET /api/v1/hadith/{id} */
@@ -893,6 +1201,46 @@ export async function postAuthPhoneVerify(
   }
 }
 
+export type LinkCodeMintResponse = {
+  ok?: boolean;
+  code?: string;
+  expires_in?: number;
+  platform_user_id?: string;
+  hint_kk?: string;
+  detail?: unknown;
+  status?: number;
+};
+
+export async function postAuthLinkCodeMint(
+  base: string,
+  accessToken: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<LinkCodeMintResponse> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/auth/link/code"), {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+    });
+    let j: LinkCodeMintResponse;
+    try {
+      j = (await r.json()) as LinkCodeMintResponse;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export async function postAuthLogin(
   base: string,
   username: string,
@@ -1028,6 +1376,155 @@ export async function putMeHatim(
     let j: MeHatimPayload;
     try {
       j = (await r.json()) as MeHatimPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export type MeQuranLastReadGlobal = {
+  surah: number;
+  ayah: number;
+  ts: string;
+};
+
+export type MeQuranLastReadPayload = {
+  ok?: boolean;
+  global?: MeQuranLastReadGlobal | null;
+  by_surah?: Record<string, number>;
+  updated_at?: string | null;
+  detail?: unknown;
+  status?: number;
+};
+
+export async function fetchMeQuranLastRead(
+  base: string,
+  accessToken: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranLastReadPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-last-read"), {
+      method: "GET",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+    });
+    let j: MeQuranLastReadPayload;
+    try {
+      j = (await r.json()) as MeQuranLastReadPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function putMeQuranLastRead(
+  base: string,
+  accessToken: string,
+  state: { global: MeQuranLastReadGlobal | null; by_surah: Record<string, number> },
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranLastReadPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-last-read"), {
+      method: "PUT",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+      body: JSON.stringify(state),
+    });
+    let j: MeQuranLastReadPayload;
+    try {
+      j = (await r.json()) as MeQuranLastReadPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export type MeQuranAyahMarkersPayload = {
+  ok?: boolean;
+  markers?: Record<string, { colorId: string; note: string }>;
+  updated_at?: string | null;
+  detail?: unknown;
+  status?: number;
+};
+
+export async function fetchMeQuranAyahMarkers(
+  base: string,
+  accessToken: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranAyahMarkersPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-ayah-markers"), {
+      method: "GET",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+    });
+    let j: MeQuranAyahMarkersPayload;
+    try {
+      j = (await r.json()) as MeQuranAyahMarkersPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function putMeQuranAyahMarkers(
+  base: string,
+  accessToken: string,
+  markers: Record<string, { colorId: string; note: string }>,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranAyahMarkersPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-ayah-markers"), {
+      method: "PUT",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+      body: JSON.stringify({ markers }),
+    });
+    let j: MeQuranAyahMarkersPayload;
+    try {
+      j = (await r.json()) as MeQuranAyahMarkersPayload;
     } catch {
       return { ok: false, detail: "parse_error", status: r.status };
     }

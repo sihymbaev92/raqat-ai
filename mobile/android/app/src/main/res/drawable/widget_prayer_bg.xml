@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Толық фон: жұмсақ градиент -->
+  <item>
+    <shape android:shape="rectangle">
+      <gradient
+          android:angle="145"
+          android:startColor="#FF1E3D34"
+          android:centerColor="#FF152A24"
+          android:endColor="#FF0C1814"
+          android:type="linear" />
+      <corners android:radius="18dp" />
+    </shape>
+  </item>
+  <!-- Үстінен алтын жіңішке жол (намаз уақыты акценті) -->
+  <item
+      android:gravity="top|fill_horizontal"
+      android:height="3dp">
+    <shape android:shape="rectangle">
+      <solid android:color="@color/widget_prayer_accent" />
+      <corners
+          android:topLeftRadius="18dp"
+          android:topRightRadius="18dp"
+          android:bottomLeftRadius="0dp"
+          android:bottomRightRadius="0dp" />
+    </shape>
+  </item>
+</layer-list>

@@ -7,11 +7,23 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m-medium"
+      }
+    },
+    "ios-device": {
+      "ios": {
+        "resourceClass": "m-medium",
+        "distribution": "internal"
       }
     }
   },

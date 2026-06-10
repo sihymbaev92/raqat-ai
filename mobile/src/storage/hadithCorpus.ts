@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { loadBundledHadithCorpusJson } from "./hadithBundleSource";
 
 /** Толық корпусты әр экран ашқанда AsyncStorage-тен қайта оқып алмау үшін (мыңдаған жол — қатып қалу) */
 let memoryCorpus: HadithCorpus | null = null;
@@ -32,18 +33,7 @@ export async function resolveBundledFullCorpus(): Promise<HadithCorpus | null> {
   if (!bundledLoadPromise) {
     bundledLoadPromise = (async () => {
       await new Promise<void>((r) => requestAnimationFrame(() => r()));
-      try {
-        const mod = await import("../../assets/bundled/hadith-from-db.json");
-        const m = mod as { default?: HadithCorpus };
-        bundledFullCorpusCache = m.default ?? (mod as unknown as HadithCorpus);
-      } catch {
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          bundledFullCorpusCache = require("../../assets/bundled/hadith-from-db.json") as HadithCorpus;
-        } catch {
-          bundledFullCorpusCache = null;
-        }
-      }
+      bundledFullCorpusCache = await loadBundledHadithCorpusJson();
       return bundledFullCorpusCache ?? null;
     })();
   }
@@ -62,6 +52,8 @@ export type SahihHadithEntry = {
   collection: "bukhari" | "muslim" | "other";
   collectionNameKk: string;
   bookTitleKk: string;
+  /** Экспорт: кітап ішіндегі тарау (ingl. Chapter: …) */
+  chapterKk?: string;
   reference: string;
   arabic: string;
   textKk: string;
@@ -69,6 +61,8 @@ export type SahihHadithEntry = {
   textRu?: string;
   /** Офлайн бандл / синк: fawaz CDN толтырған ағылшынша (Sahih International стилі) */
   textEn?: string;
+  /** Офлайн бандл / синк: fawaz CDN толтырған түрікше */
+  textTr?: string;
   narratorKk: string;
   /** Экспортта grade болса сақталады */
   grade?: string;
@@ -76,6 +70,12 @@ export type SahihHadithEntry = {
   isRepeated?: boolean;
   /** Бірінші кездесу hadith.id (қайталану болса) */
   originalDbId?: number;
+  /** v4 export: қазақша аударма UI-да жоқ, тек дереккөз */
+  sourceOnly?: boolean;
+  sourceCitationKk?: string;
+  kkSourceSite?: string;
+  kkSourceLabel?: string;
+  kkSourceUrl?: string;
 };
 
 export type HadithCorpusMeta = {
@@ -90,6 +90,21 @@ export type HadithCorpus = {
   provenance: HadithCorpusMeta;
   hadiths: SahihHadithEntry[];
 };
+
+/**
+ * Таңдалған тілге сәйкес хадис мәтіні. en→textEn (Sahih International), ru→textRu (fawaz),
+ * kk→textKk. Сол тілде мәтін болмаса бос жол қайтады (UI дереккөз сілтемесін көрсетеді).
+ */
+export function hadithTextForLocale(
+  entry: Pick<SahihHadithEntry, "textKk" | "textRu" | "textEn" | "textTr" | "arabic">,
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+): string {
+  if (locale === "en") return (entry.textEn ?? "").trim();
+  if (locale === "ru") return (entry.textRu ?? "").trim();
+  if (locale === "tr") return (entry.textTr ?? "").trim();
+  if (locale === "ar") return (entry.arabic ?? "").trim();
+  return (entry.textKk ?? "").trim();
+}
 
 /** Тізім бөлу / санау — API немесе экспорттағы өзге жазылулар мен id префикстері */
 export function hadithCollectionBucket(

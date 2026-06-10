@@ -60,6 +60,15 @@ def test_metrics_prometheus_public():
     assert "text/plain" in ct or "openmetrics" in ct
 
 
+def test_metrics_json_public_contract():
+    r = client.get("/metrics/json")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert isinstance(body.get("latency_ms"), dict)
+    assert "p95" in body["latency_ms"]
+    assert isinstance(body.get("window_size"), int)
+
+
 def test_stats_content_ok_with_temp_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     _copy_db(monkeypatch, tmp_path)
     r = client.get("/api/v1/stats/content")
@@ -132,20 +141,16 @@ def _copy_db(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     _ensure_bot_sync_sqlite_tables(dst)
 
 
-def test_hadith_random_without_source_returns_hadith_or_404(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_hadith_random_endpoint_removed(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     _copy_db(monkeypatch, tmp_path)
     r = client.get("/api/v1/hadith/random", params={"lang": "kk"})
-    assert r.status_code in (200, 404), r.text
-    if r.status_code == 200:
-        j = r.json()
-        assert j.get("ok") is True
-        assert isinstance(j.get("hadith"), dict)
+    assert r.status_code == 404, r.text
 
 
-def test_hadith_random_with_source_optional(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+def test_hadith_random_with_source_removed(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     _copy_db(monkeypatch, tmp_path)
     r = client.get("/api/v1/hadith/random", params={"lang": "kk", "source": "bukhari"})
-    assert r.status_code in (200, 404), r.text
+    assert r.status_code == 404, r.text
 
 
 def test_bot_sync_user_requires_secret(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):

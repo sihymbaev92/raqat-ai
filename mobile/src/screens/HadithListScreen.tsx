@@ -5,13 +5,13 @@ import {
   StyleSheet,
   SectionList,
   Pressable,
-  ActivityIndicator,
   RefreshControl,
   ScrollView,
   InteractionManager,
   Platform,
 } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -28,11 +28,12 @@ import {
 } from "../storage/hadithCorpus";
 import { seedBundledHadithIfNeeded } from "../services/bundledHadithSeed";
 import {
-  buildHadithLetterSections,
+  buildHadithBookOrderSections,
   sortHadithRowsByReference,
   type HadithLetterSection,
 } from "../utils/hadithLetterSections";
 import { resolveHadithGradeText } from "../content/hadithGrade";
+import { HadithCrossLinkBar } from "../components/hadith/HadithCrossLinkBar";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "HadithList">;
@@ -102,27 +103,31 @@ function partitionBukhariMuslimAsync(corpus: HadithCorpus): Promise<{
 }
 
 function makeStyles(colors: ThemeColors, isDark: boolean) {
+  void isDark;
+  const pageBg = "#FFFFFF";
+  const text = "#111827";
+  const muted = "#4B5563";
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.bg },
+    root: { flex: 1, backgroundColor: pageBg },
     pad: { padding: 16, paddingBottom: 40 },
     center: {
       flex: 1,
-      backgroundColor: colors.bg,
+      backgroundColor: pageBg,
       justifyContent: "center",
       alignItems: "center",
       padding: 24,
     },
-    muted: { color: colors.muted, marginTop: 12 },
+    muted: { color: muted, marginTop: 12 },
     err: { color: colors.error, textAlign: "center" },
     header: { marginBottom: 16 },
-    h1: { fontSize: 22, fontWeight: "800", color: colors.text, marginBottom: 8 },
+    h1: { fontSize: 22, fontWeight: "800", color: text, marginBottom: 8 },
     introCard: {
       marginBottom: 14,
       padding: 14,
-      borderRadius: 12,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderRadius: 0,
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      borderColor: "transparent",
     },
     introToggle: {
       flexDirection: "row",
@@ -131,34 +136,34 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       gap: 8,
     },
     introToggleTxt: {
-      color: colors.accent,
+      color: muted,
       fontSize: 14,
       fontWeight: "800",
       letterSpacing: 0.2,
       flex: 1,
     },
     introBody: {
-      color: colors.text,
+      color: text,
       fontSize: 14,
       lineHeight: 22,
       marginTop: 10,
     },
     meaning: {
-      color: colors.muted,
+      color: muted,
       fontSize: 12,
       lineHeight: 18,
       marginBottom: 10,
     },
-    intro: { color: colors.muted, fontSize: 13, lineHeight: 19 },
+    intro: { color: muted, fontSize: 13, lineHeight: 19 },
     stats: {
-      color: colors.text,
+      color: text,
       fontSize: 12,
       fontWeight: "600",
       marginTop: 10,
       lineHeight: 18,
     },
     importBlurb: {
-      color: colors.muted,
+      color: muted,
       fontSize: 11,
       lineHeight: 16,
       marginTop: 6,
@@ -176,11 +181,11 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderColor: colors.accent,
       backgroundColor: isDark ? "rgba(34, 197, 94, 0.14)" : "rgba(22, 163, 74, 0.1)",
     },
-    modeChipTxt: { color: colors.muted, fontSize: 12, fontWeight: "700" },
+    modeChipTxt: { color: muted, fontSize: 12, fontWeight: "700" },
     modeChipTxtOn: { color: colors.accent },
-    modeHint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 8 },
+    modeHint: { color: muted, fontSize: 11, lineHeight: 16, marginTop: 8 },
     letterIndexHint: {
-      color: colors.muted,
+      color: muted,
       fontSize: 11,
       lineHeight: 16,
       marginTop: 6,
@@ -199,49 +204,49 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     tabTxt: { color: colors.muted, fontWeight: "800", fontSize: 13 },
     tabTxtOn: { color: colors.accent },
     card: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 14,
-      marginBottom: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: "transparent",
+      borderRadius: 0,
+      padding: 0,
+      marginBottom: 18,
+      borderWidth: 0,
+      borderColor: "transparent",
     },
-    coll: { color: colors.accent, fontSize: 12, fontWeight: "700" },
-    ref: { color: colors.muted, fontSize: 12, marginTop: 4 },
+    coll: { color: muted, fontSize: 12, fontWeight: "700" },
+    ref: { color: muted, fontSize: 12, marginTop: 4 },
     badgesRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 8 },
     badge: {
-      color: colors.accent,
+      color: muted,
       fontSize: 11,
       fontWeight: "700",
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      backgroundColor: colors.bg,
+      borderWidth: 0,
+      borderColor: "transparent",
+      borderRadius: 0,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      backgroundColor: "transparent",
       overflow: "hidden",
     },
-    preview: { color: colors.scriptureMeaningKk, fontSize: 14, marginTop: 8, lineHeight: 20 },
+    preview: { color: text, fontSize: 14, marginTop: 8, lineHeight: 20 },
     previewAr: {
       fontSize: 12,
       lineHeight: 18,
       writingDirection: "rtl",
       textAlign: "right",
-      color: colors.scriptureArabic,
+      color: text,
     },
     sectionHeader: {
-      backgroundColor: colors.bg,
+      backgroundColor: pageBg,
       paddingVertical: 8,
       paddingHorizontal: 4,
       marginTop: 4,
       marginBottom: 2,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      borderBottomWidth: 0,
+      borderBottomColor: "transparent",
     },
     sectionTitle: {
       fontSize: 15,
       fontWeight: "900",
-      color: colors.accent,
+      color: muted,
       letterSpacing: 0.3,
     },
   });
@@ -250,7 +255,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
 type HadithStyles = ReturnType<typeof makeStyles>;
 
 const HadithListHeader = memo(function HadithListHeader({
-  corpus,
   bukhariN,
   muslimN,
   tab,
@@ -259,7 +263,6 @@ const HadithListHeader = memo(function HadithListHeader({
   onViewMode,
   styles,
 }: {
-  corpus: HadithCorpus;
   bukhariN: number;
   muslimN: number;
   tab: CollTab;
@@ -269,10 +272,9 @@ const HadithListHeader = memo(function HadithListHeader({
   styles: HadithStyles;
 }) {
   const { colors: themeColors } = useAppTheme();
-  const [introOpen, setIntroOpen] = useState(true);
+  const [introOpen, setIntroOpen] = useState(false);
   return (
     <View style={styles.header}>
-      <Text style={styles.h1}>{kk.hadith.title}</Text>
       <View style={styles.introCard}>
         <Pressable
           onPress={() => setIntroOpen((v) => !v)}
@@ -288,12 +290,14 @@ const HadithListHeader = memo(function HadithListHeader({
             color={themeColors.accent}
           />
         </Pressable>
-        {introOpen ? <Text style={styles.introBody}>{kk.hadith.introBody}</Text> : null}
+        {introOpen ? (
+          <>
+            <Text style={styles.introBody}>{kk.hadith.introBody}</Text>
+            <Text style={[styles.meaning, { marginTop: 8 }]}>{kk.hadith.titleMeaning}</Text>
+          </>
+        ) : null}
       </View>
-      <Text style={styles.meaning}>{kk.hadith.titleMeaning}</Text>
-      <Text style={styles.intro}>{corpus.provenance?.evidenceKk ?? ""}</Text>
       <Text style={styles.stats}>{kk.hadith.corpusStats(bukhariN, muslimN)}</Text>
-      <Text style={styles.importBlurb}>{kk.hadith.importBlurb}</Text>
       <View style={styles.modeRow}>
         <Pressable
           onPress={() => onViewMode("unique")}
@@ -338,7 +342,7 @@ const HadithRow = memo(function HadithRow({
   onOpen: (id: string) => void;
 }) {
   const gradeText = resolveHadithGradeText(item.grade);
-  const hasKk = Boolean(item.textKk?.trim());
+  const preview = item.sourceCitationKk?.trim() || `№ ${item.reference}`;
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
@@ -352,13 +356,12 @@ const HadithRow = memo(function HadithRow({
       <View style={styles.badgesRow}>
         <Text style={styles.badge}>{kk.hadith.sourceBadge(item.collectionNameKk || "—")}</Text>
         <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
-        <Text style={styles.badge}>{hasKk ? kk.hadith.translationBadgeReady : kk.hadith.translationBadgeMissing}</Text>
       </View>
       <Text
-        style={item.textKk?.trim() ? styles.preview : [styles.preview, styles.previewAr]}
+        style={styles.preview}
         numberOfLines={3}
       >
-        {item.textKk?.trim() ? item.textKk : item.arabic}
+        {preview}
       </Text>
     </Pressable>
   );
@@ -472,9 +475,9 @@ export function HadithListScreen({ navigation }: Props) {
   const data = tab === "bukhari" ? bukhariData : muslimData;
   const styles = makeStyles(colors, isDark);
 
-  const letterSections = useMemo((): HadithLetterSection[] => {
+  const bookSections = useMemo((): HadithLetterSection[] => {
     try {
-      return buildHadithLetterSections(data);
+      return buildHadithBookOrderSections(data);
     } catch {
       return [];
     }
@@ -483,24 +486,28 @@ export function HadithListScreen({ navigation }: Props) {
   const listHeader = useMemo(
     () =>
       corpus ? (
-        <HadithListHeader
-          corpus={corpus}
-          bukhariN={bukhariData.length}
-          muslimN={muslimData.length}
-          tab={tab}
-          onTab={setTab}
-          viewMode={viewMode}
-          onViewMode={setViewMode}
-          styles={styles}
-        />
-      ) : null,
-    [corpus, bukhariData.length, muslimData.length, tab, viewMode, styles]
+        <>
+          <HadithCrossLinkBar navigation={navigation} active="sahih" />
+          <HadithListHeader
+            bukhariN={bukhariData.length}
+            muslimN={muslimData.length}
+            tab={tab}
+            onTab={setTab}
+            viewMode={viewMode}
+            onViewMode={setViewMode}
+            styles={styles}
+          />
+        </>
+      ) : (
+        <HadithCrossLinkBar navigation={navigation} active="sahih" />
+      ),
+    [corpus, bukhariData.length, muslimData.length, tab, viewMode, styles, navigation]
   );
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <RaqatOrnamentSpinner size={52} />
         <Text style={styles.muted}>{kk.hadith.loading}</Text>
       </View>
     );
@@ -528,7 +535,7 @@ export function HadithListScreen({ navigation }: Props) {
   return (
     <SectionList
       style={styles.root}
-      sections={letterSections}
+      sections={bookSections}
       keyExtractor={(h) => h.id || `ref-${h.reference}`}
       /** Android: removeClippedSubviews SectionList-пен құлауға әкелуі мүмкін */
       removeClippedSubviews={Platform.OS === "ios"}

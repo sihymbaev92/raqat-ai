@@ -63,11 +63,11 @@ EXPO_PUBLIC_RAQAT_API_BASE=https://192.168.1.10:8787
 
 ## Ескі телефон және жүйе талаптары
 
-Бұл жоба **Expo SDK 52** / **React Native 0.76** үстінде тұр; өте ескі модельдерде Expo Go немесе дайын билд орнатылмауы мүмкін.
+Бұл жоба **Expo SDK 54** / **React Native 0.81** үстінде тұр; өте ескі модельдерде Expo Go немесе дайын билд орнатылмауы мүмкін.
 
 | Платформа | Шамамен не керек | Ескертпе |
 |-----------|------------------|----------|
-| **Android** | **7.0 (API 24)** және жоғары ұсынылады; `app.json` ішінде `minSdkVersion: 23` көрсетілген — билд шығарғанда нақты құрылғыда тексеріңіз | Expo Go Google Play-ден **жобаға сәйкес** нұсқада болуы керек |
+| **Android** | **7.0 (API 24)** және жоғары ұсынылады; `android/` native config және `app.config.js` ішінде `minSdkVersion: 24` көрсетілген — билд шығарғанда нақты құрылғыда тексеріңіз | Expo Go Google Play-ден **жобаға сәйкес** нұсқада болуы керек |
 | **iOS** | **15.1** және жоғары (`deploymentTarget`) | Мысалы iPhone 6s соңғы iOS-қа дейін жаңартылған болса, әдетте жүреді; одан ескі модельдерде App Store / Expo Go қолдауы болмауы мүмкін |
 
 **Ескі құрылғыда жылдамдық:** басқа қолданбаларды жабыңыз; алғашқы ашылудан кейін Құран/хадис дерегі кэштеледі. **Құбыла** магнитометрге тәуелді — ескі сенсорда дәлдік нашарлауы табиғи.
@@ -84,8 +84,8 @@ EXPO_PUBLIC_RAQAT_API_BASE=https://192.168.1.10:8787
 
 1. **`EXPO_PUBLIC_RAQAT_API_BASE`** — Metro бандлы кезінде енгізіледі: `mobile/.env`, түбір `.env`, немесе **`mobile/.env.production`** (тек `npm run build:apk` release үшін `load-raqat-expo-env.sh` соңында жүктеледі).  
    Дамыту: `EXPO_PUBLIC_RAQAT_API_BASE=http://192.168.1.5:8787 npx expo start` — эмулятор: `http://10.0.2.2:8787`
-2. **`app.config.js`** — `app.json` негізінде `extra.raqatApiBase` қалыптарады; `EXPO_PUBLIC_` жоқ болса, `app.json` extra қалпында қалады.
-3. **Release:** түбір `.env` ішіндегі `RAQAT_PLATFORM_API_BASE=http://127.0.0.1:...` APK бандлына **көпірілмейді** — құрылғыда API жұмыс істеуі үшін `.env.production` немесе `app.json` extra-дағы нақты хост қолданылады.
+2. **`app.config.js`** — `extra.raqatApiBase` қалыптарады; `EXPO_PUBLIC_` жоқ болса, config ішіндегі production extra қалпында қалады.
+3. **Release:** түбір `.env` ішіндегі `RAQAT_PLATFORM_API_BASE=http://127.0.0.1:...` APK бандлына **көпірілмейді** — құрылғыда API жұмыс істеуі үшін `.env.production` немесе `app.config.js` extra-дағы нақты хост қолданылады.
 
 ### Release APK және HTTP (cleartext)
 
@@ -119,7 +119,6 @@ EXPO_PUBLIC_RAQAT_API_BASE=https://192.168.1.10:8787
 ```
 mobile/
   App.tsx
-  app.json
   app.config.js
   src/
     api/prayerTimes.ts
@@ -129,6 +128,19 @@ mobile/
     screens/
     theme/colors.ts
 ```
+
+## Responsive Screen Fit
+
+Кішкентай телефонда контент кесілмеуі және үлкен экранда артық бос кеңістік қалмауы үшін ортақ helper бар:
+
+- `src/theme/screenFit.ts`
+- `src/components/ScreenFit.tsx`
+- `ScreenFitProvider` root-та бір рет өлшейді
+- `ScreenFitScrollView` / `ScreenFitView`
+- `useScreenFitMetrics()`
+- `screenFitScrollContentStyle(metrics, { top, bottom })`
+
+Жаңа screen/ScrollView қосқанда fixed `paddingHorizontal` орнына `ScreenFitScrollView` қолданыңыз. Телефонда контент толық енді пайдаланады, compact экранда padding азаяды, wide/web экранда оқуға ыңғайлы max width орталыққа түседі.
 
 ## Detox E2E (Android smoke)
 
@@ -142,4 +154,15 @@ mobile/
 
 GitHub Actions: **Actions → Mobile Detox (Android) → Run workflow** (`e2e-detox-android.yml`, `workflow_dispatch`).
 
-API health сервер үшін pytest (`tests/test_content_and_bot_sync_api.py`) қолданылады; Detox тек UI smoke (`raqat-app-root`).
+API health сервер үшін pytest (`tests/test_content_and_bot_sync_api.py`) қолданылады; Detox UI smoke:
+
+- app root (`raqat-app-root`) ашылады;
+- негізгі табтар (`Home`, `PrayerTab`, `Articles`, `Saved`, `Profile`) ашылады.
+
+Hardware/manual smoke (`npm run qa:android:release`) бөлек:
+
+- notification permission және exact alarm;
+- reboot/Doze/channel sound;
+- камера/barcode/photo;
+- qibla sensor calibration;
+- offline/cache және Quran/Hatim нақты телефон браузері.

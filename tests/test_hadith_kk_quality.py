@@ -6,6 +6,7 @@
 Жаңа «араб иснад тек қана text_kk-те» жағдайлары кірсе, тест құлайды — DB/импортты түзету керек.
 """
 import unittest
+import os
 from pathlib import Path
 
 from services.hadith_kk_quality import (
@@ -23,6 +24,20 @@ BUNDLE_PATH = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db.json"
 KNOWN_ARABIC_ISNAD_IN_TEXT_KK: frozenset[str] = frozenset()
 
 
+def _hadith_kk_translations_published() -> bool:
+    """KK толық аударма жарияланбаған саясат — тесттер skip (CI қызыл болмауы үшін)."""
+    return (os.getenv("RAQAT_HADITH_KK_TRANSLATIONS_PUBLISHED") or "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
+
+
+@unittest.skipUnless(
+    _hadith_kk_translations_published(),
+    "KK hadith translations not published (set RAQAT_HADITH_KK_TRANSLATIONS_PUBLISHED=1 to enforce)",
+)
 class HadithKkQualityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

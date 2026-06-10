@@ -1,0 +1,274 @@
+﻿src/components/AccountLoginModal.tsx(443,27): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'NavLike'.
+    Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/components/dashboard/DashboardLauncherHub.tsx(116,15): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: ViewProps): View', gave the following error.
+    Type '({ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 4 more ... | { ...; })[]' is not assignable to type 'StyleProp<ViewStyle>'.
+      Type '({ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 4 more ... | { ...; })[]' is not assignable to type 'RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>>'.
+        The types returned by 'pop()' are incompatible between these types.
+          Type '{ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 5 more ... | undefined' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+            Type '{ width: string; aspectRatio: number; alignSelf: string; maxHeight: string; borderRadius?: undefined; backgroundColor?: undefined; borderColor?: undefined; height?: undefined; }' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+              Type '{ width: string; aspectRatio: number; alignSelf: string; maxHeight: string; borderRadius?: undefined; backgroundColor?: undefined; borderColor?: undefined; height?: undefined; }' is not assignable to type 'ViewStyle'.
+                Types of property 'alignSelf' are incompatible.
+                  Type 'string' is not assignable to type '"auto" | FlexAlignType | undefined'.
+  Overload 2 of 2, '(props: ViewProps, context: any): View', gave the following error.
+    Type '({ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 4 more ... | { ...; })[]' is not assignable to type 'StyleProp<ViewStyle>'.
+      Type '({ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 4 more ... | { ...; })[]' is not assignable to type 'RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>>'.
+        The types returned by 'pop()' are incompatible between these types.
+          Type '{ shadowColor: string; shadowOffset: { width: number; height: number; }; shadowOpacity: number; shadowRadius: number; elevation?: undefined; overflow: "hidden"; borderWidth: number; alignItems: "center"; justifyContent: "center"; } | ... 5 more ... | undefined' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+            Type '{ width: string; aspectRatio: number; alignSelf: string; maxHeight: string; borderRadius?: undefined; backgroundColor?: undefined; borderColor?: undefined; height?: undefined; }' is not assignable to type 'ViewStyle | Falsy | RegisteredStyle<ViewStyle> | RecursiveArray<ViewStyle | Falsy | RegisteredStyle<ViewStyle>> | readonly (ViewStyle | ... 1 more ... | RegisteredStyle<...>)[]'.
+              Type '{ width: string; aspectRatio: number; alignSelf: string; maxHeight: string; borderRadius?: undefined; backgroundColor?: undefined; borderColor?: undefined; height?: undefined; }' is not assignable to type 'ViewStyle'.
+                Types of property 'alignSelf' are incompatible.
+                  Type 'string' is not assignable to type '"auto" | FlexAlignType | undefined'.
+src/components/settings/settingsFormUi.tsx(137,13): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: TextProps): Text', gave the following error.
+    Type '{ color: string; fontSize: number; fontWeight: "800"; minWidth: number; textAlign: "center"; fontVariant: readonly ["tabular-nums"]; }' is not assignable to type 'StyleProp<TextStyle>'.
+      Type '{ color: string; fontSize: number; fontWeight: "800"; minWidth: number; textAlign: "center"; fontVariant: readonly ["tabular-nums"]; }' is not assignable to type 'TextStyle'.
+        Types of property 'fontVariant' are incompatible.
+          The type 'readonly ["tabular-nums"]' is 'readonly' and cannot be assigned to the mutable type 'FontVariant[]'.
+  Overload 2 of 2, '(props: TextProps, context: any): Text', gave the following error.
+    Type '{ color: string; fontSize: number; fontWeight: "800"; minWidth: number; textAlign: "center"; fontVariant: readonly ["tabular-nums"]; }' is not assignable to type 'StyleProp<TextStyle>'.
+      Type '{ color: string; fontSize: number; fontWeight: "800"; minWidth: number; textAlign: "center"; fontVariant: readonly ["tabular-nums"]; }' is not assignable to type 'TextStyle'.
+        Types of property 'fontVariant' are incompatible.
+          The type 'readonly ["tabular-nums"]' is 'readonly' and cannot be assigned to the mutable type 'FontVariant[]'.
+src/components/settings/SettingsQuranHub.tsx(310,102): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList>' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList>' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/components/TiltParallaxImage.tsx(31,3): error TS2607: JSX element class does not support attributes because it does not have a 'props' property.
+src/components/TiltParallaxImage.tsx(31,4): error TS2786: 'Image' cannot be used as a JSX component.
+  Its type 'new (width?: number | undefined, height?: number | undefined) => HTMLImageElement' is not a valid JSX element type.
+    Type 'new (width?: number | undefined, height?: number | undefined) => HTMLImageElement' is not assignable to type 'new (props: any, context: any) => Component<any, any, any>'.
+      Type 'HTMLImageElement' is missing the following properties from type 'Component<any, any, any>': context, setState, forceUpdate, render, and 2 more.
+src/components/TraditionDinSystemHub.tsx(60,13): error TS2339: Property 'traditionIntro' does not exist on type '{ screenTitle: string; screenSubtitle: string; disclaimer: string; pillarsTitle: string; pillarAqida: string; pillarIbada: string; pillarAdab: string; pillarRefsNote: string; introMoreShow: string; ... 149 more ...; spiritLiftModalA11y: string; }'.
+src/content/__tests__/namazMenzikir.test.ts(10,68): error TS2339: Property 'restTitle' does not exist on type 'NamazMenzikirTarget'.
+  Property 'restTitle' does not exist on type '"wudu"'.
+src/screens/ContentHubScreen.tsx(252,55): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/ContentHubScreen.tsx(255,55): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/ContentHubScreen.tsx(273,46): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to type 'NavLike'.
+    Type 'NativeStackNavigationProp<MoreStackParamList, "ContentHub", undefined>' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(293,44): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'NavLike'.
+    Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(701,79): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(703,62): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(706,69): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(707,71): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(711,76): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(713,63): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(718,76): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(722,85): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(732,75): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(763,58): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(766,64): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/DashboardScreen.tsx(769,56): error TS2345: Argument of type 'HomeTabCompositeNavigation' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'HomeTabCompositeNavigation' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends (MainTabParamList & RootStackParamList)[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MainTabParamList | keyof RootStackParamList>(optio...' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/HadithListScreen.tsx(410,51): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "HadithList">' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "HadithList">' is not assignable to type 'NavLike'.
+    Type 'NativeStackNavigationProp<MoreStackParamList, "HadithList">' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/HalalScreen.tsx(504,82): error TS2339: Property 'detail' does not exist on type 'AiAnalyzeImageResponse & { status?: number | undefined; }'.
+src/screens/HalalScreen.tsx(864,74): error TS2783: 'perPage' is specified more than once, so this usage will be overwritten.
+src/screens/HatimScreen.tsx(208,9): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "Hatim">' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "Hatim">' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/PrayerTimesScreen.tsx(266,51): error TS2345: Argument of type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to type 'NavLike'.
+    Type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends RootStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof RootStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/PrayerTimesScreen.tsx(501,59): error TS2345: Argument of type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to type 'NavLike'.
+    Type 'NativeStackNavigationProp<RootStackParamList, "PrayerTimes">' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof RootStackParamList>(...args: RouteName extends unknown ? undefined extends RootStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof RootStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/QuranListScreen.tsx(56,50): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to parameter of type 'NavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'NavLike'.
+    Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'StackNavLike'.
+      Types of property 'navigate' are incompatible.
+        Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+          Types of parameters 'args' and 'args' are incompatible.
+            Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+              Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+                Target requires 2 element(s) but source may have fewer.
+src/screens/QuranListScreen.tsx(283,19): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/QuranListScreen.tsx(313,44): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/QuranListScreen.tsx(346,19): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/QuranListScreen.tsx(382,17): error TS2345: Argument of type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to parameter of type 'StackNavLike | undefined'.
+  Type 'NativeStackNavigationProp<MoreStackParamList, "QuranList">' is not assignable to type 'StackNavLike'.
+    Types of property 'navigate' are incompatible.
+      Type '{ <RouteName extends keyof MoreStackParamList>(...args: RouteName extends unknown ? undefined extends MoreStackParamList[RouteName] ? [screen: ...] | [screen: ...] : [screen: ...] : never): void; <RouteName extends keyof MoreStackParamList>(options: RouteName extends unknown ? { ...; } | { ...; } : never): void; }' is not assignable to type '(...args: unknown[]) => void'.
+        Types of parameters 'args' and 'args' are incompatible.
+          Type 'unknown[]' is not assignable to type '[screen: any] | [screen: any, params: any]'.
+            Type 'unknown[]' is not assignable to type '[screen: any, params: any]'.
+              Target requires 2 element(s) but source may have fewer.
+src/screens/QuranSurahScreen.tsx(2834,30): error TS2448: Block-scoped variable 'mushafPageInk' used before its declaration.
+src/screens/QuranSurahScreen.tsx(2834,30): error TS2454: Variable 'mushafPageInk' is used before being assigned.
+src/utils/__tests__/guideLightboxFit.test.ts(31,47): error TS2345: Argument of type 'NamedStyles<any> | NamedStyles<{ width: string; }>' is not assignable to parameter of type 'StyleProp<ImageStyle>'.
+  Type 'NamedStyles<{ width: string; }>' is not assignable to type 'StyleProp<ImageStyle>'.
+    Type 'NamedStyles<{ width: string; }>' is not assignable to type 'ImageStyle'.
+      Types of property 'width' are incompatible.
+        Type 'TextStyle | ViewStyle | ImageStyle' is not assignable to type 'DimensionValue | undefined'.
+          Type 'TextStyle' is not assignable to type 'DimensionValue | undefined'.
+src/utils/__tests__/guideLightboxFit.test.ts(31,67): error TS2322: Type 'string' is not assignable to type 'TextStyle | ViewStyle | ImageStyle'.
+src/utils/__tests__/halalGeoFilter.test.ts(10,5): error TS2783: 'id' is specified more than once, so this usage will be overwritten.
+src/utils/__tests__/halalGeoFilter.test.ts(11,5): error TS2783: 'title' is specified more than once, so this usage will be overwritten.

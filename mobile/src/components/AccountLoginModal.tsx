@@ -4,18 +4,20 @@ import {
   Text,
   Modal,
   StyleSheet,
-  Pressable,
   TextInput,
-  ActivityIndicator,
   Platform,
-  ScrollView,
+  ScrollView
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import * as Google from "expo-auth-session/providers/google";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
+import * as Clipboard from "expo-clipboard";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getExpoExtra } from "../config/expoExtra";
 import {
+  postAuthLinkCodeMint,
   postAuthLogin,
   postAuthOauthApple,
   postAuthOauthGoogle,
@@ -23,11 +25,17 @@ import {
   postAuthPhoneVerify,
   type AuthLoginResponse,
 } from "../services/platformApiClient";
-import { saveLoginTokens, clearLoginTokens, getStoredPlatformUserId } from "../storage/authTokens";
+import {
+  saveLoginTokens,
+  clearLoginTokens,
+  getStoredAccessToken,
+  getStoredPlatformUserId,
+} from "../storage/authTokens";
 import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import type { HomeTabCompositeNavigation } from "../navigation/types";
+import { navigateToAppSettings } from "../navigation/navigateToSettings";
 import { kk } from "../i18n/kk";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -71,13 +79,20 @@ async function applyAuthSuccess(r: AuthLoginResponse): Promise<boolean> {
   return true;
 }
 
-function GoogleSignInUnconfigured() {
+function GoogleSignInUnconfigured({ compact }: { compact?: boolean }) {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
   return (
-    <Pressable style={[styles.oauthBtn, styles.oauthGoogle, { opacity: 0.45 }]} disabled>
-      <Text style={styles.oauthBtnTxt}>{kk.account.signInGoogle}</Text>
-      <Text style={styles.oauthHint}>{kk.account.oauthGoogleNotConfigured}</Text>
+    <Pressable
+      style={[styles.oauthBtn, styles.oauthGoogle, compact && styles.oauthBtnCompact, { opacity: 0.45 }]}
+      disabled
+    >
+      <Text style={[styles.oauthBtnTxt, compact && styles.oauthBtnTxtCompact]} numberOfLines={1}>
+        {compact ? "Gmail" : kk.account.signInGoogle}
+      </Text>
+      {!compact ? (
+        <Text style={styles.oauthHint}>{kk.account.oauthGoogleNotConfigured}</Text>
+      ) : null}
     </Pressable>
   );
 }
@@ -87,10 +102,12 @@ function GoogleSignInWithRequest({
   onError,
   onSuccess,
   cfg,
+  compact,
 }: {
   busy: boolean;
   onError: (m: string) => void;
   onSuccess: () => void;
+  compact?: boolean;
   cfg: {
     webClientId?: string;
     iosClientId?: string;
@@ -130,11 +147,18 @@ function GoogleSignInWithRequest({
 
   return (
     <Pressable
-      style={[styles.oauthBtn, styles.oauthGoogle, (busy || !request) && { opacity: 0.45 }]}
+      style={[
+        styles.oauthBtn,
+        styles.oauthGoogle,
+        compact && styles.oauthBtnCompact,
+        (busy || !request) && { opacity: 0.45 },
+      ]}
       disabled={busy || !request}
       onPress={() => void promptAsync()}
     >
-      <Text style={styles.oauthBtnTxt}>{kk.account.signInGoogle}</Text>
+      <Text style={[styles.oauthBtnTxt, compact && styles.oauthBtnTxtCompact]} numberOfLines={1}>
+        {compact ? "Gmail" : kk.account.signInGoogle}
+      </Text>
     </Pressable>
   );
 }
@@ -144,10 +168,12 @@ export function GoogleSignInBlock({
   busy,
   onError,
   onSuccess,
+  compact,
 }: {
   busy: boolean;
   onError: (m: string) => void;
   onSuccess: () => void;
+  compact?: boolean;
 }) {
   const extra = getExpoExtra();
   const web = typeof extra?.googleWebClientId === "string" ? extra.googleWebClientId.trim() : "";
@@ -166,10 +192,18 @@ export function GoogleSignInBlock({
 
   const configured = Boolean(web || ios || android);
   if (!configured) {
-    return <GoogleSignInUnconfigured />;
+    return <GoogleSignInUnconfigured compact={compact} />;
   }
 
-  return <GoogleSignInWithRequest busy={busy} onError={onError} onSuccess={onSuccess} cfg={cfg} />;
+  return (
+    <GoogleSignInWithRequest
+      busy={busy}
+      onError={onError}
+      onSuccess={onSuccess}
+      cfg={cfg}
+      compact={compact}
+    />
+  );
 }
 
 /** Баптаулар экранында да қолдануға (Gmail / iCloud OAuth). */
@@ -177,10 +211,12 @@ export function AppleSignInButton({
   busy,
   onError,
   onSuccess,
+  compact,
 }: {
   busy: boolean;
   onError: (m: string) => void;
   onSuccess: () => void;
+  compact?: boolean;
 }) {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
@@ -229,14 +265,16 @@ export function AppleSignInButton({
 
   return (
     <Pressable
-      style={[styles.oauthBtn, styles.oauthApple, locked && { opacity: 0.7 }]}
+      style={[styles.oauthBtn, styles.oauthApple, compact && styles.oauthBtnCompact, locked && { opacity: 0.7 }]}
       onPress={() => void onApple()}
       disabled={locked}
     >
       {pending ? (
-        <ActivityIndicator color="#fff" />
+        <RaqatOrnamentSpinner size={20} />
       ) : (
-        <Text style={styles.oauthBtnTxtDark}>{kk.account.signInApple}</Text>
+        <Text style={[styles.oauthBtnTxtDark, compact && styles.oauthBtnTxtCompact]} numberOfLines={1}>
+          {compact ? "Apple" : kk.account.signInApple}
+        </Text>
       )}
     </Pressable>
   );
@@ -254,6 +292,8 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
   const [msg, setMsg] = useState<string | null>(null);
   const [pid, setPid] = useState<string | null>(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linkCodeTtl, setLinkCodeTtl] = useState<number | null>(null);
 
   const loadPid = useCallback(async () => {
     setPid(await getStoredPlatformUserId());
@@ -355,15 +395,52 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
     try {
       await clearLoginTokens();
       setPid(null);
+      setLinkCode(null);
+      setLinkCodeTtl(null);
       setMsg(kk.account.loggedOut);
     } finally {
       setBusy(false);
     }
   };
 
+  const onMintTelegramLinkCode = async () => {
+    const base = getRaqatApiBase();
+    const access = await getStoredAccessToken();
+    if (!base) {
+      setMsg(kk.account.apiMissing);
+      return;
+    }
+    if (!access) {
+      setMsg(kk.account.telegramLinkNeedLogin);
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await postAuthLinkCodeMint(base, access);
+      if (r.ok && r.code) {
+        setLinkCode(r.code);
+        setLinkCodeTtl(typeof r.expires_in === "number" ? r.expires_in : 600);
+        setMsg(kk.account.telegramLinkCodeReady);
+        return;
+      }
+      setMsg(apiErrorMessage(r) ?? kk.account.telegramLinkCodeFail);
+    } catch {
+      setMsg(kk.account.telegramLinkCodeFail);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onCopyLinkCode = async () => {
+    if (!linkCode) return;
+    await Clipboard.setStringAsync(linkCode);
+    setMsg(kk.account.telegramLinkCodeCopied);
+  };
+
   const goSettings = () => {
     onClose();
-    navigation.navigate("MoreStack", { screen: "Settings" });
+    navigateToAppSettings(navigation);
   };
 
   return (
@@ -418,13 +495,13 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
               disabled={busy || !challengeId}
             >
               {busy ? (
-                <ActivityIndicator color="#fff" />
+                <RaqatOrnamentSpinner size={24} />
               ) : (
                 <Text style={styles.primaryTxt}>{kk.account.verifyPhone}</Text>
               )}
             </Pressable>
 
-            <Text style={styles.divider}>— немесе —</Text>
+            <Text style={styles.divider}>— {kk.common.or} —</Text>
 
             <GoogleSignInBlock
               busy={busy}
@@ -437,6 +514,41 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
               onError={setMsg}
               onSuccess={() => void afterLoginOk()}
             />
+
+            {pid ? (
+              <>
+                <Text style={styles.section}>{kk.account.telegramLinkTitle}</Text>
+                <Text style={styles.hint}>{kk.account.telegramLinkHint}</Text>
+                {linkCode ? (
+                  <View style={styles.linkCodeBox}>
+                    <Text style={styles.linkCodeDigits}>{linkCode}</Text>
+                    {linkCodeTtl ? (
+                      <Text style={styles.linkCodeTtl}>
+                        {kk.account.telegramLinkExpires.replace("{sec}", String(linkCodeTtl))}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+                <View style={styles.row}>
+                  <Pressable
+                    style={[styles.secondary, styles.rowBtn, busy && { opacity: 0.7 }]}
+                    onPress={() => void onMintTelegramLinkCode()}
+                    disabled={busy}
+                  >
+                    <Text style={styles.secondaryTxt}>{kk.account.telegramLinkGetCode}</Text>
+                  </Pressable>
+                  {linkCode ? (
+                    <Pressable
+                      style={[styles.secondary, styles.rowBtn, busy && { opacity: 0.7 }]}
+                      onPress={() => void onCopyLinkCode()}
+                      disabled={busy}
+                    >
+                      <Text style={styles.secondaryTxt}>{kk.account.telegramLinkCopy}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </>
+            ) : null}
 
             {msg ? <Text style={styles.msg}>{msg}</Text> : null}
 
@@ -473,7 +585,7 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
                   disabled={busy || !user.trim() || !pass}
                 >
                   {busy ? (
-                    <ActivityIndicator color="#fff" />
+                    <RaqatOrnamentSpinner size={24} />
                   ) : (
                     <Text style={styles.primaryTxt}>{kk.account.signIn}</Text>
                   )}
@@ -565,6 +677,12 @@ function makeStyles(colors: ThemeColors) {
       alignItems: "center",
       marginBottom: 10,
     },
+    oauthBtnCompact: {
+      marginBottom: 0,
+      paddingVertical: 11,
+      width: "100%",
+    },
+    oauthBtnTxtCompact: { fontSize: 13 },
     oauthGoogle: { backgroundColor: "#fff", borderWidth: 1, borderColor: colors.border },
     oauthApple: { backgroundColor: "#000" },
     oauthBtnTxt: { color: "#1a1a1a", fontWeight: "800", fontSize: 15 },
@@ -574,5 +692,21 @@ function makeStyles(colors: ThemeColors) {
     expandTxt: { color: colors.muted, fontWeight: "600", textAlign: "center", fontSize: 13 },
     close: { marginTop: 14, alignItems: "center", paddingVertical: 8 },
     closeTxt: { color: colors.muted, fontWeight: "600" },
+    linkCodeBox: {
+      alignItems: "center",
+      paddingVertical: 12,
+      marginBottom: 8,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    linkCodeDigits: {
+      fontSize: 32,
+      fontWeight: "800",
+      letterSpacing: 8,
+      color: colors.accent,
+    },
+    linkCodeTtl: { marginTop: 6, fontSize: 12, color: colors.muted },
   });
 }

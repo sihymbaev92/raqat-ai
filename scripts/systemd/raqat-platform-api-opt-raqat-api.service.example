@@ -1,0 +1,31 @@
+# VPS (Hetzner): репо /opt/raqat-api, nginx → ішкі порт 8000 немесе 8787.
+#
+# ҚАТЕ: platform_gateway:app / platform_gateway:gateway — ЖОҚ.
+# Дұрыс: platform_api/main.py → main:app (uvicorn).
+#
+# sudo cp scripts/systemd/raqat-platform-api-opt-raqat-api.service.example \
+#        /etc/systemd/system/raqat-platform-api.service
+# sudo systemctl daemon-reload && sudo systemctl restart raqat-platform-api
+#
+# Nginx proxy_pass порты осы ExecStart портына сәйкес болуы керек:
+#   grep -r proxy_pass /etc/nginx/sites-enabled/
+
+[Unit]
+Description=RAQAT Platform API (uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/raqat-api/platform_api
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/raqat-api/.env
+# Nginx 8000-ға прокси болса — --port 8000; әдепкі репо үлгісі 8787.
+ExecStart=/opt/raqat-api/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

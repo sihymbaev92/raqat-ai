@@ -2,14 +2,13 @@
 """
 sqlite `quran.text_kk` және `quran.translit` → мобильді бандл JSON (`quran-kk-from-db.json`).
 
-`translit` дерекқорда **бір бағана**; толтыру реті: koran.kz импорты → содан кейін
-`backfill_quran_translit.py` (бос жолдарға `quran_translit.py` алгоритмі). Жоғарыдағы
-ретті орындағанда әр аяттың `translit` мәні **бір ғана түпкі көзден** (схема бойынша)
-қалғанымен сәйкес келеді.
+`text_kk` — қазақша мағына (негізгі мән). `translit` — дерекқордағы қосалқы жол; **экрандағы
+қазақ транскрипциясының эталоны емес**: қолданба аят арабы бар кезде әрдайым арабтан
+алгоритммен шығарады (`resolveQuranTranslitForDisplay`).
 
-Әр аят: `text_kk` (мағына) және `translit` (қазақ кирилл).
-Сидинг: `bundledQuranSeed.ts` дерекқор транскрипциясын алдымен қолданады, жоқ болса
-`quran-en-transliteration-full.json` (латын) қалдынады.
+Бір сайттан (мысалы koran.kz) толық кирил көшіру қателерге толы; сидтеуде кирилді латын API-ға
+басым етпейміз (`bundledQuranSeed.ts` v13+). Дерекқорда `translit` тазалау үшін алдымен
+`text_ar` негізіндегі алгоритм (`fill_kk_translit_gaps.py`, `services/quran_translit.py`) қолдануға болады.
 
 Орындау (репо түбінен):
   .venv/bin/python scripts/export_quran_kk_bundled_json.py --db global_clean.db

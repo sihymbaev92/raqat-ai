@@ -4,7 +4,7 @@
 
 ## Платформа API + бот (басынан)
 
-`bash scripts/dev_restart_platform.sh` — миграция + `8787` API (фон), журнал `.logs/platform_api.log`. Ботты қосу: `RAQAT_DEV_START_BOT=1` немесе жеке терминалда `python bot_main.py`. Толығырақ: `docs/PLATFORM_GPT_HANDOFF.md` §8.
+`bash scripts/dev_restart_platform.sh` — миграция + `8787` API (фон), журнал `.logs/platform_api.log`. Ботты қосу: `RAQAT_DEV_START_BOT=1` немесе жеке терминалда `python bot_main.py`. Толығырақ: [`docs/architecture/data-and-scripts.md`](architecture/data-and-scripts.md).
 
 Алдын ала: `.env`-те **`RAQAT_PLATFORM_API_BASE`**, **`RAQAT_BOT_LINK_SECRET`** (API серверімен бірдей), **`BOT_TOKEN`**, API үшін **`RAQAT_JWT_SECRET`**; AI үшін **`GEMINI_API_KEY`** (API немесе бот).
 
@@ -60,7 +60,7 @@ curl -sS -H "Authorization: Bearer $TOKEN" "$API/api/v1/users/me" | python -m js
 curl -sS -H "Authorization: Bearer $TOKEN" "$API/api/v1/users/me/history?limit=20" | python -m json.tool
 ```
 
-Егер `platform_token_bundle` бос болса: API жұмыс істеп тұрғанын `dev_verify_platform_flow.py` немесе қолмен `curl -X POST .../auth/link/telegram` арқылы тексеріңіз (`docs/PLATFORM_GPT_HANDOFF.md` §5.4).
+Егер `platform_token_bundle` бос болса: API жұмыс істеп тұрғанын `dev_verify_platform_flow.py` немесе қолмен `curl -X POST .../auth/link/telegram` арқылы тексеріңіз ([`docs/platform_api/overview.md`](platform_api/overview.md) — auth/link/telegram).
 
 ## 1. Миграциялар
 
@@ -104,6 +104,26 @@ RAQAT_DB_PATH=./global_clean.db python scripts/dev_verify_platform_flow.py --had
 ```bash
 python scripts/audit_sql_placeholders.py
 ```
+
+## 6. Шежіре (genealogy P0 / A1)
+
+**P0 (SQLite + mobile offline):**
+
+```bash
+python scripts/seed_genealogy_p0.py --db global_clean.db
+python scripts/export_genealogy_bundled.py
+curl -sS http://127.0.0.1:8787/api/v1/genealogy/clans | python -m json.tool
+```
+
+**A1 (PostgreSQL only):**
+
+```bash
+export DATABASE_URL=postgresql://...
+python -m alembic -c alembic.ini upgrade head
+python scripts/seed_genealogy_a1.py
+```
+
+Толығырақ: [`docs/handoff/genealogy-p0-handoff.md`](handoff/genealogy-p0-handoff.md).
 
 ---
 

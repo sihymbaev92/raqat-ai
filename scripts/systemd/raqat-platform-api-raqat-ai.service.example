@@ -1,0 +1,23 @@
+# VPS: /opt/raqat-ai, uvicorn :8000 (nginx proxy_pass сәйкес)
+# sudo cp scripts/systemd/raqat-platform-api-raqat-ai.service.example \
+#     /etc/systemd/system/raqat-platform-api.service
+
+[Unit]
+Description=RAQAT Platform API (uvicorn)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/raqat-ai/platform_api
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/raqat-ai:/opt/raqat-ai/platform_api
+EnvironmentFile=-/opt/raqat-ai/.env
+ExecStart=/opt/raqat-ai/.venv/bin/python -m uvicorn main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

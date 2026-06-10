@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:baselineAligned="false">
+
+  <LinearLayout
+      android:id="@+id/widget_cell_fajr"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_fajr_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_fajr_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+
+  <LinearLayout
+      android:id="@+id/widget_cell_sun"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_sun_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_sun_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+
+  <LinearLayout
+      android:id="@+id/widget_cell_dhuhr"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_dhuhr_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_dhuhr_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+
+  <LinearLayout
+      android:id="@+id/widget_cell_asr"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_asr_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_asr_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+
+  <LinearLayout
+      android:id="@+id/widget_cell_maghrib"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_maghrib_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_maghrib_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+
+  <LinearLayout
+      android:id="@+id/widget_cell_isha"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="center_horizontal"
+      android:paddingStart="1dp"
+      android:paddingEnd="1dp">
+    <TextView
+        android:id="@+id/widget_cell_isha_lbl"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:ellipsize="end" />
+    <TextView
+        android:id="@+id/widget_cell_isha_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="1dp"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="@color/widget_prayer_time_green"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:includeFontPadding="false" />
+  </LinearLayout>
+</LinearLayout>

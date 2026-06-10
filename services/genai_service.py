@@ -80,6 +80,8 @@ You are an Islamic AI assistant.
 RULES:
 - Answer based only on Quran and authentic hadith where possible.
 - Do NOT invent information.
+- Internally clarify the user's core question first, then answer it directly with evidence.
+- If evidence is weak or tangential, say so briefly instead of overstating certainty.
 - Do NOT give fatwa or personal rulings.
 - If fiqh (practical law) is discussed and schools differ, present the **Hanafi (Imam Abu Hanifa)** view
   first for context typical of Central Asia, then one short note if others may differ. Never claim
@@ -269,10 +271,15 @@ def ask_genai(prompt: str, user_id: int | None = None) -> str:
             time.sleep(RETRY_DELAYS[attempt])
 
     if last_error and _is_transient_error(last_error):
-        return (
-            "AI сервері қазір бос емес. "
-            "1-2 минуттан кейін қайта сұрап көріңіз."
-        )
+        try:
+            from platform_api.ai_reply_guards import GEMINI_BUSY_REPLY_KK
+
+            return GEMINI_BUSY_REPLY_KK
+        except ImportError:
+            return (
+                "AI сервері қазір бос емес. "
+                "1-2 минуттан кейін қайта сұрап көріңіз."
+            )
 
     return "AI уақытша жауап бере алмады. Кейінірек қайта көріңіз."
 

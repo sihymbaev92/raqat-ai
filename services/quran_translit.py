@@ -69,6 +69,8 @@ STOP_MARKS = {
 VOWEL_ENDINGS = ("а", "у", "и")
 SUN_LETTERS = ("т", "с", "ш", "д", "з", "р", "н")
 BASMALA_MARKLESS = "بسم الله الرحمن الرحيم"
+# mobile `BASMALA_KK_TRANSLIT_CANON` және бірдей
+BASMALA_KK_TRANSLIT_CANON = "бисмилләһир рахманир рахиим"
 
 # وَ / فَ + жиі жалғанулар (арабша бірге жазылған, оқуда бөлінеді). Ұзыннан қысқаға.
 _GRAMMAR_WA_FA_PARTICLES = (
@@ -98,7 +100,20 @@ _GRAMMAR_WA_FA_PARTICLES = (
 )
 
 # Уақф/паузада сөз соңындағы иъраб қосымшасын қысқарту (толық вокализациядағы артық а/и/у)
-_PAUSAL_KEEP_WORDS = frozenset({"бисми", "мадина", "медина"})
+_PAUSAL_KEEP_WORDS = frozenset(
+    {
+        "бисми",
+        "бисмилләһи",
+        "бисмилләһир",
+        "рахманир",
+        "рахиим",
+        "мадина",
+        "медина",
+        "әр-рахмани",
+        "әр-рахим",
+        "әр-рахман",
+    }
+)
 
 # Түбірдегі «ина» жалғаны емес (иъраб емес) — жалпы «ина» ережесінен бөлек
 _PAUSAL_EXACT_REPLACE = {
@@ -109,7 +124,7 @@ _PAUSAL_EXACT_REPLACE = {
 
 # style="pedagogical" үшін 1-сүре эталоны (пайдаланушы үлгісі; қалған 6224 аятқа JSON импорт немесе әдепкі алгоритм + тыныс).
 FATIHA_PEDAGOGICAL_PRESET: dict[int, str] = {
-    1: "бисмил ляяһир рахмаанир рахииим",
+    1: BASMALA_KK_TRANSLIT_CANON,
     2: "аль хамдулил ляяһираббиль 'аалямииин",
     3: "ар рахмаанир рахииим",
     4: "мяялики иауумид дииин",
@@ -252,7 +267,7 @@ def _transliterate_arabic_to_kazakh_default(text: str) -> str:
     )
     markless = re.sub(r"\s+", " ", markless).strip()
     if markless == BASMALA_MARKLESS:
-        return "бисмилләһир-рахманир-рахим"
+        return BASMALA_KK_TRANSLIT_CANON
 
     parts = []
 
@@ -329,7 +344,10 @@ def transliterate_arabic_to_kazakh(
 ) -> str:
     """
     style="pedagogical": 1-сүре 1–7 эталон; қалғаны — әдепкі транскрипция + тыныс жақындату.
-    Толық 114 сүрені үлгімен бірдей ету үшін `scripts/import_quran_translit_json.py` арқылы JSON жүктеңіз.
+
+    Бір сыртқы сайттан толық кирилл көшірмесін эталон деп қабылдамаңыз; қателер көп болуы мүмкін.
+    Кеңейтілген түзетулер қажет болса `import_quran_translit_json.py` (кураторлық JSON) немесе
+    осы модульдегі карталар/регекстарды жаңартыңыз.
     """
     st = (style or "default").strip().lower()
     if st == "pedagogical" and surah == 1 and ayah is not None:

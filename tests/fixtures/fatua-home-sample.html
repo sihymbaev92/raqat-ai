@@ -1,0 +1,813 @@
+
+<!DOCTYPE html>
+<html lang="kk">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+		<meta name="theme-color" content="#058242">
+        <title>Басты бет - fatua.kz</title>
+
+
+
+
+
+		<link rel="stylesheet" href="/static/js/vendor/css/main.css?v=1722937537577"> 
+		<meta name="datetime" value="2026-05-20 03:42" />
+		<style>
+			.article-page__preview img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				aspect-ratio: 16/9;
+				border: 1px solid #D1DBD5;
+			}
+		</style>
+	</head>
+	<body>
+        
+<header class="header">
+  <div class="container">
+    <div class="header__top">
+      <div class="header__logo logo">
+        <a class="logo__img" href="/kk/">
+          <img src="/static/images/logo.svg" alt="{% trans "ҚМДБ Шариғат және
+          пәтуа бөлімі" %}">
+        </a>
+        <div class="logo__text">
+          <div class="logo__title">fatua.kz</div>
+          <div class="logo__subtitle">
+            ҚМДБ Шариғат және пәтуа бөлімі
+          </div>
+        </div>
+      </div>
+      <div class="header__city city">
+        <div class="city__current">
+          <svg>
+            <use xlink:href="/static/images/sprites.svg#pin"></use>
+          </svg>
+          <span class="city__selected">&nbsp;</span>
+        </div>
+        <div class="city__menu citymenu">
+          <div class="citymenu__title">Орналасқан жеріңізді таңдаңыз</div>
+          <div class="citymenu__wrapper" data-simplebar data-simplebar-height="400px">
+            <form class="citymenu__search searchform" action="">
+              <input class="searchform__input" type="text" placeholder="іздеу">
+              <button class="searchform__btn"> 
+                <svg>
+                  <use xlink:href="/static/images/sprites.svg#search"></use>
+                </svg>
+              </button>
+            </form>
+            <ul class="citymenu__result"></ul>
+            <ul class="citymenu__mainlist"></ul>
+            <ul class="citymenu__list"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="header__shedule dayshedule">
+        <div class="dayshedule__current for-devices">
+          <div class="dayshedule__current-wrap">
+            <div class="dayshedule__current-name">&nbsp;</div>
+            <span class="dayshedule__current-time">&nbsp;</span>
+          </div>
+          <svg>
+            <use xlink:href="/static/images/sprites.svg#select-angle"></use>
+          </svg>
+        </div>
+        <div class="dayshedule__list">
+          <div data-name="fajr" data-text="Таң" class="dayshedule__item dayshedule__item--1">
+            <span class="dayshedule__item-value">&nbsp;</span> Таң
+          </div>
+          <div data-name="sunrise" data-text="Күн" class="dayshedule__item dayshedule__item--2">
+            <span class="dayshedule__item-value">&nbsp;</span> Күн
+          </div>
+          <div data-name="dhuhr" data-text="Бесін" class="dayshedule__item dayshedule__item--3">
+            <span class="dayshedule__item-value">&nbsp;</span> Бесін
+          </div>
+          <div data-name="asr" data-text="Екінті" class="dayshedule__item dayshedule__item--4">
+            <span class="dayshedule__item-value">&nbsp;</span> Екінті
+          </div>
+          <div data-name="maghrib" data-text="Ақшам" class="dayshedule__item dayshedule__item--5">
+            <span class="dayshedule__item-value">&nbsp;</span> Ақшам
+          </div>
+          <div data-name="isha" data-text="Құптан" class="dayshedule__item dayshedule__item--6">
+            <span class="dayshedule__item-value">&nbsp;</span> Құптан
+          </div>
+        </div>
+      </div>
+      <div class="header__wrap">
+        <a class="header__callback" href="https://t.me/muftyatbot" target="_blank">
+          <svg>
+            <use xlink:href="/static/images/sprites.svg#pen"></use>
+          </svg>
+          Сауал жолдау</a
+        ><a class="header__auth for-desktop" href="">
+          <svg>
+            <use xlink:href="/static/images/sprites.svg#user"></use>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</header>
+
+		
+        
+    <div class="container">
+        <div class="navblock">
+            
+<form class="searchform" action="/kk/search/" method="GET">
+    <input class="searchform__input" name="q" type="text" placeholder="іздеу">
+    <button class="searchform__btn">
+        <svg>
+            <use xlink:href="/static/images/sprites.svg#search"></use>
+        </svg>
+    </button>
+</form>
+
+            <nav class="navblock__nav">
+                <div class="navslider swiper">
+                    <div class="swiper-wrapper">
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=9800">Ақида</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=10000">Фиқх</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=10200">Құран</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=10400">Хадис</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=10600">Тәпсір</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=17400">Дұға</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=11600">Намаз</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=11800">Ораза</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=12600">Дәстүр</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=13400">Садақа</a></div>
+                        <div class="swiper-slide"><a class="navslider__item" href="/kk/qa/?category_id=15000">Жаназа</a></div>
+
+                    </div>
+                    <button class="navslider__btn navslider__btn--prev" id="navslider-prev">
+                        <svg>
+                            <use xlink:href="/static/images/sprites.svg#left"></use>
+                        </svg>
+                    </button>
+                    <button class="navslider__btn navslider__btn--next" id="navslider-next">
+                        <svg>
+                            <use xlink:href="/static/images/sprites.svg#right"></use>
+                        </svg>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+    <section class="hero">
+        <div class="container">
+            <div class="hero__container">
+                <div class="hero__slider">
+                    <div class="slider swiper">
+                        <div class="swiper-wrapper">
+                            
+                            <div class="swiper-slide">
+                                <a href="/kk/qa/read/2025-09-05/1062-неке-қию-үшін-не-істеу-керек/">
+                                    <div class="slider__item">
+                                        <div class="slider__content">
+                                            <div class="slider__title">Неке қию үшін не істеу керек?</div>
+                                            <div class="slider__subtitle">05.09.2025</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <div class="swiper-slide">
+                                <a href="/kk/qa/read/2025-09-02/1061-бильярд-ойнауға-болады-ма/">
+                                    <div class="slider__item">
+                                        <div class="slider__content">
+                                            <div class="slider__title">Бильярд ойнауға болады ма?</div>
+                                            <div class="slider__subtitle">02.09.2025</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <div class="swiper-slide">
+                                <a href="/kk/qa/read/2025-08-20/1060-құмар-ойын-ойнаудың-үкімі-қандай/">
+                                    <div class="slider__item">
+                                        <div class="slider__content">
+                                            <div class="slider__title">Құмар ойын ойнаудың үкімі қандай?</div>
+                                            <div class="slider__subtitle">20.08.2025</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <div class="swiper-slide">
+                                <a href="/kk/qa/read/2025-08-05/1057-онлайн-неке-қию-дұрыс-па/">
+                                    <div class="slider__item">
+                                        <div class="slider__content">
+                                            <div class="slider__title">Онлайн неке қию дұрыс па?</div>
+                                            <div class="slider__subtitle">05.08.2025</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                            <div class="swiper-slide">
+                                <a href="/kk/qa/read/2025-07-24/1053-жабайы-доңыз-еті-арам-ба/">
+                                    <div class="slider__item">
+                                        <div class="slider__content">
+                                            <div class="slider__title">Жабайы доңыз еті арам ба?</div>
+                                            <div class="slider__subtitle">24.07.2025</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            </div>
+                            
+                        </div>
+                        <div class="swiper-pagination"></div>
+                        <button class="slider__btn slider__btn--next" id="slider-next">
+                            <svg>
+                                <use xlink:href="/static/images/sprites.svg#next"></use>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="hero__navblock">
+                    <div class="hero__textblock">
+                        <p>«Білмесеңдер білім иелерінен сұраңдар!»</p>
+                        <p><small>«Нәхл» сүресі, 43 аят</small></p>
+                    </div>
+                    <ul class="hero__nav row g-2">
+                        <li class="col-6 p-3">
+                            <a href="/kk/fatwas/">
+                                <span>
+                                    <img src="/static/images/sprites/svg/doc.svg" alt="/fatwas/">
+                                </span>
+                                Пәтуалар
+                            </a>
+                        </li>
+                        <li class="col-6 p-3">
+                            <a href="/kk/qa/">
+                                <span>
+                                    <img src="/static/images/sprites/svg/man.svg" alt="/qa/">
+                                </span>
+                                Cұрақ-жауап
+                            </a>
+                        </li>
+                        <li class="col-6 p-3">
+                            <a href="/kk/media/">
+                                <span>
+                                    <img src="/static/images/sprites/svg/media.svg" alt="/media/">
+                                </span>Медиа
+                            </a>
+                        </li>
+                        <li class="col-6 p-3">
+                            <a href="/kk/books/">
+                                <span>
+                                    <img src="/static/images/sprites/svg/book.svg" alt="/books/">
+                                </span>
+                                Кітаптар
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="articles">
+        <div class="container">
+            <div class="articles__menublock">
+                <div class="articles__menu articlesmenu">
+                    <a href="/kk/fatwa-rules/">
+                        <div class="articlesmenu__current">
+                            <img src="/static/images/sprites/svg/document-text.svg" alt="">
+                            <span>Пәтуа ережесі</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="articles__menu articlesmenu">
+                    <a href="/kk/scientists/">
+                        <div class="articlesmenu__current">
+                            <img src="/static/images/sprites/svg/sahaba.svg" alt="">
+                            <span>Ғұламалар кеңесі</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="articles__menu articlesmenu">
+                    <a href="#">
+                        <div class="articlesmenu__current">
+                            <img src="/static/images/sprites/svg/mamandar.svg" alt="">
+                            <span>Пәтуа мамандары</span>
+                        </div>
+                    </a>
+                </div>
+                <div class="articles__menu articlesmenu">
+                    <a href="/kk/islamic-terms/">
+                        <div class="articlesmenu__current">
+                            <img src="/static/images/sprites/svg/termin.svg" alt="">
+                            <span>Ислами терминдер</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="articles__container">
+                <div class="articles__tabs">
+                    <div class="articles__tab">
+                        Барлығы
+                    </div>
+                    <div class="articles__tab">
+                        Cұрақ-жауап
+                    </div>
+                    <div class="articles__tab">
+                        Пәтуалар
+                    </div>
+                    <div class="articles__tab">
+                        Медиа
+                    </div>
+                </div>
+                <div class="articles__tabscontainer">
+                    <div class="articles__tabsitem">
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_35.png" alt="Ұл баланы неше жаста сүндетке отырғызады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-10-02/1067-ұл-баланы-неше-жаста-сүндетке-отырғызады/">Ұл баланы неше жаста сүндетке отырғызады?</a></div>
+                            <div class="article__date">
+                                02.10.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_34.png" alt="Сәбидің шашы қай уақытта алынады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-20/1066-сәбидің-шашы-қай-уақытта-алынады/">Сәбидің шашы қай уақытта алынады?</a></div>
+                            <div class="article__date">
+                                20.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_33.png" alt="Ақиқа құрбандығы бала туылған уақытта шалына ма?"></div>
+                            <div class="article__subtitle">
+                                Әртүрлі
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-15/1065-ақиқа-құрбандығы-бала-туылған-уақытта-шалына-ма/">Ақиқа құрбандығы бала туылған уақытта шалына ма?</a></div>
+                            <div class="article__date">
+                                15.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_32.png" alt="Баланың құлағына азан шақырып, жақсы ат қою үкімі?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-10/1064-баланың-құлағына-азан-шақырып-жақсы-ат-қою-үкімі/">Баланың құлағына азан шақырып, жақсы ат қою үкімі?</a></div>
+                            <div class="article__date">
+                                10.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_31.png" alt="Бала дүниеге келгенде тәхник жасалады. Ол не үшін жасалады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-06/1063-бала-дүниеге-келгенде-тәхник-жасалады-ол-не-үшін-жасалады/">Бала дүниеге келгенде тәхник жасалады. Ол не үшін жасалады?</a></div>
+                            <div class="article__date">
+                                06.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_30.png" alt="Неке қию үшін не істеу керек?"></div>
+                            <div class="article__subtitle">
+                                Отбасы
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-05/1062-неке-қию-үшін-не-істеу-керек/">Неке қию үшін не істеу керек?</a></div>
+                            <div class="article__date">
+                                05.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_29.png" alt="Бильярд ойнауға болады ма?"></div>
+                            <div class="article__subtitle">
+                                Халал мен харам
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-02/1061-бильярд-ойнауға-болады-ма/">Бильярд ойнауға болады ма?</a></div>
+                            <div class="article__date">
+                                02.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_28.png" alt="Құмар ойын ойнаудың үкімі қандай?"></div>
+                            <div class="article__subtitle">
+                                Әртүрлі
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-08-20/1060-құмар-ойын-ойнаудың-үкімі-қандай/">Құмар ойын ойнаудың үкімі қандай?</a></div>
+                            <div class="article__date">
+                                20.08.2025
+                            </div>
+                        </article>
+                        
+                    </div>
+                    <div class="articles__tabsitem">
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_35.png" alt="Ұл баланы неше жаста сүндетке отырғызады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-10-02/1067-ұл-баланы-неше-жаста-сүндетке-отырғызады/">Ұл баланы неше жаста сүндетке отырғызады?</a></div>
+                            <div class="article__date">
+                                02.10.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_34.png" alt="Сәбидің шашы қай уақытта алынады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-20/1066-сәбидің-шашы-қай-уақытта-алынады/">Сәбидің шашы қай уақытта алынады?</a></div>
+                            <div class="article__date">
+                                20.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_33.png" alt="Ақиқа құрбандығы бала туылған уақытта шалына ма?"></div>
+                            <div class="article__subtitle">
+                                Әртүрлі
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-15/1065-ақиқа-құрбандығы-бала-туылған-уақытта-шалына-ма/">Ақиқа құрбандығы бала туылған уақытта шалына ма?</a></div>
+                            <div class="article__date">
+                                15.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_32.png" alt="Баланың құлағына азан шақырып, жақсы ат қою үкімі?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-10/1064-баланың-құлағына-азан-шақырып-жақсы-ат-қою-үкімі/">Баланың құлағына азан шақырып, жақсы ат қою үкімі?</a></div>
+                            <div class="article__date">
+                                10.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_31.png" alt="Бала дүниеге келгенде тәхник жасалады. Ол не үшін жасалады?"></div>
+                            <div class="article__subtitle">
+                                Фиқһ
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-06/1063-бала-дүниеге-келгенде-тәхник-жасалады-ол-не-үшін-жасалады/">Бала дүниеге келгенде тәхник жасалады. Ол не үшін жасалады?</a></div>
+                            <div class="article__date">
+                                06.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_30.png" alt="Неке қию үшін не істеу керек?"></div>
+                            <div class="article__subtitle">
+                                Отбасы
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-05/1062-неке-қию-үшін-не-істеу-керек/">Неке қию үшін не істеу керек?</a></div>
+                            <div class="article__date">
+                                05.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_29.png" alt="Бильярд ойнауға болады ма?"></div>
+                            <div class="article__subtitle">
+                                Халал мен харам
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-09-02/1061-бильярд-ойнауға-болады-ма/">Бильярд ойнауға болады ма?</a></div>
+                            <div class="article__date">
+                                02.09.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/FATUA_дизайндары_28.png" alt="Құмар ойын ойнаудың үкімі қандай?"></div>
+                            <div class="article__subtitle">
+                                Әртүрлі
+                            </div>
+                            <div class="article__title"><a href="/kk/qa/read/2025-08-20/1060-құмар-ойын-ойнаудың-үкімі-қандай/">Құмар ойын ойнаудың үкімі қандай?</a></div>
+                            <div class="article__date">
+                                20.08.2025
+                            </div>
+                        </article>
+                        
+                    </div>
+                    <div class="articles__tabsitem">
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-11-11_at_15.57.03.jpeg" alt="ЖАСАНДЫ ЖОЛМЕН ЖАҢБЫР ЖАУДЫРҒАН ДҰРЫС ПА?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1034-жасанды-жолмен-жаңбыр-жаудырған-дұрыс-па/">ЖАСАНДЫ ЖОЛМЕН ЖАҢБЫР ЖАУДЫРҒАН ДҰРЫС ПА?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-10-19_at_10.17.30.jpeg" alt="ФОРЕКС САУДАСЫМЕН АЙНАЛЫСУҒА РҰҚСАТ ПА?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1033-форекс-саудасымен-айналысуға-рұқсат-па/">ФОРЕКС САУДАСЫМЕН АЙНАЛЫСУҒА РҰҚСАТ ПА?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-07-07_at_10.19.33.jpeg" alt="ПАРАҚОРЛЫҚТЫҢ ШАРИҒИ ҮКІМІ ҚАНДАЙ?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1032-парақорлықтың-шариғи-үкімі-қандай/">ПАРАҚОРЛЫҚТЫҢ ШАРИҒИ ҮКІМІ ҚАНДАЙ?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-04-15_at_15.39.19.jpeg" alt="ЕКПЕ ЕГУГЕ БОЛА МА?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1030-екпе-егуге-бола-ма/">ЕКПЕ ЕГУГЕ БОЛА МА?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-04-16_at_13.28.05.jpeg" alt="ТӨЛЕМ КАРТАЛАРЫН ҚОЛДАНУҒА РҰҚСАТ ПА?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1029-төлем-карталарын-қолдануға-рұқсат-па/">ТӨЛЕМ КАРТАЛАРЫН ҚОЛДАНУҒА РҰҚСАТ ПА?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-04-16_at_15.31.07.jpeg" alt="БАЛАНЫ ҚАМҚОРЛЫҚҚА АЛУДЫҢ ҮКІМІ ҚАНДАЙ?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1028-баланы-қамқорлыққа-алудың-үкімі-қандай/">БАЛАНЫ ҚАМҚОРЛЫҚҚА АЛУДЫҢ ҮКІМІ ҚАНДАЙ?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2021-09-16_at_14.38.16.jpeg" alt="ЖАЛҒА АЛҒАН МҮЛІКТІ ЖАЛҒА БЕРУГЕ БОЛА МА?"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-16/1027-жалға-алған-мүлікті-жалға-беруге-бола-ма/">ЖАЛҒА АЛҒАН МҮЛІКТІ ЖАЛҒА БЕРУГЕ БОЛА МА?</a></div>
+                            <div class="article__date">
+                                16.01.2025
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/articles/WhatsApp_Image_2022-02-22_at_16.15.13_1.jpeg" alt="ЛГБТ ҮКІМІ"></div>
+                            <div class="article__subtitle">
+                                Пәтуалар
+                            </div>
+                            <div class="article__title"><a href="/kk/fatwas/read/2025-01-15/1031-лгбт-үкімі/">ЛГБТ ҮКІМІ</a></div>
+                            <div class="article__date">
+                                15.01.2025
+                            </div>
+                        </article>
+                        
+                    </div>
+                    <div class="articles__tabsitem">
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/audio/59742_1551933499.png" alt="РӘЖАБ АЙЫНДА ҚҰЛШЫЛЫҚТАРДЫҢ САНЫН АРТТЫРУҒА БОЛА МА? | СҰРАҚ-ЖАУАП | БАУЫРЖАН ӘБДУӘЛІ"></div>
+                            <div class="article__subtitle">
+                                Сұрақ-жауап
+                            </div>
+                            <div class="article__title"><a href="/kk/media/read/2024-05-12/21-рәжаб-айында-құлшылықтардың-санын-арттыруға-бола-ма-сұрақ-жауап-бауыржан-әбдуәлі/">РӘЖАБ АЙЫНДА ҚҰЛШЫЛЫҚТАРДЫҢ САНЫН АРТТЫРУҒА БОЛА МА? | СҰРАҚ-ЖАУАП | БАУЫРЖАН ӘБДУӘЛІ</a></div>
+                            <div class="article__date">
+                                12.05.2024
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/audio/991360_1477457472.jpg" alt="ХИЖРАТ ДЕГЕНІМІЗ НЕ ЖӘНЕ ОНЫҢ ҮКІМІ МЕН ШАРТТАРЫ ҚАНДАЙ"></div>
+                            <div class="article__subtitle">
+                                Сұрақ-жауап
+                            </div>
+                            <div class="article__title"><a href="/kk/media/read/2024-05-12/20-хижрат-дегеніміз-не-және-оның-үкімі-мен-шарттары-қандай/">ХИЖРАТ ДЕГЕНІМІЗ НЕ ЖӘНЕ ОНЫҢ ҮКІМІ МЕН ШАРТТАРЫ ҚАНДАЙ</a></div>
+                            <div class="article__date">
+                                12.05.2024
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/audio/485186_1479113098.jpg" alt="ҒҰСЫЛДЫҢ ПАРЫЗДАРЫ, СҮННЕТТЕРІ, МӘКРҮҺТЕРІ"></div>
+                            <div class="article__subtitle">
+                                Сұрақ-жауап
+                            </div>
+                            <div class="article__title"><a href="/kk/media/read/2024-05-12/19-ғұсылдың-парыздары-сүннеттері-мәкрүһтері/">ҒҰСЫЛДЫҢ ПАРЫЗДАРЫ, СҮННЕТТЕРІ, МӘКРҮҺТЕРІ</a></div>
+                            <div class="article__date">
+                                12.05.2024
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/audio/58984_1478263020.jpg" alt="ӘКЕНІҢ БЕЛІНДЕ, АНАНЫҢ ҚҰРСАҒЫНДА БОЛМАҒАН ЖАРАТЫЛЫС БАР МА?"></div>
+                            <div class="article__subtitle">
+                                Сұрақ-жауап
+                            </div>
+                            <div class="article__title"><a href="/kk/media/read/2024-05-12/18-әкенің-белінде-ананың-құрсағында-болмаған-жаратылыс-бар-ма/">ӘКЕНІҢ БЕЛІНДЕ, АНАНЫҢ ҚҰРСАҒЫНДА БОЛМАҒАН ЖАРАТЫЛЫС БАР МА?</a></div>
+                            <div class="article__date">
+                                12.05.2024
+                            </div>
+                        </article>
+                        
+                        <article class="article">
+                            <div class="article__image"><img src="/media/upload/audio/388150_1477541764.jpg" alt="Пайғамбарымыз азан айтқан ба?"></div>
+                            <div class="article__subtitle">
+                                Сұрақ-жауап
+                            </div>
+                            <div class="article__title"><a href="/kk/media/read/2024-05-12/17-пайғамбарымыз-азан-айтқан-ба/">Пайғамбарымыз азан айтқан ба?</a></div>
+                            <div class="article__date">
+                                12.05.2024
+                            </div>
+                        </article>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="partners">
+        <div class="container">
+            <div class="partners-slider swiper">
+                <div class="swiper-wrapper">
+                    <div class="swiper-slide">
+                        <div class="partners-slider__item"><a href="//www.muftyat.kz" target="_blank">
+                            <img src="/static/images/partners/1.svg" alt="">
+                        </a></div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="partners-slider__item">
+                            <a href="//muslim.kz" target="_blank">
+                                <img src="/static/images/partners/2.png" alt="">
+                            </a>
+                        </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="partners-slider__item"><a href="//zeket.online" target="_blank">
+                            <img src="/static/images/partners/3.png" alt="">
+                        </a>
+                            </div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="partners-slider__item"><a href="//halaldamu.kz/" target="_blank"><img src="/static/images/partners/4.png" alt=""></a></div>
+                    </div>
+                    <div class="swiper-slide">
+                        <div class="partners-slider__item"><a href="//nmu.edu.kz" target="_blank"><img src="/static/images/partners/6.png" alt=""></a></div>
+                    </div>
+                </div>
+                <button class="partners-slider__btn partners-slider__btn--next" id="brand-next">
+                    <svg>
+                        <use xlink:href="/static/images/sprites.svg#right"></use>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </section>
+
+        
+		
+<footer class="footer">
+    <div class="container">
+        <div class="footer__wrap">
+            <div class="footer__container">
+                <div class="footer__logo logo"><a class="logo__img" href="/kk/"><img src="/static/images/logo.svg"
+                                                                                 alt="ҚМДБ Шариғат және пәтуа бөлімі"></a>
+                    <div class="logo__text">
+                        <div class="logo__title">fatua.kz</div>
+                        <div class="logo__subtitle">ҚМДБ Шариғат және пәтуа бөлімі</div>
+                    </div>
+                </div>
+                <ul class="footer__menu">
+                    <li><a href="/kk/fatwa-rules/">Пәтуа ережелері</a></li>
+                    <li><a href="/kk/scientists/">Ғұламалар кеңесі</a></li>
+                    <li><a href="/kk/media/">Медиа</a></li>
+                    <li><a href="/kk/books/">Кітаптар</a></li>
+                </ul>
+                <div class="footer__social social"><a href="https://www.facebook.com/fatuakz/" target="_blank">
+                    <svg>
+                        <use xlink:href="/static/images/sprites.svg#fb"></use>
+                    </svg>
+                </a><a href="https://vk.com/fatuakz"  target="_blank">
+                    <svg>
+                        <use xlink:href="/static/images/sprites.svg#tiktok"></use>
+                    </svg>
+                </a>
+                    <a href="https://twitter.com/muftyat"  target="_blank">
+                    <svg>
+                        <use xlink:href="/static/images/sprites.svg#tg"></use>
+                    </svg>
+                </a><a href="https://www.youtube.com/channel/UCjGz76vrczcE5ae23zt8OgA"  target="_blank">
+                    <svg>
+                        <use xlink:href="/static/images/sprites.svg#youtube"></use>
+                    </svg>
+                </a></div>
+            </div>
+            <div class="footer__copyright">© 2026 ҚМДБ Шариғат және пәтуа бөлімі</div>
+        </div>
+    </div>
+</footer>
+		
+<ul class="asidemenu">
+    <li><a href="/kk/fatwas/"> <img src="/static/images/sprites/svg/doc.svg" alt=""></a><span>
+        Пәтуалар
+    </span></li>
+    <li><a href="/kk/qa/"> <img src="/static/images/sprites/svg/man.svg" alt=""></a><span>
+					 Cұрақ-жауаптар</span></li>
+    <li><a href="/kk/media/"> <img src="/static/images/sprites/svg/media.svg" alt=""></a><span>
+					 Медиа</span></li>
+    <li><a href="/kk/books/"> <img src="/static/images/sprites/svg/book.svg" alt=""></a><span>
+					 Кітаптар</span></li>
+</ul>
+<div class="widgets">
+    <a class="widgetwhatsapp pulse" target="_blank" href="https://wa.me/77076626561">
+        <svg>
+            <use xlink:href="/static/images/sprites.svg#wtsp"></use>
+        </svg>
+    </a>
+    <a class="widgetphone pulse" href="tel:+77072333030">
+        <svg>
+            <use xlink:href="/static/images/sprites.svg#calling"></use>
+        </svg>
+    </a>
+</div>
+<div class="is-hidden">
+    
+    <form class="form form--modal" id="callback" action="/comments" method="POST">
+        <input type="hidden" name="csrfmiddlewaretoken" value="xfh1uJrpx6flgGwjiKuPtwHaMoWMKtqU3TxlFeozGjfBa6w8ADfEGneYy7uj7KDp">
+        <div class="form__title">
+            Сауал жолдау
+        </div>
+        <div class="form__subtitle">Құрметті қолданушы! Сұрақ қоярда бір сауалмен шектелуді сұранамыз. Егер бірден екі немесе одан да көп сауал жолданған жағдайда тек алғашқы сауалына ғана жауап берілетінін ескертеміз.</div>
+        <div class="form__fieldset">
+            <legend class="form__legend">Аты-жөні</legend>
+            <input class="form__input" type="text" name="first_name" required>
+        </div>
+        <div class="form__fieldset">
+            <legend class="form__legend">E-mail</legend>
+            <input class="form__input" type="text" name="email" required>
+        </div>
+        <div class="form__fieldset">
+            <legend class="form__legend">Сұрақ</legend>
+            <textarea maxlength="500" class="form__textarea" name="description"> </textarea>
+        </div>
+        <div class="form__fieldset">
+            <script src='https://www.google.com/recaptcha/api.js'></script>
+            <div class="g-recaptcha" data-sitekey="6LfPeP8pAAAAAAd_qGi67jagFNe02-KXzbxUVct7"></div>
+        </div>
+        <div class="form__ftr">
+            <button type="submit" class="btn btn--primary form__btn">
+                <svg>
+                    <use xlink:href="/static/images/sprites.svg#send"></use>
+                </svg>
+                Жіберу
+            </button>
+            <div class="form__notice">* Cұрақтың жауабы электрондық почтадаға жіберіледі</div>
+        </div>
+    </form>
+    
+</div>
+		<script>
+			if (!('IntersectionObserver' in window)) {
+				var script = document.createElement("script");
+				script.src = "https://raw.githubusercontent.com/w3c/IntersectionObserver/master/polyfill/intersection-observer.js";
+				document.getElementsByTagName('head')[0].appendChild(script);
+			}
+		</script>
+		
+		<script src="/static/js/main.js?v=1722937537577"></script>
+		<script src="/static/js/vendor.js?v=1722937537577"></script>
+
+		<script src="/static/js/vendor/js/main.js?v=1722937537577"></script>
+		<script src="/static/js/vendor/js/vendors.js?v=1722937537577"></script>
+	</body>
+</html>

@@ -52,6 +52,30 @@ export const NAMAZ_PHASE2_QUIZ_BANK: QuizQuestion[] = [
     explainWhy: "Соңғы отырыста Әт-тахияттан кейін салауат оқылады.",
     topic: "recitation",
   },
+  {
+    id: "q-rakat-1",
+    prompt: "Зухр парыз намазы неше рәкәт?",
+    options: ["2 рәкәт", "3 рәкәт", "4 рәкәт"],
+    correctIndex: 2,
+    explainWhy: "Зухр, аср, иша парыздары — төрт рәкәт (ханафи жиі нұсқасы).",
+    topic: "namaz",
+  },
+  {
+    id: "q-wudu-order-1",
+    prompt: "Дәретте бетті жуу қай кезде?",
+    options: ["Аяқтан кейін", "Оғанадан кейін, қолдан бұрын", "Соңғы қадам"],
+    correctIndex: 1,
+    explainWhy: "Жалпы рет: қол → оғана → бет → қол қайта → бас → аяқ.",
+    topic: "wudu",
+  },
+  {
+    id: "q-jamaat-1",
+    prompt: "Жамағатта имам рүкуғқа барғанда не істеу керек?",
+    options: ["Ерте барып күту", "Имамның рүкуғын күтіп, содан бару", "Дауыстап айту"],
+    correctIndex: 1,
+    explainWhy: "Имамға ерте кірмеу — жамағаттың негізгі ережелерінің бірі.",
+    topic: "namaz",
+  },
 ];
 
 // Phase 3 foundation: daily Hafiz path skeleton

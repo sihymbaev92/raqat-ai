@@ -12,7 +12,7 @@ workers үшін; әр worker өз пулы).
 
 PostgreSQL үшін: `pip install -r requirements-postgres.txt`.
 
-Логикалық схема мен env түсіндіру: `docs/PLATFORM_GPT_HANDOFF.md` §1.1.
+Логикалық схема мен env: `docs/architecture/overview.md`, `docs/architecture/configuration.md`.
 
 | Айнымалы | Мақсаты |
 |----------|---------|

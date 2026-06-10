@@ -1,22 +1,156 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
+import { ensureBundledQuranReaderLoaded, getBundledSurahAyahs } from "../services/bundledQuranReader";
+import { pickPreferredTranslit } from "../utils/quranTranslitDisplay";
+import {
+  loadSurahAyahsOverlay,
+  saveSurahAyahsOverlay,
+} from "./quranAyahOverlay";
+import { getBundledQuranAyahTranslation } from "../services/quranOfflineTranslations";
 
 export type CachedAyah = {
   numberInSurah: number;
-  /** Араб мәтін (негізгі көрсету) */
+  /** Араб мәтін: Мадина/KFGQPC стиліндегі Усмани (`quran-uthmani`) */
   text: string;
+  /**
+   * Екінші араб жолы: Al Quran Cloud `quran-unicode` (Unicode араб; түрік және басқа цифрлық басылымдармен
+   * жиі үйлесетін кодтау). Желіден толықтырылады; жоқ болса түрік таңдауында негізгі `text` көрінеді.
+   */
+  textTurkishPrint?: string;
+  /** Al Quran Cloud `quran-tajweed` тақырыпшалы мәтін — тәжуид түсі үшін */
+  textTajweed?: string;
   /** Қазақша аударма — platform_api дерегінен */
   textKk?: string;
-  /** Транскрипция: қазақ кирилл (DB бандл) немесе латын (alquran en.transliteration / API) */
+  /** Орысша аударма (Эльмир Кулиев) — тіл ru болғанда көрсетіледі (alquran.cloud ru.kuliev). */
+  textRu?: string;
+  /** Ағылшынша аударма (Sahih International) — тіл en болғанда (alquran.cloud en.sahih). */
+  textEn?: string;
+  /** Түрікше аударма (Diyanet) — tr. */
+  textTr?: string;
+  /** Өзбекше аударма (Содиқ) — uz. */
+  textUz?: string;
+  /** Қырғызша аударма (Борубаев) — ky. */
+  textKy?: string;
+  /** Қытайша аударма (Ma Jian) — zh. */
+  textZh?: string;
+  /** Парсыша аударма (Макарем Ширази) — fa. */
+  textFa?: string;
+  /** Индонезияша аударма — id. */
+  textId?: string;
+  /** Малайша аударма (Basmeih) — ms. */
+  textMs?: string;
+  /** Хинди аударма — hi. */
+  textHi?: string;
+  /** Күрдіше аударма — ku. */
+  textKu?: string;
+  /** Кітаптық қазақша транскрипция (кирил) немесе латын қосалқы — resolveQuranTranslitForDisplay */
   translit?: string;
 };
+
+/**
+ * Таңдалған тілге сәйкес аят мағынасы. Аударма жүктелмеген болса — қазақшаға қайтады.
+ * Араб тілінде (ar) бөлек мағына жоқ — экранда араб мәтінінің өзі тұрады.
+ */
+export function quranAyahMeaningForLocale(
+  item: Pick<
+    CachedAyah,
+    | "numberInSurah"
+    | "textKk"
+    | "textRu"
+    | "textEn"
+    | "textTr"
+    | "textUz"
+    | "textKy"
+    | "textZh"
+    | "textFa"
+    | "textId"
+    | "textMs"
+    | "textHi"
+    | "textKu"
+  > & { surahNumber?: number },
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+): string {
+  const pick = (v: string | undefined) => (v ?? "").trim();
+  const bundled = () => {
+    const surah = "surahNumber" in item ? item.surahNumber : undefined;
+    const ayah = "numberInSurah" in item ? item.numberInSurah : undefined;
+    return typeof surah === "number" && typeof ayah === "number"
+      ? getBundledQuranAyahTranslation(surah, ayah, locale)
+      : "";
+  };
+  switch (locale) {
+    case "ru":
+      return pick(item.textRu) || bundled() || pick(item.textKk);
+    case "en":
+      return pick(item.textEn) || bundled() || pick(item.textKk);
+    case "tr":
+      return pick(item.textTr) || bundled() || pick(item.textKk);
+    case "uz":
+      return pick(item.textUz) || bundled() || pick(item.textKk);
+    case "ky":
+      return pick(item.textKy) || bundled() || pick(item.textKk);
+    case "zh":
+      return pick(item.textZh) || bundled() || pick(item.textKk);
+    case "fa":
+      return pick(item.textFa) || bundled() || pick(item.textKk);
+    case "id":
+      return pick(item.textId) || bundled() || pick(item.textKk);
+    case "ms":
+      return pick(item.textMs) || bundled() || pick(item.textKk);
+    case "hi":
+      return pick(item.textHi) || bundled() || pick(item.textKk);
+    case "ku":
+      return pick(item.textKu) || bundled() || pick(item.textKk);
+    case "ar":
+      return "";
+    default:
+      return pick(item.textKk);
+  }
+}
 
 export type SurahAyahsCachePayload = {
   ayahs: CachedAyah[];
   savedAt: string;
 };
 
-function keyForSurah(surahNumber: number): string {
-  return `raqat_surah_ayahs_${surahNumber}_v1`;
+/** Оқу экранында көрсетілетін араб мәтін (таңдалған баспа нұсқасы). */
+export function displayCachedAyahArabic(item: CachedAyah, edition: QuranArabicScriptEditionId): string {
+  if (edition === "turkish") {
+    const alt = (item.textTurkishPrint ?? "").trim();
+    if (alt) return alt;
+  }
+  return (item.text ?? "").trim();
+}
+
+/** Платформа/басқа дерек үстінен Мадина + түрік жолдарын қою (негізгі kk/translit сақталады). */
+export function mergeDualAlquranArabicOntoBase(
+  base: CachedAyah[],
+  madinahLines: CachedAyah[] | null | undefined,
+  turkishLines: CachedAyah[] | null | undefined
+): CachedAyah[] {
+  const um = new Map((madinahLines ?? []).map((a) => [a.numberInSurah, (a.text ?? "").trim()]));
+  const tm = new Map((turkishLines ?? []).map((a) => [a.numberInSurah, (a.text ?? "").trim()]));
+  return base.map((a) => {
+    const u = um.get(a.numberInSurah);
+    const t = tm.get(a.numberInSurah);
+    return {
+      ...a,
+      ...(u ? { text: u } : {}),
+      ...(t ? { textTurkishPrint: t } : {}),
+    };
+  });
+}
+
+/** Негізгі `text` Усмани болып тұрғанда тек `textTurkishPrint` толықтырады. */
+export function mergeTurkishPrintArabicFromParsed(
+  base: CachedAyah[],
+  turkishLines: CachedAyah[] | null | undefined
+): CachedAyah[] {
+  if (!turkishLines?.length) return base;
+  const tm = new Map(turkishLines.map((a) => [a.numberInSurah, (a.text ?? "").trim()]));
+  return base.map((a) => {
+    const t = tm.get(a.numberInSurah);
+    return t ? { ...a, textTurkishPrint: t } : a;
+  });
 }
 
 export function parseAyahsFromApiResponse(j: unknown): CachedAyah[] | null {
@@ -64,15 +198,21 @@ export function parseAyahsFromPlatformPayload(j: unknown): CachedAyah[] | null {
 export async function loadSurahAyahsCache(
   surahNumber: number
 ): Promise<SurahAyahsCachePayload | null> {
-  try {
-    const raw = await AsyncStorage.getItem(keyForSurah(surahNumber));
-    if (!raw) return null;
-    const j = JSON.parse(raw) as SurahAyahsCachePayload;
-    if (!Array.isArray(j?.ayahs) || !j?.savedAt) return null;
-    return j;
-  } catch {
-    return null;
+  await ensureBundledQuranReaderLoaded().catch(() => {});
+  const bundled = getBundledSurahAyahs(surahNumber);
+  const overlay = await loadSurahAyahsOverlay(surahNumber);
+  if (!bundled && !overlay) return null;
+  if (overlay && bundled) {
+    return {
+      ayahs: mergeAyahsPreserveOfflineExtras(overlay.ayahs, bundled),
+      savedAt: overlay.savedAt,
+    };
   }
+  if (overlay) return overlay;
+  return {
+    ayahs: bundled!,
+    savedAt: "bundled",
+  };
 }
 
 function _nonEmptyTranslit(ayahs: CachedAyah[]): string[] {
@@ -105,9 +245,11 @@ export function mergeAyahsPreserveOfflineExtras(
   const junk = isSuspiciousIdenticalTranslit(incoming);
   if (!previous?.length) {
     if (!junk) return incoming;
-    return incoming.map(({ numberInSurah, text, textKk }) => {
+    return incoming.map(({ numberInSurah, text, textKk, textTajweed, textTurkishPrint }) => {
       const row: CachedAyah = { numberInSurah, text };
       if (textKk) row.textKk = textKk;
+      if (textTajweed?.trim()) row.textTajweed = textTajweed;
+      if (textTurkishPrint?.trim()) row.textTurkishPrint = textTurkishPrint;
       return row;
     });
   }
@@ -120,19 +262,42 @@ export function mergeAyahsPreserveOfflineExtras(
         numberInSurah: a.numberInSurah,
         text: a.text,
         ...(a.textKk ? { textKk: a.textKk } : {}),
+        ...(a.textTajweed?.trim() ? { textTajweed: a.textTajweed } : {}),
+        ...(a.textTurkishPrint?.trim() ? { textTurkishPrint: a.textTurkishPrint } : {}),
       };
     }
     const pTr = (p.translit ?? "").trim();
     const aTr = junk ? "" : (a.translit ?? "").trim();
-    const tr = pTr || aTr || undefined;
+    const trMerged = pickPreferredTranslit(pTr, aTr);
+    const tr = trMerged ? trMerged : undefined;
     const kk = (a.textKk ?? "").trim() || (p.textKk ?? "").trim() || undefined;
     const ar = (a.text ?? "").trim() || p.text;
+    const tj = (a.textTajweed ?? "").trim() || (p.textTajweed ?? "").trim() || undefined;
+    const ttp =
+      (a.textTurkishPrint ?? "").trim() || (p.textTurkishPrint ?? "").trim() || undefined;
     return {
       numberInSurah: a.numberInSurah,
       text: ar,
       ...(tr ? { translit: tr } : {}),
       ...(kk ? { textKk: kk } : {}),
+      ...(tj ? { textTajweed: tj } : {}),
+      ...(ttp ? { textTurkishPrint: ttp } : {}),
     };
+  });
+}
+
+/** Al Quran Cloud `quran-tajweed` жауабындағы тақырыпшалы мәтінді негізгі аяттарға қосу */
+export function mergeTajweedTaggedIntoAyahs(base: CachedAyah[], tagged: CachedAyah[] | null | undefined): CachedAyah[] {
+  if (!tagged?.length) return base;
+  const map = new Map<number, string>();
+  for (const a of tagged) {
+    const t = (a.text ?? "").trim();
+    if (t.includes("[")) map.set(a.numberInSurah, t);
+  }
+  if (!map.size) return base;
+  return base.map((a) => {
+    const t = map.get(a.numberInSurah);
+    return t ? { ...a, textTajweed: t } : a;
   });
 }
 
@@ -140,9 +305,8 @@ export async function saveSurahAyahsCache(
   surahNumber: number,
   ayahs: CachedAyah[]
 ): Promise<void> {
-  const payload: SurahAyahsCachePayload = {
-    ayahs,
-    savedAt: new Date().toISOString(),
-  };
-  await AsyncStorage.setItem(keyForSurah(surahNumber), JSON.stringify(payload));
+  await ensureBundledQuranReaderLoaded().catch(() => {});
+  const base = getBundledSurahAyahs(surahNumber);
+  const merged = base ? mergeAyahsPreserveOfflineExtras(ayahs, base) : ayahs;
+  await saveSurahAyahsOverlay(surahNumber, merged);
 }

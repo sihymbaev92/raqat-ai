@@ -12,6 +12,7 @@ from ai_embedding import cosine_similarity, embed_prompt_text
 from ai_exact_cache import _max_cached_chars, _ttl_seconds
 
 _SEM_KEY = "raqat:ai:semantic:v1:entries"
+SEMANTIC_CACHE_KEY = _SEM_KEY
 
 
 def semantic_cache_enabled() -> bool:
@@ -77,6 +78,14 @@ def cache_get_semantic(prompt: str) -> str | None:
             if sim > best_sim and sim >= thr:
                 best_sim = sim
                 best_text = txt.strip()
+        if best_text:
+            try:
+                from ai_reply_guards import is_degraded_ai_reply
+
+                if is_degraded_ai_reply(best_text):
+                    return None
+            except ImportError:
+                pass
         return best_text or None
     except Exception:
         return None
@@ -88,6 +97,13 @@ def cache_set_semantic(prompt: str, text: str) -> None:
     body = (text or "").strip()
     if not body or len(body) > _max_cached_chars():
         return
+    try:
+        from ai_reply_guards import is_degraded_ai_reply
+
+        if is_degraded_ai_reply(body):
+            return
+    except ImportError:
+        pass
     vec = embed_prompt_text(prompt)
     if not vec:
         return
@@ -114,3 +130,16 @@ def cache_set_semantic(prompt: str, text: str) -> None:
         r.setex(_SEM_KEY, ttl, json.dumps(entries, ensure_ascii=False))
     except Exception:
         return
+
+
+def cache_flush_semantic() -> bool:
+    """Delete semantic cache list key."""
+    try:
+        from app.infrastructure.redis_client import get_redis_client
+
+        r = get_redis_client()
+        if r is None:
+            return False
+        return int(r.delete(_SEM_KEY) or 0) > 0
+    except Exception:
+        return False

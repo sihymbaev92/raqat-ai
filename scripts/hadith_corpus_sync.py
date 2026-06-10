@@ -61,6 +61,14 @@ COLLECTION_NAME_KK: dict[str, str] = {
 
 SAHIH_SOURCES = frozenset({"Sahih al-Bukhari", "Sahih Muslim"})
 
+KK_SOURCE_LABEL: dict[str, str] = {
+    "fatua": "Fatua.kz",
+    "muftyat": "Muftyat.kz",
+    "islam": "Islam.kz",
+    "muslim": "Muslim.kz",
+    "sunnah": "Sunnah.com",
+}
+
 ID_RE = re.compile(r"^([a-z][a-z0-9]*)-(\d+)$")
 
 
@@ -100,6 +108,7 @@ def export_rows(
     include_all_sources: bool,
     *,
     include_repeats: bool = False,
+    source_only: bool = False,
 ) -> list[dict]:
     where = ["1=1"]
     params: list = []
@@ -130,6 +139,16 @@ def export_rows(
         sel_cols += ", text_ru"
     if "text_en" in cols:
         sel_cols += ", text_en"
+    if "text_tr" in cols:
+        sel_cols += ", text_tr"
+    if "kk_source_site" in cols:
+        sel_cols += ", kk_source_site"
+    if "kk_source_url" in cols:
+        sel_cols += ", kk_source_url"
+    if "hadith_no" in cols:
+        sel_cols += ", hadith_no"
+    if "chapter" in cols:
+        sel_cols += ", chapter"
     sel_cols += ", grade"
     if "is_repeated" in cols:
         sel_cols += ", is_repeated"
@@ -157,19 +176,30 @@ def export_rows(
         slug = _slug_for_source(src)
         hid = f"{slug}-{r['id']}"
         coll = _collection_field(slug)
-        text_kk = _strip_markdown_light(r["text_kk"])
+        text_kk = "" if source_only else _strip_markdown_light(r["text_kk"])
+        ref = str(r["id"])
+        if "hadith_no" in cols and r["hadith_no"]:
+            ref = str(r["hadith_no"]).strip() or ref
         item: dict = {
             "id": hid,
             "dbId": int(r["id"]),
             "collection": coll,
             "collectionNameKk": _collection_name_kk(slug, src),
             "bookTitleKk": "",
-            "reference": str(r["id"]),
+            "reference": ref,
             "arabic": clean_text_content(r["text_ar"]),
             "textKk": text_kk,
             "narratorKk": "",
             "grade": (r["grade"] or "").strip(),
         }
+        if source_only:
+            item["sourceOnly"] = True
+            item["sourceCitationKk"] = f"{item['collectionNameKk']}, хадис № {ref}"
+        if "chapter" in cols and r["chapter"]:
+            ch = str(r["chapter"]).strip()
+            if ch:
+                item["chapterKk"] = ch
+        # en/ru — fawaz (ашық лицензия): source-only режимде де қосылады (тек text_kk жасырын).
         if "text_ru" in cols:
             tru = r["text_ru"]
             if tru and str(tru).strip():
@@ -178,22 +208,33 @@ def export_rows(
             ten = r["text_en"]
             if ten and str(ten).strip():
                 item["textEn"] = _strip_markdown_light(ten)
+        if "text_tr" in cols:
+            ttr = r["text_tr"]
+            if ttr and str(ttr).strip():
+                item["textTr"] = _strip_markdown_light(ttr)
+        if not source_only:
+            if "text_kk_literal" in cols and r["text_kk_literal"]:
+                item["textKkLiteral"] = _strip_markdown_light(r["text_kk_literal"])
+            if "text_kk_clean" in cols and r["text_kk_clean"]:
+                item["textKkClean"] = _strip_markdown_light(r["text_kk_clean"])
+            if "text_kk_explanation" in cols and r["text_kk_explanation"]:
+                item["textKkExplanation"] = _strip_markdown_light(r["text_kk_explanation"])
+            if "translation_status" in cols and r["translation_status"] is not None:
+                item["translationStatus"] = str(r["translation_status"])
+            if "quality_score" in cols and r["quality_score"] is not None:
+                item["qualityScore"] = float(r["quality_score"])
         if "is_repeated" in cols:
             item["isRepeated"] = bool(int(r["is_repeated"] or 0))
         if "original_id" in cols and r["original_id"] is not None:
             item["originalDbId"] = int(r["original_id"])
-        if "text_kk_literal" in cols and r["text_kk_literal"]:
-            item["textKkLiteral"] = _strip_markdown_light(r["text_kk_literal"])
-        if "text_kk_clean" in cols and r["text_kk_clean"]:
-            item["textKkClean"] = _strip_markdown_light(r["text_kk_clean"])
-        if "text_kk_explanation" in cols and r["text_kk_explanation"]:
-            item["textKkExplanation"] = _strip_markdown_light(r["text_kk_explanation"])
-        if "translation_status" in cols and r["translation_status"] is not None:
-            item["translationStatus"] = str(r["translation_status"])
-        if "quality_score" in cols and r["quality_score"] is not None:
-            item["qualityScore"] = float(r["quality_score"])
         if "is_sahih" in cols and r["is_sahih"] is not None:
             item["isSahih"] = bool(int(r["is_sahih"]))
+        if "kk_source_site" in cols and r["kk_source_site"]:
+            site = str(r["kk_source_site"]).strip()
+            item["kkSourceSite"] = site
+            item["kkSourceLabel"] = KK_SOURCE_LABEL.get(site, site)
+        if "kk_source_url" in cols and r["kk_source_url"]:
+            item["kkSourceUrl"] = str(r["kk_source_url"]).strip()
         out.append(item)
     return out
 
@@ -208,21 +249,33 @@ def cmd_export(args: argparse.Namespace) -> int:
             args.limit,
             args.include_all_sources,
             include_repeats=args.include_repeats,
+            source_only=args.source_only,
         )
     finally:
         conn.close()
 
     scope = "барлық жинақтар" if args.include_all_sources else "тек Сахих Бұхари + Сахих Муслим"
+    mode = "source-only (араб + дереккөз)" if args.source_only else "full"
     provenance = {
-        "origin": f"RAQAT · SQLite export ({scope})",
-        "evidenceKk": "Дерекқордан scripts/hadith_corpus_sync.py export арқылы алынды. dbId — hadith.id.",
+        "origin": f"RAQAT · SQLite export ({scope}, {mode})",
+        "evidenceKk": (
+            "Дерекқордан scripts/hadith_corpus_sync.py export. "
+            "Арабша — fawazahmed0/hadith-api (MIT). "
+            "Қазақша аударма жарияланбайды; тек дереккөз сілтемесі."
+            if args.source_only
+            else "Дерекқордан scripts/hadith_corpus_sync.py export арқылы алынды. dbId — hadith.id."
+        ),
         "recordedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-        "licenseHint": "Түпнұсқа — исламдық жария ілім дәстүрі; қазақша мәтін RAQAT жобасы.",
+        "licenseHint": (
+            "Түпнұсқа араб — ашық API; қазақша мәтін UI-да көрсетілмейді."
+            if args.source_only
+            else "Түпнұсқа — исламдық жария ілім дәстүрі; қазақша мәтін RAQAT жобасы."
+        ),
     }
 
     corpus = {
-        # 3 = толық сахих Бұхари+Муслим (text_kk бос жолдар да, араб толық)
-        "version": 3,
+        # 5 = source-only араб/дереккөз + ашық en/ru/tr аудармалары (fawaz)
+        "version": 5 if args.source_only else 3,
         "provenance": provenance,
         "hadiths": hadiths,
     }
@@ -420,6 +473,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--include-repeats",
         action="store_true",
         help="Кітап ішіндегі қайталанатын жолдарды да экспорттау (әдепкі: тек бірегей is_repeated=0)",
+    )
+    pe.add_argument(
+        "--source-only",
+        action="store_true",
+        help="Тек араб + дереккөз (text_kk/ru/en жоқ) — заңға сәйкес жариялау",
     )
     pe.set_defaults(func=cmd_export)
 

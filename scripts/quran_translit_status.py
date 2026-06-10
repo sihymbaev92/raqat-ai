@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Құран translit күйі: бос жолдар және алгоритмнен ауытқулар (мысалы koran.kz импорты)."""
+"""Құран translit күйі: бос жолдар және `text_ar` алгоритмімен салыстырғандағы ауытқу (DB эталон емес)."""
 import argparse
 import os
 import sqlite3

@@ -43,7 +43,10 @@ from roadmap_routes import router as roadmap_router
 from usage_routes import router as usage_router
 from app.api.v1.endpoints.halal import router as halal_text_router
 from bot_sync_routes import router as bot_sync_router
+from halal_damu_routes import router as halal_damu_router
+from genealogy_routes import router as genealogy_router
 from family_tree_routes import router as family_tree_router
+from monitoring_routes import router as monitoring_router
 
 APP_NAME = "RAQAT Platform API"
 VERSION = "0.1.0"
@@ -131,6 +134,13 @@ async def lifespan(_app: FastAPI):
         except Exception:
             logger.exception("PostgreSQL: ensure_oauth_phone_tables failed")
 
+        try:
+            with get_db() as conn:
+                ensure_platform_link_code_tables(conn)
+                _pg_commit_if_needed(conn)
+            logger.info("PostgreSQL: platform_link_codes tables OK.")
+        except Exception:
+            logger.exception("PostgreSQL: ensure_platform_link_code_tables failed")
     else:
         db_path = sqlite_database_path()
         run_schema_migrations(db_path)
@@ -139,6 +149,12 @@ async def lifespan(_app: FastAPI):
         yield
     finally:
         # Close optional PostgreSQL pools to avoid leaked connections on stop/reload.
+        try:
+            from content_search_core import dispose_content_search_engines
+
+            dispose_content_search_engines()
+        except Exception:
+            logger.exception("Content search engine cleanup failed")
         close_postgresql_pools()
 
 
@@ -153,7 +169,10 @@ app.include_router(roadmap_router)
 app.include_router(usage_router)
 # Мәтіндік халал сүзгі (мобильді: POST/GET /api/v1/halal/*) — бұрын тек app.api.v1.router ішінде болған, main-ге тіркелмеген.
 app.include_router(halal_text_router, prefix="/api/v1")
+app.include_router(halal_damu_router)
+app.include_router(genealogy_router)
 app.include_router(family_tree_router)
+app.include_router(monitoring_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),

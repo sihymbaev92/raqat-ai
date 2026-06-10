@@ -1,29 +1,48 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, type ComponentProps } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
-  ScrollView,
   Platform,
   ImageBackground,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { MaterialIcons } from "@expo/vector-icons";
-import { fetchPrayerTimesForLocation } from "../api/prayerTimes";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import {
+  applyPrayerTimeShift,
+  fetchPrayerTimesForLocation,
+  fetchPrayerTimesForLocationForDate,
+  parsePrayerResultLocalDayKey,
+  type PrayerTimesResult,
+} from "../api/prayerTimes";
 import { useAppTheme } from "../theme/ThemeContext";
-import { kk } from "../i18n/kk";
+import { homeHeaderContrastTextBase, homeHeaderBrandTitleStyle } from "../theme/homeHeaderContrastText";
+import { kk, APP_BRAND_KK } from "../i18n/kk";
+import { navigateToPrayerSettings } from "../navigation/navigateToSettings";
+import { TabHomeBackButton, useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
+import { DomainSettingsHeaderButton } from "../components/settings/DomainSettingsHeaderButton";
+import { getKzPresetCoords } from "../constants/kzCities";
+import {
+  fetchOpenMeteoCurrent,
+  wmoCodeToWeatherIconName,
+  type OpenMeteoCurrent,
+} from "../services/openMeteoCurrent";
 import {
   getSelectedCity,
   setSelectedCity,
   addSavedCity,
   getNotifEnabled,
   getIftarEnabled,
+  getPrayerNotifMutedSalatKeys,
   getPrayerNotifSoundId,
   getPrayerSourceMode,
   getPrayerMosqueShiftMin,
+  setPrayerNotifMutedSalatKeys,
+  type PrayerNotifSalatKey,
   type PrayerNotifSoundId,
   type PrayerSourceMode,
 } from "../storage/prefs";
@@ -31,12 +50,21 @@ import type { RootStackParamList } from "../navigation/types";
 import { savePrayerCache } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
-import { PrayerTimesHCarousel } from "../components/PrayerTimesHCarousel";
-import { nextSalatHighlightKey } from "../utils/prayerSchedule";
-import { formatKkGregorianDate, formatKkHijriUmmAlQura } from "../utils/formatKkDate";
-import { PRAYER_TIMES_SCREEN_BG } from "../config/dashboardPrayerHero";
+import { PRAYER_TIMES_SCREEN_HERO_BG } from "../config/dashboardPrayerHero";
+import { PrayerHeroSteamOverlay } from "../components/PrayerHeroSteamOverlay";
+import { shortPrayerName } from "../components/CompactPrayerTimesRow";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
+import {
+  nextSalatRow,
+  parseMinutes,
+  secondsUntilNextSalat,
+  formatSecondsAsHms,
+} from "../utils/prayerSchedule";
+import { formatGregorianTechYmd, formatKkGregorianShort, formatKkHijriUmmAlQura } from "../utils/formatKkDate";
+import { useAppLocale } from "../i18n/runtime";
+import { useScreenFitMetrics } from "../theme/screenFit";
+import { ScreenFitScrollView } from "../components/ScreenFit";
 
-/** Дүйсенбі=0 … жексенбі=6 (JavaScript getDay(): жексенбі=0) */
 function mondayFirstWeekdayIndex(): number {
   const d = new Date().getDay();
   return d === 0 ? 6 : d - 1;
@@ -56,22 +84,123 @@ function resultToCells(
   ];
 }
 
-function prayerNotifSoundLabelKk(id: PrayerNotifSoundId): string {
-  switch (id) {
-    case "system":
-      return kk.prayer.notifSoundSystem;
-    case "bell":
-      return kk.prayer.notifSoundBell;
-    case "chime":
-      return kk.prayer.notifSoundChime;
-    case "azan_soft":
-      return kk.prayer.notifSoundAzanSoft;
-    case "off":
-      return kk.prayer.notifSoundOff;
-    default:
-      return id;
-  }
+/** Келесі намаз жолын ерекшелеу — `DashboardPrayerWidget` логикасымен үйлесімді */
+function timelineStateForRow(
+  row: { key: string; time: string },
+  next: { key: string; time: string } | null,
+  now: Date
+): "past" | "current" | "next" | "upcoming" {
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  const rowM = parseMinutes(row.time);
+  if (next && row.key === next.key) return "next";
+  if (rowM >= 0 && Math.abs(rowM - nowM) <= 2) return "current";
+  if (rowM >= 0 && rowM < nowM) return "past";
+  return "upcoming";
 }
+
+/** Реф. скриндегі қанық жасыл таймер жолы */
+const NEXT_PRAYER_STRIP_HEX = "#24A17B";
+
+function signedDeg(c: number): string {
+  const r = Math.round(c);
+  if (r > 0) return `+${r}°`;
+  return `${r}°`;
+}
+
+type PrayerTimesNavHeaderProps = {
+  colors: ThemeColors;
+  isDark: boolean;
+  dateShort: string;
+  weatherCoords: { lat: number; lon: number } | null;
+  weatherSnap: OpenMeteoCurrent | null;
+  weatherLoading: boolean;
+};
+
+function PrayerTimesNavHeader({
+  colors,
+  isDark,
+  dateShort,
+  weatherCoords,
+  weatherSnap,
+  weatherLoading,
+}: PrayerTimesNavHeaderProps) {
+  const contrast = homeHeaderContrastTextBase(colors, isDark);
+  type MciName = ComponentProps<typeof MaterialCommunityIcons>["name"];
+  const weatherIconName = weatherSnap
+    ? (wmoCodeToWeatherIconName(weatherSnap.wmoCode, {
+        isDay: weatherSnap.isDay,
+        observedAt: weatherSnap.observedAt,
+      }) as MciName)
+    : ("weather-cloudy" as MciName);
+  const tempLine = weatherSnap ? signedDeg(weatherSnap.tempC) : "";
+  const weatherA11y = weatherLoading
+    ? kk.common.loading
+    : weatherSnap
+      ? kk.dashboard.prayerWeatherA11y(tempLine)
+      : kk.dashboard.prayerWeatherUnavailableA11y;
+
+  return (
+    <View
+      style={navHeaderStyles.wrap}
+      accessibilityRole="header"
+      accessibilityLabel={`${APP_BRAND_KK}. ${dateShort}. ${weatherA11y}`}
+    >
+      <Text style={[navHeaderStyles.brand, contrast]}>{APP_BRAND_KK}</Text>
+      <View style={navHeaderStyles.subRow}>
+        <View style={navHeaderStyles.subRowDate}>
+          <Text style={[navHeaderStyles.subText, contrast]} numberOfLines={1}>
+            {dateShort}
+          </Text>
+        </View>
+        <View style={navHeaderStyles.subRowWeather}>
+          {weatherCoords ? (
+            weatherLoading ? (
+              <RaqatOrnamentSpinner size={16} />
+            ) : weatherSnap ? (
+              <>
+                <MaterialCommunityIcons name={weatherIconName} size={14} color={colors.text} />
+                <Text style={[navHeaderStyles.temp, contrast]}>{tempLine}</Text>
+              </>
+            ) : (
+              <Text style={[navHeaderStyles.subText, contrast]}>—</Text>
+            )
+          ) : (
+            <Text style={[navHeaderStyles.subText, contrast]}>—</Text>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const navHeaderStyles = StyleSheet.create({
+  wrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    maxWidth: "100%",
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+  },
+  brand: homeHeaderBrandTitleStyle("md"),
+  subRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 1,
+    width: "100%",
+    gap: 8,
+  },
+  subRowDate: { flex: 1, minWidth: 0, alignItems: "flex-start" },
+  subRowWeather: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 0,
+    justifyContent: "flex-end",
+  },
+  subText: { fontSize: 11, fontWeight: "600" },
+  temp: { fontSize: 11, fontWeight: "700", marginLeft: 3 },
+});
 
 const PLACEHOLDER_CELLS: { key: string; time: string }[] = [
   { key: "fajr", time: "" },
@@ -82,9 +211,32 @@ const PLACEHOLDER_CELLS: { key: string; time: string }[] = [
   { key: "isha", time: "" },
 ];
 
+function isSoundTogglePrayerKey(key: string): key is PrayerNotifSalatKey {
+  return key === "fajr" || key === "dhuhr" || key === "asr" || key === "maghrib" || key === "isha";
+}
+
+function prayerTimesErrorResult(city: string, country: string, error: string): PrayerTimesResult {
+  return {
+    city,
+    country,
+    date: "",
+    fajr: "",
+    sunrise: "",
+    dhuhr: "",
+    asr: "",
+    maghrib: "",
+    isha: "",
+    error,
+  };
+}
+
 export function PrayerTimesScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, "PrayerTimes">>();
+  const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
+  const screenFit = useScreenFitMetrics();
+  const locale = useAppLocale();
+  useTabHomeBackHeader(navigation, colors);
   const [city, setCity] = useState("Shymkent");
   const [country, setCountry] = useState("Kazakhstan");
   const [loading, setLoading] = useState(false);
@@ -94,69 +246,100 @@ export function PrayerTimesScreen() {
   const [sourceMode, setSourceMode] = useState<PrayerSourceMode>("calc");
   const [mosqueShiftMin, setMosqueShiftMin] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(false);
-  const [prayerSoundId, setPrayerSoundId] = useState<PrayerNotifSoundId>("azan_soft");
+  const [prayerSoundId, setPrayerSoundId] = useState<PrayerNotifSoundId>("adhan_haramain");
+  const [mutedSalatKeys, setMutedSalatKeys] = useState<PrayerNotifSalatKey[]>([]);
+  const [headerDate, setHeaderDate] = useState(() => formatKkGregorianShort(new Date(), locale));
+  const [weatherSnap, setWeatherSnap] = useState<OpenMeteoCurrent | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [nowTick, setNowTick] = useState(() => new Date());
+  const [tomorrowCells, setTomorrowCells] = useState<{ key: string; time: string }[] | null>(null);
 
-  const shiftTime = useCallback((hhmm: string, shiftMin: number): string => {
-    const m = /^(\d{1,2}):(\d{2})$/.exec((hhmm || "").trim());
-    if (!m) return hhmm;
-    const hh = parseInt(m[1], 10);
-    const mm = parseInt(m[2], 10);
-    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return hhmm;
-    let total = hh * 60 + mm + shiftMin;
-    while (total < 0) total += 24 * 60;
-    total %= 24 * 60;
-    const nh = String(Math.floor(total / 60)).padStart(2, "0");
-    const nm = String(total % 60).padStart(2, "0");
-    return `${nh}:${nm}`;
+  const weatherCoords = useMemo(() => getKzPresetCoords(city, country), [city, country]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    if (!weatherCoords) {
+      setWeatherSnap(null);
+      setWeatherLoading(false);
+      return;
+    }
+    const { lat, lon } = weatherCoords;
+    let cancelled = false;
+    const tick = async () => {
+      setWeatherLoading(true);
+      const w = await fetchOpenMeteoCurrent(lat, lon);
+      if (!cancelled) {
+        setWeatherSnap(w);
+        setWeatherLoading(false);
+      }
+    };
+    void tick();
+    const id = setInterval(() => void tick(), 20 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [weatherCoords?.lat, weatherCoords?.lon]);
 
   const applyMosqueShift = useCallback(
     (data: NonNullable<Awaited<ReturnType<typeof fetchPrayerTimesForLocation>>>) => {
       if (sourceMode !== "mosque" || data.error || mosqueShiftMin === 0) return data;
-      return {
-        ...data,
-        fajr: shiftTime(data.fajr, mosqueShiftMin),
-        sunrise: shiftTime(data.sunrise, mosqueShiftMin),
-        dhuhr: shiftTime(data.dhuhr, mosqueShiftMin),
-        asr: shiftTime(data.asr, mosqueShiftMin),
-        maghrib: shiftTime(data.maghrib, mosqueShiftMin),
-        isha: shiftTime(data.isha, mosqueShiftMin),
-      };
+      return applyPrayerTimeShift(data, mosqueShiftMin);
     },
-    [mosqueShiftMin, shiftTime, sourceMode]
+    [mosqueShiftMin, sourceMode]
   );
 
   const fetchAndSave = useCallback(
     async (c: string, co: string) => {
       setLoading(true);
-      const data = await fetchPrayerTimesForLocation(c, co, 3);
-      const out = applyMosqueShift(data);
-      setResult(out);
       setCity(c);
       setCountry(co);
-      if (!out.error) {
-        await setSelectedCity(c, co);
-        await addSavedCity(c, co);
-        await savePrayerCache(out);
-        const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
-        await reschedulePrayerNotifications(out, {
-          enabled: en,
-          iftarExtra: ift,
-        });
+      try {
+        const data = await fetchPrayerTimesForLocation(c, co);
+        const out = applyMosqueShift(data);
+        setResult(out);
+        if (!out.error) {
+          await setSelectedCity(c, co);
+          await addSavedCity(c, co);
+          await savePrayerCache(out);
+          const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
+          try {
+            await reschedulePrayerNotifications(out, {
+              enabled: en,
+              iftarExtra: ift,
+              prayerTimesAlreadyAdjusted: true,
+            });
+          } catch {
+            /* Кесте көрсетіле береді; хабарлама диагностикасы баптауларда бөлек тексеріледі. */
+          }
+        }
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Network error";
+        setResult(prayerTimesErrorResult(c, co, message));
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     },
     [applyMosqueShift]
   );
 
   useFocusEffect(
     useCallback(() => {
+      setHeaderDate(formatKkGregorianShort(new Date(), locale));
       let cancelled = false;
       (async () => {
         const prefs = await getSelectedCity();
         const mode = await getPrayerSourceMode();
         const shift = await getPrayerMosqueShiftMin();
-        const [ne, sid] = await Promise.all([getNotifEnabled(), getPrayerNotifSoundId()]);
+        const [ne, sid, mutedKeys] = await Promise.all([
+          getNotifEnabled(),
+          getPrayerNotifSoundId(),
+          getPrayerNotifMutedSalatKeys(),
+        ]);
         if (cancelled) return;
         setCity(prefs.city);
         setCountry(prefs.country);
@@ -164,12 +347,13 @@ export function PrayerTimesScreen() {
         setMosqueShiftMin(shift);
         setNotifEnabled(ne);
         setPrayerSoundId(sid);
+        setMutedSalatKeys(mutedKeys);
         await fetchAndSave(prefs.city, prefs.country);
       })();
       return () => {
         cancelled = true;
       };
-    }, [fetchAndSave])
+    }, [fetchAndSave, locale])
   );
 
   const styles = makeStyles(colors, isDark);
@@ -178,71 +362,205 @@ export function PrayerTimesScreen() {
 
   const hasData = Boolean(result && !result.error);
   const pendingCarousel = Boolean(loading && !result);
-  const carouselCells = hasData && result ? resultToCells(result) : pendingCarousel ? [] : PLACEHOLDER_CELLS;
-  const highlightKey = carouselCells.length ? nextSalatHighlightKey(carouselCells) ?? undefined : undefined;
+  const carouselCells = useMemo(
+    () => (hasData && result ? resultToCells(result) : PLACEHOLDER_CELLS),
+    [hasData, result]
+  );
+  const nextSalatResolved = useMemo(
+    () => nextSalatRow(carouselCells, tomorrowCells, nowTick),
+    [carouselCells, tomorrowCells, nowTick]
+  );
+  const stripCountdownHms = useMemo(() => {
+    if (pendingCarousel || !hasData) return "—";
+    return formatSecondsAsHms(secondsUntilNextSalat(carouselCells, nowTick, tomorrowCells));
+  }, [pendingCarousel, hasData, carouselCells, tomorrowCells, nowTick]);
+  const salatMinute = nowTick.getHours() * 60 + nowTick.getMinutes();
 
-  const summaryTable = (
-    <View style={styles.table}>
-      {hasData && result ? (
-        <Text style={styles.cityLine}>
-          {result.city}, {result.country} · {result.date}
-        </Text>
-      ) : null}
-      <PrayerTimesHCarousel
-        colors={colors}
-        isDark={isDark}
-        cells={carouselCells}
-        highlightKey={highlightKey}
-        pending={pendingCarousel}
-        lightGlass
-      />
-      {Platform.OS !== "web" ? (
-        <Pressable
-          onPress={() => navigation.navigate("MoreStack", { screen: "Settings" })}
-          style={({ pressed }) => [
-            styles.notifSoundHint,
-            pressed && { opacity: 0.85 },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={`${kk.prayer.timesOpenSoundSettings}. ${
-            notifEnabled
-              ? kk.prayer.timesNotifSoundLineEnabled(prayerNotifSoundLabelKk(prayerSoundId))
-              : kk.prayer.timesNotifSoundLineDisabled
-          }`}
-        >
-          <MaterialIcons name="notifications-active" size={22} color="#B9F6CA" />
-          <View style={styles.notifSoundHintTextWrap}>
-            <Text style={styles.notifSoundHintMain}>
-              {notifEnabled
-                ? kk.prayer.timesNotifSoundLineEnabled(prayerNotifSoundLabelKk(prayerSoundId))
-                : kk.prayer.timesNotifSoundLineDisabled}
-            </Text>
-            <Text style={styles.notifSoundHintLink}>{kk.prayer.timesOpenSoundSettings}</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={22} color="rgba(255,255,255,0.55)" />
-        </Pressable>
-      ) : null}
-    </View>
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!hasData || !carouselCells.length) {
+        if (!cancelled) setTomorrowCells(null);
+        return;
+      }
+      const salat = carouselCells.filter((r) => r.key !== "sun" && r.time?.trim());
+      if (!salat.length) {
+        if (!cancelled) setTomorrowCells(null);
+        return;
+      }
+      const nowM = new Date().getHours() * 60 + new Date().getMinutes();
+      const allPast = salat.every((r) => parseMinutes(r.time) <= nowM);
+      if (!allPast) {
+        if (!cancelled) setTomorrowCells(null);
+        return;
+      }
+      const tm = new Date();
+      tm.setDate(tm.getDate() + 1);
+      tm.setHours(12, 0, 0, 0);
+      const ptRaw = await fetchPrayerTimesForLocationForDate(city, country, tm);
+      const pt =
+        sourceMode === "mosque" && mosqueShiftMin !== 0
+          ? applyPrayerTimeShift(ptRaw, mosqueShiftMin)
+          : ptRaw;
+      if (cancelled) return;
+      if (!pt.error) setTomorrowCells(resultToCells(pt));
+      else setTomorrowCells(null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasData, carouselCells, city, country, salatMinute, mosqueShiftMin, sourceMode]);
+
+  const togglePrayerSound = useCallback(
+    async (key: PrayerNotifSalatKey) => {
+      const nextMuted = mutedSalatKeys.includes(key)
+        ? mutedSalatKeys.filter((x) => x !== key)
+        : [...mutedSalatKeys, key];
+      setMutedSalatKeys(nextMuted);
+      await setPrayerNotifMutedSalatKeys(nextMuted);
+      if (result && !result.error) {
+        const iftar = await getIftarEnabled();
+        await reschedulePrayerNotifications(result, {
+          enabled: notifEnabled,
+          iftarExtra: iftar,
+          prayerTimesAlreadyAdjusted: true,
+        });
+      }
+    },
+    [mutedSalatKeys, notifEnabled, result]
   );
 
+  /** Намаз кестесінің `date` жолымен бір локальды күн (хижра/григориан көрсетілімі). */
+  const prayerCalendarDay = useMemo(() => {
+    if (!result || result.error || !result.date?.trim()) return null;
+    const key = parsePrayerResultLocalDayKey(result.date);
+    if (!key) return null;
+    return new Date(key.y, key.m0, key.d, 12, 0, 0, 0);
+  }, [result]);
+  const hijriGregorianAnchor = prayerCalendarDay ?? new Date();
+
   return (
-    <ImageBackground
-      source={PRAYER_TIMES_SCREEN_BG}
-      style={styles.bgRoot}
-      resizeMode="cover"
-      accessibilityIgnoresInvertColors
-    >
-      <View style={styles.bgScrim} pointerEvents="none" />
-      <ScrollView
+    <View style={styles.bgRoot}>
+      <View style={[styles.topChrome, { paddingTop: insets.top }]}>
+        <TabHomeBackButton navigation={navigation} colors={colors} />
+        <View style={styles.topChromeCenter}>
+          <PrayerTimesNavHeader
+            colors={colors}
+            isDark={isDark}
+            dateShort={headerDate}
+            weatherCoords={weatherCoords}
+            weatherSnap={weatherSnap}
+            weatherLoading={weatherLoading}
+          />
+        </View>
+        <DomainSettingsHeaderButton
+          colors={colors}
+          onPress={() => navigateToPrayerSettings(navigation)}
+          accessibilityLabel={kk.settings.headerPrayerSettingsA11y}
+        />
+      </View>
+      <ScreenFitScrollView
+        testID="screen-main-prayer"
         style={styles.scrollRoot}
         contentContainerStyle={styles.content}
+        top={screenFit.isCompactPhone ? 8 : 12}
+        bottom={40 + insets.bottom}
         nestedScrollEnabled
       >
-        <View style={styles.summaryCard}>
-          <Text style={styles.hijriHero}>{formatKkHijriUmmAlQura(new Date())}</Text>
-          <Text style={styles.gregHero}>{formatKkGregorianDate(new Date())}</Text>
-          <Text style={styles.hijriNote}>{kk.prayer.hijriCalendarNote}</Text>
-          {summaryTable}
+        <View style={styles.summaryColumn}>
+          <ImageBackground
+            source={PRAYER_TIMES_SCREEN_HERO_BG}
+            style={styles.kaabaPrayerPanel}
+            imageStyle={styles.kaabaPrayerPanelImage}
+            resizeMode="cover"
+            accessibilityIgnoresInvertColors
+            accessibilityLabel={kk.prayer.timesHeroKaabaA11y}
+          >
+            <View style={styles.kaabaScrim} pointerEvents="none" />
+            <PrayerHeroSteamOverlay variant="prayerScreen" />
+            <View style={styles.frostedCard}>
+              {hasData && result ? (
+                <Text style={styles.cityLine}>
+                  {result.city}, {result.country} · {result.date}
+                </Text>
+              ) : null}
+              {pendingCarousel ? (
+                <View style={styles.ptLoadingRow}>
+                  <RaqatOrnamentSpinner size={22} />
+                  <Text style={styles.ptLoadingTxt}>{kk.common.loading}</Text>
+                </View>
+              ) : null}
+              <View style={styles.verticalTimes}>
+                {carouselCells.map((cell) => {
+                  const key = cell.key;
+                  const state = timelineStateForRow(cell, nextSalatResolved, nowTick);
+                  const isHi = state === "next" || state === "current";
+                  const isPast = state === "past";
+                  const t = cell.time?.trim() ? cell.time.trim().split(/\s+/)[0] : "—";
+                  const soundKey: PrayerNotifSalatKey | null = isSoundTogglePrayerKey(key) ? key : null;
+                  const soundMuted = soundKey ? mutedSalatKeys.includes(soundKey) : true;
+                  const soundToggleEnabled = notifEnabled && prayerSoundId !== "off";
+                  const soundActive = soundKey != null && soundToggleEnabled && !soundMuted;
+                  return (
+                    <View
+                      key={cell.key}
+                      style={[styles.ptRow, isHi && styles.ptRowHi, isPast && styles.ptRowPast]}
+                    >
+                      <View style={styles.ptNameCol}>
+                        <Text style={[styles.ptName, isPast && styles.ptNamePast, isHi && styles.ptNameHi]} numberOfLines={1}>
+                          {shortPrayerName(cell.key)}
+                        </Text>
+                        {isHi ? (
+                          <Text style={styles.ptCountdown} numberOfLines={1}>
+                            {stripCountdownHms}
+                          </Text>
+                        ) : null}
+                      </View>
+                      {soundKey ? (
+                        <Pressable
+                          onPress={() => {
+                            if (soundToggleEnabled) void togglePrayerSound(soundKey);
+                          }}
+                          disabled={!soundToggleEnabled}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityState={{ disabled: !soundToggleEnabled, selected: soundActive }}
+                          accessibilityLabel={`${shortPrayerName(cell.key)} азаны ${
+                            !soundToggleEnabled ? "жалпы баптауда өшірулі" : soundActive ? "қосулы" : "өшірулі"
+                          }`}
+                          style={({ pressed }) => [
+                            styles.ptIconBtn,
+                            soundActive && styles.ptIconBtnActive,
+                            isHi && styles.ptIconBtnOnGreen,
+                            !soundToggleEnabled && styles.ptIconBtnDisabled,
+                            pressed && soundToggleEnabled && { opacity: 0.78 },
+                          ]}
+                        >
+                          <MaterialIcons
+                            name={soundActive ? "volume-up" : "volume-off"}
+                            size={19}
+                            color={soundActive ? (isHi ? "#FFFFFF" : "#B9F6CA") : "rgba(255,255,255,0.44)"}
+                          />
+                        </Pressable>
+                      ) : (
+                        <View style={styles.ptIconBtnSpacer} />
+                      )}
+                      <Text style={[styles.ptTime, isPast && styles.ptTimePast, isHi && styles.ptTimeHi]} numberOfLines={1}>
+                        {t}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+              {hasData ? (
+                <View style={styles.ptDateFooter}>
+                  <Text style={styles.hijriHero}>{formatKkHijriUmmAlQura(hijriGregorianAnchor, locale)}</Text>
+                  <Text style={styles.gregHero}>{formatGregorianTechYmd(hijriGregorianAnchor)}</Text>
+                  <Text style={styles.hijriNote}>{kk.prayer.hijriCalendarNote}</Text>
+                </View>
+              ) : null}
+            </View>
+          </ImageBackground>
         </View>
 
         <View
@@ -278,25 +596,27 @@ export function PrayerTimesScreen() {
               ]}
             >
               {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
+                <RaqatOrnamentSpinner size={22} />
               ) : (
                 <Text style={styles.retryButtonLabel}>{kk.common.retry}</Text>
               )}
             </Pressable>
           </View>
         ) : null}
-      </ScrollView>
-    </ImageBackground>
+      </ScreenFitScrollView>
+    </View>
   );
 }
 
 function makeStyles(colors: ThemeColors, isDark: boolean) {
-  /** Фото фон үстінде оқылу үшін ақ жазу */
-  const ink = "rgba(255,255,255,0.97)";
-  const inkMuted = "rgba(255,255,255,0.78)";
-  const inkSoft = "rgba(255,255,255,0.62)";
-  const inkGold = "rgba(255, 244, 214, 0.98)";
-  const uiBorder = "rgba(255,255,255,0.22)";
+  /** Қою панель үстінде барлығы ақ мәтін */
+  const ink = "#FFFFFF";
+  const inkMuted = "#F2F4F7";
+  const inkSoft = "#E8ECF0";
+  const uiBorder = "rgba(61, 70, 84, 0.72)";
+  /** Фото фон көрінісі: намаз блогы мөлдір панель */
+  const glassCard = "rgba(18, 21, 28, 0.52)";
+  const glassHistory = "rgba(18, 21, 28, 0.58)";
   const cardShadow = Platform.select({
     ios: {
       shadowColor: "#000",
@@ -307,37 +627,54 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     android: { elevation: isDark ? 2 : 1 },
     default: {},
   });
-  const glassCard = isDark ? "rgba(6, 8, 12, 0.88)" : "rgba(6, 10, 14, 0.82)";
-  const glassBorder = "rgba(255,255,255,0.16)";
-
   return StyleSheet.create({
-    bgRoot: { flex: 1 },
-    bgScrim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: isDark ? "rgba(0,0,0,0.48)" : "rgba(0,0,0,0.38)",
+    bgRoot: { flex: 1, backgroundColor: colors.bg },
+    topChrome: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 12,
+      paddingBottom: 6,
+      backgroundColor: colors.bg,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
-    scrollRoot: { flex: 1, backgroundColor: "transparent" },
-    content: { padding: 16, paddingTop: 12, paddingBottom: 40 },
-    err: { color: "#fecaca", marginBottom: 6, fontSize: 14, lineHeight: 20, fontWeight: "700" },
+    topChromeCenter: { flex: 1, minWidth: 0 },
+    scrollRoot: { flex: 1, backgroundColor: colors.bg },
+    content: Platform.select({
+      web: {
+        width: "100%",
+        maxWidth: "100%",
+        alignSelf: "stretch",
+        paddingHorizontal: 6,
+        paddingTop: 10,
+        paddingBottom: 40,
+      },
+      default: {
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        paddingBottom: 40,
+      },
+    }),
+    err: { color: "#FFFFFF", marginBottom: 6, fontSize: 14, lineHeight: 20, fontWeight: "800" },
     errBanner: {
       marginBottom: 16,
       paddingVertical: 14,
       paddingHorizontal: 16,
-      backgroundColor: glassCard,
+      backgroundColor: "#1c1416",
       borderRadius: 16,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(239, 68, 68, 0.45)" : "rgba(239, 68, 68, 0.32)",
+      borderColor: "#9b2c2c",
       ...cardShadow,
     },
-    errHint: { color: inkMuted, fontSize: 12, lineHeight: 17, marginBottom: 10 },
+    errHint: { color: inkSoft, fontSize: 12, lineHeight: 17, marginBottom: 10 },
     retryButton: {
       alignSelf: "flex-start",
       paddingVertical: 10,
       paddingHorizontal: 18,
       borderRadius: 14,
       borderWidth: 1.5,
-      borderColor: "rgba(255,255,255,0.55)",
-      backgroundColor: "rgba(255,255,255,0.12)",
+      borderColor: "#9aa3b2",
+      backgroundColor: "#252a33",
     },
     retryButtonPressed: { opacity: 0.88 },
     retryButtonDisabled: { opacity: 0.65 },
@@ -346,8 +683,151 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontSize: 15,
       fontWeight: "800",
     },
-    table: {
-      marginTop: 4,
+    /** Қағба панелі + оның астындағы хижра/григориан карточкасы */
+    summaryColumn: {
+      marginBottom: 18,
+      alignSelf: "stretch",
+    },
+    /** Қағба фонындағы намаз панелі (тізім + жасыл жол) */
+    kaabaPrayerPanel: {
+      width: "100%",
+      minHeight: 320,
+      borderRadius: 18,
+      overflow: "hidden",
+      ...cardShadow,
+    },
+    kaabaPrayerPanelImage: {
+      borderRadius: 18,
+    },
+    kaabaScrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0, 0, 0, 0.4)",
+    },
+    frostedCard: {
+      margin: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "rgba(255, 255, 255, 0.14)",
+      backgroundColor: "rgba(14, 16, 20, 0.58)",
+      padding: 12,
+    },
+    ptLoadingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginBottom: 10,
+    },
+    ptLoadingTxt: {
+      color: inkMuted,
+      fontSize: 13,
+      fontWeight: "600",
+    },
+    verticalTimes: {
+      alignSelf: "stretch",
+    },
+    ptRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 9,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      marginBottom: 3,
+    },
+    ptRowHi: {
+      backgroundColor: NEXT_PRAYER_STRIP_HEX,
+    },
+    ptRowPast: {
+      opacity: 0.9,
+    },
+    ptNameCol: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "center",
+    },
+    ptName: {
+      color: ink,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    ptNamePast: {
+      color: "rgba(255, 255, 255, 0.88)",
+    },
+    ptNameHi: {
+      color: "#FFFFFF",
+    },
+    ptCountdown: {
+      marginTop: 2,
+      color: "rgba(255,255,255,0.9)",
+      fontSize: 11,
+      fontWeight: "800",
+      fontVariant: ["tabular-nums"],
+      letterSpacing: 0.25,
+    },
+    ptIconBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: "center",
+      justifyContent: "center",
+      marginHorizontal: 6,
+      backgroundColor: "rgba(255,255,255,0.08)",
+    },
+    ptIconBtnActive: {
+      backgroundColor: "rgba(36, 161, 123, 0.22)",
+    },
+    ptIconBtnOnGreen: {
+      backgroundColor: "rgba(255,255,255,0.16)",
+    },
+    ptIconBtnDisabled: {
+      opacity: 0.48,
+    },
+    ptIconBtnSpacer: {
+      width: 46,
+      height: 34,
+    },
+    ptTime: {
+      minWidth: 52,
+      textAlign: "right",
+      color: ink,
+      fontSize: 15,
+      fontWeight: "800",
+      fontVariant: ["tabular-nums"],
+    },
+    ptTimePast: {
+      color: "rgba(255, 255, 255, 0.9)",
+    },
+    ptTimeHi: {
+      color: "#FFFFFF",
+    },
+    ptGreenStrip: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 10,
+      paddingVertical: 11,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: NEXT_PRAYER_STRIP_HEX,
+    },
+    ptGreenStripLeft: {
+      flex: 1,
+      color: "#FFFFFF",
+      fontSize: 15,
+      fontWeight: "800",
+      marginRight: 8,
+    },
+    ptGreenStripRight: {
+      color: "#FFFFFF",
+      fontSize: 15,
+      fontWeight: "900",
+      fontVariant: ["tabular-nums"],
+      letterSpacing: 0.3,
+    },
+    ptDateFooter: {
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: "rgba(255,255,255,0.18)",
     },
     cityLine: {
       color: inkMuted,
@@ -356,49 +836,12 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "600",
       letterSpacing: 0.2,
     },
-    notifSoundHint: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
-      marginTop: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: uiBorder,
-      backgroundColor: "rgba(0,0,0,0.32)",
-    },
-    notifSoundHintTextWrap: { flex: 1 },
-    notifSoundHintMain: {
-      color: ink,
-      fontSize: 13,
-      lineHeight: 18,
-      fontWeight: "600",
-      marginBottom: 4,
-    },
-    notifSoundHintLink: {
-      color: "#B9F6CA",
-      fontSize: 12,
-      fontWeight: "800",
-    },
-    summaryCard: {
-      borderWidth: 1,
-      borderColor: glassBorder,
-      backgroundColor: glassCard,
-      borderRadius: 26,
-      padding: 18,
-      marginBottom: 18,
-      ...cardShadow,
-    },
     hijriHero: {
-      color: inkGold,
+      color: ink,
       fontSize: 22,
       fontWeight: "800",
       marginBottom: 6,
       letterSpacing: -0.3,
-      textShadowColor: "rgba(0,0,0,0.45)",
-      textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 3,
     },
     gregHero: {
       color: ink,
@@ -409,15 +852,15 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     hijriNote: { color: inkSoft, fontSize: 11, lineHeight: 16, marginBottom: 4 },
     historyCard: {
       borderWidth: 1,
-      borderColor: glassBorder,
-      backgroundColor: glassCard,
+      borderColor: uiBorder,
+      backgroundColor: glassHistory,
       borderRadius: 20,
       padding: 16,
       marginBottom: 16,
       ...cardShadow,
     },
     historyTitle: {
-      color: inkGold,
+      color: ink,
       fontSize: 15,
       fontWeight: "800",
       marginBottom: 6,

@@ -1,6 +1,7 @@
 # Шежіре дереккөздері (Genealogy Sources)
 
-**Sprint:** GENEALOGY-P0 · **Мақсаты:** әр ру/тribe `genealogy_source_refs.source_key` арқылы осы тізімге сілтеме жасайды.  
+**Sprint:** GENEALOGY-P0 · **Каталог:** `db/shezhire_catalog_data.py` + `scripts/build_shezhire_bundled.py` → `genealogy-p0.json` (v4, ~191 node).  
+**Мақсаты:** әр ру/тribe `genealogy_source_refs.source_key` арқылы осы тізімде сілтеме жасайды.  
 Келешек **AI Grounding** фазasında LLM тек осы кілттермен расталған деректерді қайтара алады.
 
 ---
@@ -13,6 +14,7 @@
 | `shakarim_shezhire` | Шәкәрім Құдайбердіұлы (1858–1931) | «Шежіре-тарих», ру атаулары мен байланыстары | **P0 — негізгі** |
 | `nas_ethnography_kz` | ҚР Ұлттық Ғылым академиясы (этнография) | Қазақ ру-тайпа этнографиялық зерттеулері | **P0 — верификация** |
 | `wikipedia_kk_zhuz` | Wikipedia (kk) | Үл жүз / Орта жүз / Кіші жүз шолу | **P2 — тек UI шолу, citation емес** |
+| `genealogy_public_figure_bio` | Жариялаған биография / сұхбат | Аtaқ tylygalar ru baylanysy | **P1 — person node** |
 
 ---
 

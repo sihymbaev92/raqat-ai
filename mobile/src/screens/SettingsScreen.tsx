@@ -1,105 +1,159 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  Pressable,
   Switch,
-  ActivityIndicator,
-  TextInput,
   Linking,
   Platform,
+  Image
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import * as Clipboard from "expo-clipboard";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ThemeColors } from "../theme/colors";
 import type { MoreStackParamList } from "../navigation/types";
-import { useAppTheme, type ThemeMode } from "../theme/ThemeContext";
+import { useAppTheme } from "../theme/ThemeContext";
+import {
+  COLOR_PALETTE_ORDER,
+  paletteChipColorsForScheme,
+  type ColorPaletteId,
+} from "../theme/themePalettes";
+import {
+  THEME_SCHEME_DARK_ORDER,
+  THEME_SCHEME_LIGHT_ORDER,
+  themeSchemePreview,
+  type ThemeSchemeId,
+} from "../theme/themeSchemes";
 import { kk } from "../i18n/kk";
-import { getRaqatApiBase, saveRaqatApiBaseOverride } from "../config/raqatApiBase";
+import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
+import { menuIconAssets } from "../theme/menuIconAssets";
+import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
 import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
-import { runContentSyncWithIncrementalPatches } from "../services/contentSync";
-import { readContentSyncState } from "../services/contentSync";
-import {
-  fetchPlatformLiveness,
-  fetchPlatformReadiness,
-  fetchContentStats,
-  postAuthLogin,
-  type ContentStatsPayload,
-  type HealthPayload,
-  type ReadinessPayload,
-} from "../services/platformApiClient";
+import { postAuthLogin } from "../services/platformApiClient";
 import {
   clearLoginTokens,
   getStoredPlatformUserId,
   saveLoginTokens,
   getValidAccessToken,
 } from "../storage/authTokens";
-import {
-  getSelectedCity,
-  getNotifEnabled,
-  setNotifEnabled,
-  getIftarEnabled,
-  setIftarEnabled,
-} from "../storage/prefs";
-import { loadPrayerCache } from "../storage/prayerCache";
-import { loadQuranListCache } from "../storage/quranListCache";
-import { loadHadithCorpus } from "../storage/hadithCorpus";
-import {
-  requestNotificationPermissions,
-  reschedulePrayerNotifications,
-} from "../services/prayerNotifications";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { AppleSignInButton, GoogleSignInBlock } from "../components/AccountLoginModal";
-import { PhoneAuthBlock } from "../components/PhoneAuthBlock";
+import { SettingsAccountLoginSection } from "../components/settings/SettingsAccountLoginSection";
 import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
-import { ExpoSpeechRecognitionModule } from "expo-speech-recognition";
+import { syncFamilyTreeWithServerBidirectional } from "../storage/familyTreeSync";
+import { syncQuranAyahMarkersWithServerBidirectional } from "../storage/quranAyahMarkers";
+import { syncQuranLastReadWithServerBidirectional } from "../storage/quranLastRead";
+import {
+  SettingsSection,
+  SettingsCard,
+  SettingsRow,
+  SettingsRadioList,
+  makeSettingsStyles,
+} from "../components/settings/settingsUi";
+import { SettingsQiblaSection } from "../components/settings/SettingsQiblaSection";
+import { navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
+import { ScreenFitScrollView } from "../components/ScreenFit";
+import {
+  APP_LOCALE_OPTIONS,
+  setCurrentLocale,
+  useAppLocale,
+  type AppLocale,
+} from "../i18n/runtime";
 
-const VOICE_DIAG_KEY = "raqat_voice_diag_v1";
-type VoiceDiagEntry = {
-  at: number;
-  transcript: string;
-  action: string;
-  lang: "kk-KZ" | "ru-RU";
-};
+const COMPACT_COLOR_PALETTES: ColorPaletteId[] = ["default", "sapphire", "violet", "rose"];
 
 type SettingsMoreLink = keyof Pick<
   MoreStackParamList,
-  "TelegramInfo" | "Ecosystem" | "Halal" | "RaqatAI"
+  "TelegramInfo" | "Ecosystem" | "Halal" | "ImamAI"
 >;
 
-type OfflineQualitySnapshot = {
-  hadithRows: number;
-  quranSurahRows: number;
-  quranSavedAt: string | null;
-  syncEtag: string | null;
-  syncSince: string | null;
-  checkedAt: string;
-};
+function labelForThemeScheme(id: ThemeSchemeId): string {
+  switch (id) {
+    case "noir":
+      return kk.settings.themeSchemeNoir;
+    case "forest":
+      return kk.settings.themeSchemeForest;
+    case "teal":
+      return kk.settings.themeSchemeTeal;
+    case "ocean":
+      return kk.settings.themeSchemeOcean;
+    case "wine":
+      return kk.settings.themeSchemeWine;
+    case "light":
+      return kk.settings.themeSchemeLight;
+    case "midnight":
+      return kk.settings.themeSchemeMidnight;
+    case "meadow":
+      return kk.settings.themeSchemeMeadow;
+    case "mintDay":
+      return kk.settings.themeSchemeMintDay;
+    case "sky":
+      return kk.settings.themeSchemeSky;
+    case "sand":
+      return kk.settings.themeSchemeSand;
+    case "blush":
+      return kk.settings.themeSchemeBlush;
+    default: {
+      const _exhaustive: never = id;
+      return _exhaustive;
+    }
+  }
+}
+
+function labelForColorPalette(id: ColorPaletteId): string {
+  switch (id) {
+    case "default":
+      return kk.settings.themePaletteDefault;
+    case "sapphire":
+      return kk.settings.themePaletteSapphire;
+    case "violet":
+      return kk.settings.themePaletteViolet;
+    case "rose":
+      return kk.settings.themePaletteRose;
+    case "forest":
+      return kk.settings.themePaletteForest;
+    case "ember":
+      return kk.settings.themePaletteEmber;
+    case "gold":
+      return kk.settings.themePaletteGold;
+    case "indigo":
+      return kk.settings.themePaletteIndigo;
+    case "mint":
+      return kk.settings.themePaletteMint;
+    case "lavender":
+      return kk.settings.themePaletteLavender;
+    case "crimson":
+      return kk.settings.themePaletteCrimson;
+    case "ocean":
+      return kk.settings.themePaletteOcean;
+    case "coral":
+      return kk.settings.themePaletteCoral;
+    case "plum":
+      return kk.settings.themePalettePlum;
+    case "sand":
+      return kk.settings.themePaletteSand;
+    case "midnight":
+      return kk.settings.themePaletteMidnight;
+    default: {
+      const _exhaustive: never = id;
+      return _exhaustive;
+    }
+  }
+}
 
 export function SettingsScreen() {
-  const { colors, mode, setMode } = useAppTheme();
+  const { colors, themeScheme, setThemeScheme, colorPalette, setColorPalette, isDark } = useAppTheme();
+  const locale = useAppLocale();
+  const { tr, translated } = useKkAutoTranslator();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
+  useTabHomeBackHeader(navigation, colors);
   const insets = useSafeAreaInsets();
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [notif, setNotif] = useState(true);
-  const [iftar, setIftar] = useState(false);
-  const [permHint, setPermHint] = useState(false);
   const [apiBase, setApiBase] = useState(() => getRaqatApiBase());
-  const [apiBaseInput, setApiBaseInput] = useState(() => getRaqatApiBase());
-  const [apiLoading, setApiLoading] = useState(false);
-  const [apiOk, setApiOk] = useState<boolean | null>(null);
-  const [health, setHealth] = useState<HealthPayload | null>(null);
-  const [readiness, setReadiness] = useState<ReadinessPayload | null>(null);
-  const [stats, setStats] = useState<ContentStatsPayload | null>(null);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncHint, setSyncHint] = useState<string | null>(null);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginBusy, setLoginBusy] = useState(false);
@@ -107,186 +161,38 @@ export function SettingsScreen() {
   const [oauthMsg, setOauthMsg] = useState<string | null>(null);
   const [platformPid, setPlatformPid] = useState<string | null>(null);
   const [supportAccountCopied, setSupportAccountCopied] = useState(false);
-  const [voiceDiag, setVoiceDiag] = useState<VoiceDiagEntry[]>([]);
-  const [voiceDiagCopied, setVoiceDiagCopied] = useState(false);
-  const [voiceHealthBusy, setVoiceHealthBusy] = useState(false);
-  const [voiceHealthReport, setVoiceHealthReport] = useState<string | null>(null);
-  const [offlineQualityLoading, setOfflineQualityLoading] = useState(false);
-  const [offlineQuality, setOfflineQuality] = useState<OfflineQualitySnapshot | null>(null);
-
-  const load = useCallback(async () => {
-    const c = await getSelectedCity();
-    setCity(c.city);
-    setCountry(c.country);
-    setNotif(await getNotifEnabled());
-    setIftar(await getIftarEnabled());
-  }, []);
-
-  const refreshOfflineQuality = useCallback(async () => {
-    setOfflineQualityLoading(true);
-    try {
-      const [quranList, hadithCorpus, syncState] = await Promise.all([
-        loadQuranListCache(),
-        loadHadithCorpus(),
-        readContentSyncState(),
-      ]);
-      setOfflineQuality({
-        hadithRows: hadithCorpus?.hadiths?.length ?? 0,
-        quranSurahRows: quranList?.list?.length ?? 0,
-        quranSavedAt: quranList?.savedAt ?? null,
-        syncEtag: syncState.etag,
-        syncSince: syncState.since,
-        checkedAt: new Date().toISOString(),
-      });
-    } finally {
-      setOfflineQualityLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const runManualContentSync = useCallback(async () => {
-    const base = getRaqatApiBase();
-    if (!base) return;
-    setSyncLoading(true);
-    setSyncHint(null);
-    try {
-      const bearer = await getValidAccessToken();
-      const r = await runContentSyncWithIncrementalPatches(base, {
-        timeoutMs: 120_000,
-        accessToken: bearer || undefined,
-      });
-      if (r.unchanged) {
-        setSyncHint(kk.settings.contentSyncUnchanged);
-      } else if (r.patch) {
-        const { quranPatched, hadithStored, errors } = r.patch;
-        let msg = kk.settings.contentSyncDone(quranPatched, hadithStored);
-        if (errors.length) {
-          msg += ` · ${errors.length} ескерту`;
-        }
-        setSyncHint(msg);
-      } else {
-        setSyncHint(kk.settings.contentSyncUnchanged);
-      }
-    } catch {
-      setSyncHint(kk.settings.contentSyncError);
-    } finally {
-      setSyncLoading(false);
-    }
-  }, []);
-
-  const checkPlatformApi = useCallback(async () => {
-    const base = getRaqatApiBase();
-    setApiBase(base);
-    setApiBaseInput(base);
-    if (!base) {
-      setApiOk(null);
-      setHealth(null);
-      setReadiness(null);
-      setStats(null);
-      setApiLoading(false);
-      return;
-    }
-    setApiLoading(true);
-    setApiOk(null);
-    try {
-      const [hr, sr, rr] = await Promise.allSettled([
-        fetchPlatformLiveness(base),
-        fetchContentStats(base),
-        fetchPlatformReadiness(base),
-      ]);
-      const h = hr.status === "fulfilled" ? hr.value : null;
-      const s = sr.status === "fulfilled" ? sr.value : null;
-      const rd = rr.status === "fulfilled" ? rr.value : null;
-      setHealth(h);
-      setStats(s);
-      setReadiness(rd);
-      /** Жетімділікті тек /health (немесе /api/v1/info) бойынша — дерекқор 503 /ready-де DB мәселесін «байланыс жоқ» деп көрсетпейді. */
-      const healthOk = h != null && h.status === "ok";
-      setApiOk(healthOk);
-    } catch {
-      setHealth(null);
-      setReadiness(null);
-      setStats(null);
-      setApiOk(false);
-    } finally {
-      setApiLoading(false);
-    }
-  }, []);
-
-  const applyApiBase = useCallback(async () => {
-    const next = await saveRaqatApiBaseOverride(apiBaseInput);
-    setApiBase(next);
-    await checkPlatformApi();
-  }, [apiBaseInput, checkPlatformApi]);
-
   useFocusEffect(
     useCallback(() => {
-      void checkPlatformApi();
-      void refreshOfflineQuality();
       void (async () => {
+        await hydrateRaqatApiBaseOverride();
+        setApiBase(getRaqatApiBase());
         setPlatformPid(await getStoredPlatformUserId());
-        try {
-          const rawDiag = await AsyncStorage.getItem(VOICE_DIAG_KEY);
-          const parsed = rawDiag ? (JSON.parse(rawDiag) as VoiceDiagEntry[]) : [];
-          setVoiceDiag(Array.isArray(parsed) ? parsed.slice(-8).reverse() : []);
-        } catch {
-          setVoiceDiag([]);
-        }
       })();
-    }, [checkPlatformApi, refreshOfflineQuality])
+    }, [])
   );
 
   const styles = makeStyles(colors);
-
-  const cycleTheme = () => {
-    const order: ThemeMode[] = ["dark", "light", "system"];
-    const i = order.indexOf(mode);
-    setMode(order[(i + 1) % order.length]);
-  };
-
-  const themeLabel =
-    mode === "dark"
-      ? kk.settings.themeDark
-      : mode === "light"
-        ? kk.settings.themeLight
-        : kk.settings.themeSystem;
-
-  const rescheduleFromCache = async () => {
-    const cached = await loadPrayerCache();
-    if (!cached || cached.error) return;
-    const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
-    await reschedulePrayerNotifications(cached, {
-      enabled: en,
-      iftarExtra: ift,
-    });
-  };
-
-  const onNotifToggle = async (v: boolean) => {
-    if (v) {
-      const ok = await requestNotificationPermissions();
-      setPermHint(!ok);
-      if (!ok) return;
-    }
-    setNotif(v);
-    await setNotifEnabled(v);
-    await rescheduleFromCache();
-  };
+  const ui = makeSettingsStyles(colors);
 
   const openMore = (screen: SettingsMoreLink) => {
-    navigation.navigate(screen);
+    navigateToMoreStackScreen(screen, undefined, navigation);
   };
 
   const scrollPadBottom = 24 + Math.max(insets.bottom, 8);
+
+  const syncAccountDataAfterLogin = useCallback(async () => {
+    await syncHatimWithServerBidirectional();
+    await syncQuranLastReadWithServerBidirectional();
+    await syncQuranAyahMarkersWithServerBidirectional();
+    await syncFamilyTreeWithServerBidirectional();
+  }, []);
 
   const onOAuthSuccess = useCallback(async () => {
     setOauthMsg(null);
     setLoginMsg(kk.settings.accountLoginOk);
     setPlatformPid(await getStoredPlatformUserId());
-    await syncHatimWithServerBidirectional();
-  }, []);
+    await syncAccountDataAfterLogin();
+  }, [syncAccountDataAfterLogin]);
 
   const donationUrl = getRaqatDonationUrl();
   const supportAccount = getRaqatSupportAccount();
@@ -303,408 +209,216 @@ export function SettingsScreen() {
     setTimeout(() => setSupportAccountCopied(false), 2000);
   }, [supportAccount]);
 
-  const copyVoiceDiag = useCallback(async () => {
-    const payload =
-      voiceDiag.length === 0
-        ? kk.settings.voiceDebugEmpty
-        : voiceDiag
-            .map((x) => {
-              const ts = new Date(x.at).toLocaleString();
-              return `[${ts}] (${x.lang}) ${x.action} :: ${x.transcript || "<empty>"}`;
-            })
-            .join("\n");
-    await Clipboard.setStringAsync(payload);
-    setVoiceDiagCopied(true);
-    setTimeout(() => setVoiceDiagCopied(false), 2000);
-  }, [voiceDiag]);
-
-  const runVoiceEngineHealthCheck = useCallback(async () => {
-    setVoiceHealthBusy(true);
-    try {
-      const M = ExpoSpeechRecognitionModule as unknown as {
-        getPermissionsAsync?: () => Promise<{ granted?: boolean; status?: string }>;
-        requestPermissionsAsync?: () => Promise<{ granted?: boolean; status?: string }>;
-        isRecognitionAvailableAsync?: () => Promise<boolean>;
-        getSupportedLocalesAsync?: () => Promise<string[]>;
-      };
-      const lines: string[] = [];
-      lines.push(`Platform: ${Platform.OS}`);
-      let permLine = "Permission: unknown";
-      try {
-        const p = (await M.getPermissionsAsync?.()) ?? (await M.requestPermissionsAsync?.());
-        if (p) {
-          const st = p.status ?? "unknown";
-          permLine = `Permission: ${st}${p.granted ? " (granted)" : ""}`;
-        }
-      } catch (e) {
-        permLine = `Permission check error: ${e instanceof Error ? e.message : String(e)}`;
-      }
-      lines.push(permLine);
-      try {
-        if (M.isRecognitionAvailableAsync) {
-          const ok = await M.isRecognitionAvailableAsync();
-          lines.push(`Recognition service: ${ok ? "available" : "unavailable"}`);
-        } else {
-          lines.push("Recognition service: method not exposed");
-        }
-      } catch (e) {
-        lines.push(`Recognition check error: ${e instanceof Error ? e.message : String(e)}`);
-      }
-      try {
-        if (M.getSupportedLocalesAsync) {
-          const locales = await M.getSupportedLocalesAsync();
-          const hasKk = locales.includes("kk-KZ");
-          const hasRu = locales.includes("ru-RU");
-          lines.push(`Locales: kk-KZ=${hasKk ? "yes" : "no"}, ru-RU=${hasRu ? "yes" : "no"}`);
-          lines.push(`Locales count: ${locales.length}`);
-        } else {
-          lines.push("Locales: method not exposed");
-        }
-      } catch (e) {
-        lines.push(`Locales check error: ${e instanceof Error ? e.message : String(e)}`);
-      }
-      setVoiceHealthReport(lines.join("\n"));
-    } finally {
-      setVoiceHealthBusy(false);
-    }
-  }, []);
+  const languageOptions = APP_LOCALE_OPTIONS.map((opt) => ({
+    id: opt.id,
+    label: opt.nativeLabel,
+  }));
 
   return (
-    <ScrollView
+    <ScreenFitScrollView
+      testID="screen-main-profile"
       style={styles.root}
-      contentContainerStyle={[styles.content, { paddingBottom: scrollPadBottom }]}
+      contentContainerStyle={styles.content}
+      bottom={scrollPadBottom}
     >
-      <Text style={styles.h1}>{kk.settings.title}</Text>
-
       {apiBase ? (
-        <>
-          <Text style={[styles.label, styles.accountSectionFirst]}>{kk.settings.accountSection}</Text>
-          <Text style={styles.hint}>{kk.settings.accountOAuthHint}</Text>
-          <Text style={styles.hint}>{kk.settings.accountHint}</Text>
-          {platformPid ? (
-            <Text style={styles.boxMuted}>{kk.settings.accountLoggedInAs(platformPid)}</Text>
-          ) : null}
-
-          <Text style={[styles.linkMethodTitle, styles.linkMethodTitleFirst]}>
-            {kk.settings.accountLinkPhoneTitle}
-          </Text>
-          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkPhoneSub}</Text>
-          <PhoneAuthBlock
-            busy={loginBusy}
-            setBusy={setLoginBusy}
-            onSuccess={() => void onOAuthSuccess()}
-            onError={(m) => {
+        <SettingsSection
+          colors={colors}
+          title={kk.settings.accountSection}
+          subtitle={kk.settings.accountSectionSub}
+        >
+          <SettingsAccountLoginSection
+            colors={colors}
+            platformPid={platformPid}
+            loginUser={loginUser}
+            loginPass={loginPass}
+            onLoginUserChange={setLoginUser}
+            onLoginPassChange={setLoginPass}
+            loginBusy={loginBusy}
+            onLoginBusyChange={setLoginBusy}
+            onAuthSuccess={() => void onOAuthSuccess()}
+            onOAuthError={(m) => {
               setOauthMsg(m || null);
               setLoginMsg(null);
             }}
-          />
-
-          <Text style={styles.linkMethodTitle}>{kk.settings.accountLinkGmailTitle}</Text>
-          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkGmailSub}</Text>
-          <GoogleSignInBlock
-            busy={loginBusy}
-            onError={(m: string) => {
-              setOauthMsg(m);
+            onLoginMessage={setLoginMsg}
+            onOAuthMessage={setOauthMsg}
+            onPasswordLogin={async () => {
+              const base = getRaqatApiBase();
+              if (!base) return;
+              setLoginBusy(true);
               setLoginMsg(null);
-            }}
-            onSuccess={() => void onOAuthSuccess()}
-          />
-
-          <Text style={styles.linkMethodTitle}>{kk.settings.accountLinkIcloudTitle}</Text>
-          <Text style={styles.linkMethodHint}>{kk.settings.accountLinkIcloudSub}</Text>
-          <AppleSignInButton
-            busy={loginBusy}
-            onError={(m: string) => {
-              setOauthMsg(m);
-              setLoginMsg(null);
-            }}
-            onSuccess={() => void onOAuthSuccess()}
-          />
-
-          <Text style={styles.oauthDivider}>— {kk.settings.accountOrPassword} —</Text>
-          <Text style={[styles.label, { marginTop: 4 }]}>{kk.settings.accountUsername}</Text>
-          <TextInput
-            style={styles.textIn}
-            placeholder={kk.settings.accountUsername}
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={loginUser}
-            onChangeText={setLoginUser}
-            editable={!loginBusy}
-          />
-          <Text style={styles.label}>{kk.settings.accountPassword}</Text>
-          <TextInput
-            style={styles.textIn}
-            placeholder={kk.settings.accountPassword}
-            placeholderTextColor={colors.muted}
-            secureTextEntry
-            value={loginPass}
-            onChangeText={setLoginPass}
-            editable={!loginBusy}
-          />
-          <View style={styles.rowBetween}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.syncBtn,
-                { flex: 1, marginRight: 8 },
-                pressed && { opacity: 0.88 },
-                loginBusy && { opacity: 0.85 },
-              ]}
-              onPress={async () => {
-                const base = getRaqatApiBase();
-                if (!base) return;
-                setLoginBusy(true);
-                setLoginMsg(null);
-                setOauthMsg(null);
-                try {
-                  const r = await postAuthLogin(base, loginUser, loginPass);
-                  if (r.ok && r.access_token && r.refresh_token) {
-                    await saveLoginTokens({
-                      access_token: r.access_token,
-                      refresh_token: r.refresh_token,
-                      expires_in: r.expires_in,
-                      platform_user_id: r.platform_user_id,
-                    });
-                    setLoginPass("");
-                    setLoginMsg(kk.settings.accountLoginOk);
-                    setPlatformPid(await getStoredPlatformUserId());
-                    await syncHatimWithServerBidirectional();
-                  } else {
-                    setLoginMsg(kk.settings.accountLoginFail);
-                  }
-                } finally {
-                  setLoginBusy(false);
+              setOauthMsg(null);
+              try {
+                const r = await postAuthLogin(base, loginUser, loginPass);
+                if (r.ok && r.access_token && r.refresh_token) {
+                  await saveLoginTokens({
+                    access_token: r.access_token,
+                    refresh_token: r.refresh_token,
+                    expires_in: r.expires_in,
+                    platform_user_id: r.platform_user_id,
+                  });
+                  setLoginPass("");
+                  setLoginMsg(kk.settings.accountLoginOk);
+                  setPlatformPid(await getStoredPlatformUserId());
+                  await syncAccountDataAfterLogin();
+                } else {
+                  setLoginMsg(kk.settings.accountLoginFail);
                 }
-              }}
-              disabled={loginBusy || !loginUser.trim() || !loginPass}
-            >
-              {loginBusy ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.syncBtnTxt}>{kk.settings.accountLogin}</Text>
-              )}
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.smallBtn,
-                { minWidth: 100, justifyContent: "center" },
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={async () => {
-                await clearLoginTokens();
-                setPlatformPid(null);
-                setLoginMsg(null);
-                setOauthMsg(null);
-              }}
-            >
-              <Text style={styles.smallBtnTxt}>{kk.settings.accountLogout}</Text>
-            </Pressable>
-          </View>
-          {oauthMsg ? <Text style={styles.warn}>{oauthMsg}</Text> : null}
-          {loginMsg ? <Text style={styles.syncHint}>{loginMsg}</Text> : null}
-        </>
-      ) : (
-        <Text style={[styles.boxMuted, styles.accountApiMissing]}>{kk.settings.platformApiNotConfigured}</Text>
-      )}
-
-      <Text style={styles.label}>{kk.settings.theme}</Text>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
-        onPress={cycleTheme}
-      >
-        <Text style={styles.rowTxt}>{themeLabel}</Text>
-        <Text style={styles.chev}>›</Text>
-      </Pressable>
-
-      <Text style={styles.label}>{kk.settings.cityTitle}</Text>
-      <Text style={styles.box}>
-        {city}, {country}
-      </Text>
-
-      <Text style={styles.label}>{kk.prayer.notifications}</Text>
-      <View style={styles.rowBetween}>
-        <Text style={styles.rowTxt}>{kk.prayer.enableNotif}</Text>
-        <Switch value={notif} onValueChange={onNotifToggle} />
-      </View>
-      {permHint ? (
-        <Text style={styles.warn}>{kk.settings.notifPermission}</Text>
+              } finally {
+                setLoginBusy(false);
+              }
+            }}
+            onLogout={async () => {
+              await clearLoginTokens();
+              setPlatformPid(null);
+              setLoginMsg(null);
+              setOauthMsg(null);
+            }}
+            oauthMsg={oauthMsg}
+            loginMsg={loginMsg}
+          />
+        </SettingsSection>
       ) : null}
-      <Text style={styles.hint}>{kk.prayer.notifHint}</Text>
 
-      <View style={styles.rowBetween}>
-        <Text style={styles.rowTxt}>{kk.prayer.iftarExtra}</Text>
-        <Switch
-          value={iftar}
-          onValueChange={async (v) => {
-            setIftar(v);
-            await setIftarEnabled(v);
-            await rescheduleFromCache();
-          }}
-        />
-      </View>
-      <Text style={styles.hint}>{kk.prayer.iftarHint}</Text>
-
-      <Text style={styles.label}>{kk.settings.platformApi}</Text>
-      <TextInput
-        style={styles.textIn}
-        value={apiBaseInput}
-        onChangeText={setApiBaseInput}
-        autoCapitalize="none"
-        autoCorrect={false}
-        keyboardType="url"
-        placeholder="http://192.168.0.148:8787"
-        placeholderTextColor={colors.muted}
-      />
-      <Pressable
-        style={({ pressed }) => [
-          styles.smallBtn,
-          { marginLeft: 0, alignSelf: "flex-start", marginTop: 8 },
-          pressed && { opacity: 0.85 },
-        ]}
-        onPress={() => void applyApiBase()}
-        disabled={apiLoading}
+      <SettingsSection
+        colors={colors}
+        title={kk.settings.languageSection}
+        subtitle={kk.settings.languageSectionSub}
       >
-        <Text style={styles.smallBtnTxt}>API сақтау</Text>
-      </Pressable>
-      {!apiBase ? (
-        <>
-          <Text style={styles.boxMuted}>{kk.settings.platformApiNotConfigured}</Text>
-          <Text style={styles.hint}>{kk.settings.platformApiHint}</Text>
-        </>
-      ) : (
-        <>
-          <Text style={styles.monoBox} selectable>
-            {apiBase}
-          </Text>
-          <View style={styles.rowBetween}>
-            <Text style={styles.rowTxt} numberOfLines={2}>
-              {apiLoading || apiOk === null
-                ? kk.settings.platformApiChecking
-                : apiOk
-                  ? `${kk.settings.platformApiOk}${health?.version ? ` · ${kk.settings.platformApiVersion(health.version)}` : ""}`
-                  : kk.settings.platformApiError}
-            </Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.smallBtn,
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={checkPlatformApi}
-              disabled={apiLoading}
-            >
-              <Text style={styles.smallBtnTxt}>{kk.settings.platformApiRefresh}</Text>
-            </Pressable>
-          </View>
-          {!apiLoading && apiOk === false ? (
-            <Text style={styles.hint}>{kk.settings.platformApiErrorHint}</Text>
-          ) : null}
-          {stats?.ok && stats.tables?.hadith?.rows != null ? (
-            <Text style={styles.hint}>
-              {kk.settings.platformHadithLine(
-                stats.tables.hadith.rows,
-                stats.tables.hadith.text_kk_pct ?? 0
-              )}
-            </Text>
-          ) : null}
-          {stats?.ok && stats.tables?.quran?.rows != null ? (
-            <Text style={styles.hint}>
-              {kk.settings.platformQuranLine(
-                stats.tables.quran.rows,
-                stats.tables.quran.text_kk_pct ?? 0
-              )}
-            </Text>
-          ) : null}
-          {readiness?.ok && readiness.backend ? (
-            <Text style={styles.hint}>
-              {kk.settings.platformReadyHint(readiness.backend)}
-            </Text>
-          ) : null}
-          {readiness &&
-          readiness.ok === false &&
-          readiness.status !== "unsupported" &&
-          readiness.status !== "network" &&
-          readiness.status !== "parse_error" ? (
-            <Text style={styles.warn}>
-              {readiness.error
-                ? `${kk.settings.platformReadyFail}: ${readiness.error}`
-                : kk.settings.platformReadyFail}
-            </Text>
-          ) : null}
-          {stats && stats.ok === false ? (
-            <Text style={styles.warn}>
-              {stats.error === "db_not_found"
-                ? "Дерекқор табылмады (серверде global_clean.db немесе RAQAT_DB_PATH)."
-                : kk.common.error}
-            </Text>
-          ) : null}
+        <SettingsRadioList<AppLocale>
+          colors={colors}
+          options={languageOptions}
+          value={locale}
+          onChange={(next) => void setCurrentLocale(next)}
+        />
+      </SettingsSection>
 
-          <Text style={styles.label}>{kk.settings.contentSync}</Text>
-          <Text style={styles.hint}>{kk.settings.contentSyncHint}</Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.syncBtn,
-              (pressed || syncLoading) && { opacity: syncLoading ? 1 : 0.88 },
-              syncLoading && { opacity: 0.85 },
-            ]}
-            onPress={runManualContentSync}
-            disabled={syncLoading || apiLoading}
-            accessibilityRole="button"
-            accessibilityLabel={kk.settings.contentSync}
-          >
-            {syncLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.syncBtnTxt}>{kk.settings.contentSync}</Text>
-            )}
-          </Pressable>
-          {syncHint ? <Text style={styles.syncHint}>{syncHint}</Text> : null}
-        </>
-      )}
+      <SettingsSection
+        colors={colors}
+        title={kk.settings.sectionAppearance}
+      >
+        <Text style={[ui.rowLabel, styles.appearanceFieldTitle]}>{tr(kk.settings.themeBackgroundTitle)}</Text>
+        <Text style={[ui.hint, styles.appearanceGroupHint]}>{tr(kk.settings.themeBackgroundCompactHint)}</Text>
+        <View style={styles.themeSchemeGrid}>
+          {THEME_SCHEME_LIGHT_ORDER.map((sid) => {
+            const sel = themeScheme === sid;
+            const preview = themeSchemePreview(sid);
+            const idleBorder = preview.isDark ? "rgba(255,255,255,0.14)" : "rgba(15,23,42,0.1)";
+            return (
+              <Pressable
+                key={sid}
+                style={({ pressed }) => [
+                  styles.themeSchemeChip,
+                  {
+                    backgroundColor: preview.bg,
+                    borderColor: sel ? preview.accent : idleBorder,
+                    borderWidth: sel ? 2.5 : 1,
+                  },
+                  pressed && { opacity: 0.92 },
+                ]}
+                onPress={() => setThemeScheme(sid)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: sel }}
+                accessibilityLabel={labelForThemeScheme(sid)}
+              >
+                <View style={styles.themeSchemeSwatches}>
+                  <View
+                    style={[
+                      styles.themeSchemeSwatch,
+                      {
+                        backgroundColor: preview.card,
+                        borderColor: preview.isDark ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.08)",
+                      },
+                    ]}
+                  />
+                  <View style={[styles.themeSchemeSwatch, { backgroundColor: preview.accent }]} />
+                </View>
+                <Text style={[styles.themeSchemeChipTxt, { color: preview.label }]} numberOfLines={1}>
+                  {tr(labelForThemeScheme(sid))}
+                </Text>
+              </Pressable>
+            );
+          })}
+          {THEME_SCHEME_DARK_ORDER.map((sid) => {
+            const sel = themeScheme === sid;
+            const preview = themeSchemePreview(sid);
+            const idleBorder = preview.isDark ? "rgba(255,255,255,0.14)" : "rgba(15,23,42,0.1)";
+            return (
+              <Pressable
+                key={sid}
+                style={({ pressed }) => [
+                  styles.themeSchemeChip,
+                  {
+                    backgroundColor: preview.bg,
+                    borderColor: sel ? preview.accent : idleBorder,
+                    borderWidth: sel ? 2.5 : 1,
+                  },
+                  pressed && { opacity: 0.92 },
+                ]}
+                onPress={() => setThemeScheme(sid)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: sel }}
+                accessibilityLabel={labelForThemeScheme(sid)}
+              >
+                <View style={styles.themeSchemeSwatches}>
+                  <View
+                    style={[
+                      styles.themeSchemeSwatch,
+                      {
+                        backgroundColor: preview.card,
+                        borderColor: preview.isDark ? "rgba(255,255,255,0.12)" : "rgba(15,23,42,0.08)",
+                      },
+                    ]}
+                  />
+                  <View style={[styles.themeSchemeSwatch, { backgroundColor: preview.accent }]} />
+                </View>
+                <Text style={[styles.themeSchemeChipTxt, { color: preview.label }]} numberOfLines={1}>
+                  {tr(labelForThemeScheme(sid))}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={[ui.rowLabel, styles.appearanceAccentTitle]}>{tr(kk.settings.colorPaletteTitle)}</Text>
+        <View style={styles.paletteCompactRow}>
+          {COMPACT_COLOR_PALETTES.map((pid) => {
+            const sel = colorPalette === pid;
+            const chip = paletteChipColorsForScheme(themeScheme, pid);
+            return (
+              <Pressable
+                key={pid}
+                style={({ pressed }) => [
+                  styles.paletteChip,
+                  {
+                    backgroundColor: chip.fill,
+                    borderColor: sel ? colors.text : chip.rim,
+                    borderWidth: sel ? 2.5 : 1,
+                  },
+                  pressed && { opacity: 0.88 },
+                ]}
+                onPress={() => setColorPalette(pid)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: sel }}
+                accessibilityLabel={labelForColorPalette(pid)}
+              >
+                <Text style={[styles.paletteChipTxt, { color: chip.label }]} numberOfLines={1}>
+                  {tr(labelForColorPalette(pid))}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </SettingsSection>
 
-      <Text style={styles.label}>{kk.settings.offlineQualityTitle}</Text>
-      <Text style={styles.hint}>{kk.settings.offlineQualityHint}</Text>
-      <View style={styles.offlineCard}>
-        <View style={styles.rowBetween}>
-          <Text style={styles.rowTxt}>{kk.settings.offlineQualityApiStatus}</Text>
-          <Text style={apiOk ? styles.okTxt : styles.warnTxt}>
-            {apiOk == null ? "—" : apiOk ? kk.settings.offlineQualityApiOk : kk.settings.offlineQualityApiDown}
-          </Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={styles.rowTxt}>{kk.settings.offlineQualityHadithRows}</Text>
-          <Text style={styles.boxStatTxt}>{offlineQuality?.hadithRows ?? "—"}</Text>
-        </View>
-        <View style={styles.rowBetween}>
-          <Text style={styles.rowTxt}>{kk.settings.offlineQualityQuranRows}</Text>
-          <Text style={styles.boxStatTxt}>{offlineQuality?.quranSurahRows ?? "—"}</Text>
-        </View>
-        <Text style={styles.hint}>
-          {kk.settings.offlineQualitySyncState(
-            offlineQuality?.syncSince ?? null,
-            offlineQuality?.syncEtag ?? null
-          )}
-        </Text>
-        <Text style={styles.hint}>
-          {kk.settings.offlineQualitySavedAt(
-            offlineQuality?.quranSavedAt ?? null,
-            offlineQuality?.checkedAt ?? null
-          )}
-        </Text>
-        <Pressable
-          style={({ pressed }) => [styles.smallBtn, pressed && { opacity: 0.85 }]}
-          onPress={() => void refreshOfflineQuality()}
-          disabled={offlineQualityLoading}
-        >
-          {offlineQualityLoading ? (
-            <ActivityIndicator color={colors.accent} size="small" />
-          ) : (
-            <Text style={styles.smallBtnTxt}>{kk.settings.offlineQualityRefresh}</Text>
-          )}
-        </Pressable>
-      </View>
+      <SettingsQiblaSection
+        colors={colors}
+        onOpenQibla={() => {
+          navigateToRootStackScreen("Qibla");
+        }}
+      />
 
-      <Text style={[styles.label, styles.linksSectionLabel]}>{kk.settings.linksSection}</Text>
+      <SettingsSection colors={colors} title={kk.settings.sectionLinks} subtitle={kk.settings.sectionLinksSub}>
       <Pressable
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
         onPress={() => openMore("TelegramInfo")}
@@ -713,7 +427,7 @@ export function SettingsScreen() {
       >
         <View style={styles.rowLead}>
           <MaterialIcons name="telegram" size={22} color={colors.accent} />
-          <Text style={styles.rowTxt}>{kk.dashboard.telegramShort}</Text>
+          <Text style={styles.rowTxt}>{tr(kk.dashboard.telegramShort)}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
@@ -725,7 +439,7 @@ export function SettingsScreen() {
       >
         <View style={styles.rowLead}>
           <Text style={styles.rowEmoji}>🌐</Text>
-          <Text style={styles.rowTxt}>{kk.ecosystem.cardTitle}</Text>
+          <Text style={styles.rowTxt}>{tr(kk.ecosystem.cardTitle)}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
@@ -736,75 +450,42 @@ export function SettingsScreen() {
         accessibilityLabel={kk.features.halalTitle}
       >
         <View style={styles.rowLead}>
-          <Text style={styles.rowEmoji}>✅</Text>
-          <Text style={styles.rowTxt}>{kk.features.halalTitle}</Text>
+          <Image
+            source={menuIconAssets.tileHalal}
+            style={[styles.rowMenuIcon, styles.rowMenuIconPromo]}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+          <Text style={styles.rowTxt}>{tr(kk.features.halalTitle)}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
       <Pressable
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }, styles.rowGap]}
-        onPress={() => openMore("RaqatAI")}
+        onPress={() => openMore("ImamAI")}
         accessibilityRole="button"
         accessibilityLabel={kk.features.raqatAiTitle}
       >
         <View style={styles.rowLead}>
-          <Text style={styles.rowEmoji}>✨</Text>
-          <Text style={styles.rowTxt}>{kk.features.raqatAiTitle}</Text>
+          <Image
+            source={menuIconAssets.promoAi}
+            style={[styles.rowMenuIcon, styles.rowMenuIconPromo]}
+            resizeMode="contain"
+            accessibilityIgnoresInvertColors
+          />
+          <Text style={styles.rowTxt}>{tr(kk.features.raqatAiTitle)}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
+      </SettingsSection>
 
+      <SettingsSection colors={colors} title={kk.settings.sectionSupport}>
       <View style={styles.supportBlock}>
-        <Text style={[styles.supportTitle, { marginBottom: 10 }]}>{kk.settings.voiceDebugTitle}</Text>
-        {voiceDiag.length === 0 ? (
-          <Text style={styles.supportBody}>{kk.settings.voiceDebugEmpty}</Text>
-        ) : (
-          <View style={styles.voiceDiagList}>
-            {voiceDiag.map((x, idx) => (
-              <View key={`${x.at}-${idx}`} style={styles.voiceDiagItem}>
-                <Text style={styles.voiceDiagMeta}>
-                  {new Date(x.at).toLocaleTimeString()} · {x.lang} · {x.action}
-                </Text>
-                <Text style={styles.voiceDiagText} numberOfLines={2}>
-                  {x.transcript || "<empty>"}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-        <Pressable
-          style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
-          onPress={() => void copyVoiceDiag()}
-          accessibilityRole="button"
-          accessibilityLabel={kk.settings.voiceDebugCopy}
-        >
-          <Text style={styles.supportCopyBtnTxt}>
-            {voiceDiagCopied ? kk.settings.voiceDebugCopied : kk.settings.voiceDebugCopy}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
-          onPress={() => void runVoiceEngineHealthCheck()}
-          accessibilityRole="button"
-          accessibilityLabel="Voice Engine Health Check"
-        >
-          <Text style={styles.supportCopyBtnTxt}>
-            {voiceHealthBusy ? "Тексерілуде..." : "Engine health check"}
-          </Text>
-        </Pressable>
-        {voiceHealthReport ? (
-          <View style={styles.voiceHealthBox}>
-            <Text style={styles.voiceHealthText}>{voiceHealthReport}</Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.supportBlock}>
-        <Text style={styles.supportTitle}>{kk.settings.supportProjectTitle}</Text>
-        <Text style={styles.supportBody}>{kk.settings.supportProjectBody}</Text>
+        <Text style={styles.supportTitle}>{tr(kk.settings.supportProjectTitle)}</Text>
+        <Text style={styles.supportBody}>{tr(kk.settings.supportProjectBody)}</Text>
         {supportAccount ? (
           <>
-            <Text style={styles.supportAccountLabel}>{kk.settings.supportAccountLabel}</Text>
+            <Text style={styles.supportAccountLabel}>{tr(kk.settings.supportAccountLabel)}</Text>
             <View style={styles.supportAccountBox}>
               <Text style={styles.supportAccountMono} selectable>
                 {supportAccount}
@@ -817,12 +498,12 @@ export function SettingsScreen() {
               accessibilityLabel={kk.settings.supportAccountCopy}
             >
               <Text style={styles.supportCopyBtnTxt}>
-                {supportAccountCopied
+                {tr(supportAccountCopied
                   ? kk.settings.supportAccountCopied
-                  : kk.settings.supportAccountCopy}
+                  : kk.settings.supportAccountCopy)}
               </Text>
             </Pressable>
-            <Text style={styles.supportDisclaimer}>{kk.settings.supportAccountDisclaimer}</Text>
+            <Text style={styles.supportDisclaimer}>{tr(kk.settings.supportAccountDisclaimer)}</Text>
           </>
         ) : null}
         {donationUrl ? (
@@ -832,54 +513,37 @@ export function SettingsScreen() {
             accessibilityRole="button"
             accessibilityLabel={kk.settings.supportProjectOpen}
           >
-            <Text style={styles.supportBtnTxt}>{kk.settings.supportProjectOpen}</Text>
+            <Text style={styles.supportBtnTxt}>{tr(kk.settings.supportProjectOpen)}</Text>
           </Pressable>
         ) : null}
       </View>
-    </ScrollView>
+      </SettingsSection>
+      <GuideAutoTranslateBanner colors={colors} visible={translated} />
+    </ScreenFitScrollView>
   );
 }
 
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: 20 },
-    h1: { color: colors.text, fontSize: 22, fontWeight: "700", marginBottom: 16 },
-    oauthDivider: {
-      textAlign: "center",
-      color: colors.muted,
-      fontSize: 12,
-      marginVertical: 14,
-    },
-    label: { color: colors.muted, fontSize: 12, marginBottom: 8, marginTop: 12 },
+    content: { padding: 16, paddingBottom: 36 },
+    label: { color: colors.text, fontSize: 15, fontWeight: "600", marginBottom: 8, marginTop: 4 },
     linksSectionLabel: { marginTop: 28 },
     accountSectionFirst: { marginTop: 4 },
-    linkMethodTitle: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
-      marginTop: 18,
-      letterSpacing: 0.15,
-    },
-    linkMethodTitleFirst: { marginTop: 12 },
-    linkMethodHint: {
-      color: colors.muted,
-      fontSize: 12,
-      lineHeight: 17,
-      marginTop: 4,
-      marginBottom: 4,
-    },
     accountApiMissing: { marginBottom: 8 },
     rowGap: { marginTop: 8 },
     rowLead: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },
     rowEmoji: { fontSize: 20 },
+    rowMenuIcon: { width: 26, height: 26, opacity: 0.84 },
+    /** Халал / Имам ИИ — сәл ірі, фонсыз PNG */
+    rowMenuIconPromo: { width: 32, height: 32, opacity: 1 },
     row: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       backgroundColor: colors.card,
       padding: 16,
-      borderRadius: 12,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -889,28 +553,71 @@ function makeStyles(colors: ThemeColors) {
       justifyContent: "space-between",
       backgroundColor: colors.card,
       padding: 16,
-      borderRadius: 12,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 8,
     },
-    rowTxt: { color: colors.text, fontSize: 16, flex: 1 },
+    soundPick: { gap: 6, marginBottom: 10 },
+    soundRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      paddingVertical: 4,
+      paddingLeft: 6,
+      paddingRight: 4,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    soundRowMain: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 10,
+      paddingHorizontal: 8,
+      minHeight: 44,
+    },
+    soundRowSelected: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSurface,
+    },
+    soundPreviewHit: {
+      padding: 6,
+      marginVertical: 2,
+      borderRadius: 10,
+    },
+    soundPreviewSpacer: { width: 40 },
+    soundMark: { width: 22, textAlign: "right", fontSize: 16, color: colors.muted },
+    rowTxt: { color: colors.text, fontSize: 16, flex: 1, fontWeight: "700" },
     chev: { color: colors.muted, fontSize: 20 },
     box: {
       backgroundColor: colors.card,
       padding: 14,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
       fontSize: 16,
     },
     hint: { color: colors.muted, fontSize: 13, marginTop: 8, lineHeight: 18 },
-    warn: { color: colors.error, fontSize: 13, marginTop: 8 },
+    warn: { color: colors.error, fontSize: 13, marginTop: 8, lineHeight: 19 },
+    warnBlock: { marginTop: 8, gap: 8 },
+    warnLinkBtn: {
+      alignSelf: "flex-start",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSurface,
+    },
+    warnLinkTxt: { color: colors.accent, fontSize: 13, fontWeight: "800" },
     boxMuted: {
       backgroundColor: colors.card,
       padding: 14,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.muted,
@@ -920,7 +627,7 @@ function makeStyles(colors: ThemeColors) {
     monoBox: {
       backgroundColor: colors.card,
       padding: 12,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       color: colors.text,
@@ -931,43 +638,66 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 8,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 12,
+      borderRadius: 16,
       paddingHorizontal: 14,
       paddingVertical: 12,
       backgroundColor: colors.card,
       color: colors.text,
       fontSize: 16,
     },
+    /** Карточка ішіндегі алғашқы өріс: сыртқы label бар, margin қысқартады. */
+    textInInCard: {
+      marginTop: 0,
+      backgroundColor: "#11151B",
+    },
+    cardNote: {
+      marginTop: 12,
+      color: colors.muted,
+      fontSize: 15,
+      lineHeight: 22,
+    },
+    monoInCard: {
+      marginTop: 12,
+      paddingTop: 12,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      fontFamily: "monospace",
+      fontSize: 13,
+      color: colors.text,
+      lineHeight: 20,
+    },
+    apiCardRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      marginTop: 10,
+      paddingTop: 4,
+    },
+    apiStatusTxt: {
+      flex: 1,
+      paddingRight: 10,
+      fontSize: 15,
+    },
+    hintInCard: {
+      marginTop: 10,
+    },
+    warnInCard: {
+      marginTop: 10,
+    },
     smallBtn: {
       paddingVertical: 8,
       paddingHorizontal: 12,
-      borderRadius: 10,
+      borderRadius: 12,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       marginLeft: 8,
     },
     smallBtnTxt: { color: colors.accent, fontSize: 14, fontWeight: "600" },
-    syncBtn: {
-      marginTop: 10,
-      backgroundColor: colors.accent,
-      paddingVertical: 14,
-      borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: 48,
-    },
-    syncBtnTxt: { color: "#ffffff", fontWeight: "700", fontSize: 16 },
-    syncHint: {
-      color: colors.muted,
-      fontSize: 13,
-      marginTop: 10,
-      lineHeight: 18,
-    },
     offlineCard: {
       marginTop: 8,
       padding: 12,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -979,7 +709,7 @@ function makeStyles(colors: ThemeColors) {
     supportBlock: {
       marginTop: 28,
       padding: 16,
-      borderRadius: 12,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -1005,9 +735,9 @@ function makeStyles(colors: ThemeColors) {
       textAlign: "center",
     },
     supportAccountBox: {
-      backgroundColor: colors.card,
+      backgroundColor: "#11151B",
       padding: 12,
-      borderRadius: 12,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1023,7 +753,7 @@ function makeStyles(colors: ThemeColors) {
       paddingVertical: 10,
       paddingHorizontal: 16,
       borderRadius: 10,
-      backgroundColor: colors.card,
+      backgroundColor: "#11151B",
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1046,44 +776,118 @@ function makeStyles(colors: ThemeColors) {
       alignItems: "center",
     },
     supportBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 15 },
-    voiceDiagList: {
-      marginTop: 4,
+    mushafDensityRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: 8,
+      marginBottom: 8,
+      marginTop: 4,
     },
-    voiceDiagItem: {
-      backgroundColor: colors.bg,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 8,
-      paddingHorizontal: 10,
-    },
-    voiceDiagMeta: {
-      color: colors.muted,
-      fontSize: 11,
-      lineHeight: 16,
+    appearanceFieldTitle: {
+      marginTop: 2,
       marginBottom: 2,
+      fontWeight: "800",
     },
-    voiceDiagText: {
-      color: colors.text,
-      fontSize: 13,
-      lineHeight: 18,
-      fontWeight: "600",
+    appearanceGroupHint: {
+      marginTop: 0,
+      marginBottom: 8,
+      fontSize: 12,
+      fontWeight: "700",
+      letterSpacing: 0.2,
     },
-    voiceHealthBox: {
-      marginTop: 10,
-      backgroundColor: colors.bg,
-      borderRadius: 10,
+    appearanceAccentTitle: {
+      marginTop: 8,
+      marginBottom: 8,
+      fontWeight: "800",
+    },
+    themeSchemeGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      marginBottom: 8,
+    },
+    themeModeChip: {
+      width: "31%",
+      minWidth: 96,
+      flexGrow: 1,
+      borderRadius: 14,
+      overflow: "hidden",
+    },
+    themeSchemeChip: {
+      width: "48%",
+      paddingVertical: 8,
+      paddingHorizontal: 8,
+      borderRadius: 14,
+      overflow: "hidden",
+    },
+    themeSchemeSwatches: {
+      flexDirection: "row",
+      justifyContent: "flex-start",
+      gap: 5,
+      marginBottom: 5,
+    },
+    themeSchemeSwatch: {
+      width: 14,
+      height: 14,
+      borderRadius: 7,
+      borderWidth: 1,
+    },
+    themeSchemeChipTxt: {
+      fontSize: 10,
+      fontWeight: "800",
+      textAlign: "left",
+      letterSpacing: 0.2,
+    },
+    themeModeFill: {
+      height: 36,
+      width: "100%",
+    },
+    themeModeSplit: {
+      flexDirection: "row",
+      height: 36,
+      width: "100%",
+    },
+    themeModeSplitHalf: {
+      flex: 1,
+      height: "100%",
+    },
+    themeModeLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      textAlign: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 6,
+      backgroundColor: colors.card,
+    },
+    paletteCompactRow: {
+      flexDirection: "row",
+      gap: 8,
+      marginBottom: 4,
+    },
+    paletteChip: {
+      flex: 1,
+      paddingVertical: 9,
+      paddingHorizontal: 8,
+      borderRadius: 13,
+    },
+    paletteChipTxt: {
+      fontSize: 11,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    mushafDensityChip: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: 14,
       borderWidth: 1,
       borderColor: colors.border,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
+      backgroundColor: colors.card,
     },
-    voiceHealthText: {
-      color: colors.text,
-      fontSize: 12,
-      lineHeight: 17,
-      fontFamily: "monospace",
+    mushafDensityChipActive: {
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSurface,
     },
+    mushafDensityChipTxt: { color: colors.muted, fontSize: 14, fontWeight: "700" },
+    mushafDensityChipTxtActive: { color: colors.text },
   });
 }

@@ -1,6 +1,11 @@
 # platform_api үшін Windows .venv құру + pip install (Activate.ps1 қажет емес).
 # Пайдалану (жоба түбінен): powershell -ExecutionPolicy Bypass -File .\scripts\setup_venv_platform_api.ps1
 # Немесе: $env:PYTHON_EXE = "C:\...\python.exe" — нақты python.org Python
+#
+# -KeepVenv: .venv жоймайды, тек pip install (файл бұғатталғанда пайдалы).
+param(
+    [switch]$KeepVenv
+)
 $ErrorActionPreference = "Stop"
 
 function Resolve-PythonExe {
@@ -43,14 +48,36 @@ Set PYTHON_EXE to full path, e.g.:
 Write-Host "Using Python: $Py"
 & $Py --version
 
-# Ескі бұзылған .venv
+# Ескі .venv: aiohttp .pyd кейде uvicorn/IDE ұстап тұрады — Remove-Item сәтсіз болса ауыстырамыз.
 if (Test-Path ".venv") {
-    Write-Host "Ескі .venv жойылуда..."
-    Remove-Item -Recurse -Force ".venv"
+    if ($KeepVenv) {
+        Write-Host "KeepVenv: бар .venv сақталады, тек pip install."
+    } else {
+        Write-Host "Ескі .venv жойылуда (бұғат болса uvicorn/python процестерін жабыңыз)..."
+        try {
+            Remove-Item -Recurse -Force ".venv" -ErrorAction Stop
+        } catch {
+            $bak = ".venv_trash_" + [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+            try {
+                Rename-Item -Path ".venv" -NewName $bak -ErrorAction Stop
+                Write-Host "Ескі .venv '$bak' деп ауыстырылды (жою орнына)."
+            } catch {
+                Write-Error @"
+.venv қайта жасалмайды: файл бұғатталған (aiohttp .pyd т.б.).
+1) Тапсырмалар диспетчерінде python.exe / uvicorn тоқтатыңыз; Cursor-да platform_api терминалдарын жабыңыз.
+2) Қайта: powershell ...\setup_venv_platform_api.ps1 -KeepVenv — ескі venv қалдырып тек pip жаңартады.
+3) Немесе қолмен platform_api\.venv қалтасын өшіріңіз.
+Түпнұсқа: $_
+"@
+            }
+        }
+    }
 }
 
-Write-Host "venv құралуда..."
-& $Py -m venv .venv
+if (-not (Test-Path ".venv")) {
+    Write-Host "venv құралуда..."
+    & $Py -m venv .venv
+}
 
 $Vpy = Join-Path $Api ".venv\Scripts\python.exe"
 if (-not (Test-Path $Vpy)) {
@@ -66,6 +93,10 @@ if (Test-Path "requirements-postgres.txt") {
 $MigrateReq = Join-Path $Root "scripts\requirements-pg-migrate.txt"
 if (Test-Path $MigrateReq) {
     & $Vpy -m pip install -r $MigrateReq
+}
+$DevReq = Join-Path $Root "scripts\requirements-dev.txt"
+if (Test-Path $DevReq) {
+    & $Vpy -m pip install -r $DevReq
 }
 
 Write-Host "Done. Uvicorn example:"

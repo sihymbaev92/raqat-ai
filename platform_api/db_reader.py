@@ -9,6 +9,7 @@ from typing import Any
 
 from app.infrastructure.redis_url import normalize_redis_url
 from db.dialect_sql import execute as _exec
+from db.dialect_sql import is_psycopg_connection, is_sqlite_connection, table_names
 from db.get_db import get_db_reader, is_postgresql_configured, sqlite_database_path
 
 
@@ -59,11 +60,132 @@ def readiness_ping() -> dict[str, Any]:
     return out
 
 
+def _import_hint_kk() -> str:
+    return (
+        "Импорт серверде: scripts/import_hadith_from_open_sources.py, "
+        "scripts/import_quran_kk_qurankarim.py, содан кейін create_hadith_fts.py "
+        "(немесе --db / RAQAT_DB_PATH). API тек оқу: осы stats."
+    )
+
+
+def _scalar_count(row: Any) -> int:
+    if row is None:
+        return 0
+    if isinstance(row, dict):
+        return int(next(iter(row.values())))
+    return int(row[0])
+
+
+def _table_column_names_lower(conn: Any, table: str) -> set[str]:
+    if table not in ("hadith", "quran"):
+        raise ValueError(table)
+    if is_sqlite_connection(conn):
+        rows = _exec(conn, f"PRAGMA table_info({table})", ()).fetchall()
+        return {str(r[1]).lower() for r in rows}
+    if is_psycopg_connection(conn):
+        rows = _exec(
+            conn,
+            """
+            SELECT column_name FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (table.lower(),),
+        ).fetchall()
+        colset: set[str] = set()
+        for r in rows:
+            if isinstance(r, dict):
+                colset.add(str(r["column_name"]).lower())
+            else:
+                colset.add(str(r[0]).lower())
+        return colset
+    return set()
+
+
+def _fill_content_stats_tables(conn: Any, tables: set[str]) -> dict[str, Any]:
+    """hadith / quran / hadith_fts — SQLite немесе PostgreSQL."""
+    out_tables: dict[str, Any] = {}
+
+    if "hadith" in tables:
+        total = _scalar_count(_exec(conn, "SELECT COUNT(*) AS n FROM hadith", ()).fetchone())
+        hadith_block: dict[str, Any] = {"rows": total}
+        cols = _table_column_names_lower(conn, "hadith")
+        if "text_kk" in cols:
+            kk = _scalar_count(
+                _exec(
+                    conn,
+                    """
+                    SELECT COUNT(*) AS n FROM hadith
+                    WHERE TRIM(COALESCE(text_kk, '')) <> ''
+                    """,
+                    (),
+                ).fetchone()
+            )
+            hadith_block["text_kk_filled"] = kk
+            hadith_block["text_kk_pct"] = round(100.0 * kk / total, 1) if total else 0.0
+        out_tables["hadith"] = hadith_block
+    else:
+        out_tables["hadith"] = None
+
+    if "quran" in tables:
+        total = _scalar_count(_exec(conn, "SELECT COUNT(*) AS n FROM quran", ()).fetchone())
+        quran_block: dict[str, Any] = {"rows": total}
+        cols = _table_column_names_lower(conn, "quran")
+        if "text_kk" in cols:
+            kk = _scalar_count(
+                _exec(
+                    conn,
+                    """
+                    SELECT COUNT(*) AS n FROM quran
+                    WHERE TRIM(COALESCE(text_kk, '')) <> ''
+                    """,
+                    (),
+                ).fetchone()
+            )
+            quran_block["text_kk_filled"] = kk
+            quran_block["text_kk_pct"] = round(100.0 * kk / total, 1) if total else 0.0
+        out_tables["quran"] = quran_block
+    else:
+        out_tables["quran"] = None
+
+    if "hadith_fts" in tables:
+        try:
+            fts_n = _scalar_count(_exec(conn, "SELECT COUNT(*) AS n FROM hadith_fts", ()).fetchone())
+            out_tables["hadith_fts"] = {"rows": fts_n}
+        except Exception as exc:
+            out_tables["hadith_fts"] = {"rows": None, "error": str(exc)[:200]}
+    else:
+        out_tables["hadith_fts"] = None
+
+    return out_tables
+
+
+def _get_content_stats_postgresql() -> dict[str, Any]:
+    try:
+        with get_db_reader() as conn:
+            tables = table_names(conn)
+            return {
+                "ok": True,
+                "backend": "postgresql",
+                "path": None,
+                "tables": _fill_content_stats_tables(conn, tables),
+                "import_hint_kk": _import_hint_kk(),
+            }
+    except Exception as e:
+        return {
+            "ok": False,
+            "error": str(e)[:400],
+            "backend": "postgresql",
+        }
+
+
 def get_content_stats() -> dict:
     """
-    SQLite дерекқорынан жол санын қайтарады.
-    Файл жоқ немесе кесте жоқ болса ok=False.
+    Құран/хадис жол санын қайтарады.
+    PostgreSQL (`DATABASE_URL`) немесе SQLite файл (`RAQAT_DB_PATH` / әдепкі global_clean.db).
     """
+    if is_postgresql_configured():
+        return _get_content_stats_postgresql()
+
     path = resolve_db_path()
     if not path.is_file():
         return {
@@ -82,66 +204,12 @@ def get_content_stats() -> dict:
                 "SELECT name FROM sqlite_master WHERE type='table'"
             ).fetchall()
         }
-        out: dict = {"ok": True, "path": str(path), "tables": {}}
-
-        if "hadith" in tables:
-            total = int(conn.execute("SELECT COUNT(*) FROM hadith").fetchone()[0])
-            hadith_block: dict = {"rows": total}
-            cols = {
-                row[1]
-                for row in conn.execute("PRAGMA table_info(hadith)").fetchall()
-            }
-            if "text_kk" in cols:
-                kk = int(
-                    conn.execute(
-                        """
-                        SELECT COUNT(*) FROM hadith
-                        WHERE TRIM(COALESCE(text_kk, '')) <> ''
-                        """
-                    ).fetchone()[0]
-                )
-                hadith_block["text_kk_filled"] = kk
-                hadith_block["text_kk_pct"] = round(100.0 * kk / total, 1) if total else 0.0
-            out["tables"]["hadith"] = hadith_block
-        else:
-            out["tables"]["hadith"] = None
-
-        if "quran" in tables:
-            total = int(conn.execute("SELECT COUNT(*) FROM quran").fetchone()[0])
-            quran_block: dict = {"rows": total}
-            cols = {
-                row[1] for row in conn.execute("PRAGMA table_info(quran)").fetchall()
-            }
-            if "text_kk" in cols:
-                kk = int(
-                    conn.execute(
-                        """
-                        SELECT COUNT(*) FROM quran
-                        WHERE TRIM(COALESCE(text_kk, '')) <> ''
-                        """
-                    ).fetchone()[0]
-                )
-                quran_block["text_kk_filled"] = kk
-                quran_block["text_kk_pct"] = round(100.0 * kk / total, 1) if total else 0.0
-            out["tables"]["quran"] = quran_block
-        else:
-            out["tables"]["quran"] = None
-
-        if "hadith_fts" in tables:
-            try:
-                fts_n = int(conn.execute("SELECT COUNT(*) FROM hadith_fts").fetchone()[0])
-                out["tables"]["hadith_fts"] = {"rows": fts_n}
-            except Exception as exc:
-                out["tables"]["hadith_fts"] = {"rows": None, "error": str(exc)[:200]}
-        else:
-            out["tables"]["hadith_fts"] = None
-
-        out["import_hint_kk"] = (
-            "Импорт серверде: scripts/import_hadith_from_open_sources.py, "
-            "scripts/import_quran_kk_qurankarim.py, содан кейін create_hadith_fts.py "
-            "(немесе --db / RAQAT_DB_PATH). API тек оқу: осы stats."
-        )
-
-        return out
+        return {
+            "ok": True,
+            "backend": "sqlite",
+            "path": str(path),
+            "tables": _fill_content_stats_tables(conn, tables),
+            "import_hint_kk": _import_hint_kk(),
+        }
     finally:
         conn.close()

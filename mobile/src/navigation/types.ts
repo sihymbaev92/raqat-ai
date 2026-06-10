@@ -5,6 +5,7 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 export type MoreStackParamList = {
   /** Мазмұн тізімі (басты бет тайлдары өзгермейді). */
   ContentHub: undefined;
+  KmdbHub: undefined;
   Seerah: undefined;
   QuranList: undefined;
   QuranSurah: {
@@ -36,8 +37,8 @@ export type MoreStackParamList = {
         focusAyah?: number;
       }
     | undefined;
-  CommunityDua: undefined;
   Hajj: undefined;
+  ZakatCalculator: undefined;
   Halal: undefined;
   ImamAI:
     | undefined
@@ -56,8 +57,12 @@ export type MoreStackParamList = {
     | {
         scrollToBlockTitle?: string;
         scrollToCategory?: "family" | "social" | "ceremony" | "faith";
+        showTopics?: boolean;
       }
     | undefined;
+  KazakhTraditionTopicDetail: { topicId: string };
+  KazakhTraditionArticles: { articleId?: string } | undefined;
+  KazakhTraditionFavorites: undefined;
   /** Қазақ шежіресі — ру ағашы (FlatList accordion) */
   GenealogyClans: undefined;
   /** Жеке отбасылық шежіре (JWT) */
@@ -75,6 +80,8 @@ export type MoreStackParamList = {
   KazakhGreatWords: undefined;
   KazakhGreatWordsAuthor: { authorId: string };
   KazakhGreatWordsEntry: { entryId: string };
+  /** Fatua.kz кітабы — bundled PDF metadata */
+  OfficialFatuaBook: { bookId: string };
   HadithHub: undefined;
   HadithList: undefined;
   HadithDetail: { hadithId: string };
@@ -88,10 +95,9 @@ export type TasbihStackParamList = {
   TasbihCounter: { dhikrId: number; titleKk?: string };
 };
 
-/** Дұғалар табы: жергілікті дұғалар → қауым дұғасы */
+/** Дұғалар табы: жергілікті дұғалар жинақтары */
 export type DuasStackParamList = {
   DuasHome: undefined;
-  CommunityDua: undefined;
 };
 
 /** Негізгі экрандар (таб жолағы жоқ — stack). */
@@ -112,6 +118,14 @@ export type RootStackParamList = {
   /** Түбір stack: 99 есім (мазмұннан немесе терең сілтемеден) */
   AsmaAlHusna: undefined;
   PrayerTimes: undefined;
+  PrayerAzan:
+    | {
+        label?: string;
+        time?: string;
+        soundId?: string;
+        salatKey?: string;
+      }
+    | undefined;
   Qibla: { mode?: "compass" | "camera" } | undefined;
   MoreStack: NavigatorScreenParams<MoreStackParamList>;
 };

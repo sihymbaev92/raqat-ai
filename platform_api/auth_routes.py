@@ -21,6 +21,7 @@ from db.platform_identity_chat import (
     ensure_platform_user_for_telegram,
     link_telegram_to_existing_platform_user,
 )
+from db.platform_link_code import mint_platform_link_code, redeem_platform_link_code
 from db.password_login import ensure_platform_user_for_password_username
 from db_reader import resolve_db_path
 from jwt_auth import (
@@ -45,6 +46,11 @@ class LoginBody(BaseModel):
 
 
 class LinkTelegramBody(BaseModel):
+    telegram_user_id: int = Field(..., ge=1, le=9223372036854775807)
+
+
+class LinkCodeRedeemBody(BaseModel):
+    code: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$")
     telegram_user_id: int = Field(..., ge=1, le=9223372036854775807)
 
 
@@ -302,6 +308,116 @@ def auth_link_telegram(
         platform_user_id=pid,
         telegram_user_id=body.telegram_user_id,
     )
+
+
+@router.post("/auth/link/code")
+def auth_link_code(
+    request: Request,
+    body: LinkCodeRedeemBody | None = None,
+    creds: HTTPAuthorizationCredentials | None = Depends(link_bearer),
+):
+    """
+    (1) Мобильді: Bearer access → `{ code, expires_in }` (6 цифр, ~10 мин).
+    (2) Бот: `X-Raqat-Bot-Link-Secret` + `{ code, telegram_user_id }` → JWT жұбы (link/telegram сияқты).
+    """
+    if not jwt_secret():
+        raise HTTPException(
+            status_code=503,
+            detail={"code": "JWT_NOT_CONFIGURED", "message": "Set RAQAT_JWT_SECRET (min 32 chars)."},
+        )
+    expected_link = (os.getenv("RAQAT_BOT_LINK_SECRET") or "").strip()
+    bot_hdr = (request.headers.get("X-Raqat-Bot-Link-Secret") or "").strip()
+
+    if bot_hdr:
+        if not expected_link:
+            raise HTTPException(
+                status_code=503,
+                detail={"code": "LINK_SECRET_NOT_CONFIGURED", "message": "RAQAT_BOT_LINK_SECRET not set."},
+            )
+        if bot_hdr != expected_link:
+            raise HTTPException(
+                status_code=401,
+                detail={"code": "INVALID_BOT_LINK_SECRET", "message": "Wrong X-Raqat-Bot-Link-Secret."},
+            )
+        if not body:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "BODY_REQUIRED", "message": "Send JSON: code, telegram_user_id."},
+            )
+        try:
+            pid = redeem_platform_link_code(body.code, body.telegram_user_id)
+            pair = create_token_pair(
+                subject=pid,
+                scopes=list(DEFAULT_BOOTSTRAP_SCOPES),
+                telegram_user_id=body.telegram_user_id,
+                platform_user_id=pid,
+            )
+        except ValueError as e:
+            code = str(e)
+            if code == "invalid_code_format":
+                raise HTTPException(
+                    status_code=400,
+                    detail={"code": "INVALID_CODE_FORMAT", "message": "Code must be 6 digits."},
+                ) from e
+            if code == "unknown_code":
+                raise HTTPException(
+                    status_code=404,
+                    detail={"code": "UNKNOWN_CODE", "message": "Code not found or already used."},
+                ) from e
+            if code == "code_expired":
+                raise HTTPException(
+                    status_code=410,
+                    detail={"code": "CODE_EXPIRED", "message": "Link code expired. Generate a new one in the app."},
+                ) from e
+            if code in ("telegram_already_linked", "platform_already_has_telegram"):
+                raise HTTPException(
+                    status_code=409,
+                    detail={"code": code.upper(), "message": code},
+                ) from e
+            raise HTTPException(status_code=400, detail={"code": "LINK_FAILED", "message": code}) from e
+        except RuntimeError as e:
+            raise HTTPException(status_code=503, detail={"code": "LINK_FAILED", "message": str(e)}) from e
+        return _token_bundle_response(
+            pair=pair,
+            scopes=list(DEFAULT_BOOTSTRAP_SCOPES),
+            platform_user_id=pid,
+            telegram_user_id=body.telegram_user_id,
+        )
+
+    if not creds or (creds.scheme or "").lower() != "bearer":
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "code": "UNAUTHORIZED",
+                "message": "Bearer access (mint code) or X-Raqat-Bot-Link-Secret (redeem).",
+            },
+        )
+    try:
+        payload = decode_access_token(creds.credentials)
+    except Exception:
+        raise HTTPException(status_code=401, detail={"code": "INVALID_TOKEN", "message": "Access JWT invalid or expired."}) from None
+    pid = platform_user_id_from_payload(payload)
+    if not pid:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "SUB_NOT_PLATFORM_UUID",
+                "message": "Bearer access token sub must be a platform_user_id (uuid).",
+            },
+        )
+    try:
+        plain, ttl = mint_platform_link_code(pid)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail={"code": "LINK_CODE_FAILED", "message": str(e)}) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail={"code": "INVALID_PLATFORM_USER", "message": str(e)}) from e
+    return {
+        "ok": True,
+        "code": plain,
+        "expires_in": ttl,
+        "platform_user_id": pid,
+        "hint_kk": "Ботқа осы 6 цифрды жіберіңіз (10 минут ішінде).",
+    }
 
 
 @router.post("/auth/oauth/google")

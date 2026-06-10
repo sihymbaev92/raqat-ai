@@ -11,10 +11,9 @@ from services.platform_link_service import platform_link_configured
 def main_menu(user_id: int | None = None, lang: str | None = None):
     lang = lang or (get_user_lang(user_id) if user_id else None) or "kk"
     kb = ReplyKeyboardBuilder()
-    # Алдымен: Құран → Хадис → RAQAT AI → Халал, содан қалғалары
+    # Алдымен: Құран → RAQAT AI → Халал (хадис — мобильді қолданба; бот: /hadith)
     actions = [
         "quran",
-        "hadith",
         "ai",
         "halal",
         "tajwid",
@@ -149,10 +148,12 @@ def feedback_admin_actions(feedback_id: int):
     kb.adjust(2)
     return kb.as_markup()
 
+
 def next_hadith_keyboard():
     kb = InlineKeyboardBuilder()
     kb.button(text="🔄 Келесі сахих", callback_data="next_hadith")
     return kb.as_markup()
+
 
 def tasbih_keyboard(uid: int):
     """Тасбих + зікір таңдау (дерекқордан алғашқы 8 жол)."""

@@ -1,7 +1,32 @@
 <resources>
-  <color name="splashscreen_background">#0c1f1a</color>
-  <color name="iconBackground">#0c1f1a</color>
+  <!-- Жарық тема: статус/навигация жолы — қолданба фонымен бір түсте, қара иконкалар -->
+  <color name="app_status_bar_light">#F8FAFC</color>
+  <color name="app_status_bar_dark">#05080B</color>
+  <color name="splashscreen_background">#2a5d67</color>
+  <color name="iconBackground">#00000000</color>
   <color name="colorPrimary">#023c69</color>
   <color name="colorPrimaryDark">#0c1f1a</color>
   <color name="notification_icon_color">#c9a227</color>
+  <!-- Намаз виджеттері: келесі намаз / мәтін иерархиясы -->
+  <color name="widget_prayer_accent">#E8C86A</color>
+  <color name="widget_prayer_text">#FFFFFF</color>
+  <color name="widget_prayer_muted">#D4E8E0</color>
+  <color name="widget_prayer_dim">#8AA69C</color>
+  <color name="widget_prayer_next_time_bright">#FFFFFF</color>
+  <!-- Намаз уақыты: ақ мәтін (келесі / қалыпты / өткен) -->
+  <color name="widget_prayer_time_green">#FFFFFF</color>
+  <color name="widget_prayer_time_green_next">#FFFFFF</color>
+  <color name="widget_prayer_time_past">#88FFFFFF</color>
+  <!-- Қос панель виджет: ішкі карточка -->
+  <color name="widget_prayer_panel_surface">#263832</color>
+  <color name="widget_prayer_panel_edge">#66E8C86A</color>
+  <color name="widget_weather_sunny">#F59E0B</color>
+  <color name="widget_weather_cloudy">#38BDF8</color>
+  <color name="widget_weather_fog">#94A3B8</color>
+  <color name="widget_weather_rain">#3B82F6</color>
+  <color name="widget_weather_snow">#BAE6FD</color>
+  <color name="widget_weather_storm">#C084FC</color>
+  <!-- Басты бет mockup виджет -->
+  <color name="widget_prayer_home_kicker">#E0FFFFFF</color>
+  <color name="widget_prayer_strip_active_text">#1B4332</color>
 </resources>

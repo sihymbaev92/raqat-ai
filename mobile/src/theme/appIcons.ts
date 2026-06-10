@@ -6,6 +6,11 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 export type MciName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
+/** Қала / мекенжай (намаз hero, Halal іздеу) */
+export const locationIcons = {
+  cityPin: "map-marker-outline" as MciName,
+} as const;
+
 /** Басты бет: батырмалар мен тор */
 export const dashboardIcons = {
   heroQuran: "book-open-page-variant" as MciName,
@@ -28,10 +33,17 @@ export const hubIcons = {
   comm: "hands-pray" as MciName,
   eco: "leaf" as MciName,
   tg: "telegram" as MciName,
+  /** Мазмұн орталығы: Siri / Жарлықтар нұсқауы */
+  siriShortcut: "microphone-message" as MciName,
 } as const;
 
 /** Төменгі таб: focused / blurred жұптары */
 export const tabIcons = {
+  home: { active: "home" as MciName, inactive: "home-outline" as MciName },
+  articles: { active: "newspaper-variant" as MciName, inactive: "newspaper-variant-outline" as MciName },
+  prayer: { active: "mosque" as MciName, inactive: "mosque-outline" as MciName },
+  saved: { active: "bookmark" as MciName, inactive: "bookmark-outline" as MciName },
+  profile: { active: "account-circle" as MciName, inactive: "account-circle-outline" as MciName },
   duas: { active: "hands-pray" as MciName, inactive: "hands-pray-outline" as MciName },
   asma: "star-four-points" as MciName,
   tasbih: { active: "counter" as MciName, inactive: "gesture-tap" as MciName },

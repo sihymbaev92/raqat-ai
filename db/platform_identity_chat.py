@@ -33,6 +33,18 @@ def _trim(s: str) -> str:
     return t
 
 
+def _notify_ai_cache_after_persist(user_text: str, assistant_text: str) -> None:
+    """Optional Redis write-through when platform_api cache modules are importable."""
+    try:
+        from ai_cache_invalidation import on_ai_chat_exchange_persisted
+
+        on_ai_chat_exchange_persisted(user_text, assistant_text)
+    except ImportError:
+        pass
+    except Exception:
+        logger.debug("ai cache notify failed", exc_info=True)
+
+
 @contextmanager
 def _platform_db(db_path: str) -> Iterator[Any]:
     """PostgreSQL DSN болса `get_db_writer()`, әйтпесе SQLite `db_path`."""
@@ -82,52 +94,59 @@ def ensure_platform_user_for_telegram(db_path: str, telegram_user_id: int) -> st
         return pid
 
 
+def link_telegram_to_existing_platform_user_on_conn(
+    conn: Any, platform_user_id: str, telegram_user_id: int
+) -> None:
+    """Бір DB қосылымында tg ↔ platform uuid байланысын қояды."""
+    tid = int(telegram_user_id)
+    pid = str(platform_user_id).strip()
+    if "platform_identities" not in _tables(conn):
+        raise RuntimeError("platform_identities missing: run DB migrations")
+    conflict = _exec(
+        conn,
+        """
+        SELECT platform_user_id FROM platform_identities
+        WHERE telegram_user_id = ? AND platform_user_id <> ?
+        """,
+        (tid, pid),
+    ).fetchone()
+    if conflict:
+        raise ValueError("telegram_already_linked")
+    row = _exec(
+        conn,
+        "SELECT platform_user_id, telegram_user_id FROM platform_identities WHERE platform_user_id = ?",
+        (pid,),
+    ).fetchone()
+    if row:
+        cur = row["telegram_user_id"]
+        if cur is not None and int(cur) != tid:
+            raise ValueError("platform_already_has_telegram")
+        _exec(
+            conn,
+            """
+            UPDATE platform_identities
+            SET telegram_user_id = ?, updated_at = datetime('now')
+            WHERE platform_user_id = ?
+            """,
+            (tid, pid),
+        )
+    else:
+        _exec(
+            conn,
+            """
+            INSERT INTO platform_identities (platform_user_id, telegram_user_id, created_at, updated_at)
+            VALUES (?, ?, datetime('now'), datetime('now'))
+            """,
+            (pid, tid),
+        )
+
+
 def link_telegram_to_existing_platform_user(
     db_path: str, platform_user_id: str, telegram_user_id: int
 ) -> None:
     """JWT sub = platform uuid болғанда tg байланысын қояды."""
-    tid = int(telegram_user_id)
-    pid = str(platform_user_id).strip()
     with _platform_db(db_path) as conn:
-        if "platform_identities" not in _tables(conn):
-            raise RuntimeError("platform_identities missing: run DB migrations")
-        conflict = _exec(
-            conn,
-            """
-            SELECT platform_user_id FROM platform_identities
-            WHERE telegram_user_id = ? AND platform_user_id <> ?
-            """,
-            (tid, pid),
-        ).fetchone()
-        if conflict:
-            raise ValueError("telegram_already_linked")
-        row = _exec(
-            conn,
-            "SELECT platform_user_id, telegram_user_id FROM platform_identities WHERE platform_user_id = ?",
-            (pid,),
-        ).fetchone()
-        if row:
-            cur = row["telegram_user_id"]
-            if cur is not None and int(cur) != tid:
-                raise ValueError("platform_already_has_telegram")
-            _exec(
-                conn,
-                """
-                UPDATE platform_identities
-                SET telegram_user_id = ?, updated_at = datetime('now')
-                WHERE platform_user_id = ?
-                """,
-                (tid, pid),
-            )
-        else:
-            _exec(
-                conn,
-                """
-                INSERT INTO platform_identities (platform_user_id, telegram_user_id, created_at, updated_at)
-                VALUES (?, ?, datetime('now'), datetime('now'))
-                """,
-                (pid, tid),
-            )
+        link_telegram_to_existing_platform_user_on_conn(conn, platform_user_id, telegram_user_id)
 
 
 def append_ai_exchange(
@@ -167,6 +186,7 @@ def append_ai_exchange(
                 """,
                 (pid, a, src, cid),
             )
+    _notify_ai_cache_after_persist(u, a)
 
 
 def append_telegram_ai_turn(

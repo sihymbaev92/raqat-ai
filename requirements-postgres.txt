@@ -1,3 +1,6 @@
 # PostgreSQL: get_db() және migrate скрипті үшін (міндетті емес)
 # pool: RAQAT_PG_USE_POOL=1 кезінде get_db() үшін psycopg_pool
+# genealogy A1: alembic upgrade head
 psycopg[binary,pool]>=3.1,<4
+sqlalchemy>=2.0.36,<3
+alembic>=1.14,<2

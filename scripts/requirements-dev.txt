@@ -2,3 +2,7 @@
 #   pip install -r platform_api/requirements.txt -r scripts/requirements-dev.txt
 pytest>=8,<10
 psycopg[binary,pool]>=3.1,<4
+# Telegram бот handler тесттері (tests/test_*_handler.py, test_ai_chat.py)
+aiogram>=3.13,<4
+# aiogram → aiohttp; 3.13.x wheel кейде бұзылған (helpers жоқ) — тұрақты нұсқа
+aiohttp>=3.10,<3.12

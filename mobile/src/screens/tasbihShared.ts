@@ -43,7 +43,11 @@ export function manualToMode(manual: number | null): TasbihGoalMode {
 
 export function effectiveGoalForItem(item: DhikrItem | undefined, manual: number | null): number {
   if (!item) return 33;
-  if (item.phaseRule === "triple_salah") return 99;
+  /** Намаздан кейінгі 33×3: әдепкі 99, бірақ 33/99 түймелері нақты мақсатты ауыстыруы керек */
+  if (item.phaseRule === "triple_salah") {
+    if (manual === 33 || manual === 99) return manual;
+    return 99;
+  }
   if (manual === 33 || manual === 99) return manual;
   const d = item.defaultTarget || 33;
   return Math.max(1, Math.min(d, 999));

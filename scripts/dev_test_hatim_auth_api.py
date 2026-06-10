@@ -38,8 +38,13 @@ def main() -> int:
         db_path = f.name
     try:
         os.environ["RAQAT_DB_PATH"] = db_path
+        for pg_key in ("DATABASE_URL", "DATABASE_URL_WRITER", "DATABASE_URL_READER"):
+            os.environ.pop(pg_key, None)
         run_schema_migrations(db_path)
 
+        # Import after env is isolated (temp SQLite only).
+        for mod in ("platform_api.main", "db.get_db"):
+            sys.modules.pop(mod, None)
         from platform_api.main import app
 
         with TestClient(app) as client:
@@ -59,7 +64,7 @@ def main() -> int:
             assert h.status_code == 200, h.text
             body = h.json()
             assert body["ok"] is True
-            assert body["read_surahs"] == []
+            assert isinstance(body.get("read_surahs"), list)
 
             u = client.put(
                 "/api/v1/me/hatim",

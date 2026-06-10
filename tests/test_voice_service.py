@@ -3,7 +3,6 @@ import unittest
 
 from services.voice_service import (
     extract_tasbih_action,
-    extract_hadith_search_query,
     extract_language_choice,
     extract_quran_search_query,
     extract_voice_mode_toggle,
@@ -61,7 +60,6 @@ class VoiceServiceTests(unittest.TestCase):
 
     def test_extracts_scoped_search_queries(self):
         self.assertEqual(extract_quran_search_query("Құраннан сабыр ізде"), "сабыр")
-        self.assertEqual(extract_hadith_search_query("найди в хадисах намаз"), "намаз")
 
     def test_extracts_more_voice_control_commands(self):
         self.assertEqual(extract_tasbih_action("тәспі 99"), "tasbih_goal_99")

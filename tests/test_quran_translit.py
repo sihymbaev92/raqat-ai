@@ -8,7 +8,7 @@ class QuranTranslitTests(unittest.TestCase):
     def test_basmala_is_smoothed_for_readable_transliteration(self):
         self.assertEqual(
             transliterate_arabic_to_kazakh("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"),
-            "бисмилләһир-рахманир-рахим",
+            "бисмилләһир рахманир рахиим",
         )
 
     def test_sajdah_mark_is_not_in_output(self):
@@ -83,7 +83,7 @@ class QuranTranslitTests(unittest.TestCase):
                 ayah=1,
                 style="pedagogical",
             ),
-            "бисмил ляяһир рахмаанир рахииим",
+            "бисмилләһир рахманир рахиим",
         )
         self.assertEqual(
             transliterate_arabic_to_kazakh(

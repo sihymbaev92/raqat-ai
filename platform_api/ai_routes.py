@@ -6,7 +6,7 @@ import base64
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 from typing import Literal
 
@@ -14,7 +14,20 @@ from ai_exact_cache import cache_get_reply, cache_set_reply
 from ai_semantic_cache import cache_get_semantic, cache_set_semantic
 from prometheus_metrics import observe_ai_chat
 from ai_multimodal import analyze_halal_image, transcribe_voice, tts_to_payload
-from ai_proxy import generate_ai_reply
+from ai_proxy import generate_ai_reply, generate_ai_reply_meta, _ai_kb_only_mode
+from ai_reply_guards import GEMINI_BUSY_REPLY_KK, is_degraded_ai_reply
+
+try:
+    from islamic_kb.db import kb_stats
+    from islamic_kb.config import islamic_kb_enabled
+    from islamic_kb.home_feed import fetch_official_home_feed
+    from islamic_kb.search import list_islamic_kb_documents, search_islamic_kb_articles
+except ImportError:
+    islamic_kb_enabled = lambda: False  # type: ignore[misc, assignment]
+    kb_stats = None  # type: ignore[misc, assignment]
+    search_islamic_kb_articles = None  # type: ignore[misc, assignment]
+    list_islamic_kb_documents = None  # type: ignore[misc, assignment]
+    fetch_official_home_feed = None  # type: ignore[misc, assignment]
 from ai_rate_limit import require_ai_access_with_rate_limit
 from db.governance_store import append_audit_event, append_usage_event
 from db.platform_identity_chat import append_ai_exchange
@@ -112,6 +125,10 @@ class AiChatRequest(BaseModel):
         default="full",
         description="quick — қысқа жауап (алдымен жылдам); full — толық талдау",
     )
+    kb_only: bool = Field(
+        default=False,
+        description="True — осы сұрауда жауап тек Fatua.kz/Muftyat.kz индексіне сүйенеді",
+    )
     staged_pipeline: bool = Field(
         default=False,
         description="True — Raqat AI чат үшін Құран→хадис→іздеу; False — бір шақыру (халал т.б.)",
@@ -140,6 +157,7 @@ def ai_chat(
             {
                 "prompt": body.prompt,
                 "detail_level": body.detail_level,
+                "kb_only": body.kb_only,
                 "staged_pipeline": body.staged_pipeline,
                 "platform_user_id": str(pid) if pid else None,
                 "telegram_user_id": tid,
@@ -149,11 +167,15 @@ def ai_chat(
         return {**out, "user_id": body.user_id}
 
     quick = body.detail_level == "quick"
-    cache_prompt = f"quick:{body.prompt}" if quick else body.prompt
+    cache_scope = "kb:" if body.kb_only else "mixed:"
+    cache_prompt = f"{cache_scope}quick:{body.prompt}" if quick else f"{cache_scope}{body.prompt}"
 
     cached = cache_get_reply(cache_prompt)
+    if cached and is_degraded_ai_reply(cached):
+        cached = None
     cache_hit_exact = bool(cached and str(cached).strip())
     cache_hit_semantic = False
+    reply_sources: list[dict] = []
     if cache_hit_exact:
         text = str(cached).strip()
     else:
@@ -163,16 +185,35 @@ def ai_chat(
             cache_hit_semantic = True
         else:
             t0 = time.perf_counter()
-            text = generate_ai_reply(
+            reply = generate_ai_reply_meta(
                 body.prompt,
                 quick=quick,
                 use_staged_pipeline=body.staged_pipeline,
+                kb_only=body.kb_only,
             )
             observe_ai_chat(time.perf_counter() - t0)
-            cache_set_reply(cache_prompt, text)
-            cache_set_semantic(cache_prompt, text)
+            text = reply.text
+            reply_sources = list(reply.sources or [])
+            if not is_degraded_ai_reply(text):
+                cache_set_reply(cache_prompt, text)
+                cache_set_semantic(cache_prompt, text)
 
     cache_hit = cache_hit_exact or cache_hit_semantic
+
+    if is_degraded_ai_reply(text):
+        _log_ai_event(request, "POST /api/v1/ai/chat", prompt_chars=len(body.prompt), response_chars=0)
+        return {
+            "ok": False,
+            "error": "gemini_busy",
+            "text": "",
+            "detail": {
+                "message_kk": GEMINI_BUSY_REPLY_KK,
+                "retry_after_s": 90,
+            },
+            "user_id": body.user_id,
+            "cached": False,
+            "detail_level": body.detail_level,
+        }
 
     if pid and not quick:
         append_ai_exchange(
@@ -196,7 +237,7 @@ def ai_chat(
         ),
     )
     _log_ai_event(request, "POST /api/v1/ai/chat", prompt_chars=len(body.prompt), response_chars=len(text))
-    return {
+    out: dict = {
         "ok": True,
         "text": text,
         "user_id": body.user_id,
@@ -205,11 +246,111 @@ def ai_chat(
         "cached_semantic": cache_hit_semantic,
         "detail_level": body.detail_level,
     }
+    if reply_sources:
+        out["sources"] = reply_sources
+    return out
+
+
+@router.get("/ai/kb/status")
+def ai_kb_status(_: None = Depends(require_ai_access_with_rate_limit)):
+    """Fatua/Muftyat индекс күйі (RAG)."""
+    enabled = bool(islamic_kb_enabled()) if callable(islamic_kb_enabled) else False
+    if not enabled:
+        return {"ok": True, "enabled": False, "documents": 0, "chunks": 0, "by_site": {}}
+    if kb_stats is None:
+        return {"ok": True, "enabled": True, "documents": 0, "chunks": 0, "by_site": {}}
+    stats = kb_stats()
+    return {
+        "ok": True,
+        "enabled": True,
+        "kb_only": _ai_kb_only_mode(),
+        **stats,
+    }
+
+
+@router.get("/ai/kb/search")
+def ai_kb_search(
+    q: str = Query(..., min_length=2, max_length=240),
+    limit: int = Query(10, ge=1, le=20),
+    site: str | None = Query(
+        None,
+        description="fatua, muftyat немесе fatua,muftyat",
+    ),
+    _: None = Depends(require_ai_access_with_rate_limit),
+):
+    """
+    Локальды FTS іздеу (scraper индексі). Толық мәтін емес — title + excerpt + url.
+    """
+    query = (q or "").strip()
+    if search_islamic_kb_articles is None:
+        return {"ok": False, "error": "islamic_kb_unavailable", "results": []}
+    sites: frozenset[str] | None = None
+    if site and str(site).strip():
+        sites = frozenset(
+            s.strip().lower() for s in str(site).split(",") if s.strip()
+        )
+    try:
+        results = search_islamic_kb_articles(query, limit=limit, sources=sites)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:200], "results": []}
+    return {
+        "ok": True,
+        "query": query,
+        "rag_enabled": bool(islamic_kb_enabled()) if callable(islamic_kb_enabled) else False,
+        "results": [r.as_dict() for r in results],
+    }
+
+
+@router.get("/ai/kb/browse")
+def ai_kb_browse(
+    limit: int = Query(16, ge=1, le=30),
+    offset: int = Query(0, ge=0, le=5000),
+    site: str | None = Query(None, description="fatua | muftyat"),
+    _: None = Depends(require_ai_access_with_rate_limit),
+):
+    """Каталог (Halal сияқты сат): соңғы мақалалар — title + excerpt + url."""
+    if list_islamic_kb_documents is None:
+        return {"ok": False, "error": "islamic_kb_unavailable", "results": []}
+    site_key = (site or "").strip().lower() or None
+    if site_key and site_key not in ("fatua", "muftyat"):
+        raise HTTPException(status_code=400, detail="site must be fatua or muftyat")
+    try:
+        results = list_islamic_kb_documents(site=site_key, limit=limit, offset=offset)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:200], "results": []}
+    return {
+        "ok": True,
+        "site": site_key,
+        "rag_enabled": bool(islamic_kb_enabled()) if callable(islamic_kb_enabled) else False,
+        "results": [r.as_dict() for r in results],
+    }
+
+
+@router.get("/ai/kb/home-feed")
+def ai_kb_home_feed(
+    limit: int = Query(6, ge=1, le=12),
+    _: None = Depends(require_ai_access_with_rate_limit),
+):
+    """fatua.kz/kk + muftyat.kz/kk басты бет жаңалықтары (суретпен) — mobile proxy."""
+    if fetch_official_home_feed is None:
+        return {"ok": False, "error": "home_feed_unavailable", "results": []}
+    try:
+        per_site = max(1, min(limit, 12))
+        items = fetch_official_home_feed(limit_per_site=per_site)
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:200], "results": []}
+    return {
+        "ok": True,
+        "results": [it.as_dict() for it in items[: limit * 2]],
+    }
 
 
 class AiAnalyzeImageRequest(BaseModel):
     image_b64: str = Field(..., min_length=8, max_length=25_000_000)
     mime_type: str = Field(default="image/jpeg", max_length=128)
+    # Екінші сурет (мысалы артқы жақ / құрам) — міндетті емес.
+    image_b64_2: str | None = Field(default=None, max_length=25_000_000)
+    mime_type_2: str | None = Field(default=None, max_length=128)
     lang: str = Field(default="kk", max_length=8)
     # Қосымша нұсқау (қолданба): құрылымды талдау.
     prompt: str | None = Field(None, max_length=12_000)
@@ -223,25 +364,37 @@ def ai_analyze_image(
     _: None = Depends(require_ai_access_with_rate_limit),
 ):
     if body.async_mode:
-        return _enqueue_or_503(
-            "raqat.ai.analyze_image",
-            {
-                "image_b64": body.image_b64,
-                "mime_type": body.mime_type,
-                "lang": body.lang,
-                "prompt": body.prompt,
-            },
-        )
+        pl: dict = {
+            "image_b64": body.image_b64,
+            "mime_type": body.mime_type,
+            "lang": body.lang,
+            "prompt": body.prompt,
+        }
+        if body.image_b64_2:
+            pl["image_b64_2"] = body.image_b64_2
+            pl["mime_type_2"] = body.mime_type_2
+        return _enqueue_or_503("raqat.ai.analyze_image", pl)
     try:
         raw = base64.standard_b64decode(body.image_b64.encode("ascii"))
     except Exception:
         return {"ok": False, "text": "", "error": "invalid_base64"}
-    text = analyze_halal_image(raw, body.mime_type, body.lang, body.prompt)
+    extra: list[tuple[bytes, str]] | None = None
+    b2 = (body.image_b64_2 or "").strip()
+    if b2:
+        if len(b2) < 8:
+            return {"ok": False, "text": "", "error": "invalid_base64_2"}
+        try:
+            raw2 = base64.standard_b64decode(b2.encode("ascii"))
+        except Exception:
+            return {"ok": False, "text": "", "error": "invalid_base64_2"}
+        m2 = (body.mime_type_2 or "image/jpeg").strip() or "image/jpeg"
+        extra = [(raw2, m2)]
+    text = analyze_halal_image(raw, body.mime_type, body.lang, body.prompt, extra_images=extra)
     if text:
         _log_ai_event(
             request,
             "POST /api/v1/ai/analyze-image",
-            prompt_chars=len(body.image_b64),
+            prompt_chars=len(body.image_b64) + (len(b2) if b2 else 0),
             response_chars=len(text),
         )
     return {"ok": bool(text), "text": text}

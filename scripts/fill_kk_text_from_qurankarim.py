@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Бос text_kk жолдарын qurankarim.kz API (Халифа Алтай) арқылы толықтырады.
+ЕСКІ / УАҚЫТША: бос text_kk-ны qurankarim.kz (Халифа Алтай) арқылы толықтырады.
+
+Негізгі қазақша мағына — Ерлан Алимулы (`data/quran_kk_verified.json` →
+`scripts/import_quran_kk_verified.py` / `bash scripts/run_erlan_quran_import.sh`).
+Бұл скриптті жаңа бандл үшін қолданбаңыз.
 """
 from __future__ import annotations
 

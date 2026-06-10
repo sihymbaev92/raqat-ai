@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Pressable,
   Animated,
-  Platform,
+  Platform
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import * as Haptics from "expo-haptics";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -28,6 +28,7 @@ import {
   manualToMode,
   effectiveGoalForItem,
 } from "./tasbihShared";
+import { pickBestTranslit } from "../utils/translitKk";
 
 type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihCounter">;
 
@@ -126,16 +127,18 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
     setCount(0);
   }, []);
 
-  const pulseGreen = () => {
+  const pulseTapFlash = () => {
+    flash.stopAnimation();
+    flash.setValue(0);
     Animated.sequence([
       Animated.timing(flash, {
         toValue: 1,
-        duration: 90,
+        duration: 70,
         useNativeDriver: true,
       }),
       Animated.timing(flash, {
         toValue: 0,
-        duration: 220,
+        duration: 280,
         useNativeDriver: true,
       }),
     ]).start();
@@ -143,8 +146,7 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
 
   const tap = () => {
     if (!active) return;
-    pulseGreen();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    pulseTapFlash();
     setCount((c) => {
       const n = c + 1;
       if (n >= effectiveGoal) {
@@ -169,10 +171,11 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
 
   const phase = phaseLabel(count, effectiveGoal, active.phaseRule);
   const remaining = Math.max(0, effectiveGoal - count);
+  const translitLine = pickBestTranslit(active.textAr || "", active.translitKk);
 
   const flashOpacity = flash.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 0.28],
+    outputRange: [0, 0.62],
   });
 
   return (
@@ -211,18 +214,13 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
 
         <View style={styles.aboveCircle}>
           <Text style={styles.arCompact}>{active.textAr}</Text>
+          {translitLine ? <Text style={styles.translitCompact}>{translitLine}</Text> : null}
           <Text style={styles.progressLine}>
             {count} / {effectiveGoal}
           </Text>
           {phase ? <Text style={styles.phaseAbove}>{phase}</Text> : null}
         </View>
 
-        {active.translitKk ? (
-          <View style={styles.metaBlock}>
-            <Text style={styles.metaLabel}>{kk.tasbih.translitLabel}</Text>
-            <Text style={styles.translit}>{active.translitKk}</Text>
-          </View>
-        ) : null}
         {active.meaningKk ? (
           <View style={styles.metaBlock}>
             <Text style={styles.metaLabel}>{kk.tasbih.meaningLabel}</Text>
@@ -246,7 +244,10 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
         ]}
       >
         <Pressable
-          style={styles.circle}
+          style={({ pressed }) => [
+            styles.circle,
+            { borderColor: pressed ? colors.success : colors.accentDark },
+          ]}
           onPress={tap}
           accessibilityRole="button"
           accessibilityLabel={kk.tasbih.tapA11y}
@@ -256,7 +257,10 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
             style={[
               StyleSheet.absoluteFillObject,
               styles.circleFlash,
-              { opacity: flashOpacity, backgroundColor: colors.success },
+              {
+                opacity: flashOpacity,
+                backgroundColor: colors.success,
+              },
             ]}
           />
           <Text style={styles.count}>{count}</Text>
@@ -310,7 +314,15 @@ function makeStyles(colors: ThemeColors) {
       color: colors.scriptureArabic,
       textAlign: "center",
       writingDirection: "rtl",
-      marginBottom: 6,
+      marginBottom: 2,
+    },
+    translitCompact: {
+      color: colors.scriptureTranslit,
+      fontSize: 14,
+      lineHeight: 20,
+      textAlign: "center",
+      marginBottom: 8,
+      paddingHorizontal: 12,
     },
     progressLine: {
       fontSize: 17,

@@ -77,6 +77,7 @@ def analyze_halal_image(
     mime_type: str,
     lang: str,
     client_prompt: str | None = None,
+    extra_images: list[tuple[bytes, str]] | None = None,
 ) -> str:
     if not image_bytes or genai_types is None:
         return ""
@@ -89,6 +90,21 @@ def analyze_halal_image(
         prompt = f"{base}\n\n--- Қосымша нұсқау (клиент) ---\n{extra}"
     else:
         prompt = base
+    parts: list = [
+        prompt,
+        genai_types.Part.from_bytes(
+            data=image_bytes,
+            mime_type=mime_type or "image/jpeg",
+        ),
+    ]
+    for raw, mt in extra_images or []:
+        if raw:
+            parts.append(
+                genai_types.Part.from_bytes(
+                    data=raw,
+                    mime_type=mt or "image/jpeg",
+                )
+            )
     last_error = None
     for attempt in range(len(RETRY_DELAYS) + 1):
         saw = False
@@ -97,13 +113,7 @@ def analyze_halal_image(
                 cfg = _halal_image_gen_config()
                 kwargs: dict = {
                     "model": model_name,
-                    "contents": [
-                        prompt,
-                        genai_types.Part.from_bytes(
-                            data=image_bytes,
-                            mime_type=mime_type or "image/jpeg",
-                        ),
-                    ],
+                    "contents": parts,
                 }
                 if cfg is not None:
                     kwargs["config"] = cfg

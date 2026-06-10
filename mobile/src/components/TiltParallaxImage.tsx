@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Image,
   Platform,
+  StyleSheet,
   View,
   type ImageResizeMode,
   type ImageSourcePropType,
@@ -10,6 +10,7 @@ import {
   type ImageStyle,
 } from "react-native";
 import { Accelerometer } from "expo-sensors";
+import { RasterImage } from "@/ui/RasterImage";
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
@@ -24,10 +25,25 @@ type Props = {
   trackingActive: boolean;
   /** Еңкейу шегі (градус) */
   maxDeg?: number;
+  zoomable?: boolean;
+  zoomNested?: boolean;
 };
 
-const staticImage = (source: ImageSourcePropType, imageStyle: StyleProp<ImageStyle>, resizeMode: ImageResizeMode) => (
-  <Image source={source} style={imageStyle} resizeMode={resizeMode} accessibilityIgnoresInvertColors />
+const staticImage = (
+  source: ImageSourcePropType,
+  imageStyle: StyleProp<ImageStyle>,
+  resizeMode: ImageResizeMode,
+  zoomable?: boolean,
+  zoomNested?: boolean
+) => (
+  <RasterImage
+    source={source}
+    style={[StyleSheet.absoluteFillObject, imageStyle]}
+    resizeMode={resizeMode}
+    zoomable={zoomable}
+    zoomNested={zoomNested}
+    accessibilityIgnoresInvertColors
+  />
 );
 
 /**
@@ -40,6 +56,8 @@ export function TiltParallaxImage({
   resizeMode,
   trackingActive,
   maxDeg = 12,
+  zoomable = false,
+  zoomNested = false,
 }: Props) {
   const [sensorOk, setSensorOk] = useState<boolean | null>(null);
   const rx = useRef(new Animated.Value(0)).current;
@@ -92,7 +110,7 @@ export function TiltParallaxImage({
   }, [trackingActive, sensorOk, maxDeg, rx, ry]);
 
   if (sensorOk !== true || !trackingActive) {
-    return staticImage(source, imageStyle, resizeMode);
+    return staticImage(source, imageStyle, resizeMode, zoomable, zoomNested);
   }
 
   const rotateX = rx.interpolate({
@@ -107,15 +125,23 @@ export function TiltParallaxImage({
   });
 
   return (
-    <View style={{ flex: 1, overflow: "hidden" }} accessibilityIgnoresInvertColors>
+    <View style={StyleSheet.absoluteFillObject} accessibilityIgnoresInvertColors>
       <Animated.View
-        style={{
-          flex: 1,
-          transform: [{ perspective: 900 }, { rotateX: rotateX }, { rotateY: rotateY }],
-        }}
-        needsOffscreenAlphaCompositing
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            transform: [{ perspective: 900 }, { rotateX: rotateX }, { rotateY: rotateY }],
+          },
+        ]}
       >
-        <Image source={source} style={imageStyle} resizeMode={resizeMode} accessibilityIgnoresInvertColors />
+        <RasterImage
+          source={source}
+          style={[StyleSheet.absoluteFillObject, imageStyle]}
+          resizeMode={resizeMode}
+          zoomable={zoomable}
+          zoomNested={zoomNested}
+          accessibilityIgnoresInvertColors
+        />
       </Animated.View>
     </View>
   );

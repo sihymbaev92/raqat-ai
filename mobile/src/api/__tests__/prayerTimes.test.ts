@@ -1,4 +1,4 @@
-import { parseAladhanPayload } from "../prayerTimes";
+import { parseAladhanPayload, isPrayerTimesResultForLocalToday } from "../prayerTimes";
 
 describe("parseAladhanPayload", () => {
   it("уақыт белгілерін қиып, қаланы мен күнді дұрыс толтырады", () => {
@@ -48,5 +48,67 @@ describe("parseAladhanPayload", () => {
     };
     const r = parseAladhanPayload(payload, "A", "B");
     expect(r.date).toBe("2026-04-19");
+  });
+});
+
+describe("isPrayerTimesResultForLocalToday", () => {
+  it("DD-MM-YYYY: сол күн true", () => {
+    const now = new Date(2026, 3, 19, 8, 0, 0);
+    expect(
+      isPrayerTimesResultForLocalToday(
+        {
+          city: "A",
+          country: "B",
+          date: "19-04-2026",
+          fajr: "05:00",
+          sunrise: "06:00",
+          dhuhr: "12:00",
+          asr: "15:00",
+          maghrib: "18:00",
+          isha: "19:30",
+        },
+        now
+      )
+    ).toBe(true);
+  });
+
+  it("DD-MM-YYYY: келесі күн false", () => {
+    const now = new Date(2026, 3, 20, 8, 0, 0);
+    expect(
+      isPrayerTimesResultForLocalToday(
+        {
+          city: "A",
+          country: "B",
+          date: "19-04-2026",
+          fajr: "05:00",
+          sunrise: "06:00",
+          dhuhr: "12:00",
+          asr: "15:00",
+          maghrib: "18:00",
+          isha: "19:30",
+        },
+        now
+      )
+    ).toBe(false);
+  });
+
+  it("YYYY-MM-DD: сол күн true", () => {
+    const now = new Date(2026, 3, 19, 23, 59, 0);
+    expect(
+      isPrayerTimesResultForLocalToday(
+        {
+          city: "A",
+          country: "B",
+          date: "2026-04-19",
+          fajr: "04:00",
+          sunrise: "",
+          dhuhr: "",
+          asr: "",
+          maghrib: "",
+          isha: "",
+        },
+        now
+      )
+    ).toBe(true);
   });
 });

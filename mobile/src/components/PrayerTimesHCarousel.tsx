@@ -1,9 +1,11 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Platform } from "react-native";
+import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ComponentProps } from "react";
 import type { ThemeColors } from "../theme/colors";
 import { shortPrayerName } from "./CompactPrayerTimesRow";
+import { useAppLocale } from "../i18n/runtime";
 
 type Mci = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -25,14 +27,19 @@ type Props = {
   highlightKey?: string;
   /** Жүктелуде */
   pending?: boolean;
-  /** Фото фондағы намаз экраны: қою шыны + ақ жазу */
+  /** Фото фондағы намаз экраны: қою панель + ақ жазу (мөлдір емес) */
   lightGlass?: boolean;
 };
 
-const GLASS_CARD = "rgba(8, 10, 14, 0.82)";
-const GLASS_BORDER = "rgba(255,255,255,0.14)";
-const INK = "rgba(255,255,255,0.95)";
-const INK_DIM = "rgba(255,255,255,0.82)";
+/** lightGlass: фон суреті көрінсін — мөлдір панель + ақ жазу */
+const GLASS_CARD = "rgba(18, 21, 28, 0.48)";
+const GLASS_BORDER = "rgba(61, 70, 84, 0.75)";
+const GLASS_BORDER_ACTIVE = "rgba(212, 168, 75, 0.92)";
+const GLASS_CHIP = "rgba(37, 43, 54, 0.55)";
+const GLASS_CHIP_ACTIVE = "rgba(58, 52, 40, 0.62)";
+const INK = "#FFFFFF";
+/** Вебте панель кең — карточкалар сәл үлкенірек */
+const PRAYER_CARD_WIDTH = Platform.OS === "web" ? 112 : 92;
 
 export function PrayerTimesHCarousel({
   colors,
@@ -42,6 +49,7 @@ export function PrayerTimesHCarousel({
   pending,
   lightGlass = false,
 }: Props) {
+  useAppLocale();
   return (
     <ScrollView
       horizontal
@@ -60,21 +68,13 @@ export function PrayerTimesHCarousel({
               ]}
             >
               {i === 0 ? (
-                <ActivityIndicator
-                  size="small"
-                  color={lightGlass ? "#FFFFFF" : colors.accent}
-                  style={styles.pendingSpinner}
-                />
+                <RaqatOrnamentSpinner size={26} style={styles.pendingSpinner} />
               ) : (
                 <View
                   style={[
                     styles.iconChip,
                     {
-                      backgroundColor: lightGlass
-                        ? "rgba(255,255,255,0.08)"
-                        : isDark
-                          ? "rgba(255,255,255,0.06)"
-                          : "rgba(20, 45, 32, 0.06)",
+                      backgroundColor: lightGlass ? GLASS_CHIP : isDark ? "rgba(255,255,255,0.06)" : "rgba(20, 45, 32, 0.06)",
                       opacity: 0.55,
                     },
                   ]}
@@ -88,7 +88,7 @@ export function PrayerTimesHCarousel({
             const ico = ICON[c.key] ?? "clock-outline";
             const cardBorder = lightGlass
               ? active
-                ? "rgba(255, 220, 170, 0.85)"
+                ? GLASS_BORDER_ACTIVE
                 : GLASS_BORDER
               : active
                 ? isDark
@@ -98,8 +98,8 @@ export function PrayerTimesHCarousel({
             const cardBg = lightGlass ? GLASS_CARD : colors.card;
             const chipBg = lightGlass
               ? active
-                ? "rgba(255, 220, 170, 0.22)"
-                : "rgba(255,255,255,0.08)"
+                ? GLASS_CHIP_ACTIVE
+                : GLASS_CHIP
               : active
                 ? isDark
                   ? "rgba(212, 175, 55, 0.2)"
@@ -107,12 +107,10 @@ export function PrayerTimesHCarousel({
                 : isDark
                   ? "rgba(255,255,255,0.06)"
                   : "rgba(20, 45, 32, 0.06)";
-            const iconColor = lightGlass ? (active ? "#FFF8E7" : INK) : colors.accent;
-            const nameColor = lightGlass ? INK_DIM : colors.text;
+            const iconColor = lightGlass ? INK : colors.accent;
+            const nameColor = lightGlass ? INK : colors.text;
             const timeColor = lightGlass
-              ? active
-                ? "#FFFFFF"
-                : INK_DIM
+              ? INK
               : active
                 ? colors.text
                 : isDark
@@ -148,7 +146,7 @@ export function PrayerTimesHCarousel({
 const styles = StyleSheet.create({
   scroller: { gap: 8, paddingVertical: 2, paddingRight: 8 },
   card: {
-    width: 92,
+    width: PRAYER_CARD_WIDTH,
     borderRadius: 16,
     borderWidth: 1.5,
     paddingVertical: 7,

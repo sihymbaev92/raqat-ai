@@ -16,7 +16,6 @@ async def register_default_bot_commands(bot: Bot) -> None:
         BotCommand(command="start", description="🏠 Бастау · басты мәзір"),
         BotCommand(command="menu", description="📋 Негізгі мәзір"),
         BotCommand(command="quran", description="📖 Құран"),
-        BotCommand(command="hadith", description="📚 Хадис"),
         BotCommand(command="prayer", description="🕌 Намаз"),
         BotCommand(command="hajj", description="🕋 Қажылық"),
         BotCommand(command="wudu", description="💧 Дәрет"),

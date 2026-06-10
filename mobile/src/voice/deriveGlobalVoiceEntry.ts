@@ -1,9 +1,8 @@
 import type { NavigationState } from "@react-navigation/native";
 
 /**
- * - Басты бет (Main → Home): жоғарғы header-дағы микрофон — бұрыштағы дубль жоқ.
- * - Main басқа экрандар: төменгі таб жолағы жоқ, стандарт safe area жеткілікті.
- * - Qibla, MoreStack, т.б.: толық экран, тек safe area.
+ * - Main (барлық табтар): микрофон тек жоғарғы header оң жақта — төменгі FAB жоқ.
+ * - Qibla, MoreStack, т.б.: төменгі FAB + safe area.
  */
 export function deriveGlobalVoiceEntryLayout(
   state: NavigationState | undefined,
@@ -16,21 +15,15 @@ export function deriveGlobalVoiceEntryLayout(
     return { showGlobalFab: true, bottomInset: 16 };
   }
   const r = state.routes[state.index];
-  if (r.name === "Main" && r.state && "index" in r.state && "routes" in r.state) {
-    const t = r.state;
-    const idx = typeof t.index === "number" ? t.index : 0;
-    const cur = t.routes[idx];
-    if (cur?.name === "Home") {
-      return { showGlobalFab: false, bottomInset: 0 };
-    }
-    return { showGlobalFab: true, bottomInset: 16 };
+  if (r.name === "Main") {
+    return { showGlobalFab: false, bottomInset: 0 };
   }
   return { showGlobalFab: true, bottomInset: 16 };
 }
 
 /**
  * Магнитометр/бағыт — тек нави дайын, state бар кезде; суық іске қосуды қиындатпау үшін !rootReady → false.
- * Басты бет (Main→Home) немесе Qibla экранында ғана true.
+ * Battery үшін барлық Main табта емес, тек Home-дегі құбыла виджеті және толық Qibla экраны көрінгенде жүреді.
  */
 export function shouldRunQiblaMotionSensors(
   state: NavigationState | undefined,
@@ -43,13 +36,10 @@ export function shouldRunQiblaMotionSensors(
   if (r.name === "Qibla") {
     return true;
   }
-  if (r.name === "Main" && r.state && "index" in r.state && "routes" in r.state) {
-    const t = r.state;
-    const idx = typeof t.index === "number" ? t.index : 0;
-    const cur = t.routes[idx];
-    if (cur?.name === "Home") {
-      return true;
-    }
+  if (r.name === "Main") {
+    const nested = r.state as NavigationState | undefined;
+    const active = nested?.routes?.[nested.index ?? 0];
+    return active?.name === "Home";
   }
   return false;
 }

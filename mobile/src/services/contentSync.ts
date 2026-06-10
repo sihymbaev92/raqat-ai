@@ -1,11 +1,9 @@
 /**
- * Құран/хадис метадерек синхроны: ETag + since (инкременттік diff).
- * AsyncStorage: etag, since; diff бойынша аяттарды сүре кэшіне қосады.
+ * Құран метадерек синхроны: ETag + since (инкременттік diff).
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   fetchMetadataChanges,
-  fetchPlatformHadith,
   fetchPlatformQuranAyah,
   type MetadataChangesPayload,
 } from "./platformApiClient";
@@ -14,10 +12,10 @@ import {
   saveSurahAyahsCache,
   type CachedAyah,
 } from "../storage/quranSurahCache";
+import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 
 const KEY_ETAG = "raqat.content.metadata_etag";
 const KEY_SINCE = "raqat.content.metadata_since_sqlite";
-const KEY_HADITH_PREFIX = "raqat.platform.hadith.";
 
 export type ContentSyncOptions = {
   timeoutMs?: number;
@@ -62,11 +60,12 @@ export async function runContentMetadataSync(
 ): Promise<ContentSyncResult> {
   const { etag, since } = await readContentSyncState();
   const bearer = opts?.accessToken?.trim();
+  const contentSecret = opts?.contentSecret ?? getRaqatContentReadSecret();
   const body = await fetchMetadataChanges(apiBase, {
     timeoutMs: opts?.timeoutMs,
     since: since ?? undefined,
     ifNoneMatch: etag ?? undefined,
-    contentSecret: opts?.contentSecret,
+    contentSecret,
     authorizationBearer: bearer || undefined,
   });
   if (body === null) {
@@ -120,13 +119,7 @@ function yieldToUi(): Promise<void> {
   return new Promise((resolve) => setImmediate(resolve));
 }
 
-/** Хадис әр жолы бөлек кілт — шағын параллель OK; Құран бір сүре = бір кілт, сонда тізбектеу міндетті. */
-const HADITH_FETCH_CONCURRENCY = 3;
-
-/**
- * metadata жауабындағы quran_changed / hadith_changed бойынша API-дан тартылып жергілікті сақтауға жазады.
- * Құран: `quranSurahCache` (сүре бойынша бір JSON). Хадис: `raqat.platform.hadith.{id}` JSON.
- */
+/** metadata жауабындағы quran_changed бойынша API-дан тартылып жергілікті сақтауға жазады. */
 export async function applyIncrementalContentPatches(
   apiBase: string,
   body: MetadataChangesPayload,
@@ -138,7 +131,7 @@ export async function applyIncrementalContentPatches(
   if (!body.incremental_diff_available) {
     return { quranPatched, hadithStored, errors };
   }
-  const secret = opts?.contentSecret;
+  const secret = opts?.contentSecret ?? getRaqatContentReadSecret();
   const bearer = opts?.accessToken?.trim();
   const tmo = opts?.timeoutMs;
 
@@ -190,35 +183,7 @@ export async function applyIncrementalContentPatches(
     await yieldToUi();
   }
 
-  const hids = body.hadith_changed ?? [];
-  for (let i = 0; i < hids.length; i += HADITH_FETCH_CONCURRENCY) {
-    const chunk = hids.slice(i, i + HADITH_FETCH_CONCURRENCY);
-    await Promise.all(
-      chunk.map(async (hid) => {
-        try {
-          const r = await fetchPlatformHadith(apiBase, hid, {
-            timeoutMs: tmo,
-            contentSecret: secret,
-            authorizationBearer: bearer || undefined,
-          });
-          if (!r.ok || !r.hadith) {
-            errors.push(`hadith ${hid}`);
-            return;
-          }
-          await AsyncStorage.setItem(
-            `${KEY_HADITH_PREFIX}${hid}`,
-            JSON.stringify({ hadith: r.hadith, savedAt: new Date().toISOString() })
-          );
-          hadithStored += 1;
-        } catch (e) {
-          errors.push(`hadith ${hid}: ${String(e)}`);
-        }
-      })
-    );
-    await yieldToUi();
-  }
-
-  return { quranPatched, hadithStored, errors };
+  return { quranPatched, hadithStored: 0, errors };
 }
 
 /**

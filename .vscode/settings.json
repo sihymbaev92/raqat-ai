@@ -27,5 +27,9 @@
   "python.analysis.autoImportCompletions": false,
   "python.analysis.inlayHints.functionReturnTypes": false,
   "python.analysis.inlayHints.variableTypes": false,
-  "typescript.tsserver.maxTsServerMemory": 256
+  "typescript.tsserver.maxTsServerMemory": 256,
+  "cursorpyright.analysis.autoImportCompletions": false,
+  "cursorpyright.analysis.inlayHints.functionReturnTypes": false,
+  "cursorpyright.analysis.inlayHints.variableTypes": false,
+  "git.ignoreLimitWarning": true
 }

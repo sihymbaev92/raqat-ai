@@ -19,9 +19,10 @@ def _redis_optional_for_api_tests(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def _sqlite_mode_for_api_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+def _sqlite_mode_for_api_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest):
     nodeid = request.node.nodeid
     if "test_pg_migrate_integration" in nodeid:
+        yield
         return
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("DATABASE_URL_WRITER", raising=False)
@@ -30,5 +31,12 @@ def _sqlite_mode_for_api_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.
         from db.get_db import close_postgresql_pools
 
         close_postgresql_pools()
+    except Exception:
+        pass
+    yield
+    try:
+        from content_search_core import dispose_content_search_engines
+
+        dispose_content_search_engines()
     except Exception:
         pass

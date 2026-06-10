@@ -1,26 +1,32 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   Dimensions,
   ScrollView,
-  Pressable,
   Linking,
   Platform,
-  Image,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { Pressable } from "@/ui/Pressable";
+import { useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native";
 import { useQiblaSensor } from "../context/QiblaSensorContext";
+import type { RootStackParamList } from "../navigation/types";
+import { QiblaArCameraView } from "../components/QiblaArCameraView";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { menuIconAssets } from "../theme/menuIconAssets";
 import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { qiblaAlignHint, QIBLA_ALIGN_THRESHOLD_DEG, type QiblaAlignHint } from "../lib/qiblaHints";
 
 const { width } = Dimensions.get("window");
+
+/** Көрсету үшін 0.1° дәлдік (солтүстік = 0…360). */
+function formatDeg1(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return "—";
+  return (Math.round(n * 10) / 10).toFixed(1);
+}
 
 function screenHint(h: QiblaAlignHint, bearing: number | null): string {
   if (bearing == null) return kk.qibla.hintPending;
@@ -36,22 +42,53 @@ function screenHint(h: QiblaAlignHint, bearing: number | null): string {
   }
 }
 
+function formatAccuracyMeters(m: number | null | undefined): string {
+  if (m == null || !Number.isFinite(m)) return "—";
+  if (m >= 1000) return `±${(m / 1000).toFixed(1)} км`;
+  return `±${Math.max(1, Math.round(m))} м`;
+}
+
+type QiblaRoute = RouteProp<RootStackParamList, "Qibla">;
+
 export function QiblaScreen() {
   const { colors } = useAppTheme();
-  const { perm, bearing, rotateDeg, refreshBearing, positionFailed, locationSource, motionMode, setMotionMode } =
-    useQiblaSensor();
-  const dialSize = Math.min(width - 124, 196);
+  const route = useRoute<QiblaRoute>();
+  const initialMode = route.params?.mode === "camera" ? "camera" : "compass";
+  const [viewMode, setViewMode] = useState<"compass" | "camera">(initialMode);
+
+  useEffect(() => {
+    if (route.params?.mode === "camera") setViewMode("camera");
+  }, [route.params?.mode]);
+  const {
+    perm,
+    bearing,
+    heading,
+    headingHasSample,
+    rotateDeg,
+    refreshBearing,
+    positionFailed,
+    locationSource,
+    locationAccuracyM,
+    motionMode,
+    setMotionMode,
+    headingAccuracyDeg,
+    compassQuality,
+  } = useQiblaSensor();
+  const dialSize = Math.min(width - 84, 260);
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const alignHint = qiblaAlignHint(rotateDeg, bearing);
+  const alignHint = qiblaAlignHint(rotateDeg, bearing, { headingReady: headingHasSample });
   const mainHint = screenHint(alignHint, bearing);
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationSecLeft, setCalibrationSecLeft] = useState(20);
   const [calibrationResult, setCalibrationResult] = useState<"high" | "medium" | "low" | null>(null);
+  const rotateDegRef = useRef(rotateDeg);
+  rotateDegRef.current = rotateDeg;
 
   useFocusEffect(
     useCallback(() => {
+      setMotionMode("fast");
       void refreshBearing();
-    }, [refreshBearing])
+    }, [refreshBearing, setMotionMode])
   );
 
   useEffect(() => {
@@ -63,7 +100,7 @@ export function QiblaScreen() {
           clearInterval(tick);
           setCalibrating(false);
           void refreshBearing();
-          const diff = Math.abs(rotateDeg);
+          const diff = Math.abs(rotateDegRef.current);
           if (diff <= 8) {
             setCalibrationResult("high");
           } else if (diff <= 18) {
@@ -77,7 +114,7 @@ export function QiblaScreen() {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [calibrating, refreshBearing, rotateDeg]);
+  }, [calibrating, refreshBearing]);
 
   const openAppSettings = () => {
     void Linking.openSettings();
@@ -86,7 +123,7 @@ export function QiblaScreen() {
   if (perm === "unknown") {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} size="large" />
+        <RaqatOrnamentSpinner size={52} />
         <Text style={styles.muted}>{kk.qibla.permLoading}</Text>
       </View>
     );
@@ -157,21 +194,75 @@ export function QiblaScreen() {
       contentContainerStyle={styles.pad}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.arrowPanel}>
-        <QiblaArrowPointer
+      <View style={styles.modeRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.modeChip,
+            viewMode === "compass" && styles.modeChipActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => setViewMode("compass")}
+          accessibilityRole="button"
+          accessibilityState={{ selected: viewMode === "compass" }}
+        >
+          <Text style={[styles.modeTxt, viewMode === "compass" && styles.modeTxtActive]}>
+            {kk.qibla.modeCompass}
+          </Text>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.modeChip,
+            viewMode === "camera" && styles.modeChipActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => setViewMode("camera")}
+          accessibilityRole="button"
+          accessibilityState={{ selected: viewMode === "camera" }}
+        >
+          <Text style={[styles.modeTxt, viewMode === "camera" && styles.modeTxtActive]}>
+            {kk.qibla.modeCamera}
+          </Text>
+        </Pressable>
+      </View>
+
+      {viewMode === "camera" ? (
+        <QiblaArCameraView
           colors={colors}
-          size={dialSize}
-          rotateDeg={rotateDeg}
-          aligned={alignHint === "aligned" && bearing != null}
-          showDialRing
+          layout="inline"
+          style={styles.cameraPane}
+          onClose={() => setViewMode("compass")}
         />
-        <Image
-          source={menuIconAssets.headerQibla}
-          style={styles.kaabaImg}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
-          accessibilityLabel="Kaaba"
-        />
+      ) : null}
+
+      {viewMode === "compass" ? (
+      <>
+      <View style={[styles.arrowPanel, { position: "relative" }]}>
+        {bearing != null && !headingHasSample ? (
+          <View
+            style={{
+              width: dialSize,
+              height: dialSize,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <RaqatOrnamentSpinner size={52} />
+          </View>
+        ) : (
+          <QiblaArrowPointer
+            colors={colors}
+            size={dialSize}
+            rotateDeg={rotateDeg}
+            aligned={alignHint === "aligned" && bearing != null}
+            showDialRing
+            showDialHalo
+            showTopMarker
+            showPivotHub
+            showAlignLed
+            needlePulse
+            ornamentNeedle
+          />
+        )}
       </View>
 
       {locationSource === "city" ? (
@@ -188,16 +279,31 @@ export function QiblaScreen() {
       </Text>
 
       {bearing != null ? (
+        <View style={styles.preciseNums}>
+          <Text style={styles.preciseNumLine}>{kk.qibla.azimuthReadout(formatDeg1(bearing))}</Text>
+          <Text style={styles.preciseNumLine}>{kk.qibla.headingReadout(formatDeg1(heading))}</Text>
+          <Text style={styles.preciseNumLine}>
+            {kk.qibla.compassQualityReadout(compassQuality, formatDeg1(headingAccuracyDeg))}
+          </Text>
+          <Text style={styles.preciseNumLine}>
+            {locationSource === "gps"
+              ? kk.qibla.locationAccuracyReadout(formatAccuracyMeters(locationAccuracyM))
+              : kk.qibla.locationSourceCity}
+          </Text>
+        </View>
+      ) : null}
+
+      {bearing != null && alignHint !== "none" ? (
         <Text style={styles.offsetLine} accessibilityLiveRegion="polite">
           {alignHint === "aligned"
             ? kk.qibla.offsetInZone(QIBLA_ALIGN_THRESHOLD_DEG)
             : alignHint === "turn_cw"
-              ? kk.qibla.offsetPreciseCw(Math.max(1, Math.round(Math.abs(rotateDeg))))
-              : kk.qibla.offsetPreciseCcw(Math.max(1, Math.round(Math.abs(rotateDeg))))}
+              ? kk.qibla.offsetPreciseCw(rotateDeg)
+              : kk.qibla.offsetPreciseCcw(rotateDeg)}
         </Text>
       ) : null}
 
-      <View style={styles.modeRow}>
+      <View style={styles.motionModeRow}>
         <Pressable
           style={({ pressed }) => [
             styles.modeChip,
@@ -206,7 +312,9 @@ export function QiblaScreen() {
           ]}
           onPress={() => setMotionMode("balanced")}
         >
-          <Text style={[styles.modeTxt, motionMode === "balanced" && styles.modeTxtActive]}>Balanced</Text>
+          <Text style={[styles.modeTxt, motionMode === "balanced" && styles.modeTxtActive]}>
+            {kk.qibla.motionBalanced}
+          </Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -216,7 +324,9 @@ export function QiblaScreen() {
           ]}
           onPress={() => setMotionMode("fast")}
         >
-          <Text style={[styles.modeTxt, motionMode === "fast" && styles.modeTxtActive]}>Fast</Text>
+          <Text style={[styles.modeTxt, motionMode === "fast" && styles.modeTxtActive]}>
+            {kk.qibla.motionFast}
+          </Text>
         </Pressable>
       </View>
 
@@ -270,6 +380,8 @@ export function QiblaScreen() {
       </Pressable>
 
       <Text style={styles.hint}>{kk.qibla.magnetHint}</Text>
+      </>
+      ) : null}
     </ScrollView>
   );
 }
@@ -304,6 +416,25 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 8,
       textAlign: "center",
     },
+    preciseNums: {
+      alignSelf: "stretch",
+      marginBottom: 10,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      gap: 4,
+    },
+    preciseNumLine: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "600",
+      lineHeight: 20,
+      textAlign: "center",
+      ...(Platform.OS === "ios" ? ({ fontVariant: ["tabular-nums"] } as const) : {}),
+    },
     offsetLine: {
       color: colors.muted,
       fontSize: 15,
@@ -333,7 +464,14 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.card,
     },
     secondaryBtnTxt: { color: colors.accent, fontWeight: "600", fontSize: 15 },
+    cameraPane: { marginBottom: 16 },
     modeRow: {
+      flexDirection: "row",
+      gap: 8,
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    motionModeRow: {
       flexDirection: "row",
       gap: 8,
       justifyContent: "center",
@@ -389,8 +527,6 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: 4,
       minWidth: width - 84,
     },
-    /** Эмодзи 🕋 орнына PNG — қоршаусыз, анық */
-    kaabaImg: { width: 36, height: 36, marginTop: 8 },
     hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 8 },
   });
 }

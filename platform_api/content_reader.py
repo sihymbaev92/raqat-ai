@@ -206,7 +206,7 @@ def quran_one_ayah(surah: int, ayah: int) -> dict[str, Any] | None:
 
 def _hadith_select_columns(conn: Any) -> str:
     cols = _table_columns(conn, "hadith")
-    base = ["id", "source", "text_ar", "text_kk", "text_ru", "text_en", "grade"]
+    base = [c for c in ("id", "source", "text_ar", "text_kk", "text_ru", "text_en", "grade") if c in cols]
     for c in (
         "is_repeated",
         "original_id",
@@ -220,6 +220,8 @@ def _hadith_select_columns(conn: Any) -> str:
         "hadith_no",
         "chapter",
         "is_sahih",
+        "kk_source_site",
+        "kk_source_url",
     ):
         if c in cols:
             base.append(c)
@@ -251,6 +253,18 @@ def _norm_lang_col(lang: str) -> str:
     return "text_en"
 
 
+def _hadith_lang_col(conn: Any, lang: str) -> str:
+    """Тіл бағанасы кестеде жоқ болса (мысалы text_en жоқ SQLite), қолжетімді аудармаға ауысады."""
+    want = _norm_lang_col(lang)
+    cols = _table_columns(conn, "hadith")
+    if want in cols:
+        return want
+    for fallback in ("text_kk", "text_ru", "text_en", "text_ar"):
+        if fallback in cols:
+            return fallback
+    return "text_ar"
+
+
 def hadith_random_for_source(
     source: str,
     *,
@@ -258,12 +272,12 @@ def hadith_random_for_source(
     lang: str = "kk",
     unique_only: bool = True,
 ) -> dict[str, Any] | None:
-    col = _norm_lang_col(lang)
     where = "source = ?"
     params: list[Any] = [source]
     if strict_sahih:
         where += " AND POSITION('sahih' IN lower(COALESCE(grade, ''))) > 0"
     with _content_conn() as conn:
+        col = _hadith_lang_col(conn, lang)
         if unique_only:
             where += hadith_unique_only_sql_suffix(conn)
         row = _exec(
@@ -287,11 +301,11 @@ def hadith_random_any(
     unique_only: bool = True,
 ) -> dict[str, Any] | None:
     """Барлық дереккөз бойынша кездейсоқ хадис (source сүзгісі жоқ)."""
-    col = _norm_lang_col(lang)
     where = "1=1"
     if strict_sahih:
         where += " AND POSITION('sahih' IN lower(COALESCE(grade, ''))) > 0"
     with _content_conn() as conn:
+        col = _hadith_lang_col(conn, lang)
         if unique_only:
             where += hadith_unique_only_sql_suffix(conn)
         row = _exec(
@@ -315,68 +329,15 @@ def hadith_search(
     limit: int = 60,
     unique_only: bool = True,
 ) -> list[dict[str, Any]]:
-    col = _norm_lang_col(lang)
-    token = f"%{(query or '').strip()}%"
-    with _content_conn() as conn:
-        cols = _table_columns(conn, "hadith")
-        select_bits = [f"{col} AS text_tr"]
-        for c in (
-            "text_kk_literal",
-            "text_kk_clean",
-            "text_kk_explanation",
-            "translation_status",
-            "quality_score",
-            "is_sahih",
-        ):
-            if c in cols:
-                select_bits.append(c)
-        uq = hadith_unique_only_sql_suffix(conn) if unique_only else ""
-        rows = _exec(
-            conn,
-            f"""
-            SELECT id, source, text_ar, grade, {", ".join(select_bits)}
-            FROM hadith
-            WHERE lower(
-                COALESCE({col}, '') || ' ' ||
-                COALESCE(text_en, '') || ' ' ||
-                COALESCE(text_ar, '')
-            ) LIKE lower(?)
-            {uq}
-            LIMIT ?
-            """,
-            (token, int(max(1, min(limit, 200)))),
-        ).fetchall()
-    return [dict(r) for r in rows]
+    from content_search_core import hadith_search as _hadith_search_sa
+
+    return _hadith_search_sa(query, lang=lang, limit=limit, unique_only=unique_only)
 
 
 def quran_search(query: str, *, lang: str = "kk", include_translit: bool = True, limit: int = 5) -> list[dict[str, Any]]:
-    col = _norm_lang_col(lang)
-    token = f"%{(query or '').strip()}%"
-    where_parts = ["COALESCE(text_ar, '') LIKE ?"]
-    params: list[Any] = [token]
-    select_cols = ["surah", "ayah", "text_ar"]
-    if col != "text_ar":
-        where_parts.insert(0, f"COALESCE({col}, '') LIKE ?")
-        params.insert(0, token)
-        select_cols.append(f"{col} AS text_tr")
-    if include_translit:
-        where_parts.append("COALESCE(translit, '') LIKE ?")
-        params.append(token)
-        select_cols.append("translit")
-    params.append(int(max(1, min(limit, 100))))
-    with _content_conn() as conn:
-        rows = _exec(
-            conn,
-            f"""
-            SELECT {", ".join(select_cols)}
-            FROM quran
-            WHERE {" OR ".join(where_parts)}
-            ORDER BY surah, ayah
-            LIMIT ?
-            """,
-            tuple(params),
-        ).fetchall()
-    return [dict(r) for r in rows]
+    from content_search_core import quran_search as _quran_search_sa
+
+    return _quran_search_sa(query, lang=lang, include_translit=include_translit, limit=limit)
 
 
 def content_fingerprint_v1() -> tuple[str, dict[str, Any]]:

@@ -1,16 +1,14 @@
 import { SEERAH_LESSON_COUNT, urlForSeerahLesson } from "../seerahVideos";
 
 describe("urlForSeerahLesson", () => {
-  it("түпнұсқа сілтеме жоқ кезде YouTube іздеуін қайтарады", () => {
+  it("түпнұсқа watch URL берілген (3-сабақ = нақты бейне)", () => {
     const u = urlForSeerahLesson(3);
-    expect(u).toContain("youtube.com");
-    expect(u).toContain("search_query=");
-    expect(decodeURIComponent(u)).toContain("3");
+    expect(u).toMatch(/^https:\/\/www\.youtube\.com\/watch\?v=[\w-]+$/);
   });
 
-  it("38-сабақ үшін жұмыс істейді", () => {
+  it("38-сабақ — нақты бейне id", () => {
     const u = urlForSeerahLesson(38);
-    expect(decodeURIComponent(u)).toContain("38");
+    expect(u).toBe("https://www.youtube.com/watch?v=uAigXDEzbVI");
   });
 
   it("шектеу сыртында RangeError береді", () => {

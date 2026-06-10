@@ -8,58 +8,74 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Appearance } from "react-native";
-import { darkColors, lightColors, type ThemeColors } from "./colors";
+import { type ThemeColors } from "./colors";
+import {
+  isColorPaletteId,
+  resolveThemeColors,
+  type ColorPaletteId,
+} from "./themePalettes";
+import {
+  isThemeSchemeId,
+  migrateLegacyThemeMode,
+  isThemeSchemeDark,
+  type ThemeSchemeId,
+} from "./themeSchemes";
 
-const STORAGE_KEY = "raqat_theme_mode";
-
-export type ThemeMode = "dark" | "light" | "system";
+const STORAGE_KEY_LEGACY = "raqat_theme_mode";
+const STORAGE_KEY_SCHEME = "raqat_theme_scheme";
+const STORAGE_KEY_PALETTE = "raqat_color_palette";
 
 type Ctx = {
   colors: ThemeColors;
-  mode: ThemeMode;
+  themeScheme: ThemeSchemeId;
+  colorPalette: ColorPaletteId;
   isDark: boolean;
-  setMode: (m: ThemeMode) => void;
+  setThemeScheme: (s: ThemeSchemeId) => void;
+  setColorPalette: (p: ColorPaletteId) => void;
 };
 
 const ThemeContext = createContext<Ctx | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("dark");
-  const [systemScheme, setSystemScheme] = useState<"light" | "dark" | null | undefined>(
-    () => Appearance.getColorScheme()
-  );
+  const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>("light");
+  const [colorPalette, setColorPaletteState] = useState<ColorPaletteId>("default");
 
   useEffect(() => {
     (async () => {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
-      if (raw === "dark" || raw === "light" || raw === "system") {
-        setModeState(raw);
+      const schemeRaw = await AsyncStorage.getItem(STORAGE_KEY_SCHEME);
+      if (isThemeSchemeId(schemeRaw)) {
+        setThemeSchemeState(schemeRaw);
+      } else {
+        const legacy = await AsyncStorage.getItem(STORAGE_KEY_LEGACY);
+        const systemDark = Appearance.getColorScheme() === "dark";
+        setThemeSchemeState(migrateLegacyThemeMode(legacy, systemDark));
+      }
+      const pal = await AsyncStorage.getItem(STORAGE_KEY_PALETTE);
+      if (isColorPaletteId(pal)) {
+        setColorPaletteState(pal);
       }
     })();
   }, []);
 
-  useEffect(() => {
-    const sub = Appearance.addChangeListener(({ colorScheme }) => {
-      setSystemScheme(colorScheme);
-    });
-    return () => sub.remove();
+  const setThemeScheme = useCallback((s: ThemeSchemeId) => {
+    setThemeSchemeState(s);
+    AsyncStorage.setItem(STORAGE_KEY_SCHEME, s).catch(() => {});
   }, []);
 
-  const setMode = useCallback((m: ThemeMode) => {
-    setModeState(m);
-    AsyncStorage.setItem(STORAGE_KEY, m).catch(() => {});
+  const setColorPalette = useCallback((p: ColorPaletteId) => {
+    setColorPaletteState(p);
+    AsyncStorage.setItem(STORAGE_KEY_PALETTE, p).catch(() => {});
   }, []);
 
-  const isDark = useMemo(() => {
-    if (mode === "dark") return true;
-    if (mode === "light") return false;
-    return systemScheme === "dark";
-  }, [mode, systemScheme]);
-  const colors = isDark ? darkColors : lightColors;
+  const isDark = useMemo(() => isThemeSchemeDark(themeScheme), [themeScheme]);
+  const colors = useMemo(
+    () => resolveThemeColors(themeScheme, colorPalette),
+    [themeScheme, colorPalette]
+  );
 
   const value = useMemo(
-    () => ({ colors, mode, isDark, setMode }),
-    [colors, mode, isDark, setMode]
+    () => ({ colors, themeScheme, colorPalette, isDark, setThemeScheme, setColorPalette }),
+    [colors, themeScheme, colorPalette, isDark, setThemeScheme, setColorPalette]
   );
 
   return (

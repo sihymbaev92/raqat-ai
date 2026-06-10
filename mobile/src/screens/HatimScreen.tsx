@@ -1,15 +1,19 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  LayoutAnimation,
   Platform,
-  UIManager,
-  Switch,
+  type LayoutChangeEvent,
 } from "react-native";
-import { KazakhOrnamentBand } from "../components/KazakhOrnamentBand";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "@react-navigation/native";
@@ -17,12 +21,36 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { QURAN_BASMALA_READER_AR } from "../constants/quranUthmani";
 import type { MoreStackParamList } from "../navigation/types";
-import { HATIM_SECTIONS } from "../content/spiritualContent";
+import { navigateToQuranMushafBook } from "../navigation/navigateToMoreStack";
+import { mushafPageForSurahAyah } from "../quran/mushafPageForSurahAyah";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
-import { QURAN_JUZ_STARTS } from "../data/quranJuzBoundaries";
-import { computeHatimJuzStats } from "../hatim/hatimJuzProgress";
+import { juzForSurahAyah } from "../data/quranJuzBoundaries";
+import { AYAH_COUNTS_PER_SURAH } from "../data/quranAyahCounts";
+import {
+  mushafStartPageForSurah,
+  surahListMetaSubtitle,
+  surahListNumberedTitle,
+} from "../data/surahListMeta";
+import {
+  HATIM_SURAH_ROW_H,
+  buildHatimListLayouts,
+  hatimListIndexForSurah,
+  hatimScrollOffsetForIndex,
+} from "../hatim/hatimListScroll";
+import {
+  QuranSurahListCheckbox,
+  QuranSurahListJuzHeader,
+  QuranSurahListRow,
+} from "../components/quran/QuranSurahListRow";
+import { QuranNavWheelSheet } from "../components/quran/QuranNavWheelSheet";
+import { HatimSurahSearchSheet } from "../components/quran/HatimSurahSearchSheet";
+import {
+  clampQuranNavCoords,
+  coordsFromSurah,
+  initialAyahForNavCoords,
+  type QuranNavCoords,
+} from "../quran/quranNavPickerCoords";
 import {
   hatimProgressFraction,
   loadHatimProgress,
@@ -31,160 +59,240 @@ import {
   toggleHatimSurah,
   type HatimResume,
 } from "../storage/hatimProgress";
-import { requestNotificationPermissions } from "../services/prayerNotifications";
-import {
-  getHatimReminderClock,
-  getHatimReminderEnabled,
-  setHatimReminderClock,
-  setHatimReminderEnabled,
-  syncHatimReminderSchedule,
-} from "../services/hatimReminderNotifications";
-
-/** QuranSurah mushafLayout-пен бір кітап палитрасы. */
-const MUSHAF_LIGHT_TAUPE = "#A68E74";
-const MUSHAF_LIGHT_PAGE = "#FDF6E9";
-const MUSHAF_LIGHT_DESK = "#EBE4D4";
-
-if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+import { QURAN_BOOK_FONT_FACE, loadQuranBookFonts } from "../fonts/quranBookFonts";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "Hatim">;
 };
 
-type Row = { number: number; title: string };
+type Row = { number: number; name: string; ayahCount: number };
+
+type HatimListRow =
+  | { kind: "juzHeader"; juz: number }
+  | { kind: "surah"; row: Row };
+
+function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
+  return {
+    screenBg: isDark ? colors.bg : "#F2F2F7",
+  };
+}
 
 export function HatimScreen({ navigation }: Props) {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const listPalette = useMemo(() => quranSurahListPalette(colors, isDark), [colors, isDark]);
+  const styles = useMemo(
+    () => makeStyles(colors, isDark, listPalette.screenBg),
+    [colors, isDark, listPalette.screenBg]
+  );
   const [read, setRead] = useState<Set<number>>(new Set());
   const [resume, setResume] = useState<HatimResume | null>(null);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderHour, setReminderHour] = useState(20);
-  const [reminderMinute, setReminderMinute] = useState(0);
-  const [reminderErr, setReminderErr] = useState<string | null>(null);
+  const [navSheetOpen, setNavSheetOpen] = useState(false);
+  const [searchSheetOpen, setSearchSheetOpen] = useState(false);
+  const surahListRef = useRef<FlatList<HatimListRow>>(null);
+  const listHeaderHeightRef = useRef(0);
 
-  const reload = useCallback(async () => {
-    const [s, r, en, clock] = await Promise.all([
-      loadHatimProgress(),
-      loadHatimResume(),
-      getHatimReminderEnabled(),
-      getHatimReminderClock(),
-    ]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadQuranBookFonts().catch(() => {});
+    }, [])
+  );
+
+  const reload = useCallback(async (shouldApply: () => boolean = () => true) => {
+    const [s, r] = await Promise.all([loadHatimProgress(), loadHatimResume()]);
+    if (!shouldApply()) return;
     setRead(s);
     setResume(r);
-    setReminderEnabled(en);
-    setReminderHour(clock.hour);
-    setReminderMinute(clock.minute);
   }, []);
 
   useFocusEffect(
     useCallback(() => {
+      let alive = true;
       void (async () => {
-        await syncHatimWithServerBidirectional();
-        await reload();
-        if (Platform.OS !== "web") {
-          await syncHatimReminderSchedule();
+        await reload(() => alive);
+        try {
+          await syncHatimWithServerBidirectional();
+        } catch {
+          /* офлайн / API — жергілікті прогресс көрсетіледі */
         }
+        await reload(() => alive);
       })();
-    }, [reload])
+      return () => {
+        alive = false;
+      };
+    }, [reload]),
   );
 
   const data: Row[] = useMemo(
     () =>
       Array.from({ length: 114 }, (_, i) => {
         const number = i + 1;
-        return { number, title: surahDisplayTitle(number, "") };
+        const name = surahDisplayTitle(number, "");
+        const ayahCount = AYAH_COUNTS_PER_SURAH[number - 1] ?? 0;
+        return {
+          number,
+          name,
+          ayahCount,
+        };
       }),
-    []
+    [],
+  );
+
+  const listRows = useMemo<HatimListRow[]>(() => {
+    const rows: HatimListRow[] = [];
+    let lastJuz = 0;
+    for (const row of data) {
+      const juz = juzForSurahAyah(row.number, 1);
+      if (juz !== lastJuz) {
+        rows.push({ kind: "juzHeader", juz });
+        lastJuz = juz;
+      }
+      rows.push({ kind: "surah", row });
+    }
+    return rows;
+  }, [data]);
+
+  const listLayouts = useMemo(
+    () => buildHatimListLayouts(listRows),
+    [listRows]
+  );
+
+  const scrollToListIndex = useCallback(
+    (index: number) => {
+      if (index < 0) return;
+      const offset = hatimScrollOffsetForIndex(
+        listLayouts,
+        index,
+        listHeaderHeightRef.current
+      );
+      const run = () => {
+        surahListRef.current?.scrollToOffset({ offset, animated: true });
+      };
+      run();
+      if (Platform.OS === "web") {
+        requestAnimationFrame(run);
+        setTimeout(run, 120);
+      } else {
+        requestAnimationFrame(run);
+      }
+    },
+    [listLayouts]
   );
 
   const { read: readCount, total, pct } = hatimProgressFraction(read);
 
-  const juzStats = useMemo(() => computeHatimJuzStats(read), [read]);
+  const navPickerInitial = useMemo((): QuranNavCoords => {
+    if (resume) return coordsFromSurah(resume.surah);
+    for (let n = 1; n <= 114; n += 1) {
+      if (!read.has(n)) return coordsFromSurah(n);
+    }
+    return coordsFromSurah(1);
+  }, [resume, read]);
 
-  const openJuzFromGrid = useCallback(
-    (juz: number) => {
-      const row = QURAN_JUZ_STARTS.find((x) => x.juz === juz);
-      if (!row) return;
-      navigation.navigate("QuranSurah", {
-        surahNumber: row.startSurah,
-        initialAyah: row.startAyah,
-        mushafLayout: true,
-        englishName: surahDisplayTitle(row.startSurah, ""),
-      });
+  const scrollHatimToSurah = useCallback(
+    (surahNumber: number) => {
+      const index = hatimListIndexForSurah(listLayouts, surahNumber, listRows);
+      scrollToListIndex(index);
+    },
+    [listLayouts, listRows, scrollToListIndex]
+  );
+
+  const onListHeaderLayout = useCallback((e: LayoutChangeEvent) => {
+    listHeaderHeightRef.current = e.nativeEvent.layout.height;
+  }, []);
+
+  const openNavSheet = useCallback(() => setNavSheetOpen(true), []);
+  const closeNavSheet = useCallback(() => setNavSheetOpen(false), []);
+  const openSearchSheet = useCallback(() => setSearchSheetOpen(true), []);
+  const closeSearchSheet = useCallback(() => setSearchSheetOpen(false), []);
+
+  const onSearchPickSurah = useCallback(
+    (surahNumber: number) => {
+      scrollHatimToSurah(surahNumber);
+    },
+    [scrollHatimToSurah]
+  );
+
+  const openMushafBook = useCallback(
+    (opts?: { initialPage?: number; focusSurah?: number; focusAyah?: number }) => {
+      navigateToQuranMushafBook(
+        {
+          ...(opts?.initialPage != null ? { initialPage: opts.initialPage } : {}),
+          ...(opts?.focusSurah != null ? { focusSurah: opts.focusSurah } : {}),
+          ...(opts?.focusAyah != null ? { focusAyah: opts.focusAyah } : {}),
+        },
+        navigation
+      );
     },
     [navigation]
   );
 
-  const goResume = () => {
-    if (!resume) return;
-    navigation.navigate("QuranSurah", {
-      surahNumber: resume.surah,
-      englishName: surahDisplayTitle(resume.surah, ""),
-      initialAyah: resume.ayah,
-      mushafLayout: true,
-    });
-  };
-
-  const goFromBasmala = useCallback(() => {
-    if (resume) {
-      navigation.navigate("QuranSurah", {
-        surahNumber: resume.surah,
-        englishName: surahDisplayTitle(resume.surah, ""),
-        initialAyah: resume.ayah,
-        mushafLayout: true,
-      });
-      return;
-    }
-    for (let n = 1; n <= 114; n += 1) {
-      if (!read.has(n)) {
-        navigation.navigate("QuranSurah", {
-          surahNumber: n,
-          englishName: surahDisplayTitle(n, ""),
-          mushafLayout: true,
+  const openMushafAtSurah = useCallback(
+    (surahNumber: number, opts?: { initialAyah?: number }) => {
+      if (opts?.initialAyah != null) {
+        openMushafBook({
+          focusSurah: surahNumber,
+          focusAyah: opts.initialAyah,
+          initialPage: mushafPageForSurahAyah(surahNumber, opts.initialAyah),
         });
         return;
       }
-    }
-    navigation.navigate("QuranSurah", {
-      surahNumber: 1,
-      englishName: surahDisplayTitle(1, ""),
-      mushafLayout: true,
+      openMushafBook({
+        focusSurah: surahNumber,
+        focusAyah: 1,
+        initialPage: mushafStartPageForSurah(surahNumber),
+      });
+    },
+    [openMushafBook]
+  );
+
+  const onNavApply = useCallback(
+    (coords: QuranNavCoords) => {
+      closeNavSheet();
+      scrollHatimToSurah(coords.surah);
+      openMushafBook({
+        initialPage: coords.page,
+        focusSurah: coords.surah,
+        focusAyah: initialAyahForNavCoords(coords),
+      });
+    },
+    [closeNavSheet, scrollHatimToSurah, openMushafBook]
+  );
+
+  const openHatimSettings = useCallback(() => {
+    navigation.navigate("HatimSettings");
+  }, [navigation]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShadowVisible: false,
+      headerTitleAlign: "center",
+      headerRight: () => (
+        <View style={{ flexDirection: "row", alignItems: "center", marginRight: 2 }}>
+          <Pressable
+            onPress={openHatimSettings}
+            style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.82 : 1 }]}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={kk.hatim.settingsBtnA11y}
+          >
+            <MaterialIcons name="settings" size={24} color={colors.text} />
+          </Pressable>
+        </View>
+      ),
     });
-  }, [resume, read, navigation]);
+    return () => {
+      navigation.setOptions({
+        headerTitleAlign: undefined,
+        headerShadowVisible: undefined,
+        headerRight: undefined,
+      });
+    };
+  }, [navigation, colors.text, openHatimSettings]);
 
-  const pad2 = (n: number) => String(n).padStart(2, "0");
-
-  const bumpReminderClock = async (deltaMin: number) => {
-    let t = reminderHour * 60 + reminderMinute + deltaMin;
-    t = Math.max(6 * 60, Math.min(23 * 60 + 59, t));
-    const h = Math.floor(t / 60);
-    const m = t % 60;
-    await setHatimReminderClock(h, m);
-    setReminderHour(h);
-    setReminderMinute(m);
-    if (reminderEnabled && Platform.OS !== "web") {
-      await syncHatimReminderSchedule();
-    }
-  };
-
-  const onReminderToggle = async (v: boolean) => {
-    setReminderErr(null);
-    if (Platform.OS === "web") return;
-    if (v) {
-      const ok = await requestNotificationPermissions();
-      if (!ok) {
-        setReminderErr(kk.hatim.reminderPermNeeded);
-        return;
-      }
-    }
-    await setHatimReminderEnabled(v);
-    setReminderEnabled(v);
-    await syncHatimReminderSchedule();
+  const goResume = () => {
+    if (!resume) return;
+    openMushafAtSurah(resume.surah, { initialAyah: resume.ayah });
   };
 
   const onToggle = async (n: number) => {
@@ -195,327 +303,231 @@ export function HatimScreen({ navigation }: Props) {
   const listBottomPad = 24 + insets.bottom;
 
   return (
-    <View style={styles.bookDesk}>
-      <View style={[styles.bookPageWrap, { paddingBottom: Math.max(6, Math.round(insets.bottom * 0.45)) }]}>
-        <View style={[styles.bookPage, isDark && styles.bookPageDark]}>
-          <FlatList
-            style={styles.listFlex}
-            data={data}
-            keyExtractor={(it) => String(it.number)}
-            extraData={{ readSig: [...read].sort((a, b) => a - b).join(",") }}
-            contentContainerStyle={[styles.pad, { paddingBottom: listBottomPad }]}
-            ListHeaderComponent={
-              <View style={styles.headerBlock}>
-                <View style={styles.basmalaSection}>
-                  <KazakhOrnamentBand colors={colors} compact tone="quranGold" bleed={12} translucent />
-                  <Pressable
-                    onPress={goFromBasmala}
-                    style={({ pressed }) => [styles.basmalaBanner, pressed && { opacity: 0.92 }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.basmalaOpenReaderA11y}
-                  >
-                    <Text style={styles.basmalaArabic} importantForAccessibility="no">
-                      {QURAN_BASMALA_READER_AR}
-                    </Text>
-                  </Pressable>
-                </View>
-                {Platform.OS !== "web" ? (
-                  <View style={styles.reminderCard}>
-                    <View style={styles.reminderHeadRow}>
-                      <Text style={styles.reminderTitle}>{kk.hatim.reminderTitle}</Text>
-                      <Switch
-                        value={reminderEnabled}
-                        onValueChange={(v) => void onReminderToggle(v)}
-                        trackColor={{
-                          false: colors.border,
-                          true: isDark ? "rgba(77,182,172,0.45)" : "rgba(21,128,61,0.35)",
-                        }}
-                        thumbColor={reminderEnabled ? colors.accent : colors.muted}
-                        accessibilityLabel={kk.hatim.reminderTitle}
-                      />
-                    </View>
-                    <Text style={styles.reminderHint}>{kk.hatim.reminderHint}</Text>
-                    {reminderErr ? <Text style={styles.reminderErr}>{reminderErr}</Text> : null}
-                    {reminderEnabled ? (
-                      <View style={styles.reminderTimeBlock}>
-                        <Text style={styles.reminderTimeLabel}>{kk.hatim.reminderTimeLabel}</Text>
-                        <View style={styles.reminderTimeRow}>
-                          <Pressable
-                            style={({ pressed }) => [styles.reminderTimeBtn, pressed && { opacity: 0.88 }]}
-                            onPress={() => void bumpReminderClock(-30)}
-                            accessibilityRole="button"
-                            accessibilityLabel={kk.hatim.reminderTimeMinusA11y}
-                          >
-                            <Text style={styles.reminderTimeBtnTxt}>−</Text>
-                          </Pressable>
-                          <Text style={styles.reminderTimeValue} accessibilityRole="text">
-                            {pad2(reminderHour)}:{pad2(reminderMinute)}
-                          </Text>
-                          <Pressable
-                            style={({ pressed }) => [styles.reminderTimeBtn, pressed && { opacity: 0.88 }]}
-                            onPress={() => void bumpReminderClock(30)}
-                            accessibilityRole="button"
-                            accessibilityLabel={kk.hatim.reminderTimePlusA11y}
-                          >
-                            <Text style={styles.reminderTimeBtnTxt}>+</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
+    <View style={styles.screen}>
+      <HatimSurahSearchSheet
+        visible={searchSheetOpen}
+        colors={colors}
+        isDark={isDark}
+        rows={data}
+        onClose={closeSearchSheet}
+        onPick={onSearchPickSurah}
+      />
+      <QuranNavWheelSheet
+        visible={navSheetOpen}
+        colors={colors}
+        isDark={isDark}
+        columns="juz-page"
+        initial={navPickerInitial}
+        onClose={closeNavSheet}
+        onApply={onNavApply}
+      />
+      <View
+        style={[
+          styles.listWrap,
+          { paddingBottom: Math.max(6, Math.round(insets.bottom * 0.45)) },
+        ]}
+      >
+        <FlatList
+          ref={surahListRef}
+          style={styles.listFlex}
+          data={listRows}
+          keyExtractor={(it) =>
+            it.kind === "juzHeader" ? `jh-${it.juz}` : `s-${it.row.number}`
+          }
+          extraData={{ readSig: [...read].sort((a, b) => a - b).join(",") }}
+          getItemLayout={(_, index) => {
+            const row = listLayouts[index];
+            if (!row) {
+              return { length: HATIM_SURAH_ROW_H, offset: 0, index };
+            }
+            return { length: row.length, offset: row.offset, index };
+          }}
+          onScrollToIndexFailed={({ index }) => {
+            scrollToListIndex(index);
+          }}
+          contentContainerStyle={[styles.pad, { paddingBottom: listBottomPad }]}
+          ListHeaderComponent={
+            <View style={styles.headerBlock} onLayout={onListHeaderLayout}>
+              <View style={styles.hatimProgressSolo}>
                 <Pressable
                   onPress={goResume}
                   disabled={!resume}
                   style={({ pressed }) => [
                     styles.progressCard,
+                    styles.progressCardSolo,
                     resume ? styles.progressCardActive : null,
                     pressed && resume && { opacity: 0.94 },
                   ]}
                   accessibilityRole={resume ? "button" : "none"}
-                  accessibilityLabel={resume ? kk.hatim.continueReading : undefined}
+                  accessibilityLabel={
+                    resume ? kk.hatim.continueReading : undefined
+                  }
                 >
-                  <Text style={styles.progressTitle}>{kk.hatim.progressTitle}</Text>
+                  <Text style={styles.progressTitle}>
+                    {kk.hatim.progressTitle}
+                  </Text>
                   <View style={styles.barBg}>
-                    <View style={[styles.barFill, { width: `${Math.round(pct * 100)}%` }]} />
+                    <View
+                      style={[
+                        styles.barFill,
+                        { width: `${Math.round(pct * 100)}%` },
+                      ]}
+                    />
                   </View>
                   <Text style={styles.progressSub}>
-                    {kk.hatim.progressCount.replace("{read}", String(readCount)).replace("{total}", String(total))}
+                    {kk.hatim.progressCount
+                      .replace("{read}", String(readCount))
+                      .replace("{total}", String(total))}
                   </Text>
                   {resume ? (
                     <>
                       <Text style={styles.resumeLine}>
                         {kk.hatim.resumeLine
-                          .replace("{surah}", String(resume.surah))
+                          .replace("{surahTitle}", surahDisplayTitle(resume.surah, ""))
                           .replace("{ayah}", String(resume.ayah))}
                       </Text>
-                      <Text style={styles.continueCta}>{kk.hatim.continueReading} ›</Text>
+                      <Text style={styles.continueCta}>
+                        {kk.hatim.continueReading} ›
+                      </Text>
                     </>
                   ) : (
                     <Text style={styles.tapHint}>{kk.hatim.tapAyahHint}</Text>
                   )}
                 </Pressable>
-                <View style={styles.juzSection}>
-                  <Text style={styles.juzSectionTitle}>{kk.hatim.juzProgressTitle}</Text>
-                  <Text style={styles.juzSectionHint}>{kk.hatim.juzProgressHint}</Text>
-                  <View style={styles.juzGrid}>
-                    {juzStats.map((st) => (
-                      <View key={st.juz} style={styles.juzCellWrap}>
-                        <Pressable
-                          onPress={() => openJuzFromGrid(st.juz)}
-                          accessibilityRole="button"
-                          accessibilityLabel={kk.hatim.juzOpenA11y(st.juz)}
-                          style={({ pressed }) => [styles.juzCellPress, pressed && { opacity: 0.9 }]}
-                        >
-                          <View style={styles.juzBarTrack}>
-                            <View
-                              style={[
-                                styles.juzBarFill,
-                                { height: `${Math.round(st.fraction * 100)}%` },
-                              ]}
-                            />
-                          </View>
-                          <Text style={styles.juzNum}>{st.juz}</Text>
-                        </Pressable>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                <Pressable
-                  style={({ pressed }) => [styles.guideToggle, pressed && { opacity: 0.92 }]}
-                  onPress={() => {
-                    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-                    setGuideOpen((v) => !v);
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={kk.hatim.guideToggle}
-                >
-                  <Text style={styles.guideToggleText}>{guideOpen ? kk.hatim.guideHide : kk.hatim.guideShow}</Text>
-                  <Text style={styles.guideChev}>{guideOpen ? "▾" : "▸"}</Text>
-                </Pressable>
-                {guideOpen ? (
-                  <View style={styles.guideBody}>
-                    {HATIM_SECTIONS.map((s) => (
-                      <View key={s.title} style={styles.guideSection}>
-                        <Text style={styles.guideSectionTitle}>{s.title}</Text>
-                        <Text style={styles.guideSectionBody}>{s.body}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
               </View>
-            }
-            renderItem={({ item }) => {
-              const done = read.has(item.number);
-              const inProgress = !done && resume != null && resume.surah === item.number;
+              <View style={styles.hatimQuickActions}>
+                <Pressable
+                  onPress={openSearchSheet}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={kk.hatim.searchBtnA11y}
+                  style={({ pressed }) => [
+                    styles.hatimQuickAction,
+                    pressed && styles.hatimQuickActionPressed,
+                  ]}
+                >
+                  <MaterialIcons name="search" size={19} color={colors.accent} />
+                  <Text style={styles.hatimQuickActionText}>Сүре іздеу</Text>
+                </Pressable>
+                <Pressable
+                  onPress={openNavSheet}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={kk.hatim.juzHeaderBtnA11y}
+                  style={({ pressed }) => [
+                    styles.hatimQuickAction,
+                    styles.hatimQuickActionPrimary,
+                    pressed && styles.hatimQuickActionPressed,
+                  ]}
+                >
+                  <View style={styles.hatimJuzIconBadge}>
+                    <MaterialIcons name="auto-stories" size={17} color={colors.accent} />
+                  </View>
+                  <Text style={styles.hatimQuickActionText}>Джуз</Text>
+                </Pressable>
+              </View>
+            </View>
+          }
+          renderItem={({ item }) => {
+            if (item.kind === "juzHeader") {
               return (
-                <View style={styles.row}>
-                  <Pressable
-                    style={({ pressed }) => [styles.checkWrap, pressed && { opacity: 0.88 }]}
-                    onPress={() => void onToggle(item.number)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: done }}
-                    accessibilityLabel={kk.hatim.markReadA11y.replace("{n}", String(item.number))}
-                  >
-                    <View style={[styles.checkBox, done && styles.checkBoxOn]}>
-                      {done ? <Text style={styles.checkMark}>✓</Text> : null}
-                    </View>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [styles.rowMain, pressed && { opacity: 0.9 }]}
-                    onPress={() =>
-                      navigation.navigate("QuranSurah", {
-                        surahNumber: item.number,
-                        englishName: item.title,
-                        mushafLayout: true,
-                        ...(inProgress && resume ? { initialAyah: resume.ayah } : {}),
-                      })
-                    }
-                    accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.openSurahRowA11y(item.number, item.title)}
-                  >
-                    <Text style={styles.rowNum}>{item.number}</Text>
-                    <Text style={styles.rowTitle} numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    {inProgress ? <Text style={styles.progressDot}>●</Text> : null}
-                    <Text style={styles.rowChev}>›</Text>
-                  </Pressable>
-                </View>
+                <QuranSurahListJuzHeader
+                  juz={item.juz}
+                  label={kk.quran.juzSectionHeader(item.juz)}
+                  colors={colors}
+                  isDark={isDark}
+                  compact
+                />
               );
-            }}
-          />
-        </View>
+            }
+            const row = item.row;
+            const done = read.has(row.number);
+            const inProgress =
+              !done && resume != null && resume.surah === row.number;
+            const title = surahDisplayTitle(row.number, "");
+            return (
+              <QuranSurahListRow
+                surahNumber={row.number}
+                numberedTitle={surahListNumberedTitle(row.number, "")}
+                metaSubtitle={surahListMetaSubtitle(row.number, row.ayahCount)}
+                mushafPage={mushafStartPageForSurah(row.number)}
+                inProgress={inProgress}
+                onPress={() =>
+                  openMushafAtSurah(
+                    row.number,
+                    inProgress && resume ? { initialAyah: resume.ayah } : undefined
+                  )
+                }
+                accessibilityLabel={kk.hatim.openSurahRowA11y(title, {
+                  surahNumber: row.number,
+                  ayahCount: row.ayahCount,
+                })}
+                colors={colors}
+                isDark={isDark}
+                leading={
+                  <QuranSurahListCheckbox
+                    checked={done}
+                    onToggle={() => void onToggle(row.number)}
+                    accessibilityLabel={kk.hatim.markReadA11y.replace("{title}", title)}
+                    colors={colors}
+                    isDark={isDark}
+                  />
+                }
+              />
+            );
+          }}
+        />
       </View>
     </View>
   );
 }
 
-function makeStyles(colors: ThemeColors, isDark: boolean) {
-  const deskBg = isDark ? "#0D0C0B" : MUSHAF_LIGHT_DESK;
-  const pageBg = isDark ? "#161513" : MUSHAF_LIGHT_PAGE;
-  const pageBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(45,36,24,0.12)";
-  const ink = isDark ? colors.text : "#2A2319";
-  const inkMuted = isDark ? colors.muted : MUSHAF_LIGHT_TAUPE;
-  const inkStrong = isDark ? colors.text : "#5C4D3D";
-  const surface = isDark ? "#1C1B19" : "rgba(255, 252, 247, 0.96)";
-  const surfaceBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(166, 142, 116, 0.38)";
-  const checkBg = isDark ? "#121110" : "#FFFEF7";
+function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
+  const ink = colors.text;
+  const inkMuted = colors.muted;
+  const inkStrong = colors.text;
+  const surface = colors.card;
+  const surfaceBorder = colors.border;
+  const checkBg = isDark ? colors.card : colors.bg;
 
   return StyleSheet.create({
-    bookDesk: { flex: 1, backgroundColor: deskBg },
-    bookPageWrap: {
+    screen: {
+      flex: 1,
+      backgroundColor: screenBg,
+    },
+    listWrap: {
       flex: 1,
       paddingHorizontal: 10,
-      paddingTop: 6,
-    },
-    bookPage: {
-      flex: 1,
-      backgroundColor: pageBg,
-      borderRadius: 4,
-      overflow: "hidden",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: pageBorder,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 5 },
-      shadowOpacity: isDark ? 0.35 : 0.14,
-      shadowRadius: 16,
-      elevation: 6,
-    },
-    bookPageDark: {
-      borderColor: "rgba(255,255,255,0.08)",
+      paddingTop: 2,
     },
     listFlex: { flex: 1 },
-    pad: { paddingHorizontal: 12, paddingTop: 10, paddingBottom: 8 },
-    headerBlock: { marginBottom: 10 },
-    basmalaSection: {
-      alignSelf: "stretch",
-      marginBottom: 10,
-    },
-    reminderCard: {
-      alignSelf: "stretch",
-      backgroundColor: surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: surfaceBorder,
-      padding: 12,
-      marginBottom: 10,
-    },
-    reminderHeadRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    reminderTitle: { fontSize: 15, fontWeight: "800", color: inkStrong, flex: 1 },
-    reminderHint: { marginTop: 8, fontSize: 12, lineHeight: 17, color: inkMuted },
-    reminderErr: { marginTop: 8, fontSize: 12, fontWeight: "700", color: colors.error },
-    reminderTimeBlock: { marginTop: 12 },
-    reminderTimeLabel: {
-      fontSize: 12,
-      fontWeight: "700",
-      color: inkMuted,
-      marginBottom: 8,
-      textAlign: "center",
-    },
-    reminderTimeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 14,
-    },
-    reminderTimeBtn: {
-      minWidth: 44,
-      height: 40,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: surfaceBorder,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: checkBg,
-    },
-    reminderTimeBtnTxt: { fontSize: 20, fontWeight: "800", color: colors.accent },
-    reminderTimeValue: { fontSize: 17, fontWeight: "900", color: inkStrong, minWidth: 96, textAlign: "center" },
-    basmalaBanner: {
-      marginTop: 6,
-      alignSelf: "stretch",
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(212, 175, 55, 0.42)" : "rgba(166, 142, 116, 0.4)",
-      backgroundColor: isDark ? "rgba(212, 175, 55, 0.1)" : "rgba(253, 246, 233, 0.72)",
-    },
-    basmalaArabic: {
-      textAlign: "center",
-      writingDirection: "rtl",
-      color: isDark ? "#FAFAFA" : "#000000",
-      fontSize: 24,
-      lineHeight: 40,
-      fontWeight: "500",
-      letterSpacing: 0,
-      ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
-    },
+    pad: { paddingHorizontal: 12, paddingTop: 2, paddingBottom: 8 },
+    headerBlock: { marginBottom: 0 },
     progressCard: {
       backgroundColor: surface,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: surfaceBorder,
       padding: 14,
-      marginBottom: 8,
+      marginBottom: 0,
+    },
+    progressCardSolo: {
+      alignSelf: "stretch",
     },
     progressCardActive: {
       borderColor: colors.accent,
       borderWidth: 1.5,
     },
-    progressTitle: { fontSize: 15, fontWeight: "800", color: inkStrong, marginBottom: 10 },
+    progressTitle: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: inkStrong,
+      marginBottom: 10,
+    },
     barBg: {
       height: 10,
       borderRadius: 6,
-      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(166, 142, 116, 0.28)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : colors.border,
       overflow: "hidden",
     },
     barFill: {
@@ -523,12 +535,24 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderRadius: 6,
       backgroundColor: colors.accent,
     },
-    progressSub: { marginTop: 8, fontSize: 13, color: inkMuted },
+    progressSub: {
+      marginTop: 8,
+      fontSize: 13,
+      color: inkMuted,
+      ...Platform.select({
+        web: {},
+        default: { fontFamily: QURAN_BOOK_FONT_FACE.amiri },
+      }),
+    },
     resumeLine: {
       marginTop: 10,
       fontSize: 13,
       color: ink,
       fontWeight: "600",
+      ...Platform.select({
+        web: {},
+        default: { fontFamily: QURAN_BOOK_FONT_FACE.amiri },
+      }),
     },
     continueCta: {
       marginTop: 6,
@@ -537,109 +561,52 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.accent,
     },
     tapHint: { marginTop: 10, fontSize: 12, lineHeight: 17, color: inkMuted },
-    juzSection: {
+    hatimProgressSolo: {
       alignSelf: "stretch",
-      backgroundColor: surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: surfaceBorder,
-      padding: 12,
-      marginBottom: 10,
+      marginBottom: 0,
     },
-    juzSectionTitle: { fontSize: 15, fontWeight: "800", color: inkStrong, marginBottom: 6 },
-    juzSectionHint: { fontSize: 11, lineHeight: 16, color: inkMuted, marginBottom: 10 },
-    juzGrid: {
+    hatimQuickActions: {
       flexDirection: "row",
-      flexWrap: "wrap",
-      marginHorizontal: -3,
-    },
-    juzCellWrap: {
-      width: "16.666%",
-      padding: 3,
-    },
-    juzCellPress: {
+      justifyContent: "flex-end",
       alignItems: "center",
+      gap: 8,
+      marginTop: -2,
+      marginBottom: -2,
+      paddingRight: 2,
     },
-    juzBarTrack: {
-      width: "100%",
-      height: 34,
-      borderRadius: 8,
-      overflow: "hidden",
-      backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(166, 142, 116, 0.22)",
+    hatimQuickAction: {
+      minHeight: 34,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      paddingHorizontal: 11,
+      paddingVertical: 7,
+      borderRadius: 999,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: surfaceBorder,
-      justifyContent: "flex-end",
+      backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "rgba(255,255,255,0.82)",
     },
-    juzBarFill: {
-      width: "100%",
-      backgroundColor: colors.accent,
-      minHeight: 0,
+    hatimQuickActionPrimary: {
+      borderColor: colors.accent,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.08)",
     },
-    juzNum: {
-      marginTop: 4,
-      fontSize: 11,
-      fontWeight: "800",
-      color: inkStrong,
-    },
-    guideToggle: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      paddingVertical: 10,
-      paddingHorizontal: 2,
-    },
-    guideToggleText: { fontSize: 15, fontWeight: "700", color: colors.accent },
-    guideChev: { fontSize: 14, color: colors.accent },
-    guideBody: { marginBottom: 6 },
-    guideSection: {
-      backgroundColor: surface,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: surfaceBorder,
-      padding: 12,
-      marginBottom: 8,
-    },
-    guideSectionTitle: { color: colors.accent, fontWeight: "800", fontSize: 14, marginBottom: 6 },
-    guideSectionBody: { color: ink, fontSize: 14, lineHeight: 22 },
-    row: {
-      flexDirection: "row",
-      alignItems: "stretch",
-      backgroundColor: surface,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: surfaceBorder,
-      marginBottom: 7,
-      overflow: "hidden",
-    },
-    checkWrap: { justifyContent: "center", paddingHorizontal: 11 },
-    checkBox: {
-      width: 26,
-      height: 26,
-      borderRadius: 8,
-      borderWidth: 2,
-      borderColor: surfaceBorder,
+    hatimJuzIconBadge: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: checkBg,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(5, 150, 105, 0.11)",
     },
-    checkBoxOn: { borderColor: colors.accent, backgroundColor: `${colors.accent}22` },
-    checkMark: { color: colors.accent, fontWeight: "900", fontSize: 16 },
-    rowMain: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      paddingVertical: 11,
-      paddingRight: 10,
-      gap: 8,
+    hatimQuickActionPressed: {
+      opacity: 0.84,
+      transform: [{ scale: 0.98 }],
     },
-    rowNum: {
-      fontSize: 14,
-      fontWeight: "800",
-      color: inkMuted,
-      minWidth: 28,
+    hatimQuickActionText: {
+      color: colors.accent,
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: "900",
     },
-    rowTitle: { flex: 1, fontSize: 15, fontWeight: "600", color: ink },
-    rowChev: { fontSize: 18, color: inkMuted, fontWeight: "600" },
-    progressDot: { color: colors.accent, fontSize: 12, marginRight: 4 },
   });
 }

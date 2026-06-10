@@ -1,0 +1,32 @@
+import {
+  resolveScreenFitMetrics,
+  screenFitScrollContentStyle,
+} from "../screenFit";
+
+describe("screenFit", () => {
+  it("reduces padding and scale on compact phones", () => {
+    const m = resolveScreenFitMetrics(320, 568);
+    expect(m.isCompactPhone).toBe(true);
+    expect(m.horizontalPadding).toBe(10);
+    expect(m.fontScale).toBeLessThan(1);
+    expect(m.contentWidth).toBe(300);
+  });
+
+  it("uses full phone width without desktop max content clamp", () => {
+    const m = resolveScreenFitMetrics(430, 932);
+    expect(m.isWide).toBe(false);
+    expect(m.maxContentWidth).toBe(430);
+    expect(m.horizontalPadding).toBe(16);
+  });
+
+  it("centers wide layouts with a readable content width", () => {
+    const m = resolveScreenFitMetrics(1024, 768);
+    const style = screenFitScrollContentStyle(m, { top: 12, bottom: 24 });
+    expect(m.isWide).toBe(true);
+    expect(m.maxContentWidth).toBe(720);
+    expect(style.maxWidth).toBe(720);
+    expect(style.alignSelf).toBe("center");
+    expect(style.paddingHorizontal).toBe(24);
+  });
+});
+

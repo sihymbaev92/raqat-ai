@@ -1,6 +1,6 @@
 # RAQAT жобасы: Құран мәтіні / транскрипция — GPT үшін қысқа бриф
 
-**Толық платформа (бот, API, веб, мобильді):** `docs/PLATFORM_GPT_HANDOFF.md`
+**Толық платформа (бот, API, веб, мобильді):** [`docs/README.md`](README.md) · архив [`docs/archive/PLATFORM_GPT_HANDOFF_2026-05.md`](archive/PLATFORM_GPT_HANDOFF_2026-05.md)
 
 **Ресми дерек көздері (жобада осыны басшылыққа аламыз):**
 

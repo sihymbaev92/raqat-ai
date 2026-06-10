@@ -20,6 +20,11 @@ function sortUnique(nums: number[]): number[] {
   return Array.from(s).sort((a, b) => a - b);
 }
 
+function sameSortedNumbers(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((n, i) => n === b[i]);
+}
+
 type InternalState = {
   readSurahs: Set<number>;
   resume: HatimResume | null;
@@ -85,6 +90,15 @@ export async function saveHatimProgress(read: Set<number>): Promise<void> {
   await persist({ readSurahs: read, resume: cur.resume });
 }
 
+export async function saveHatimResume(surah: number, ayah: number): Promise<void> {
+  const cur = await loadInternal();
+  const resume: HatimResume = {
+    surah: Math.max(1, Math.min(114, surah)),
+    ayah: Math.max(1, ayah),
+  };
+  await persist({ readSurahs: cur.readSurahs, resume });
+}
+
 /**
  * Аятқа басу: соңғы орын сақталады; соңғы аят болса сүре «оқылды» деп белгіленеді.
  */
@@ -124,7 +138,13 @@ export async function syncHatimWithServerBidirectional(): Promise<void> {
     await putMeHatim(base, access, sortUnique([...local.readSurahs]));
     return;
   }
-  await persist({ readSurahs: remote, resume: local.resume });
+  const merged = new Set([...remote, ...local.readSurahs]);
+  const remoteSorted = sortUnique([...remote]);
+  const mergedSorted = sortUnique([...merged]);
+  await persist({ readSurahs: new Set(mergedSorted), resume: local.resume });
+  if (!sameSortedNumbers(remoteSorted, mergedSorted)) {
+    await putMeHatim(base, access, mergedSorted);
+  }
 }
 
 export async function pushHatimToServerIfLoggedIn(read: Set<number>): Promise<void> {
@@ -149,4 +169,9 @@ export function hatimProgressFraction(read: Set<number>): { read: number; total:
   const r = read.size;
   const total = 114;
   return { read: r, total, pct: total ? Math.min(1, r / total) : 0 };
+}
+
+export async function clearHatimProgress(): Promise<void> {
+  await persist({ readSurahs: new Set(), resume: null });
+  await pushHatimToServerIfLoggedIn(new Set());
 }

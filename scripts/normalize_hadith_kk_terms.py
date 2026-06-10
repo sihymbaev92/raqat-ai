@@ -22,6 +22,26 @@ def replace_word(text: str, source: str, target: str) -> tuple[str, int]:
     return pat.subn(target, text)
 
 
+# Жіктелген түрлер (\b сөз шегінен тыс): тауафымен, тауафынан т.б.
+_SUBSTRING_FIXES: tuple[tuple[str, str], ...] = (
+    ("тауап", "тәуаф"),
+    ("тауаф", "тәуаф"),
+    ("рызық", "ризық"),
+)
+
+
+def apply_substring_fixes(text: str) -> tuple[str, int]:
+    """Толық сөз емес, ішкі қосымшалы нұсқаларды түзету (санау: алмастыру саны)."""
+    total = 0
+    for old, new in _SUBSTRING_FIXES:
+        if old not in text:
+            continue
+        c = text.count(old)
+        text = text.replace(old, new)
+        total += c
+    return text, total
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Normalize hadith textKk variants by glossary.")
     p.add_argument("--bundle", type=Path, default=DEFAULT_BUNDLE)
@@ -48,6 +68,8 @@ def main() -> int:
                     continue
                 kk, n = replace_word(kk, v, preferred)
                 changed_tokens += n
+        kk, n_sub = apply_substring_fixes(kk)
+        changed_tokens += n_sub
         if kk != original:
             row["textKk"] = kk
             changed_rows += 1

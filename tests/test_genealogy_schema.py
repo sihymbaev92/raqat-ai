@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from db.connection import db_conn
-from db.genealogy_seed import upsert_genealogy_default_source_refs, upsert_genealogy_p0_clans
+from db.genealogy_seed import P0_CLAN_COUNT, upsert_genealogy_default_source_refs, upsert_genealogy_p0_clans
 from db.migrations import run_schema_migrations
 
 
@@ -37,9 +37,9 @@ def test_genealogy_p0_seed_upsert_idempotent(tmp_path):
         n2 = upsert_genealogy_p0_clans(conn)
         conn.commit()
         count = conn.execute("SELECT COUNT(*) FROM genealogy_clans").fetchone()[0]
-        assert n1 == 14
-        assert n2 == 14
-        assert count == 14
+        assert n1 == P0_CLAN_COUNT
+        assert n2 == P0_CLAN_COUNT
+        assert count == P0_CLAN_COUNT
         row = conn.execute(
             "SELECT parent_id, level FROM genealogy_clans WHERE id = 'dulat'"
         ).fetchone()

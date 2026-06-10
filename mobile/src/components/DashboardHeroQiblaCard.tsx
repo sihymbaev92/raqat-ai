@@ -1,5 +1,7 @@
 import React, { useCallback, useRef } from "react";
-import { Platform, Pressable, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import { Platform, Text, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable } from "@/ui/Pressable";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { QiblaArrowPointer } from "./QiblaArrowPointer";
 import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
@@ -30,17 +32,21 @@ type Props = {
 export function DashboardHeroQiblaCard({ colors, columnWidth, variant = "inline", styles, cardShadow }: Props) {
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const { refreshBearing, bearing } = useQiblaStable();
-  const { rotateDeg } = useQiblaMotion();
+  const { rotateDeg, headingHasSample } = useQiblaMotion();
   const bearingReady = bearing != null;
-  const qiblaAligned = qiblaAlignHint(rotateDeg, bearing) === "aligned" && bearingReady;
+  const motionReady = bearingReady && headingHasSample;
+  const qiblaAligned =
+    motionReady && qiblaAlignHint(rotateDeg, bearing, { headingReady: true }) === "aligned";
   const lastBearingFocusAt = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
+      if (Platform.OS === "web") return undefined;
       const now = Date.now();
       if (now - lastBearingFocusAt.current < 25_000) return;
       lastBearingFocusAt.current = now;
       void refreshBearing();
+      return undefined;
     }, [refreshBearing])
   );
 
@@ -79,35 +85,26 @@ export function DashboardHeroQiblaCard({ colors, columnWidth, variant = "inline"
       accessibilityLabel={kk.tabs.qibla}
       accessibilityHint={kk.dashboard.qiblaHeroFoot}
     >
-      {bearingReady ? (
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 8,
-            right: isBanner ? 12 : 8,
-            width: 9,
-            height: 9,
-            borderRadius: 5,
-            backgroundColor: colors.success,
-            borderWidth: 1.5,
-            borderColor: qiblaAligned ? `${colors.success}ff` : `${colors.card}`,
-            zIndex: 2,
-            ...(Platform.OS === "ios"
-              ? {
-                  shadowColor: colors.success,
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: 0.8,
-                  shadowRadius: 3,
-                }
-              : { elevation: 3 }),
-          }}
-        />
-      ) : null}
       <View style={styles.heroArrowInner}>
         <View style={styles.heroArrowArea}>
           <View style={styles.heroArrowLift}>
-            <QiblaArrowPointer colors={colors} size={arrowSize} rotateDeg={rotateDeg} aligned={qiblaAligned} />
+            {!motionReady ? (
+              <MaterialIcons name="navigation" size={Math.min(28, arrowSize * 0.55)} color={colors.accent} />
+            ) : (
+              <QiblaArrowPointer
+                colors={colors}
+                size={arrowSize}
+                rotateDeg={rotateDeg}
+                aligned={qiblaAligned}
+                showDialRing={false}
+                showDialHalo={false}
+                showTopMarker={false}
+                needlePulse={false}
+                showPivotHub={false}
+                minimalDial
+                ornamentArrow
+              />
+            )}
           </View>
         </View>
         <Text style={styles.heroQiblaLabel}>{kk.tabs.qibla}</Text>

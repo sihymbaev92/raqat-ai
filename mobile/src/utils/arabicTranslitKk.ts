@@ -80,10 +80,37 @@ const PUNCT_MAP: Record<string, string> = {
 
 const BASMALA = "بسم الله الرحمن الرحيم";
 
+/** Құран басмаласының қазақ транскрипциясы (барлық жолдарда бір нұсқа). */
+export const BASMALA_KK_TRANSLIT_CANON = "бисмилләһир рахманир рахиим";
+
+/** ٱ (U+0671) және т.б. Uthmani нұсқаларын эталон салыстыру үшін біркелкілеу. */
+function canonicalArabicMarklessForCompare(s: string): string {
+  return s
+    .normalize("NFKC")
+    .replace(/\ufeff/g, "")
+    .split("")
+    .filter((ch) => !MARK_RE.test(ch) && !STOP_MARKS.has(ch) && ch !== "ـ")
+    .join("")
+    .replace(/\u0671/g, "\u0627")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const SUN_LETTERS = ["т", "с", "ш", "д", "з", "р", "н"] as const;
 const MOON_AFTER_AL = ["ф", "қ", "к", "б", "ж", "х", "ғ", "м", "һ", "'", "у", "й"] as const;
 const VOWEL_ENDINGS = ["а", "у", "и"] as const;
-const PAUSAL_KEEP_WORDS = new Set(["бисми", "мадина", "медина"]);
+const PAUSAL_KEEP_WORDS = new Set([
+  "бисми",
+  "бисмилләһи",
+  "бисмилләһир",
+  "рахманир",
+  "рахиим",
+  "мадина",
+  "медина",
+  "әр-рахмани",
+  "әр-рахим",
+  "әр-рахман",
+]);
 const PAUSAL_EXACT_REPLACE: Record<string, string> = {
   аһдина: "иһдин",
   "ас-сирата": "ас-сират",
@@ -162,6 +189,10 @@ function escapeRegExp(v: string): string {
   return v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+/** JS `\\b` тек ascii \\w үшін; кирилл транскрипциясында Unicode шекара. */
+const CYR_WB_START = "(?<![\\p{L}\\p{M}])";
+const CYR_WB_END = "(?![\\p{L}\\p{M}])";
+
 function applyPausalIrabTrim(text: string): string {
   if (!text) return text;
   const trimWord = (word: string): string => {
@@ -236,10 +267,12 @@ function transliterateCluster(base: string, marks: string[], parts: string[]): s
 export function transliterateArabicToKazakh(text: string): string {
   const normalized = (text || "").normalize("NFKC");
   const markless = [...normalized]
-    .filter((ch) => !MARK_RE.test(ch) && !STOP_MARKS.has(ch) && ch !== "ـ")
+    .filter((ch) => ch !== "\ufeff" && !MARK_RE.test(ch) && !STOP_MARKS.has(ch) && ch !== "ـ")
     .join("");
   const collapsed = markless.replace(/\s+/g, " ").trim();
-  if (collapsed === BASMALA) return "бисмилләһир-рахманир-рахим";
+  if (canonicalArabicMarklessForCompare(collapsed) === canonicalArabicMarklessForCompare(BASMALA)) {
+    return BASMALA_KK_TRANSLIT_CANON;
+  }
 
   const parts: string[] = [];
   for (const { base, marks } of splitClusters(normalized)) {
@@ -254,30 +287,36 @@ export function transliterateArabicToKazakh(text: string): string {
   result = result.replace(/ии(?=й)/g, "и");
   result = result.replace(/(.)\1{2,}/g, "$1$1");
   for (const letter of SUN_LETTERS) {
-    const re = new RegExp(`\\bал${letter}${letter}`, "g");
-    result = result.replace(re, `а${letter}-${letter}`);
+    const re = new RegExp(`${CYR_WB_START}ал${letter}${letter}`, "gu");
+    result = result.replace(re, `ә${letter}-${letter}`);
   }
   for (const moon of MOON_AFTER_AL) {
     const esc = escapeRegExp(moon);
-    result = result.replace(new RegExp(`\\bбиал${esc}`, "g"), `би әл-${moon}`);
-    result = result.replace(new RegExp(`\\bуал${esc}`, "g"), `уа әл-${moon}`);
+    result = result.replace(new RegExp(`${CYR_WB_START}биал${esc}`, "gu"), `би әл-${moon}`);
+    result = result.replace(new RegExp(`${CYR_WB_START}уал${esc}`, "gu"), `уа әл-${moon}`);
     result = result.replace(new RegExp(`(^|[\\s،؛(])ал${esc}`, "g"), `$1әл-${moon}`);
-    result = result.replace(new RegExp(`\\bлил${esc}`, "g"), `ли әл-${moon}`);
+    result = result.replace(new RegExp(`${CYR_WB_START}лил${esc}`, "gu"), `ли әл-${moon}`);
   }
-  result = result.replace(/\bбиалл/g, "би алл");
-  result = result.replace(/\bабиалл/g, "а би алл");
-  result = result.replace(/\bлилл/g, "ли алл");
-  result = result.replace(/\bкалл/g, "ка алл");
-  result = result.replace(/\bуабиалл/g, "уа би алл");
-  result = result.replace(/\bфабиалл/g, "фа би алл");
-  result = result.replace(/\bуалилл/g, "уа ли алл");
-  result = result.replace(/\bфалилл/g, "фа ли алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}биалл`, "gu"), "би алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}абиалл`, "gu"), "а би алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}лилл`, "gu"), "ли алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}калл`, "gu"), "ка алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}уабиалл`, "gu"), "уа би алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}фабиалл`, "gu"), "фа би алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}уалилл`, "gu"), "уа ли алл");
+  result = result.replace(new RegExp(`${CYR_WB_START}фалилл`, "gu"), "фа ли алл");
   for (const [src, dst] of GRAMMAR_WA_FA_PARTICLES) {
-    result = result.replace(new RegExp(`\\b${escapeRegExp(src)}\\b`, "g"), dst);
+    result = result.replace(
+      new RegExp(`${CYR_WB_START}${escapeRegExp(src)}${CYR_WB_END}`, "gu"),
+      dst
+    );
   }
   result = applyPausalIrabTrim(result);
-  result = result.replace(/\bфиа\b/g, "фи");
-  result = result.replace(/\bуамин\b/g, "үә мин");
+  result = result.replace(new RegExp(`${CYR_WB_START}фиа${CYR_WB_END}`, "gu"), "фи");
+  result = result.replace(new RegExp(`${CYR_WB_START}уамин${CYR_WB_END}`, "gu"), "үә мин");
+  /* بِسْمِ + اللَّهِ — «бисми алләһи» бір сөзге жақындау */
+  result = result.replace(new RegExp(`${CYR_WB_START}бисми\\s+алләһи${CYR_WB_END}`, "gui"), "бисмилләһи");
+  result = result.replace(new RegExp(`${CYR_WB_START}бисми\\s+аллаһи${CYR_WB_END}`, "gui"), "бисмилләһи");
   result = result.replace(/\s+([,;?.])/g, "$1");
   result = result.replace(/[\u0600-\u06FF\uFE70-\uFEFF]+/g, "");
   result = result.replace(/\s{2,}/g, " ").trim();

@@ -14,6 +14,12 @@ export type ThemeColors = {
   /** Акценті күштірек фон/шекара (бетбелгі, сақина) */
   accentSurfaceStrong: string;
   /**
+   * Намаз: қосалқы түстер (келесі намаз градиенті `nextPrayerTheme.ts` + LinearGradient).
+   */
+  prayerCalmGreen: string;
+  prayerCalmGreenSurface: string;
+  prayerCalmGreenBorder: string;
+  /**
    * Құран / хадис / дұға / зікір: араб әрпі (алтын),
    * оқылуы/транскрипция (жарқыраған ашық), қазақша мағына (таза контраст).
    */
@@ -23,39 +29,41 @@ export type ThemeColors = {
 };
 
 export const darkColors: ThemeColors = {
-  /** Томның көк-қоңыр фон, жарқыраудан сақтайды */
-  bg: "#05080B",
-  /** Карталар: фоннан сәл жарық қабат */
-  card: "#0C1015",
-  text: "#F2F4F5",
-  muted: "#7A8B94",
-  /** Ашық тиел — батырмалар, белгі, прогресс */
-  accent: "#26A69A",
-  /** Қою тиел — шекара, белсенді күй, сызықтар */
-  accentDark: "#00897B",
-  border: "#1f7a3f",
-  success: "#4DB6AC",
-  error: "#f29393",
-  accentSurface: "rgba(38, 166, 154, 0.14)",
-  accentSurfaceStrong: "rgba(38, 166, 154, 0.26)",
-  scriptureArabic: "#D4AF37",
-  scriptureTranslit: "#80CBC4",
-  scriptureMeaningKk: "#FFFFFF",
+  bg: "#0A0E13",
+  card: "#1A232E",
+  text: "#FFFFFF",
+  muted: "#CBD5E1",
+  accent: "#38B2AC",
+  accentDark: "#2A8F8A",
+  border: "rgba(148, 163, 184, 0.32)",
+  success: "#5FD99A",
+  error: "#F5A8A8",
+  accentSurface: "rgba(56, 178, 172, 0.16)",
+  accentSurfaceStrong: "rgba(56, 178, 172, 0.30)",
+  prayerCalmGreen: "#1A4D35",
+  prayerCalmGreenSurface: "rgba(26, 77, 53, 0.28)",
+  prayerCalmGreenBorder: "rgba(82, 201, 138, 0.24)",
+  scriptureArabic: "#D4BC78",
+  scriptureTranslit: "#7DD3CF",
+  scriptureMeaningKk: "#F8FAFC",
 };
 
 export const lightColors: ThemeColors = {
-  bg: "#e2efe6",
-  card: "#ffffff",
-  text: "#0f2418",
-  muted: "#4a6758",
-  accent: "#b8860b",
-  accentDark: "#9a7209",
-  border: "#7ac894",
-  success: "#15803d",
-  error: "#b91c1c",
-  accentSurface: "rgba(184, 134, 11, 0.11)",
-  accentSurfaceStrong: "rgba(184, 134, 11, 0.2)",
-  scriptureArabic: "#9a7209",
-  scriptureTranslit: "#0d9488",
-  scriptureMeaningKk: "#0a1a12",
+  bg: "#F6F4EF",
+  card: "#FFFFFF",
+  text: "#0F172A",
+  muted: "#475569",
+  accent: "#C9A227",
+  accentDark: "#A8841A",
+  border: "#D5CFC3",
+  success: "#2F8A55",
+  error: "#B84A4A",
+  accentSurface: "rgba(201, 162, 39, 0.12)",
+  accentSurfaceStrong: "rgba(201, 162, 39, 0.20)",
+  prayerCalmGreen: "#2E7A4D",
+  prayerCalmGreenSurface: "rgba(46, 122, 77, 0.1)",
+  prayerCalmGreenBorder: "rgba(61, 154, 98, 0.22)",
+  scriptureArabic: "#A8841A",
+  scriptureTranslit: "#178A7A",
+  scriptureMeaningKk: "#1E293B",
 };

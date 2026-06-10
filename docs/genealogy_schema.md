@@ -88,30 +88,52 @@ P2 (UI-only):      wikipedia_kk_zhuz
 
 ---
 
-## 4. P0 test dataset (14 node)
+## 4. P0 catalog (36 node)
 
-Day 2 upsert: `scripts/seed_genealogy_p0.py`
+Day 2 upsert: `scripts/seed_genealogy_p0.py` · offline: `scripts/export_genealogy_bundled.py` · A1: `scripts/seed_genealogy_a1.py`
 
 ```
 Ұлы жүз (uly_zhuz, L1)
 ├── Үйсін (uisin, L2)
 │   └── Дулат (dulat, L3)
-└── Албан (alban, L2)
+│       ├── Ботбай (botbay, L4)
+│       ├── Тобықты (tobyqty, L4)
+│       ├── Желібі (zhelibu, L4)
+│       └── Шоланға (sholanga, L4)
+├── Албан (alban, L2)
+│   ├── Сарыжас (saryzhas, L3)
+│   ├── Тана (tana, L3)
+│   └── Қарауыл (karauyl, L3)
+├── Сарыүйсін (sary_uisin, L2)
+├── Суан (suan, L2)
+├── Жалайыр (jalayir, L2)
+├── Шапырашты (shapyrashty, L2)
+├── Ысты (ysty, L2)
+└── Ошақты (oshakty, L2)
 
 Орта жүз (orta_zhuz, L1)
 ├── Арғын (argyn, L2)
 │   ├── Қаракесек (karakesek, L3)
 │   ├── Қуандық (kuandyk, L3)
 │   └── Төртуыл (tortuyl, L3)
-└── Найман (nayman, L2)
+├── Найман (nayman, L2)
+│   ├── Садыр (sadyr, L3)
+│   ├── Бура (bura, L3)
+│   └── Керкей (karke, L3)
+├── Қоңырат (kongrat, L2)
+├── Керей (kerey, L2)
+├── Уақ (uak, L2)
+└── Қыпшақ (qypshaq, L2)
 
 Кіші жүз (kishi_zhuz, L1)
-└── Алшын (alshyn, L2)
-    ├── Әлімұлы (alimuly, L3)
-    └── Байұлы (baiuly, L3)
+├── Алшын (alshyn, L2)
+│   ├── Әлімұлы (alimuly, L3)
+│   └── Байұлы (baiuly, L3)
+├── Табын (tabyn, L2)
+└── Шекте (shekty, L2)
 ```
 
-> Sprint атауындағы «15 ру» — 14 нақты node + 1 резерв (кейінгі root/metadata).
+> Дереккөздер: Mashhur Jusip, Шәкәрім, NAS ethnography — әр руға `genealogy_source_refs`.
 
 ---
 
@@ -195,7 +217,7 @@ PostgreSQL: `ensure_genealogy_tables(conn)` — platform_api startup PG path-т�
 ## 10. Freeze gate (P0)
 
 - [x] Day 1: schema doc + migration v20
-- [ ] Day 2: seed upsert 14 nodes + source refs
+- [x] Day 2: seed upsert 26 nodes + source refs
 - [ ] Day 3: API read endpoints
 - [ ] Day 4: Mobile FlatList accordion screen
 - [ ] Day 5–7: QA + AI grounding whitelist hook

@@ -925,6 +925,7 @@ def _migration_014_repair_user_data_tables(conn) -> None:
         "platform_password_logins" in tables
         and "platform_hatim_read" in tables
         and "platform_quran_last_read" in tables
+        and "platform_quran_ayah_markers" in tables
     ):
         return
     from db.user_data_schema import ensure_user_data_tables
@@ -960,6 +961,13 @@ def _migration_023_family_tree(conn) -> None:
     ensure_family_tree_tables(conn)
 
 
+def _migration_024_platform_quran_ayah_markers(conn) -> None:
+    """Аят бетбелгілері — JWT sync (мобильді quran_ayah_markers_v1)."""
+    from db.user_data_schema import ensure_user_data_tables
+
+    ensure_user_data_tables(conn)
+
+
 MIGRATIONS: list[tuple[int, str, Callable]] = [
     (1, "indexes_and_fts_supporting", _migration_001_indexes),
     (2, "merge_legacy_users", _migration_002_merge_legacy_users),
@@ -984,6 +992,7 @@ MIGRATIONS: list[tuple[int, str, Callable]] = [
     (21, "platform_quran_last_read", _migration_021_platform_quran_last_read),
     (22, "genealogy_persons", _migration_022_genealogy_persons),
     (23, "family_tree", _migration_023_family_tree),
+    (24, "platform_quran_ayah_markers", _migration_024_platform_quran_ayah_markers),
 ]
 
 

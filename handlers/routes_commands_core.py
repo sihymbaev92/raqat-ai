@@ -4,6 +4,7 @@ from aiogram.filters import Command
 
 from handlers.start import start_handler
 from handlers.onboarding import guide_handler
+from handlers.link_code import link_code_help_handler
 from handlers.language import language_handler
 from handlers.translation import translation_handler
 from handlers.feedback import content_feedback_handler, feedback_handler
@@ -13,6 +14,7 @@ from handlers.admin import admin_handler, feedbacks_handler, health_handler, qa_
 def register_core_command_handlers(dp: Dispatcher) -> None:
     dp.message.register(start_handler, Command("start"))
     dp.message.register(start_handler, Command("menu"))
+    dp.message.register(link_code_help_handler, Command("link"))
     dp.message.register(guide_handler, Command("help"))
     dp.message.register(guide_handler, Command("guide"))
     dp.message.register(language_handler, Command("lang"))

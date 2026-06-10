@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { rootNavigationRef } from "../navigation/rootNavigationRef";
+import { navigateToMoreStackScreen } from "../navigation/navigateToMoreStack";
 
 const CATEGORY_ID = "raqat_quick_actions_v1";
 const ACTION_OPEN_AI = "open_raqat_ai";
@@ -8,8 +8,7 @@ let removeListener: (() => void) | null = null;
 
 function handleQuickAction(actionId?: string) {
   if (actionId !== ACTION_OPEN_AI) return;
-  if (!rootNavigationRef.isReady()) return;
-  rootNavigationRef.navigate("MoreStack", { screen: "RaqatAI" });
+  navigateToMoreStackScreen("ImamAI");
 }
 
 export async function initNotificationQuickActions(): Promise<void> {
@@ -18,7 +17,7 @@ export async function initNotificationQuickActions(): Promise<void> {
   await Notifications.setNotificationCategoryAsync(CATEGORY_ID, [
     {
       identifier: ACTION_OPEN_AI,
-      buttonTitle: "RAQAT ашу",
+      buttonTitle: "RAQAT · көмекші",
       options: {
         opensAppToForeground: true,
       },

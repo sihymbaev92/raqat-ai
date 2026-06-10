@@ -1,0 +1,4 @@
+# Bot runtime (Telegram aiogram) — dev орнату:
+#   pip install -r requirements-bot.txt
+-r platform_api/requirements.txt
+-r scripts/requirements-dev.txt

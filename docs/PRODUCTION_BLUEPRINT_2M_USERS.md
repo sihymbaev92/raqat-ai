@@ -2,7 +2,7 @@
 
 Бұл құжат — жобаны масштабтауға арналған **нақты архитектуралық карта** (кеңес емес, орындалатын нұсқа). FastAPI production-та container және multi-worker режимде жақсы қолданылады; PostgreSQL HA үшін primary/standby және replication; Redis — distributed rate limit/cache; Celery — Redis broker/backend, retry/reconnect.
 
-Қолданыстағы жоғары деңгейлі сипаттама: [`RAQAT_V1_TECHNICAL_ARCHITECTURE.md`](./RAQAT_V1_TECHNICAL_ARCHITECTURE.md), платформа handoff: [`PLATFORM_GPT_HANDOFF.md`](./PLATFORM_GPT_HANDOFF.md).
+Қолданыстағы жоғары деңгейлі сипаттама: [`RAQAT_V1_TECHNICAL_ARCHITECTURE.md`](./RAQAT_V1_TECHNICAL_ARCHITECTURE.md), платформа: [`README.md`](./README.md), [`architecture/`](./architecture/README.md).
 
 **Репозиторийдегі орындалған карта:** түбірде [`ECOSYSTEM.md`](../ECOSYSTEM.md), [`apps/`](../apps/), [`packages/`](../packages/), [`infra/docker/`](../infra/docker/).
 

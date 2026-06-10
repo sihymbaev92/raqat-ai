@@ -12,7 +12,7 @@
 | **Өндіріс шешімі** | **PostgreSQL** (`DATABASE_URL` / `DATABASE_URL_WRITER`). API `db/get_db.py` — DSN postgres болса SQLite миграциялары өтпейді. |
 | Қайда SQLite қалды | Жергілікті әзірлеу, unit тест, көшу алдындағы `global_clean.db` снапшоты. |
 
-**Жұмыс тізбегі:** `docs/MIGRATION_SQLITE_TO_POSTGRES.md`, `scripts/run_pg_cutover.sh`, `docs/OPERATIONS_STACK_CHECKLIST.md` §2.
+**Жұмыс тізбегі:** `docs/MIGRATION_SQLITE_TO_POSTGRES.md`, `scripts/run_pg_cutover.sh`, `docs/OPERATIONS_STACK_CHECKLIST.md` §2. **Sprint 1 M1 (local/staging gate):** `docs/operations/sprint-1-cutover-rollback-runbook.md` — shadow DB, validate-only, rollback drill (<15 min), KPI monitor.
 
 Кодта «SQLite-ті өндірісте өшіру» — бұл **орта айнымалылары**: postgres DSN қойылғанда SQLite жолы іске қосылмайды; қосымша runtime guard қажет болса, өндірісте `DATABASE_URL` жоқ деп API іске қоспау саясатын CI/CD-де бекіту жеткілікті.
 
@@ -76,4 +76,4 @@ High load кезінде «stuck» — **visibility_timeout** + **soft time limi
 | AI cache | Exact + **семантикалық** (`RAQAT_AI_SEMANTIC_CACHE=1`). |
 | Queue | Retry + timeout **бар**; DLQ — жол картасына қосу. |
 
-Сілтемелер: `docs/OPERATIONS_STACK_CHECKLIST.md`, `docs/PLATFORM_GPT_HANDOFF.md` §21–§22.
+Сілтемелер: `docs/OPERATIONS_STACK_CHECKLIST.md`, `docs/platform_api/ai-ecosystem.md`, `docs/handoff/gpt-sre-summary.md`.

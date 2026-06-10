@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Read-only: /api/v1/quran/*, /api/v1/hadith/*, /api/v1/metadata/changes (ETag, since)."""
+"""Read-only: /api/v1/quran/*, /api/v1/metadata/changes (ETag, since)."""
 from __future__ import annotations
 
 import time
@@ -11,10 +11,6 @@ from ai_security import optional_content_read_secret
 from app.infrastructure.cache import cache_get_json, cache_set_json
 from content_reader import (
     content_fingerprint_v1,
-    hadith_random_any,
-    hadith_random_for_source,
-    hadith_search,
-    hadith_by_id,
     metadata_diff_for_since,
     quran_search,
     quran_one_ayah,
@@ -25,7 +21,6 @@ from db_reader import resolve_db_path
 
 router = APIRouter(prefix="/api/v1", tags=["content"])
 SURAHS_CACHE_TTL_SECONDS = 120
-HADITH_BY_ID_CACHE_TTL_SECONDS = 180
 METADATA_CHANGES_CACHE_TTL_SECONDS = 30
 
 
@@ -54,7 +49,7 @@ def metadata_changes(
     response: Response,
     since: str | None = Query(
         None,
-        description="ISO8601 (мысалы 2026-01-01T00:00:00Z). updated_at бар DB үшін quran_changed/hadith_changed.",
+        description="ISO8601 (мысалы 2026-01-01T00:00:00Z). updated_at бар DB үшін quran_changed.",
     ),
     _: None = Depends(optional_content_read_secret),
 ):
@@ -104,7 +99,7 @@ def metadata_changes(
         "since_invalid": bool(diff.get("since_invalid")),
         "since_normalized_sqlite": diff.get("since_normalized_sqlite"),
         "quran_changed": diff.get("quran_changed") or [],
-        "hadith_changed": diff.get("hadith_changed") or [],
+        "hadith_changed": [],
         "hint_kk": hint,
         "etag": etag,
         "last_modified_http": lm,
@@ -162,65 +157,5 @@ def quran_ayah(
     if not row:
         raise HTTPException(404, detail="ayah not found")
     return {"ok": True, "ayah": row}
-
-
-@router.get("/hadith/random")
-def hadith_random(
-    source: str | None = Query(
-        None,
-        description="Кітап атауы (мысалы bukhari). Бос болса — барлық дереккөзден кездейсоқ.",
-    ),
-    strict_sahih: bool = Query(False),
-    lang: str = Query("kk"),
-    unique: bool = Query(
-        True,
-        description="Тек бірегей жолдар (is_repeated=0). False — кітап ішіндегі қайталанулармен.",
-    ),
-    _: None = Depends(optional_content_read_secret),
-):
-    src = (source or "").strip()
-    if src:
-        row = hadith_random_for_source(
-            src, strict_sahih=strict_sahih, lang=lang, unique_only=unique
-        )
-    else:
-        row = hadith_random_any(
-            strict_sahih=strict_sahih, lang=lang, unique_only=unique
-        )
-    if not row:
-        raise HTTPException(404, detail="hadith not found")
-    return {"ok": True, "hadith": row}
-
-
-@router.get("/hadith/search")
-def hadith_search_endpoint(
-    q: str = Query(..., min_length=1),
-    lang: str = Query("kk"),
-    limit: int = Query(60, ge=1, le=200),
-    unique: bool = Query(
-        True,
-        description="Тек бірегей жолдар (is_repeated=0). False — толық кітап жолдары.",
-    ),
-    _: None = Depends(optional_content_read_secret),
-):
-    rows = hadith_search(q, lang=lang, limit=limit, unique_only=unique)
-    return {"ok": True, "items": rows}
-
-
-@router.get("/hadith/{hadith_id}")
-def hadith_one(
-    hadith_id: int,
-    _: None = Depends(optional_content_read_secret),
-):
-    cache_key = f"content:hadith:one:v1:{hadith_id}"
-    cached = cache_get_json(cache_key)
-    if cached and cached.get("ok") and isinstance(cached.get("hadith"), dict):
-        return cached
-    row = hadith_by_id(hadith_id)
-    if not row:
-        raise HTTPException(404, detail="hadith not found")
-    body = {"ok": True, "hadith": row}
-    cache_set_json(cache_key, body, HADITH_BY_ID_CACHE_TTL_SECONDS)
-    return body
 
 

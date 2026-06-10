@@ -14,7 +14,7 @@
 | `--validate-only` dry-run | **`bash scripts/run_pg_cutover.sh --validate-only`** немесе `python scripts/validate_pg_copy.py …` |
 | `scripts/smoke_platform_api.py` | **қосылды** — төмен §5 |
 | `scripts/smoke_cutover_validate.py` | **қосылды** — миграция валидациясы + HTTP smoke |
-| Redis + exact cache «жоспар» | **көптегені іске қосылған** — `platform_api/ai_exact_cache.py`, `redis_client.py`, `ai_rate_limit.py`, `docs/PLATFORM_GPT_HANDOFF.md` §21 |
+| Redis + exact cache «жоспар» | **көптегені іске қосылған** — `platform_api/ai_exact_cache.py`, `redis_client.py`, `ai_rate_limit.py`, `docs/platform_api/ai-ecosystem.md` |
 | `tests/test_auth_link.py` | `/auth/link/telegram` бот құпиясы, uuid claim, bootstrap Bearer 400 |
 
 ---
@@ -271,4 +271,4 @@ curl -fsS http://127.0.0.1:8788/ready
 
 ## Жаңарту
 
-Соңғы түгендеу: репо ішіндегі скрипт атауларымен келісімді сақтау үшін осы файлды **PR кезінде** `MIGRATION_SQLITE_TO_POSTGRES.md` / `PLATFORM_GPT_HANDOFF.md` кестелерінен бір реттік сілтеме арқылы жаңартыңыз.
+Соңғы түгендеу: репо ішіндегі скрипт атауларымен келісімді сақтау үшін осы файлды **PR кезінде** `MIGRATION_SQLITE_TO_POSTGRES.md` / `docs/README.md` кестелерінен бір реттік сілтеме арқылы жаңартыңыз.

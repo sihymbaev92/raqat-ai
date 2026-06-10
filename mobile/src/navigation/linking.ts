@@ -7,11 +7,14 @@ import type { LinkingOptions } from "@react-navigation/native";
 import type { NavigationState, PartialState } from "@react-navigation/native";
 import type { RootStackParamList } from "./types";
 import {
+  applyQuranMushafBookParamsFromDeepLink,
   applyQuranSurahParamsFromDeepLink,
+  getFocusedMushafBookParams,
   getFocusedQuranSurahParams,
+  mushafBookParamsFromSurahLink,
   normalizeDeepLinkPath,
+  parseMushafBookQueryParams,
   parseQuranSurahDeepPath,
-  rewriteMushafSurahPathToRouterPath,
 } from "./quranSurahDeepLink";
 
 function webPrefixes(): string[] {
@@ -31,11 +34,14 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
         path: "",
         screens: {
           Home: "",
+          Articles: "articles",
+          PrayerTab: "prayer",
+          Saved: "saved",
+          Profile: "profile",
           Duas: {
             path: "duas",
             screens: {
               DuasHome: "",
-              CommunityDua: "community",
             },
           },
           Tasbih: {
@@ -57,11 +63,13 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
       },
       AsmaAlHusna: "asma",
       PrayerTimes: "prayer-times",
+      PrayerAzan: "azan",
       Qibla: "qibla",
       MoreStack: {
         path: "more",
         screens: {
           ContentHub: "",
+          KmdbHub: "kmdb",
           QuranList: "quran",
           QuranSurah: {
             path: "surah/:surahNumber/:initialAyah?",
@@ -81,14 +89,31 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           Duas: "extra-duas",
           TelegramInfo: "telegram",
           Settings: "more-settings",
+          PrayerSettings: "prayer-settings",
+          QuranSettings: "quran-settings",
           SiriShortcutHelp: "siri-shortcuts",
           Hatim: "hatim",
-          CommunityDua: "community-dua",
+          HatimSettings: "hatim/settings",
+          QuranMushafBook: {
+            path: "mushaf-book/:initialPage?",
+            parse: {
+              initialPage: (v?: string) => {
+                if (v == null || v === "") return undefined;
+                const n = parseInt(v, 10);
+                return Number.isFinite(n) && n >= 1 && n <= 604 ? n : undefined;
+              },
+            },
+          },
           NamazGuide: "namaz-guide",
           TajweedGuide: "tajweed",
           Hajj: "hajj",
+          ZakatCalculator: "zakat",
           Halal: "halal",
           HadithHub: "hadith",
+          HadithList: "hadith/list",
+          HadithDetail: "hadith/detail/:hadithId",
+          ScrapedHadithMuftyatList: "hadith/muftyat",
+          ScrapedHadithMuftyatDetail: "hadith/muftyat/:id",
           GenealogyClans: "genealogy",
           FamilyTree: "genealogy/my",
           ImamAI: "ai",
@@ -96,7 +121,12 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           IslamicKbSearch: "knowledge/search",
           Ecosystem: "ecosystem",
           KazakhTradition: "tradition",
+          KazakhTraditionTopicDetail: "tradition/topic/:topicId",
+          KazakhTraditionArticles: "tradition/articles/:articleId?",
+          KazakhTraditionFavorites: "tradition/favorites",
           KazakhTraditionBooks: "tradition/books",
+          KurbanAit: "kurban-ait",
+          OfficialFatuaBook: "books/fatua/:bookId",
           KazakhGreatWords: "tradition/great-words",
           KazakhGreatWordsAuthor: "tradition/great-words/author/:authorId",
           KazakhGreatWordsEntry: "tradition/great-words/entry/:entryId",
@@ -106,21 +136,33 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
   },
   getStateFromPath(path, options) {
     const normalized = normalizeDeepLinkPath(path);
-    const mushafRouterPath = rewriteMushafSurahPathToRouterPath(normalized);
-    if (mushafRouterPath != null) {
-      const parsed = parseQuranSurahDeepPath(normalized);
-      const built = RNGetStateFromPath(mushafRouterPath, options);
-      if (parsed && built) {
-        return applyQuranSurahParamsFromDeepLink(
+    const mushafSurah = parseQuranSurahDeepPath(normalized);
+    if (mushafSurah != null) {
+      const built = RNGetStateFromPath("more/mushaf-book", options);
+      if (built) {
+        return applyQuranMushafBookParamsFromDeepLink(
           built as NavigationState | PartialState<NavigationState>,
-          parsed
+          mushafBookParamsFromSurahLink(mushafSurah)
         ) as typeof built;
       }
-      return built;
     }
-    return RNGetStateFromPath(path, options);
+    const query = parseMushafBookQueryParams(path);
+    const built = RNGetStateFromPath(normalized, options);
+    if (built && (query.focusSurah || query.focusAyah || query.initialPage)) {
+      return applyQuranMushafBookParamsFromDeepLink(
+        built as NavigationState | PartialState<NavigationState>,
+        query
+      ) as typeof built;
+    }
+    return built;
   },
   getPathFromState(state, options) {
+    const mushafBook = getFocusedMushafBookParams(state as NavigationState | PartialState<NavigationState>);
+    if (mushafBook?.focusSurah != null) {
+      const s = mushafBook.focusSurah;
+      const a = mushafBook.focusAyah;
+      return a != null && a > 1 ? `more/mushaf-surah/${s}/${a}` : `more/mushaf-surah/${s}`;
+    }
     const p = getFocusedQuranSurahParams(state as NavigationState | PartialState<NavigationState>);
     if (p?.mushafLayout) {
       return p.initialAyah != null

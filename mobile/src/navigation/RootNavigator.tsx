@@ -1,67 +1,29 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MainTabs } from "./MainTabs";
-import { MoreNavigator } from "./MoreStack";
-import { AsmaAlHusnaScreen } from "../screens/AsmaAlHusnaScreen";
-import { PrayerTimesScreen } from "../screens/PrayerTimesScreen";
-import { QiblaScreen } from "../screens/QiblaScreen";
-import { useAppTheme } from "../theme/ThemeContext";
-import { kk } from "../i18n/kk";
+import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
+import { useAppLocale } from "../i18n/runtime";
 import type { RootStackParamList } from "./types";
+import { lazyScreen } from "./lazyScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+const AsmaAlHusnaScreen = lazyScreen(() => import("../screens/AsmaAlHusnaScreen").then((m) => ({ default: m.AsmaAlHusnaScreen })));
+const PrayerTimesScreen = lazyScreen(() => import("../screens/PrayerTimesScreen").then((m) => ({ default: m.PrayerTimesScreen })));
+const PrayerAzanScreen = lazyScreen(() => import("../screens/PrayerAzanScreen").then((m) => ({ default: m.PrayerAzanScreen })));
+const QiblaScreen = lazyScreen(() => import("../screens/QiblaScreen").then((m) => ({ default: m.QiblaScreen })));
+const MoreNavigator = lazyScreen(() => import("./MoreStack").then((m) => ({ default: m.MoreNavigator })));
 
 export function RootNavigator() {
-  const { colors } = useAppTheme();
+  useAppLocale();
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
+    <Stack.Navigator screenOptions={hiddenStackHeaderOptions}>
       <Stack.Screen name="Main" component={MainTabs} />
-      <Stack.Screen
-        name="AsmaAlHusna"
-        component={AsmaAlHusnaScreen}
-        options={{
-          headerShown: true,
-          title: kk.asma.screenTitle,
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: "600" },
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="PrayerTimes"
-        component={PrayerTimesScreen}
-        options={{
-          headerShown: true,
-          title: kk.prayer.title,
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: "600" },
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="Qibla"
-        component={QiblaScreen}
-        options={{
-          headerShown: true,
-          title: kk.tabs.qibla,
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: "600" },
-          headerShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="MoreStack"
-        component={MoreNavigator}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="AsmaAlHusna" component={AsmaAlHusnaScreen} />
+      <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} />
+      <Stack.Screen name="PrayerAzan" component={PrayerAzanScreen} />
+      <Stack.Screen name="Qibla" component={QiblaScreen} />
+      <Stack.Screen name="MoreStack" component={MoreNavigator} />
     </Stack.Navigator>
   );
 }

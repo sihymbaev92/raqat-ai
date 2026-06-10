@@ -1,0 +1,872 @@
+{
+  "version": 1,
+  "updated": "2026-05-31",
+  "source": "manual_kz_seed",
+  "disclaimer": "RAQAT уақытша анықтама — halaldamu products API толыққанша ресми реестр басым.",
+  "items": [
+    {
+      "gtin": "4607025392015",
+      "title": "Айран 1% 450 мл",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, қайма, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "KZ сүт өнімі"
+    },
+    {
+      "gtin": "4607025392024",
+      "title": "Айран 2.5% 900 мл",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, қайма, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392033",
+      "title": "Кефир 1% 900 мл",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392042",
+      "title": "Кефир 2.5% 450 мл",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392051",
+      "title": "Сүт ультрапастерленген 2.5% 1 л",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392060",
+      "title": "Сүт 3.2% 900 мл",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392079",
+      "title": "Қаймақ 20% 180 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, қайма",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392088",
+      "title": "Творог 9% 200 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392097",
+      "title": "Сүзбе 5% 350 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392103",
+      "title": "Йогурт түсімді 2.5% 125 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, ашытқы, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392112",
+      "title": "Йогурт натуральный 3.2% 450 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392121",
+      "title": "Сметана 20% 400 г",
+      "brand": "FoodMaster",
+      "ingredients": "Сүт, қайма",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392130",
+      "title": "Маргарин 72% 200 г",
+      "brand": "FoodMaster",
+      "ingredients": "май, су, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "құрамды тексеру"
+    },
+    {
+      "gtin": "4607025392149",
+      "title": "Сары май 82.5% 180 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт майы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392158",
+      "title": "Ірімшік «Голландия» 45% 180 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, тұз, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392167",
+      "title": "Ірімшік плавленый 400 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, май, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392176",
+      "title": "Көмеk 0.5 л",
+      "brand": "Coca-Cola",
+      "ingredients": "су, қант, көмірқышқыл газы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "сусын"
+    },
+    {
+      "gtin": "5449000049407",
+      "title": "Coca-Cola 0.5 л",
+      "brand": "Coca-Cola",
+      "ingredients": "су, қант, краситель",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "халықаралық GTIN"
+    },
+    {
+      "gtin": "5449000214913",
+      "title": "Coca-Cola 1 л",
+      "brand": "Coca-Cola",
+      "ingredients": "су, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "5449000111971",
+      "title": "Sprite 0.5 л",
+      "brand": "Coca-Cola",
+      "ingredients": "су, қант, лимон қышқылы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "5449000054223",
+      "title": "Fanta апельсин 0.5 л",
+      "brand": "Coca-Cola",
+      "ingredients": "су, қант, хош иістендіргіш",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392228",
+      "title": "Шырай 1 л",
+      "brand": "Рахат",
+      "ingredients": "су, қант, хош иістендіргіш",
+      "companyId": 17163,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392237",
+      "title": "Шырай 2 л",
+      "brand": "Рахат",
+      "ingredients": "су, қант",
+      "companyId": 17163,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392246",
+      "title": "Нан «Алматы» 400 г",
+      "brand": "Нан зауыты",
+      "ingredients": "ұн, су, тұз, ашытқы",
+      "companyId": 21967,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392255",
+      "title": "Нан батон 350 г",
+      "brand": "Нан зауыты",
+      "ingredients": "ұн, су, тұз",
+      "companyId": 21967,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392264",
+      "title": "Бородинский нан 500 г",
+      "brand": "Нан зауыты",
+      "ingredients": "ұн, молasses, тұз",
+      "companyId": 21967,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392273",
+      "title": "Ұн жоғарғы сорт 2 кг",
+      "brand": "Астық",
+      "ingredients": "ұн бидай",
+      "companyId": 15182,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392282",
+      "title": "Күріш дайын 900 г",
+      "brand": "Астық",
+      "ingredients": "күріш",
+      "companyId": 15182,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392291",
+      "title": "Макарон «Спагетти» 400 г",
+      "brand": "Макарон",
+      "ingredients": "ұн, су",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392307",
+      "title": "Күнбағыс майы 1 л",
+      "brand": "Май",
+      "ingredients": "күнбағыс тұқымы майы",
+      "companyId": 16409,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392316",
+      "title": "Оливкалық май Extra Virgin 500 мл",
+      "brand": "Май",
+      "ingredients": "зәйтүн майы",
+      "companyId": 16409,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392325",
+      "title": "Қант ақ 1 кг",
+      "brand": "Қант",
+      "ingredients": "сахароза",
+      "companyId": 16235,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392334",
+      "title": "Тұз кәдімгі 1 кг",
+      "brand": "Тұз",
+      "ingredients": "тұз",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392343",
+      "title": "Шай қара 100 пакет",
+      "brand": "Шай",
+      "ingredients": "шай",
+      "companyId": 21131,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392352",
+      "title": "Кофе растворимый 95 г",
+      "brand": "Кофе",
+      "ingredients": "кофе, ароматизатор",
+      "companyId": 21098,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392361",
+      "title": "Бал натуральный 250 г",
+      "brand": "Бал",
+      "ingredients": "бал",
+      "companyId": 16662,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392370",
+      "title": "Джем құбарша 350 г",
+      "brand": "Консерві",
+      "ingredients": "құбарша, қант, пектин",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392389",
+      "title": "Кетчуп 500 г",
+      "brand": "Тұздық",
+      "ingredients": "томат, қант, тұз, уксус",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392398",
+      "title": "Майонез Провансаль 400 г",
+      "brand": "Тұздық",
+      "ingredients": "май, жұмыртқа, тұз, уксус",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392404",
+      "title": "Горчица 140 г",
+      "brand": "Тұздық",
+      "ingredients": "қызылшә, тұз, уксус",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392413",
+      "title": "Шоколад сүтті 90 г",
+      "brand": "Кәмпит",
+      "ingredients": "какао, сүт, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392422",
+      "title": "Печенье «Юбилейное» 112 г",
+      "brand": "Кәмпит",
+      "ingredients": "ұн, қант, май",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392431",
+      "title": "Чипсы рифленые 140 г",
+      "brand": "Снэк",
+      "ingredients": "картоп, май, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392440",
+      "title": "Сок апельсин 1 л",
+      "brand": "Сок",
+      "ingredients": "концентрат, су, қант",
+      "companyId": 18456,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392459",
+      "title": "Сок алма-крыжовник 2 л",
+      "brand": "Сок",
+      "ingredients": "концентрат, су",
+      "companyId": 18456,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392468",
+      "title": "Минералды су 1.5 л",
+      "brand": "Су",
+      "ingredients": "минералды су",
+      "companyId": 21105,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392477",
+      "title": "Энергетик 250 мл",
+      "brand": "Энергетик",
+      "ingredients": "су, қант, кофеин, таурин",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392486",
+      "title": "Лапша тез дайындалатын 70 г",
+      "brand": "Лапша",
+      "ingredients": "ұн, тұз, май",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392495",
+      "title": "Бұршақ консерві 400 г",
+      "brand": "Консерві",
+      "ingredients": "бұршақ, су, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392501",
+      "title": "Нокат арахис 50 г",
+      "brand": "Кәмпит",
+      "ingredients": "арахис, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392510",
+      "title": "Йогурт питьевой клубника 290 мл",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, қант, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392529",
+      "title": "Сосиски молочные 400 г",
+      "brand": "Ет",
+      "ingredients": "шошқа/сиыр еті, тұз",
+      "companyId": 22500,
+      "certificateStatus": "active",
+      "note": "ет өнімі — құрамды тексеру"
+    },
+    {
+      "gtin": "4607025392538",
+      "title": "Колбаса вареная 500 г",
+      "brand": "Ет",
+      "ingredients": "ет, тұз, специя",
+      "companyId": 22500,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392547",
+      "title": "Филе куриное охлажденное 1 кг",
+      "brand": "Ет",
+      "ingredients": "тауық еті",
+      "companyId": 22500,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392556",
+      "title": "Рыба мороженая 1 кг",
+      "brand": "Балық",
+      "ingredients": "балық",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392565",
+      "title": "Яйца куриные С0 10 шт",
+      "brand": "Жұмыртқа",
+      "ingredients": "жұмыртқа",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392574",
+      "title": "Масло подсолнечное рафинированное 1 л",
+      "brand": "Май",
+      "ingredients": "күнбағыс майы",
+      "companyId": 16409,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392583",
+      "title": "Гречка 900 г",
+      "brand": "Крупа",
+      "ingredients": "гречка",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392592",
+      "title": "Овсяные хлопья 500 г",
+      "brand": "Крупа",
+      "ingredients": "сұлы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392608",
+      "title": "Детское питание каша 200 г",
+      "brand": "Бала",
+      "ingredients": "сұлы, сүт",
+      "companyId": 16662,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392617",
+      "title": "Вода питьевая 5 л",
+      "brand": "Су",
+      "ingredients": "су",
+      "companyId": 21105,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392626",
+      "title": "Сыр твердый 200 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, тұз, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392635",
+      "title": "Ряженка 4% 500 мл",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, сахар",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392644",
+      "title": "Кумыс 0.5 л",
+      "brand": "Дәстүрлі",
+      "ingredients": "сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392653",
+      "title": "Шубат 0.5 л",
+      "brand": "Дәстүрлі",
+      "ingredients": "түйе сүті, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392662",
+      "title": "Құрт тұздалған 100 г",
+      "brand": "Дәстүрлі",
+      "ingredients": "сүт, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392671",
+      "title": "Балық консерві сайра 185 г",
+      "brand": "Консерві",
+      "ingredients": "балық, май, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392680",
+      "title": "Томат паста 270 г",
+      "brand": "Тұздық",
+      "ingredients": "томат",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392699",
+      "title": "Соус соевый 150 мл",
+      "brand": "Тұздық",
+      "ingredients": "соя, тұз",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392705",
+      "title": "Чай зеленый 25 пакет",
+      "brand": "Шай",
+      "ingredients": "жасыл шай",
+      "companyId": 21131,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392714",
+      "title": "Какао порошок 100 г",
+      "brand": "Какао",
+      "ingredients": "какао, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392723",
+      "title": "Мороженое пломбир 80 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, қант, май",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392732",
+      "title": "Пельмени 1 кг",
+      "brand": "Тамақ",
+      "ingredients": "ет, ұн, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392741",
+      "title": "Манты замороженные 800 г",
+      "brand": "Тамақ",
+      "ingredients": "ет, ұн",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392750",
+      "title": "Самса с мясом 4 шт",
+      "brand": "Тамақ",
+      "ingredients": "ет, ұн, май",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392769",
+      "title": "Батончик шоколадный 50 г",
+      "brand": "Кәмпит",
+      "ingredients": "какао, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392778",
+      "title": "Желе фруктовое 130 г",
+      "brand": "Кәмпит",
+      "ingredients": "қант, желатин",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "желатин тегі тексеру"
+    },
+    {
+      "gtin": "4607025392787",
+      "title": "Вафли 200 г",
+      "brand": "Кәмпит",
+      "ingredients": "ұн, қант, май",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392796",
+      "title": "Хлебцы рисовые 100 г",
+      "brand": "Снэк",
+      "ingredients": "күріш",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392802",
+      "title": "Орехи грецкие 80 г",
+      "brand": "Снэк",
+      "ingredients": "жаңғақ",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392811",
+      "title": "Изюм 150 г",
+      "brand": "Кептірілген",
+      "ingredients": "жүзім",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392820",
+      "title": "Чай черный листовой 100 г",
+      "brand": "Шай",
+      "ingredients": "шай",
+      "companyId": 21131,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392839",
+      "title": "Сахар тростниковый 500 г",
+      "brand": "Қант",
+      "ingredients": "қант",
+      "companyId": 16235,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392848",
+      "title": "Уксус столовый 9% 500 мл",
+      "brand": "Тұздық",
+      "ingredients": "су, уксус",
+      "companyId": 18961,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392857",
+      "title": "Сода пищевая 500 г",
+      "brand": "Қоспа",
+      "ingredients": "сода",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392866",
+      "title": "Дрожжи сухие 11 г",
+      "brand": "Нан",
+      "ingredients": "ашытқы, эмульгатор",
+      "companyId": 21967,
+      "certificateStatus": "active",
+      "note": null
+    },
+    {
+      "gtin": "4607025392875",
+      "title": "Крахмал картофельный 250 г",
+      "brand": "Қоспа",
+      "ingredients": "крахмал",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392884",
+      "title": "Какао-напиток 25 г",
+      "brand": "Какао",
+      "ingredients": "какао, қант, сүт ұнтағы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392893",
+      "title": "Сгущенное молоко 380 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392909",
+      "title": "Сливки 10% 200 мл",
+      "brand": "FoodMaster",
+      "ingredients": "сүт",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392918",
+      "title": "Сыр плавленый ломтики 140 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, тұз",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392927",
+      "title": "Йогурт греческий 150 г",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4870055004281",
+      "title": "Кефир биойогурт 1% 330 мл",
+      "brand": "FoodMaster",
+      "ingredients": "сүт, ашытқы",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "OFF:kefir kazakhstan"
+    },
+    {
+      "gtin": "4607025392945",
+      "title": "Молоко безлактозное 1 л",
+      "brand": "FoodMaster",
+      "ingredients": "сүт",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392954",
+      "title": "Протеиновый батончик 60 г",
+      "brand": "Спорт",
+      "ingredients": "сүт протеині, қант",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": null
+    },
+    {
+      "gtin": "4607025392963",
+      "title": "Витаминный комплекс 30 таб",
+      "brand": "Қосымша",
+      "ingredients": "витаминдер",
+      "companyId": null,
+      "certificateStatus": "reference",
+      "note": "тағамдық қоспа емес"
+    }
+  ]
+}

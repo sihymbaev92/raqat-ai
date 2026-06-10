@@ -21,3 +21,14 @@ def test_gelatin_doubtful():
 def test_plain_water_halal_possible():
     r = analyze_halal_text("water, salt")
     assert r["status"] == "halal_possible"
+
+
+def test_russian_pork_adjective_haram():
+    r = analyze_halal_text("свиной жир, соль")
+    assert r["status"] == "haram"
+    assert "свиной" in r["message"].lower()
+
+
+def test_wine_vinegar_doubtful():
+    r = analyze_halal_text("уксус винный, вода")
+    assert r["status"] == "doubtful"

@@ -1,15 +1,15 @@
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Pressable } from "@/ui/Pressable";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
-import { loadHadithCorpus, findHadith, type HadithCorpus } from "../storage/hadithCorpus";
+import { loadHadithCorpus, findHadith, hadithTextForLocale, type HadithCorpus } from "../storage/hadithCorpus";
+import { useAppLocale } from "../i18n/runtime";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
-import { getRaqatApiBase } from "../config/raqatApiBase";
-import { fetchPlatformHadith } from "../services/platformApiClient";
-import { getValidAccessToken } from "../storage/authTokens";
 import { resolveHadithGradeText } from "../content/hadithGrade";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "HadithDetail">;
@@ -17,12 +17,9 @@ type Props = NativeStackScreenProps<MoreStackParamList, "HadithDetail">;
 export function HadithDetailScreen({ route, navigation }: Props) {
   const { hadithId } = route.params;
   const { colors } = useAppTheme();
+  const appLocale = useAppLocale();
   const [corpus, setCorpus] = useState<HadithCorpus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [arabic, setArabic] = useState("");
-  const [textKk, setTextKk] = useState("");
-  const [textEn, setTextEn] = useState("");
-  const [textRu, setTextRu] = useState("");
 
   useEffect(() => {
     let alive = true;
@@ -45,47 +42,10 @@ export function HadithDetailScreen({ route, navigation }: Props) {
   const h = corpus ? findHadith(corpus, hadithId) : undefined;
   const narratorKk = h?.narratorKk?.trim() ?? "";
   const gradeText = resolveHadithGradeText(h?.grade);
-
-  useEffect(() => {
-    if (!h) return;
-    setArabic(h.arabic);
-    setTextKk(h.textKk?.trim() ?? "");
-    setTextEn(h.textEn?.trim() ?? "");
-    setTextRu(h.textRu?.trim() ?? "");
-  }, [h]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!h) return;
-      const base = getRaqatApiBase()?.trim();
-      const dbId = typeof h.dbId === "number" && h.dbId > 0 ? h.dbId : null;
-      if (!base || !dbId) return;
-      const bearer = await getValidAccessToken();
-      try {
-        const r = await fetchPlatformHadith(base, dbId, {
-          timeoutMs: 12_000,
-          authorizationBearer: bearer || undefined,
-        });
-        if (cancelled || !r.ok || !r.hadith || typeof r.hadith !== "object") return;
-        const row = r.hadith as {
-          text_ar?: string | null;
-          text_kk?: string | null;
-          text_ru?: string | null;
-          text_en?: string | null;
-        };
-        if (row.text_ar?.trim()) setArabic(row.text_ar.trim());
-        if (row.text_kk?.trim()) setTextKk(row.text_kk.trim());
-        if (row.text_ru?.trim()) setTextRu(row.text_ru.trim());
-        if (row.text_en?.trim()) setTextEn(row.text_en.trim());
-      } catch {
-        /* офлайн */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [h]);
+  const sourceOnly = Boolean(h?.sourceOnly ?? (corpus?.version ?? 0) >= 4);
+  const citation = h?.sourceCitationKk?.trim() || (h ? `${h.collectionNameKk}, хадис № ${h.reference}` : "");
+  const sourceLabel = h?.kkSourceLabel?.trim() || h?.kkSourceSite?.trim() || "";
+  const sourceUrl = h?.kkSourceUrl?.trim() || "";
 
   useLayoutEffect(() => {
     if (h) {
@@ -100,7 +60,7 @@ export function HadithDetailScreen({ route, navigation }: Props) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.accent} />
+        <RaqatOrnamentSpinner size={52} />
       </View>
     );
   }
@@ -113,6 +73,13 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     );
   }
 
+  const openSource = () => {
+    if (!sourceUrl) return;
+    void Linking.openURL(sourceUrl).catch(() => {
+      /* елемеу */
+    });
+  };
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.meta}>{h.collectionNameKk ?? ""}</Text>
@@ -124,43 +91,54 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       <View style={styles.badgesRow}>
         <Text style={styles.badge}>{kk.hadith.sourceBadge(h.collectionNameKk || "—")}</Text>
         <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
-        <Text style={styles.badge}>{textKk ? kk.hadith.translationBadgeReady : kk.hadith.translationBadgeMissing}</Text>
       </View>
 
       <Text style={styles.section}>{kk.hadith.arabic}</Text>
-      <Text style={styles.arabic}>{arabic || h.arabic}</Text>
+      <Text style={styles.arabic}>{h.arabic}</Text>
 
-      <Text style={styles.section}>{kk.hadith.translationKk}</Text>
-      <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
-      <Text style={textKk ? styles.body : styles.bodyMuted}>
-        {textKk || kk.hadith.translationPending}
-      </Text>
+      {(() => {
+        if (appLocale !== "en" && appLocale !== "ru" && appLocale !== "tr") return null;
+        const localeText = hadithTextForLocale(h, appLocale);
+        if (!localeText) return null;
+        const label =
+          appLocale === "ru" ? "Перевод" : appLocale === "tr" ? "Çeviri" : "Translation";
+        return (
+          <>
+            <Text style={styles.section}>{label}</Text>
+            <Text style={styles.body} selectable>{localeText}</Text>
+          </>
+        );
+      })()}
 
-      {textRu ? (
-        <>
-          <Text style={styles.section}>{kk.hadith.translationRu}</Text>
-          <Text style={styles.body}>{textRu}</Text>
-        </>
+      <Text style={styles.section}>{kk.hadith.kkSourceTitle}</Text>
+      <Text style={styles.body}>{citation}</Text>
+      {sourceOnly ? (
+        <Text style={styles.meaningNote}>{kk.hadith.sourceOnlyNote}</Text>
+      ) : null}
+      {sourceUrl ? (
+        <Pressable
+          onPress={openSource}
+          oyuBackdrop={false}
+          accessibilityRole="link"
+          accessibilityLabel={kk.hadith.kkSourceOpenA11y(sourceLabel || kk.hadith.kkSourceTitle)}
+          style={({ pressed }) => [styles.sourceBtn, pressed && styles.sourceBtnPressed]}
+        >
+          <Text style={styles.sourceBtnTxt}>
+            {sourceLabel ? `${kk.hadith.kkSourceTitle}: ${sourceLabel}` : kk.hadith.kkSourceTitle}
+          </Text>
+        </Pressable>
       ) : null}
 
-      {textEn ? (
+      {narratorKk ? (
         <>
-          <Text style={styles.section}>{kk.hadith.translationEn}</Text>
-          <Text style={styles.body}>{textEn}</Text>
+          <Text style={styles.section}>{kk.hadith.narrator}</Text>
+          <Text style={styles.body}>{narratorKk}</Text>
         </>
       ) : null}
-
-      <Text style={styles.section}>{kk.hadith.narrator}</Text>
-      <Text style={narratorKk ? styles.body : styles.bodyMuted}>
-        {narratorKk || kk.hadith.narratorPending}
-      </Text>
 
       {corpus?.provenance ? (
         <View style={styles.prov}>
           <Text style={styles.provTitle}>{kk.hadith.provenance}</Text>
-          {corpus.provenance.origin ? (
-            <Text style={styles.provTxt}>{corpus.provenance.origin}</Text>
-          ) : null}
           {corpus.provenance.evidenceKk ? (
             <Text style={styles.provTxt}>{corpus.provenance.evidenceKk}</Text>
           ) : null}
@@ -174,65 +152,78 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 }
 
 function makeStyles(colors: ThemeColors) {
+  const pageBg = "#FFFFFF";
+  const text = "#111827";
+  const muted = "#4B5563";
+  const arabic = "#111827";
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.bg },
+    root: { flex: 1, backgroundColor: pageBg },
     content: { padding: 20, paddingBottom: 40 },
     center: {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: colors.bg,
+      backgroundColor: pageBg,
       padding: 24,
     },
     err: { color: colors.error, textAlign: "center" },
-    meta: { color: colors.accent, fontWeight: "700", fontSize: 14 },
-    book: { color: colors.muted, fontSize: 13, marginTop: 4 },
-    ref: { color: colors.muted, fontSize: 12, marginBottom: 8 },
+    meta: { color: muted, fontWeight: "700", fontSize: 14 },
+    book: { color: muted, fontSize: 13, marginTop: 4 },
+    ref: { color: muted, fontSize: 12, marginBottom: 8 },
     badgesRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginBottom: 8 },
     badge: {
-      color: colors.accent,
+      color: muted,
       fontSize: 11,
       fontWeight: "700",
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-      backgroundColor: colors.card,
+      borderWidth: 0,
+      borderColor: "transparent",
+      borderRadius: 0,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      backgroundColor: "transparent",
       overflow: "hidden",
     },
     section: {
-      color: colors.accent,
+      color: muted,
       fontSize: 12,
       fontWeight: "700",
       marginTop: 12,
       marginBottom: 6,
     },
     arabic: {
-      color: colors.scriptureArabic,
+      color: arabic,
       fontSize: 16,
       lineHeight: 28,
       writingDirection: "rtl",
       textAlign: "right",
     },
     meaningNote: {
-      color: colors.muted,
+      color: muted,
       fontSize: 13,
       lineHeight: 20,
-      marginBottom: 10,
+      marginTop: 8,
       fontStyle: "italic",
     },
-    body: { color: colors.scriptureMeaningKk, fontSize: 16, lineHeight: 26 },
-    bodyMuted: { color: colors.muted, fontSize: 15, lineHeight: 24, fontStyle: "italic" },
+    body: { color: text, fontSize: 16, lineHeight: 26 },
+    sourceBtn: {
+      marginTop: 10,
+      alignSelf: "flex-start",
+      paddingHorizontal: 0,
+      paddingVertical: 4,
+      borderRadius: 0,
+      backgroundColor: "transparent",
+    },
+    sourceBtnPressed: { opacity: 0.88 },
+    sourceBtnTxt: { color: muted, fontWeight: "700", fontSize: 14 },
     prov: {
       marginTop: 20,
-      padding: 12,
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
+      padding: 0,
+      backgroundColor: "transparent",
+      borderRadius: 0,
+      borderWidth: 0,
+      borderColor: "transparent",
     },
-    provTitle: { color: colors.muted, fontSize: 11, fontWeight: "700", marginBottom: 6 },
-    provTxt: { color: colors.muted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
+    provTitle: { color: muted, fontSize: 11, fontWeight: "700", marginBottom: 6 },
+    provTxt: { color: muted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
   });
 }

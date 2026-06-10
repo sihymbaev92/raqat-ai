@@ -29,6 +29,26 @@ def ensure_user_data_tables(conn: Any) -> None:
             )
             """
         )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_quran_last_read (
+                platform_user_id TEXT PRIMARY KEY NOT NULL,
+                state_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (platform_user_id) REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_quran_ayah_markers (
+                platform_user_id TEXT PRIMARY KEY NOT NULL,
+                markers_json TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (platform_user_id) REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE
+            )
+            """
+        )
         return
     if is_psycopg_connection(conn):
         # platform_identities.platform_user_id — UUID (PostgreSQL bootstrap)
@@ -46,6 +66,24 @@ def ensure_user_data_tables(conn: Any) -> None:
             CREATE TABLE IF NOT EXISTS platform_hatim_read (
                 platform_user_id UUID PRIMARY KEY NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
                 surahs_json TEXT NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_quran_last_read (
+                platform_user_id UUID PRIMARY KEY NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                state_json TEXT NOT NULL,
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS platform_quran_ayah_markers (
+                platform_user_id UUID PRIMARY KEY NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
+                markers_json TEXT NOT NULL,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
             """

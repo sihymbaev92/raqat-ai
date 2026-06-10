@@ -42,8 +42,10 @@ def task_ai_chat(self, payload: dict) -> dict:
     if not prompt:
         return {"ok": False, "error": "empty_prompt"}
     quick = (payload.get("detail_level") or "full") == "quick"
+    kb_only = bool(payload.get("kb_only")) if "kb_only" in payload else None
     staged_pipeline = bool(payload.get("staged_pipeline"))
-    cache_prompt = f"quick:{prompt}" if quick else prompt
+    cache_scope = "kb:" if kb_only else "mixed:"
+    cache_prompt = f"{cache_scope}quick:{prompt}" if quick else f"{cache_scope}{prompt}"
     try:
         from ai_exact_cache import cache_get_reply, cache_set_reply
         from ai_proxy import generate_ai_reply
@@ -53,7 +55,11 @@ def task_ai_chat(self, payload: dict) -> dict:
         from db_reader import resolve_db_path
         from prometheus_metrics import observe_ai_chat
 
+        from ai_reply_guards import GEMINI_BUSY_REPLY_KK, is_degraded_ai_reply
+
         cached = cache_get_reply(cache_prompt)
+        if cached and is_degraded_ai_reply(cached):
+            cached = None
         cache_hit_exact = bool(cached and str(cached).strip())
         cache_hit_semantic = False
         if cache_hit_exact:
@@ -69,12 +75,22 @@ def task_ai_chat(self, payload: dict) -> dict:
                     prompt,
                     quick=quick,
                     use_staged_pipeline=staged_pipeline,
+                    kb_only=kb_only,
                 )
                 observe_ai_chat(time.perf_counter() - t0)
-                cache_set_reply(cache_prompt, text)
-                cache_set_semantic(cache_prompt, text)
+                if not is_degraded_ai_reply(text):
+                    cache_set_reply(cache_prompt, text)
+                    cache_set_semantic(cache_prompt, text)
 
         cache_hit = cache_hit_exact or cache_hit_semantic
+
+        if is_degraded_ai_reply(text):
+            return {
+                "ok": False,
+                "error": "gemini_busy",
+                "text": "",
+                "detail": {"message_kk": GEMINI_BUSY_REPLY_KK, "retry_after_s": 90},
+            }
 
         db_path = str(resolve_db_path())
         pid = payload.get("platform_user_id")
@@ -142,7 +158,16 @@ def task_analyze_image(self, payload: dict) -> dict:
         mime = (payload.get("mime_type") or "image/jpeg").strip() or "image/jpeg"
         lang = (payload.get("lang") or "kk").strip() or "kk"
         client_prompt = payload.get("prompt")
-        text = analyze_halal_image(raw, mime, lang, client_prompt)
+        extra = None
+        b2 = (payload.get("image_b64_2") or "").strip()
+        if b2:
+            try:
+                raw2 = base64.standard_b64decode(b2.encode("ascii"))
+            except Exception:
+                return {"ok": False, "error": "invalid_base64_2", "text": ""}
+            m2 = (payload.get("mime_type_2") or "image/jpeg").strip() or "image/jpeg"
+            extra = [(raw2, m2)]
+        text = analyze_halal_image(raw, mime, lang, client_prompt, extra_images=extra)
         return {"ok": bool(text), "text": text or ""}
     except Retry:
         raise

@@ -40,6 +40,10 @@ def require_ai_access(
         status_code=401,
         detail={
             "code": "INVALID_AI_AUTH",
+            "message_kk": (
+                "AI чатына кіру рұқсаты жоқ. Баптаулардан кіріңіз немесе серверде "
+                "RAQAT_AI_ALLOW_ANONYMOUS=1 қосыңыз."
+            ),
             "message": (
                 "Authorization: Bearer JWT with scope ai is required, "
                 "or set RAQAT_AI_ALLOW_ANONYMOUS=1 (or unset) for anonymous with IP limit."

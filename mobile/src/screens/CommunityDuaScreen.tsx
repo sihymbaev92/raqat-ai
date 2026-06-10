@@ -5,13 +5,13 @@ import {
   StyleSheet,
   FlatList,
   TextInput,
-  Pressable,
-  ActivityIndicator,
   RefreshControl,
   Platform,
   KeyboardAvoidingView,
-  Image,
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RasterImage } from "@/ui/RasterImage";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useFocusEffect } from "@react-navigation/native";
@@ -167,7 +167,7 @@ export function CommunityDuaScreen(_props: Props) {
       ListHeaderComponent={
         <View>
           <View style={styles.heroWrap}>
-            <Image
+            <RasterImage
               source={menuIconAssets.communityDuaHero}
               style={styles.heroImg}
               resizeMode="contain"
@@ -175,6 +175,7 @@ export function CommunityDuaScreen(_props: Props) {
               accessibilityRole="image"
               accessibilityLabel={kk.communityDua.heroA11y}
             />
+            <View style={styles.heroImgLight} pointerEvents="none" />
           </View>
           <Text style={styles.hint}>{kk.communityDua.listIntro}</Text>
         </View>
@@ -210,7 +211,7 @@ export function CommunityDuaScreen(_props: Props) {
       {err ? <Text style={styles.bannerErr}>{err}</Text> : null}
       {loading && !rows.length ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.accent} />
+          <RaqatOrnamentSpinner size={52} />
         </View>
       ) : (
         list
@@ -268,6 +269,12 @@ function makeStyles(colors: ThemeColors) {
       maxWidth: 320,
       height: 200,
       transform: [{ translateY: -10 }],
+      opacity: 0.9,
+    },
+    heroImgLight: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "#FFFFFF",
+      opacity: 0.1,
     },
     hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginBottom: 12 },
     empty: { color: colors.muted, marginTop: 24, textAlign: "center", paddingHorizontal: 12 },

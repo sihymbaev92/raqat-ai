@@ -29,14 +29,18 @@ _is_local_api_base() {
   esac
 }
 
-if [[ -z "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]] && [[ -n "${RAQAT_PLATFORM_API_BASE:-}" ]]; then
+if [[ -z "${EXPO_PUBLIC_IMAM_AI_API_BASE:-}" ]] && [[ -z "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]] && [[ -n "${RAQAT_PLATFORM_API_BASE:-}" ]]; then
   if [[ "${RAQAT_EXPO_RELEASE_BUILD:-0}" != "1" ]] || ! _is_local_api_base "${RAQAT_PLATFORM_API_BASE}"; then
+    export EXPO_PUBLIC_IMAM_AI_API_BASE="${RAQAT_PLATFORM_API_BASE}"
     export EXPO_PUBLIC_RAQAT_API_BASE="${RAQAT_PLATFORM_API_BASE}"
   fi
 fi
 # Қауіпсіздік: AI/content secret клиентке EXPO_PUBLIC арқылы таратылмайды.
 
 if [[ "${RAQAT_EXPO_RELEASE_BUILD:-0}" == "1" ]] && [[ "${RAQAT_ALLOW_LOCALHOST_EXPO:-}" != "1" ]]; then
+  if [[ -n "${EXPO_PUBLIC_IMAM_AI_API_BASE:-}" ]] && _is_local_api_base "${EXPO_PUBLIC_IMAM_AI_API_BASE}"; then
+    unset EXPO_PUBLIC_IMAM_AI_API_BASE
+  fi
   if [[ -n "${EXPO_PUBLIC_RAQAT_API_BASE:-}" ]] && _is_local_api_base "${EXPO_PUBLIC_RAQAT_API_BASE}"; then
     unset EXPO_PUBLIC_RAQAT_API_BASE
   fi

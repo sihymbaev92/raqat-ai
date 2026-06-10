@@ -60,6 +60,22 @@
 
 ---
 
+## 3г. Muftyat.kz + Fatua.kz — KK хадис/риуаят үзінділері
+
+ҚМДБ ресми порталдарынан **мақала ішіндегі хадис/риуаят** үзінділерін жинайды (толық Сахих корпус емес — сол үшін §3б fawaz API).
+
+| Қадам | Команда |
+|--------|---------|
+| Бір URL тест | `python scripts/scrape_hadith_kk.py test --url "https://www.muftyat.kz/kk/articles/.../" --site muftyat` |
+| Muftyat + Fatua crawl | `bash scripts/run_hadith_scrape_muftyat_fatua.sh` |
+| Тек «хадис» slug URL | `python scripts/scrape_hadith_kk.py crawl --site muftyat --hadith-only --max-pages 20` |
+| Статистика | `python scripts/scrape_hadith_kk.py stats` |
+| JSON экспорт | `python scripts/scrape_hadith_kk.py export --out data/scraped_hadith_muftyat_fatua.json` |
+
+SQLite: `data/hadith_scrape.sqlite3`. Fatua **пәтуа** мәтіні → `islamic_kb` (AI/RAG іздеу); Muftyat/Fatua **хадис үзінділері** → `scrape_hadith_kk.py` → `mobile/assets/bundled/scraped-hadith-muftyat.json` (`export_scraped_hadith_mobile.py`).
+
+---
+
 ## 3а. Орыс және ағылшынша (CDN, «сахих» жинақтар)
 
 | Тіл | Бағана | Скрипт |
@@ -120,7 +136,7 @@
 - `db/hadith_repo.py` — мәтін бағанасын таңдау
 - `translate_hadith_kk_batch.py` — аударма батчысы
 
-Толық платформа брифі: `docs/PLATFORM_GPT_HANDOFF.md` (хадис KK батч/resume: **§18**).
+Толық платформа: `docs/README.md`; хадис KK батч/resume: [`platform_api/hadith-translation-runbook.md`](platform_api/hadith-translation-runbook.md).
 
 ---
 
@@ -139,7 +155,7 @@
 | **Қолмен түзету** | Терминология, стиль, мағына дәлдігі | DB редакторы немесе JSON экспорт/импорт (`hadith_corpus_sync.py`) |
 | **Іздеу индексі** | `text_kk` өзгерісінен кейін | `create_hadith_fts.py` (қажет болса) |
 
-Статистика (қанша жол толтырылған) репо DB снапшотына байланысты: `python scripts/hadith_corpus_sync.py stats --db ./global_clean.db` немесе `docs/PLATFORM_GPT_HANDOFF.md` **§18** мысалындағы `get_content_stats` жолы.
+Статистика (қанша жол толтырылған) репо DB снапшотына байланысты: `python scripts/hadith_corpus_sync.py stats --db ./global_clean.db` немесе [`platform_api/hadith-translation-runbook.md`](platform_api/hadith-translation-runbook.md).
 
 ### 9.2 Мазмұндық принциптер (редакциялық)
 

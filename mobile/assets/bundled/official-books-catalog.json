@@ -1,0 +1,478 @@
+{
+  "syncedAt": "2026-05-30T23:21:35Z",
+  "sources": {
+    "fatua": {
+      "label": "Fatua.kz",
+      "listUrl": "https://fatua.kz/kk/books/",
+      "count": 12,
+      "books": [
+        {
+          "id": "16-шарх-аль-гакыйда-ат-тахавия-аль-мусамма-байан-ас-сунна-ва-ль-джамаа",
+          "title": "Шарх аль-гакыйда ат-тахавия аль-мусамма \"Байан ас-сунна ва-ль-джамаа",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/16-шарх-аль-гакыйда-ат-тахавия-аль-мусамма-байан-ас-сунна-ва-ль-джамаа/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/668590_1434342034.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/676891_1434342034.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "15-ظفر-الاماني",
+          "title": "ظفر الاماني",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/15-ظفر-الاماني/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/890113_1428469238.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/80368_1428469238.jpg",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "14-ценность-времени",
+          "title": "Ценность времени",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/14-ценность-времени/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/907169_1428468267.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/455886_1428468267.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "13-азы-ислама",
+          "title": "Азы ислама",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/13-азы-ислама/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/454505_1428468008.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/772725_1428468008.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "12-учитель-мухаммад",
+          "title": "Учитель Мухаммад",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/12-учитель-мухаммад/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/619199_1428467203.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/375006_1428467090.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "11-корановедение",
+          "title": "Корановедение",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/11-корановедение/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/826701_1428467773.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/384515_1428467773.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "10-учение-ислама",
+          "title": "Учение ислама",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/10-учение-ислама/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/388408_1428466299.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/78157_1428466299.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "9-тәпсір-тұнығы",
+          "title": "Тәпсір тұнығы",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/9-тәпсір-тұнығы/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/641669_1428466066.02.15.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/917977_1428466066.jpg",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "8-رسالة-المسترشدين",
+          "title": "رسالة المسترشدين",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/8-رسالة-المسترشدين/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/747687_1428464878.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/200380_1428464878.jpg",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "7-قيمة-الزمن-عند-العلماء",
+          "title": "قيمة الزمن عند العلماء",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/7-قيمة-الزمن-عند-العلماء/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/865788_1428464796.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/544973_1428464796.jpg",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "6-الإنتقاء-في-فضائل-الأمة-الثلاثة-الفقهاء",
+          "title": "الإنتقاء في فضائل الأمة الثلاثة الفقهاء",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/6-الإنتقاء-في-فضائل-الأمة-الثلاثة-الفقهاء/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/233642_1428464432.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/291381_1428464432.png",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        },
+        {
+          "id": "5-مكانة-الإمام-أبي-حنيفة-في-الحديث",
+          "title": "مكانة الإمام أبي حنيفة في الحديث",
+          "category": "Әртүрлі",
+          "url": "https://fatua.kz/kk/books/read/2024-05-03/5-مكانة-الإمام-أبي-حنيفة-في-الحديث/",
+          "site": "fatua",
+          "pdfUrl": "https://fatua.kz/media/upload/books/480931_1428464429.pdf",
+          "coverUrl": "https://fatua.kz/media/upload/books/288648_1428464466.jpg",
+          "author": "",
+          "publishedYear": "2024",
+          "about": ""
+        }
+      ]
+    },
+    "muftyat": {
+      "label": "Muftyat.kz",
+      "listUrl": "https://www.muftyat.kz/kk/books/",
+      "count": 45,
+      "books": [
+        {
+          "id": "36023",
+          "title": "Қазақстан мұсылмандарының қара шаңырағы «Діни басқармаға – 30 жыл»",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/36023/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28669",
+          "title": "ҰЛЫ ДАЛА ТӨСІНДЕГІ ИСЛАМ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28669/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28670",
+          "title": "Дін мен дәстүр II",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28670/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28671",
+          "title": "Үміт сәулесі",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28671/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28672",
+          "title": "Иман\" журналы 2015",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28672/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28673",
+          "title": "Иман\" журналы 2014",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28673/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28674",
+          "title": "Акида ат-Тахавийя",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28674/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28676",
+          "title": "Люди Сунны и согласия - кто они (Ахлю-с-Сунна валь-Джама’а)",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28676/",
+          "site": "muftyat"
+        },
+        {
+          "id": "38580",
+          "title": "«ЗИЯТКЕР ИМАМ» ТҰЖЫРЫМДАМАСЫ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/38580/",
+          "site": "muftyat"
+        },
+        {
+          "id": "36296",
+          "title": "ЗИРАТ ЖӘНЕ ЗИЯРАТ МӘДЕНИЕТІ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/36296/",
+          "site": "muftyat"
+        },
+        {
+          "id": "36293",
+          "title": "АС БЕРУ МӘДЕНИЕТІ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/36293/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28968",
+          "title": "ДІНИ ЛАУАЗЫМДАР ТІЗІЛІМІ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28968/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28967",
+          "title": "ДІН ҚЫЗМЕТКЕРЛЕРІ АТҚАРАТЫН ДІНИ РӘСІМДЕР ТІЗІЛІМІ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28967/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28966",
+          "title": "«ЖЕТІ РУХАНИ ҚАЗЫҚ»",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28966/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28709",
+          "title": "Қазақстан мұсылмандарының ТҰҒЫРНАМАСЫ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28709/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28710",
+          "title": "Мұсылманның тұлғалық бейнесі",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28710/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28711",
+          "title": "Имамның тұлғалық келбеті",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28711/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28712",
+          "title": "ҚМДБ қызметкерінің ЭТИКАСЫ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28712/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28677",
+          "title": "Книга, избавляющая от заблуждений",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28677/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28678",
+          "title": "Адабы",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28678/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28679",
+          "title": "Толкование акиды «Ан-Насафия»",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28679/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28681",
+          "title": "Методика приобретения знаний и завещание Абу Ханифы",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28681/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28682",
+          "title": "Дін мен Дәстүр 1",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28682/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28683",
+          "title": "ҚАЗАҚ МӘДЕНИЕТІ ЖӘНЕ ИСЛАМ ҚҰНДЫЛЫҚТАРЫ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28683/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28684",
+          "title": "Таным тұғыры",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28684/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28685",
+          "title": "Мүбәрак Рамазан",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28685/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28686",
+          "title": "Ғибратнама",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28686/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28687",
+          "title": "Мәңгі мұғжиза",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28687/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28688",
+          "title": "Кемелдік кілті",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28688/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28689",
+          "title": "Қажылық",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28689/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28691",
+          "title": "Құраншылар деген кімдер?",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28691/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28692",
+          "title": "Біз ұстанатын діни жол",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28692/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28693",
+          "title": "Тәлімгер тағылымы",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28693/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28694",
+          "title": "Талас-тартыстар (Ихтиләфтар)",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28694/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28695",
+          "title": "Құран оқып - үйренейік!",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28695/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28696",
+          "title": "Имани гүл",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28696/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28697",
+          "title": "Иман негіздері",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28697/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28698",
+          "title": "Ислам ғылымхалы",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28698/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28699",
+          "title": "Хадис – ғұрпымыз, сүннет – салтымыз",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28699/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28700",
+          "title": "БАЛА ТӘ РБИЕСІ БЕСІКТЕН БАСТАЛАДЫ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28700/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28702",
+          "title": "Салафия",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28702/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28703",
+          "title": "О мусульманском этикете",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28703/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28705",
+          "title": "Исламдағы таңдаулы 100 сұрақ",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28705/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28706",
+          "title": "Дін мен діл I",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28706/",
+          "site": "muftyat"
+        },
+        {
+          "id": "28707",
+          "title": "Ашариты Ахлю-с-Сунна валь-Джама`а",
+          "category": "",
+          "url": "https://www.muftyat.kz/kk/book/28707/",
+          "site": "muftyat"
+        }
+      ]
+    }
+  }
+}

@@ -23,8 +23,7 @@ class MainApplication : Application(), ReactApplication {
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              // add(MyReactNativePackage())
+              add(PrayerWidgetPackage())
             }
 
           override fun getJSMainModuleName(): String = ".expo/.virtual-metro-entry"
@@ -47,6 +46,12 @@ class MainApplication : Application(), ReactApplication {
     }
     loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
+    try {
+      PrayerWidgetAlarmScheduler.scheduleNext(this)
+      QiblaWidgetSensorService.ensureRunning(this)
+    } catch (_: Throwable) {
+      /* виджет alarm — іске қосуды блоктамау */
+    }
   }
 
   override fun onConfigurationChanged(newConfig: Configuration) {

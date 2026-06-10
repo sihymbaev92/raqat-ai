@@ -54,15 +54,15 @@ def _tts_translation_opened(ui_lang: str) -> str:
     lang = normalize_lang_code(ui_lang or "kk")
     phrases = {
         "kk": (
-            "Аударма баптауы ашылды. Құран мен хадис мәтінінің тілін "
+            "Аударма баптауы ашылды. Құран мәтінінің тілін "
             "төмендегі түймелерден немесе тізімнен таңдаңыз."
         ),
         "ru": (
-            "Открыты настройки перевода. Выберите язык текста Корана и хадисов "
+            "Открыты настройки перевода. Выберите язык текста Корана "
             "кнопками или из списка."
         ),
         "en": (
-            "Translation settings are open. Choose the language for Quran and hadith text "
+            "Translation settings are open. Choose the language for Quran text "
             "using the buttons or list below."
         ),
     }

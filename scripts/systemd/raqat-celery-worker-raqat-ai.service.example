@@ -1,0 +1,24 @@
+# VPS: /opt/raqat-ai Celery worker (async AI, TTS, …)
+# sudo cp scripts/systemd/raqat-celery-worker-raqat-ai.service.example \
+#     /etc/systemd/system/raqat-celery-worker.service
+# sudo systemctl daemon-reload && sudo systemctl enable --now raqat-celery-worker
+
+[Unit]
+Description=RAQAT Celery worker (async AI)
+After=network-online.target redis-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/raqat-ai/platform_api
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/raqat-ai:/opt/raqat-ai/platform_api
+EnvironmentFile=-/opt/raqat-ai/.env
+ExecStart=/opt/raqat-ai/.venv/bin/python -m celery -A celery_app worker --loglevel=info --concurrency=2
+Restart=always
+RestartSec=8
+
+[Install]
+WantedBy=multi-user.target

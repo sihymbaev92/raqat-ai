@@ -1,5 +1,5 @@
 import { createNavigationContainerRef } from "@react-navigation/native";
 import type { RootStackParamList } from "./types";
 
-/** Дауыспен басқару және басқа орталық навигация үшін */
+/** Орталық навигация (deeplink / widget / сервистер) үшін */
 export const rootNavigationRef = createNavigationContainerRef<RootStackParamList>();

@@ -1,6 +1,6 @@
 /**
  * Жобаға қолдау — банк шоты / IBAN мәтіні (опция).
- * EXPO_PUBLIC_RAQAT_SUPPORT_ACCOUNT немесе app.json → extra.raqatSupportAccount
+ * EXPO_PUBLIC_RAQAT_SUPPORT_ACCOUNT немесе app.config.js → extra.raqatSupportAccount
  */
 import { getExpoExtra } from "./expoExtra";
 

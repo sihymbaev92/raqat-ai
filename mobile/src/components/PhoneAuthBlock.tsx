@@ -3,11 +3,11 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
-  ActivityIndicator,
-  Platform,
+  Platform
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import {
   postAuthPhoneStart,
@@ -58,12 +58,14 @@ type Props = {
   setBusy: (v: boolean) => void;
   onSuccess: () => void;
   onError: (m: string) => void;
+  /** Баптаулар: қысқа жолдар, телефон/код бір қатарда */
+  compact?: boolean;
 };
 
 /**
  * Телефон + SMS код (серверде аккаунт байланыстырылады; Gmail/Apple сияқты).
  */
-export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError }: Props) {
+export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError, compact }: Props) {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
   const [phone, setPhone] = useState("");
@@ -134,6 +136,59 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError }: Props) {
     }
   }, [challengeId, otp, setBusy, onError, onSuccess]);
 
+  if (compact) {
+    return (
+      <View style={styles.wrapCompact}>
+        <View style={styles.inlineRow}>
+          <TextInput
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            style={[styles.input, styles.inputFlex]}
+            placeholder={kk.account.phonePlaceholder}
+            placeholderTextColor={colors.muted}
+            editable={!busy}
+          />
+          <Pressable
+            style={[styles.btnInline, busy && { opacity: 0.7 }]}
+            onPress={() => void onSendOtp()}
+            disabled={busy}
+          >
+            <Text style={styles.btnInlineTxt}>{kk.account.sendOtp}</Text>
+          </Pressable>
+        </View>
+        <View style={styles.inlineRow}>
+          <TextInput
+            value={otp}
+            onChangeText={setOtp}
+            keyboardType="number-pad"
+            maxLength={8}
+            style={[styles.input, styles.inputFlex]}
+            placeholder={kk.account.otpPlaceholder}
+            placeholderTextColor={colors.muted}
+            editable={!busy}
+            autoComplete="sms-otp"
+            textContentType="oneTimeCode"
+          />
+          <Pressable
+            style={[styles.btnInlinePrimary, (busy || !challengeId) && { opacity: 0.55 }]}
+            onPress={() => void onVerifyPhone()}
+            disabled={busy || !challengeId}
+          >
+            {busy ? (
+              <RaqatOrnamentSpinner size={20} />
+            ) : (
+              <Text style={styles.btnInlinePrimaryTxt}>{kk.account.verifyPhone}</Text>
+            )}
+          </Pressable>
+        </View>
+        {localMsg ? <Text style={styles.msgOk}>{localMsg}</Text> : null}
+      </View>
+    );
+  }
+
   return (
     <View style={styles.wrap}>
       <Text style={styles.label}>{kk.account.phoneE164}</Text>
@@ -175,7 +230,7 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError }: Props) {
         disabled={busy || !challengeId}
       >
         {busy ? (
-          <ActivityIndicator color="#fff" />
+          <RaqatOrnamentSpinner size={24} />
         ) : (
           <Text style={styles.btnPrimaryTxt}>{kk.account.verifyPhone}</Text>
         )}
@@ -188,6 +243,29 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError }: Props) {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrap: { marginBottom: 8 },
+    wrapCompact: { gap: 8, marginBottom: 0 },
+    inlineRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    inputFlex: { flex: 1, minWidth: 0, marginBottom: 0 },
+    btnInline: {
+      paddingVertical: 11,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      flexShrink: 0,
+    },
+    btnInlineTxt: { color: colors.accent, fontWeight: "700", fontSize: 13 },
+    btnInlinePrimary: {
+      paddingVertical: 11,
+      paddingHorizontal: 12,
+      borderRadius: 12,
+      backgroundColor: colors.accent,
+      flexShrink: 0,
+      minWidth: 72,
+      alignItems: "center",
+    },
+    btnInlinePrimaryTxt: { color: "#fff", fontWeight: "800", fontSize: 13 },
     label: { color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 },
     input: {
       borderWidth: 1,

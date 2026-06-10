@@ -1,8 +1,12 @@
 import React, { type ComponentProps } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
+import { parseMinutes, nextSalatHighlightKey } from "../utils/prayerSchedule";
 
 export type PrayerTimeCell = { key: string; time: string };
 
@@ -11,58 +15,47 @@ const KEYS = ["fajr", "sun", "dhuhr", "asr", "maghrib", "isha"] as const;
 /** Бір қатардағы кесте үшін қысқа атаулар (басты экран = уақыт табы) */
 export function shortPrayerName(key: string): string {
   const m: Record<string, string> = {
-    fajr: "Таң",
-    sun: "Күн",
-    dhuhr: "Бесін",
-    asr: "Екінті",
-    maghrib: "Ақшам",
-    isha: "Құптан",
+    fajr: kk.prayer.fajrShort,
+    sun: kk.prayer.sunriseShort,
+    dhuhr: kk.prayer.dhuhrShort,
+    asr: kk.prayer.asrShort,
+    maghrib: kk.prayer.maghribShort,
+    isha: kk.prayer.ishaShort,
   };
   return m[key] ?? key;
-}
-
-function longPrayerName(key: string): string {
-  const m: Record<string, string> = {
-    fajr: kk.prayer.fajr,
-    sun: kk.prayer.sunrise,
-    dhuhr: kk.prayer.dhuhr,
-    asr: kk.prayer.asr,
-    maghrib: kk.prayer.maghrib,
-    isha: kk.prayer.isha,
-  };
-  return m[key] ?? shortPrayerName(key);
 }
 
 type MciName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 type PrayerVisual = { icon: MciName; fg: string; soft: string };
 
-/** Әр намазға тән түс пен иконка — «сурет» орнына түсті белгіше */
-function prayerVisual(key: string, isDark: boolean): PrayerVisual {
+/** Әр намазға тән түс пен иконка — UI бөліктерінде қайта қолдану үшін export */
+export function prayerVisual(key: string, isDark: boolean): PrayerVisual {
+  /** Жұмсақ пастель: ашық темада тұнық, қараңғыда күйдірілмеген рең */
   const v: Record<string, { light: Omit<PrayerVisual, "icon"> & { icon: MciName }; dark: Omit<PrayerVisual, "icon"> & { icon: MciName } }> = {
     fajr: {
-      light: { icon: "weather-sunset-up", fg: "#0369a1", soft: "rgba(14, 165, 233, 0.16)" },
-      dark: { icon: "weather-sunset-up", fg: "#7dd3fc", soft: "rgba(56, 189, 248, 0.22)" },
+      light: { icon: "moon-waxing-crescent", fg: "#5b8fc9", soft: "rgba(186, 230, 253, 0.72)" },
+      dark: { icon: "moon-waxing-crescent", fg: "#93c5fd", soft: "rgba(59, 130, 246, 0.18)" },
     },
     sun: {
-      light: { icon: "white-balance-sunny", fg: "#ca8a04", soft: "rgba(234, 179, 8, 0.18)" },
-      dark: { icon: "white-balance-sunny", fg: "#fde047", soft: "rgba(250, 204, 21, 0.2)" },
+      light: { icon: "weather-sunset-up", fg: "#c9a227", soft: "rgba(254, 243, 199, 0.85)" },
+      dark: { icon: "weather-sunset-up", fg: "#fcd34d", soft: "rgba(251, 191, 36, 0.16)" },
     },
     dhuhr: {
-      light: { icon: "weather-sunny", fg: "#a16207", soft: "rgba(250, 204, 21, 0.2)" },
-      dark: { icon: "weather-sunny", fg: "#facc15", soft: "rgba(234, 179, 8, 0.18)" },
+      light: { icon: "white-balance-sunny", fg: "#b8860b", soft: "rgba(253, 230, 138, 0.55)" },
+      dark: { icon: "white-balance-sunny", fg: "#fde68a", soft: "rgba(245, 158, 11, 0.14)" },
     },
     asr: {
-      light: { icon: "clock-time-four-outline", fg: "#c2410c", soft: "rgba(251, 146, 60, 0.16)" },
-      dark: { icon: "clock-time-four-outline", fg: "#fdba74", soft: "rgba(249, 115, 22, 0.2)" },
+      light: { icon: "timer-sand", fg: "#c0846d", soft: "rgba(255, 228, 210, 0.85)" },
+      dark: { icon: "timer-sand", fg: "#fdba9c", soft: "rgba(251, 146, 60, 0.14)" },
     },
     maghrib: {
-      light: { icon: "weather-sunset-down", fg: "#c2410c", soft: "rgba(249, 115, 22, 0.18)" },
-      dark: { icon: "weather-sunset-down", fg: "#fb923c", soft: "rgba(234, 88, 12, 0.22)" },
+      light: { icon: "weather-sunset-down", fg: "#b87070", soft: "rgba(254, 215, 215, 0.65)" },
+      dark: { icon: "weather-sunset-down", fg: "#fca5a5", soft: "rgba(248, 113, 113, 0.14)" },
     },
     isha: {
-      light: { icon: "moon-waning-crescent", fg: "#5b21b6", soft: "rgba(139, 92, 246, 0.14)" },
-      dark: { icon: "moon-waning-crescent", fg: "#c4b5fd", soft: "rgba(167, 139, 250, 0.2)" },
+      light: { icon: "weather-night", fg: "#8b7fc7", soft: "rgba(221, 214, 254, 0.75)" },
+      dark: { icon: "weather-night", fg: "#c4b5fd", soft: "rgba(139, 92, 246, 0.18)" },
     },
   };
   const p = v[key];
@@ -98,6 +91,8 @@ type Props = {
   isDark?: boolean;
   /** Басты бетті бір экранға сыйғызу: бір қатардағы әріптер мен сағат кішірек */
   compact?: boolean;
+  /** Толық экран: алты намаз тік тізім (скроллсыз кесте) — `sixRows` орнына */
+  scheduleList?: boolean;
 };
 
 /**
@@ -160,8 +155,16 @@ export function CompactPrayerTimesRow({
   highlightKey,
   isDark,
   compact,
+  scheduleList,
 }: Props) {
-  const styles = makeStyles(colors, isDark, Boolean(sixRows && sixRowsCompact), compact);
+  useAppLocale();
+  const styles = makeStyles(
+    colors,
+    isDark,
+    Boolean(sixRows && sixRowsCompact),
+    compact,
+    Boolean(scheduleList)
+  );
   const data = rows.length > 0 ? rows : EMPTY;
   const wrapStyle = embedded
     ? [styles.cardEmbedded, compact && styles.cardEmbeddedDense]
@@ -172,34 +175,40 @@ export function CompactPrayerTimesRow({
     <>
       {pending ? (
         <View style={styles.pendingBadge}>
-          <ActivityIndicator size="small" color={colors.accent} />
+          <RaqatOrnamentSpinner size={28} />
         </View>
       ) : null}
-      {sixRows ? (
-        <View style={styles.sixStack}>
-          {data.map((r, i) => {
-            const highlighted = Boolean(highlightKey && r.key === highlightKey);
-            const iconSz = sixRowsCompact ? 19 : 24;
+      {scheduleList ? (
+        <View style={styles.scheduleWrap}>
+          {data.map((r, idx) => {
+            const hk = highlightKey ?? nextSalatHighlightKey(data);
+            const highlighted = Boolean(hk && r.key === hk);
+            const iconSz = 21;
             const pv = prayerVisual(r.key, dark);
             return (
               <View
                 key={r.key}
                 style={[
-                  styles.stackChip,
-                  embedded && styles.stackChipEmbedded,
-                  i === data.length - 1 && styles.stackChipLast,
-                  highlighted && styles.stackChipHighlight,
+                  styles.scheduleRow,
+                  idx === data.length - 1 && styles.scheduleRowLast,
+                  highlighted && styles.scheduleRowHot,
                   highlighted && { borderLeftColor: pv.fg, backgroundColor: pv.soft },
                 ]}
               >
-                <View style={[styles.stackIconBadge, { backgroundColor: pv.soft }]}>
-                  <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
+                <View style={styles.scheduleLeft}>
+                  <View style={[styles.scheduleIcon, { backgroundColor: pv.soft }]}>
+                    <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
+                  </View>
+                  <Text style={styles.scheduleName} numberOfLines={1}>
+                    {shortPrayerName(r.key)}
+                  </Text>
                 </View>
-                <Text style={[styles.stackLabel, r.key === "isha" && styles.stackLabelIsha]} numberOfLines={1}>
-                  {longPrayerName(r.key)}
-                </Text>
                 <Text
-                  style={[styles.stackTime, highlighted && styles.stackTimeHighlight, { color: pv.fg }]}
+                  style={[
+                    styles.scheduleTime,
+                    { color: pv.fg },
+                    highlighted && styles.scheduleTimeHot,
+                  ]}
                   numberOfLines={1}
                 >
                   {r.time?.trim() ? r.time : "—"}
@@ -208,6 +217,44 @@ export function CompactPrayerTimesRow({
             );
           })}
         </View>
+      ) : sixRows ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.hScrollContent}
+          nestedScrollEnabled
+        >
+          {data.map((r) => {
+            const hk = highlightKey ?? nextSalatHighlightKey(data);
+            const highlighted = Boolean(hk && r.key === hk);
+            const iconSz = sixRowsCompact ? 17 : 20;
+            const pv = prayerVisual(r.key, dark);
+            return (
+              <View
+                key={r.key}
+                style={[
+                  styles.hChip,
+                  embedded && styles.hChipEmbedded,
+                  highlighted && styles.hChipHot,
+                  highlighted && { borderColor: pv.fg, backgroundColor: pv.soft },
+                ]}
+              >
+                <View style={[styles.hChipIcon, { backgroundColor: pv.soft }]}>
+                  <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
+                </View>
+                <Text style={styles.hChipAbbr} numberOfLines={1}>
+                  {shortPrayerName(r.key)}
+                </Text>
+                <Text
+                  style={[styles.hChipTime, highlighted && styles.hChipTimeHot, { color: pv.fg }]}
+                  numberOfLines={1}
+                >
+                  {r.time?.trim() ? r.time : "—"}
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
       ) : (
         <RowCells slice={data} styles={styles} compact={compact} colors={colors} isDark={isDark} />
       )}
@@ -229,29 +276,91 @@ export function CompactPrayerTimesRow({
   return <View style={wrapStyle}>{inner}</View>;
 }
 
-function makeStyles(colors: ThemeColors, isDark?: boolean, sixCompact?: boolean, rowCompact?: boolean) {
+function makeStyles(
+  colors: ThemeColors,
+  isDark?: boolean,
+  sixCompact?: boolean,
+  rowCompact?: boolean,
+  scheduleList?: boolean
+) {
   const rc = Boolean(rowCompact);
-  const chipBg = isDark ? "rgba(255,255,255,0.06)" : "rgba(15, 23, 42, 0.04)";
-  const gap = sixCompact ? 5 : 9;
-  const chipPy = sixCompact ? 6 : 12;
-  const chipPx = sixCompact ? 8 : 13;
-  const chipPl = sixCompact ? 8 : 11;
-  const iconBox = sixCompact ? 30 : 40;
-  const labelFs = sixCompact ? 13 : 16;
-  const timeFs = sixCompact ? 16 : 19;
-  const timeHiFs = sixCompact ? 18 : 21;
-  const hiPadL = sixCompact ? 6 : 9;
+  const chipBg = isDark ? "rgba(38, 166, 154, 0.12)" : colors.bg;
+  const hChipW = sixCompact ? 76 : 88;
+  const cardShadow = Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: isDark ? 0.25 : 0.05,
+      shadowRadius: isDark ? 12 : 10,
+    },
+    android: { elevation: isDark ? 1 : 0 },
+    default: {},
+  });
 
   return StyleSheet.create({
     card: {
       position: "relative",
       backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingVertical: 8,
-      paddingHorizontal: 4,
+      borderRadius: scheduleList ? 18 : 22,
+      paddingVertical: scheduleList ? 4 : 12,
+      paddingHorizontal: scheduleList ? 0 : 8,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 4,
+      marginBottom: 6,
+      ...cardShadow,
+    },
+    /** Тік кесте: бір намаз — бір жол */
+    scheduleWrap: {
+      borderRadius: 14,
+      overflow: "hidden",
+    },
+    scheduleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+      borderLeftWidth: 3,
+      borderLeftColor: "transparent",
+      backgroundColor: colors.card,
+    },
+    scheduleRowLast: {
+      borderBottomWidth: 0,
+    },
+    scheduleRowHot: {
+      borderLeftWidth: 3,
+    },
+    scheduleLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      flex: 1,
+      minWidth: 0,
+    },
+    scheduleIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    scheduleName: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "700",
+      flex: 1,
+    },
+    scheduleTime: {
+      fontSize: 19,
+      fontWeight: "700",
+      fontVariant: ["tabular-nums"],
+      marginLeft: 8,
+    },
+    scheduleTimeHot: {
+      fontSize: 20,
+      fontWeight: "800",
     },
     cardEmbedded: {
       position: "relative",
@@ -274,67 +383,62 @@ function makeStyles(colors: ThemeColors, isDark?: boolean, sixCompact?: boolean,
       top: 6,
       zIndex: 1,
     },
-    sixStack: {
-      gap,
-    },
-    stackChip: {
+    /** Алты намаз — горизонтал карусель түймелер */
+    hScrollContent: {
       flexDirection: "row",
+      gap: sixCompact ? 8 : 10,
+      paddingVertical: 2,
+      paddingRight: 4,
+    },
+    hChip: {
+      width: hChipW,
       alignItems: "center",
-      paddingVertical: chipPy,
-      paddingHorizontal: chipPx,
-      paddingLeft: chipPl,
-      borderRadius: sixCompact ? 12 : 14,
+      paddingVertical: sixCompact ? 10 : 12,
+      paddingHorizontal: 6,
+      borderRadius: sixCompact ? 17 : 19,
+      borderWidth: 1,
+      borderColor: colors.border,
       backgroundColor: chipBg,
-      borderLeftWidth: 0,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: isDark ? 0.25 : 0.06,
-          shadowRadius: 3,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0.12 : 0.04,
+          shadowRadius: 5,
         },
-        android: { elevation: 1 },
+        android: { elevation: isDark ? 0 : 1 },
         default: {},
       }),
     },
-    stackChipEmbedded: {
-      marginHorizontal: 0,
+    hChipEmbedded: {
+      borderColor: isDark ? colors.border : `${colors.border}99`,
+      backgroundColor: isDark ? "transparent" : `${colors.card}cc`,
     },
-    stackChipLast: {},
-    stackChipHighlight: {
-      borderLeftWidth: 4,
-      paddingLeft: hiPadL,
+    hChipHot: {
+      borderWidth: 2,
     },
-    stackIconBadge: {
-      width: iconBox,
-      height: iconBox,
-      borderRadius: sixCompact ? 12 : 14,
+    hChipIcon: {
+      width: sixCompact ? 34 : 38,
+      height: sixCompact ? 34 : 38,
+      borderRadius: sixCompact ? 11 : 12,
       alignItems: "center",
       justifyContent: "center",
-      marginRight: sixCompact ? 8 : 12,
+      marginBottom: sixCompact ? 5 : 6,
     },
-    stackLabel: {
-      flex: 1,
-      minWidth: 0,
-      color: colors.text,
-      fontSize: labelFs,
-      fontWeight: "800",
-      letterSpacing: 0.15,
-      paddingRight: sixCompact ? 6 : 8,
-    },
-    /** "Құптан" визуалды салмағын басқа атаулармен теңестіру */
-    stackLabelIsha: {
-      fontSize: Math.max(11, labelFs - 2),
+    hChipAbbr: {
+      color: colors.muted,
+      fontSize: sixCompact ? 10 : 11,
       fontWeight: "700",
+      marginBottom: 2,
     },
-    stackTime: {
-      fontSize: timeFs,
-      fontWeight: "900",
+    hChipTime: {
+      fontSize: sixCompact ? 14 : 16,
+      fontWeight: "700",
       fontVariant: ["tabular-nums"],
-      letterSpacing: 0.35,
     },
-    stackTimeHighlight: {
-      fontSize: timeHiFs,
+    hChipTimeHot: {
+      fontSize: sixCompact ? 15 : 17,
+      fontWeight: "800",
     },
     row: {
       flexDirection: "row",

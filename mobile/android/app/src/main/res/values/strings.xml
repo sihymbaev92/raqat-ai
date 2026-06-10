@@ -1,5 +1,45 @@
 <resources>
-  <string name="app_name">RAQAT</string>
+  <string name="app_name">RAHAT OMIR</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
+
+  <string name="widget_prayer_label">Намаз уақыты</string>
+  <string name="widget_prayer_description">Бүгінгі намаз уақыттары (қолданба кестесінен), күн шығуымен.</string>
+  <string name="widget_prayer_empty">Қолданбаны ашып, намаз уақытын жаңартыңыз.</string>
+
+  <string name="widget_prayer_next_label">Келесі намаз</string>
+  <string name="widget_prayer_next_description">Ауа райы, кері санақ және бес парыз — 5×1 жолақ</string>
+  <string name="widget_prayer_next_heading">Келесі намаз</string>
+
+  <string name="widget_prayer_strip_label">Намаз жолақ</string>
+  <string name="widget_prayer_strip_description">Бүгінгі намаз уақыттары — қысқа жолақ</string>
+
+  <string name="widget_prayer_morning_label">Таң · Күн · Бесін</string>
+  <string name="widget_prayer_morning_description">Таң, күн шығуы, бесін</string>
+
+  <string name="widget_prayer_evening_label">Аср · Шам · Құптан</string>
+  <string name="widget_prayer_evening_description">Екінті, ақшам, құптан</string>
+
+  <string name="widget_prayer_twocol_label">Екі баған</string>
+  <string name="widget_prayer_twocol_description">Намаз кестесі — екі баған</string>
+
+  <string name="widget_prayer_five_dual_label">5 парыз намаз</string>
+  <string name="widget_prayer_five_dual_description">Бес парыз намаз — екі баған</string>
+
+  <string name="widget_prayer_home_strip_label">Басты бет намаз</string>
+  <string name="widget_prayer_home_strip_description">Басты экрандағы сияқты: 5 намаз, келесі намаз санағы, құбыла</string>
+
+  <string name="widget_qibla_a11y">Құбыла</string>
+  <string name="widget_city_a11y">Қала</string>
+  <string name="widget_qibla_service_channel">Құбыла виджеті</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — құбыла</string>
+  <string name="widget_qibla_service_text">Негізгі экран виджеті үшін компас</string>
+  <string name="prayer_azan_fullscreen_title">Намаз уақыты кірді</string>
+
+  <string name="widget_prayer_row_fajr">Таң</string>
+  <string name="widget_prayer_row_sun">Күн</string>
+  <string name="widget_prayer_row_dhuhr">Бесін</string>
+  <string name="widget_prayer_row_asr">Екінті</string>
+  <string name="widget_prayer_row_maghrib">Ақшам</string>
+  <string name="widget_prayer_row_isha">Құптан</string>
 </resources>

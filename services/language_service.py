@@ -271,7 +271,6 @@ ACTION_ALIASES = {
         "hac",
         "hec",
     },
-    "hadith": {"хадис", "hadith", "حديث"},
     "ai": {"raqat ai", "ai", "рақат ai"},
     "qibla": {"құбыла", "qibla", "кибла", "قبلة"},
     "tasbih": {"тәспі", "тасбих", "tasbih", "تسبيح"},
@@ -298,9 +297,9 @@ ACTION_ALIASES = {
 
 UI_TEXTS = {
     "choose_language": {
-        "kk": "🌐 <b>Тілді таңдаңыз</b>\n\nБір тіл таңдалса, мәзір мен Құран/хадис ағыны сол тілге байланады.\nБатырмамен де, мәтінмен де, дауыспен де ауыстыра аласыз: <i>\"орысша\"</i>, <i>\"english\"</i>.",
-        "en": "🌐 <b>Choose a language</b>\n\nOnce selected, the menu and Quran/Hadith flow will follow that language.\nYou can switch it by button, text, or voice too: <i>\"Russian\"</i>, <i>\"English\"</i>.",
-        "ru": "🌐 <b>Выберите язык</b>\n\nПосле выбора меню и поток Корана/хадисов будут подстраиваться под этот язык.\nЯзык можно менять кнопкой, текстом или голосом: <i>\"русский\"</i>, <i>\"english\"</i>.",
+        "kk": "🌐 <b>Тілді таңдаңыз</b>\n\nБір тіл таңдалса, мәзір мен Құран ағыны сол тілге байланады.\nБатырмамен де, мәтінмен де, дауыспен де ауыстыра аласыз: <i>\"орысша\"</i>, <i>\"english\"</i>.",
+        "en": "🌐 <b>Choose a language</b>\n\nOnce selected, the menu and Quran flow will follow that language.\nYou can switch it by button, text, or voice too: <i>\"Russian\"</i>, <i>\"English\"</i>.",
+        "ru": "🌐 <b>Выберите язык</b>\n\nПосле выбора меню и поток Корана будут подстраиваться под этот язык.\nЯзык можно менять кнопкой, текстом или голосом: <i>\"русский\"</i>, <i>\"english\"</i>.",
     },
     "language_saved": {
         "kk": "🌐 Тіл сақталды: <b>{language}</b>",
@@ -331,6 +330,64 @@ UI_TEXTS = {
         "kk": "ℹ️ Платформа батырмасы бұл серверде өшірілген (<code>RAQAT_PLATFORM_API_BASE</code> немесе <code>RAQAT_BOT_LINK_SECRET</code> бос).",
         "en": "ℹ️ Platform link is disabled on this server (missing <code>RAQAT_PLATFORM_API_BASE</code> or <code>RAQAT_BOT_LINK_SECRET</code>).",
         "ru": "ℹ️ Связка с платформой отключена на этом сервере (нет <code>RAQAT_PLATFORM_API_BASE</code> или <code>RAQAT_BOT_LINK_SECRET</code>).",
+    },
+    "link_code_success": {
+        "kk": "✅ <b>Байланыс сәтті!</b>\n\nМобильді аккаунт пен бот бір профильге бірікті. AI тарихы синхрондалады.",
+        "en": "✅ <b>Linked!</b>\n\nYour mobile account and this bot now share one profile.",
+        "ru": "✅ <b>Связано!</b>\n\nМобильный аккаунт и бот объединены в один профиль.",
+    },
+    "link_code_unknown": {
+        "kk": "❌ Код табылмады немесе қолданылған. Қолданбадан жаңа код алыңыз.",
+        "en": "❌ Code not found or already used. Generate a new code in the app.",
+        "ru": "❌ Код не найден или уже использован. Запросите новый код в приложении.",
+    },
+    "link_code_expired": {
+        "kk": "⏱ Код мерзімі өтті. Қолданбадан жаңасын алыңыз.",
+        "en": "⏱ Code expired. Generate a new one in the app.",
+        "ru": "⏱ Срок кода истёк. Запросите новый в приложении.",
+    },
+    "link_code_failed": {
+        "kk": "❌ Кодты растау сәтсіз. Интернет немесе сервер баптауын тексеріңіз.",
+        "en": "❌ Could not redeem the code. Check network and server config.",
+        "ru": "❌ Не удалось подтвердить код. Проверьте сеть и настройки сервера.",
+    },
+    "link_code_api_not_configured": {
+        "kk": "ℹ️ Байланыс коды бұл серверде өшірілген (API base / bot secret).",
+        "en": "ℹ️ Link codes are disabled (missing API base or bot secret).",
+        "ru": "ℹ️ Коды связи отключены (нет API base или bot secret).",
+    },
+    "link_code_telegram_taken": {
+        "kk": "❌ Бұл Telegram аккаунты басқа профильге байланған.",
+        "en": "❌ This Telegram account is already linked to another profile.",
+        "ru": "❌ Этот Telegram уже привязан к другому профилю.",
+    },
+    "link_code_platform_has_tg": {
+        "kk": "❌ Мобильді профильде басқа Telegram бар.",
+        "en": "❌ This mobile profile already has a different Telegram linked.",
+        "ru": "❌ У мобильного профиля уже другой Telegram.",
+    },
+    "link_code_help": {
+        "kk": (
+            "📱 Мобильді қолданбадан:\n"
+            "1) Профиль → Telegram байланысы\n"
+            "2) «Код алу» батырмасын басыңыз\n"
+            "3) Осы ботқа 6 цифрды жіберіңіз (мысалы: 042817)\n\n"
+            "Код 10 минут жарамды."
+        ),
+        "ru": (
+            "📱 В мобильном приложении:\n"
+            "1) Профиль → Связь с Telegram\n"
+            "2) Нажмите «Получить код»\n"
+            "3) Отправьте 6 цифр этому боту\n\n"
+            "Код действует 10 минут."
+        ),
+        "en": (
+            "📱 In the mobile app:\n"
+            "1) Profile → Telegram link\n"
+            "2) Tap «Get code»\n"
+            "3) Send the 6 digits to this bot\n\n"
+            "The code is valid for 10 minutes."
+        ),
     },
     "fallback_unknown": {
         "kk": "Түсінбедім.\n\nТөмендегі батырмалардың бірін таңдаңыз:",
@@ -363,9 +420,9 @@ UI_TEXTS = {
         "ru": "🌐 Контент на языке <b>{requested}</b> еще не полностью загружен в базу. Сейчас показывается вариант <b>{fallback}</b>.",
     },
     "choose_translation": {
-        "kk": "🌐 <b>Құран мен хадис аударма тілін таңдаңыз</b>\n\nБұл бап интерфейс тілінен бөлек жұмыс істейді.",
-        "en": "🌐 <b>Choose the Quran and Hadith translation language</b>\n\nThis setting works separately from the interface language.",
-        "ru": "🌐 <b>Выберите язык перевода Корана и хадисов</b>\n\nЭта настройка работает отдельно от языка интерфейса.",
+        "kk": "🌐 <b>Құран аударма тілін таңдаңыз</b>\n\nБұл бап интерфейс тілінен бөлек жұмыс істейді.",
+        "en": "🌐 <b>Choose the Quran translation language</b>\n\nThis setting works separately from the interface language.",
+        "ru": "🌐 <b>Выберите язык перевода Корана</b>\n\nЭта настройка работает отдельно от языка интерфейса.",
     },
     "translation_saved": {
         "kk": "🌐 Аударма тілі сақталды: <b>{language}</b>",

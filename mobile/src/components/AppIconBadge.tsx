@@ -1,5 +1,6 @@
 import React from "react";
-import { View, StyleSheet, Platform, Image, type ViewStyle, type ImageSourcePropType } from "react-native";
+import { View, StyleSheet, Platform, type ViewStyle, type ImageSourcePropType } from "react-native";
+import { RasterImage } from "@/ui/RasterImage";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
 import type { MciName } from "../theme/appIcons";
@@ -41,6 +42,16 @@ type Props = {
    * Тек PNG: шекара жоқ, артқы дақ жоқ, көлеңке жоқ — карта/экран фоны өз күйінде.
    */
   plain?: boolean;
+  /** PNG суреттерін визуалды жеңілдету (0..1), әдепкі: 0.9 */
+  imageOpacity?: number;
+  /** PNG: сәл қараңғырату — қара қабат opacity (0..~0.28), мысалы Сира/Тәжуид/Қажылық */
+  imageDarken?: number;
+  /**
+   * PNG: 1-ден үлкен — суретті ішінен үлкейтіп қоршауды кесу (иконка сыртындағы жиек/жарық шеңберді тайл ішінде қалдырмау).
+   */
+  imageCropZoom?: number;
+  /** PNG: ішкі translateY (px), мысалы compositions астындағы бөлігін көрсету */
+  imageTranslateY?: number;
 };
 
 /**
@@ -59,16 +70,25 @@ export function AppIconBadge(props: Props) {
     style,
     shape = "squircle",
     plain = false,
+    imageOpacity = 1,
+    imageDarken,
+    imageCropZoom,
+    imageTranslateY,
   } = props;
   const dim = SIZE_MAP[size];
   const box = boxPx != null && boxPx > 0 ? boxPx : dim.box;
   const iconFromBox = Math.round(dim.icon * (box / dim.box));
   const tint = iconColor ?? colors.accent;
   const radius = shape === "circle" ? box / 2 : box * 0.28;
-  /** PNG: батырма ішінде мүмкіндігінше толық, бірақ шеңбер шегінен шықпайды */
-  const rasterSize = imageSource ? Math.round(box * 0.995) : iconFromBox;
+  /** PNG: батырма ішінде толық кадр — contain; zoom тек 1.05-ке дейін */
+  const rasterSize = imageSource ? Math.round(box * 0.92) : iconFromBox;
   const showBorder = !plain && border;
   const bg = plain ? "transparent" : tintBg;
+  const dimOverlay =
+    typeof imageDarken === "number" && imageDarken > 0
+      ? Math.min(0.28, Math.max(0.04, imageDarken))
+      : 0;
+  const innerRasterRadius = shape === "circle" ? rasterSize / 2 : radius * (rasterSize / box);
   return (
     <View
       style={[
@@ -87,12 +107,76 @@ export function AppIconBadge(props: Props) {
       ]}
     >
       {imageSource ? (
-        <Image
-          source={imageSource}
-          style={{ width: rasterSize, height: rasterSize }}
-          resizeMode="contain"
-          accessibilityIgnoresInvertColors
-        />
+        typeof imageCropZoom === "number" && imageCropZoom > 1.05 ? (
+          <View
+            style={{
+              width: rasterSize,
+              height: rasterSize,
+              overflow: "hidden",
+              position: "relative",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: innerRasterRadius,
+            }}
+          >
+            <RasterImage
+              source={imageSource}
+              style={{
+                width: rasterSize,
+                height: rasterSize,
+                transform: [
+                  { scale: imageCropZoom },
+                  ...(typeof imageTranslateY === "number" ? [{ translateY: imageTranslateY }] : []),
+                ],
+                opacity: Math.min(1, Math.max(0.85, imageOpacity)),
+              }}
+              resizeMode="cover"
+              accessibilityIgnoresInvertColors
+            />
+            {dimOverlay > 0 ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  { backgroundColor: "#000000", opacity: dimOverlay },
+                ]}
+              />
+            ) : null}
+          </View>
+        ) : (
+          <View
+            style={{
+              width: rasterSize,
+              height: rasterSize,
+              position: "relative",
+              overflow: "hidden",
+              borderRadius: innerRasterRadius,
+            }}
+          >
+            <RasterImage
+              source={imageSource}
+              style={{
+                width: rasterSize,
+                height: rasterSize,
+                opacity: Math.min(1, Math.max(0.85, imageOpacity)),
+                ...(typeof imageTranslateY === "number"
+                  ? { transform: [{ translateY: imageTranslateY }] }
+                  : {}),
+              }}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+            {dimOverlay > 0 ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  { backgroundColor: "#000000", opacity: dimOverlay },
+                ]}
+              />
+            ) : null}
+          </View>
+        )
       ) : name ? (
         <MaterialCommunityIcons name={name} size={iconFromBox} color={tint} />
       ) : null}

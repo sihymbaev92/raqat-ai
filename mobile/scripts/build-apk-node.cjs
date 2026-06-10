@@ -46,4 +46,12 @@ const r = spawnSync(exe, args, {
   env: process.env,
   shell: false,
 });
-process.exit(r.status === 0 || r.status === null ? 0 : r.status);
+if (r.error) {
+  console.error(`Android build wrapper failed: ${r.error.message}`);
+  process.exit(1);
+}
+if (r.signal) {
+  console.error(`Android build wrapper stopped by signal: ${r.signal}`);
+  process.exit(1);
+}
+process.exit(r.status === 0 ? 0 : r.status ?? 1);

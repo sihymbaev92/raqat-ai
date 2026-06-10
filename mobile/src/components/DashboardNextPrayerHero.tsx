@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -8,7 +10,9 @@ import {
   minutesUntilNextSalat,
   progressBetweenScheduledPrayers,
 } from "../utils/prayerSchedule";
-import { formatKkGregorianDate, formatKkHijriUmmAlQura } from "../utils/formatKkDate";
+import { formatGregorianTechYmd, formatKkHijriUmmAlQura } from "../utils/formatKkDate";
+import { nextPrayerBarTrackGradient, nextPrayerProgressFillHex } from "../theme/nextPrayerTheme";
+import { useAppLocale } from "../i18n/runtime";
 
 type Row = { key: string; label: string; time: string };
 
@@ -41,6 +45,7 @@ export function DashboardNextPrayerHero({
   momentBanner,
   compact = false,
 }: Props) {
+  const locale = useAppLocale();
   const [now, setNow] = useState(() => new Date());
   const city = cityLabelKkForApiName(cityApiName) || "—";
   const times = allRows.map((r) => r.time);
@@ -106,18 +111,20 @@ export function DashboardNextPrayerHero({
         </View>
         <View style={styles.timeCol}>
           <Text style={[styles.clock, compact && styles.clockCompact, { color: colors.text }]}>{formatClock(now)}</Text>
-          <Text style={[styles.dateLine, { color: colors.muted }]} numberOfLines={1}>
-            {formatKkGregorianDate(now)}
+          <Text style={[styles.hijriLinePrimary, { color: colors.muted }]} numberOfLines={1}>
+            {formatKkHijriUmmAlQura(now, locale)}
           </Text>
-          <Text style={[styles.hijriLine, { color: colors.muted }]} numberOfLines={1}>
-            {formatKkHijriUmmAlQura(now)}
+          <Text style={[styles.gregTechLine, { color: colors.muted }]} numberOfLines={1}>
+            {formatGregorianTechYmd(now)}
           </Text>
         </View>
       </View>
 
       {showNext ? (
         <>
-          <Text style={[styles.kicker, compact && styles.kickerCompact, { color: colors.muted }]}>{kk.dashboard.nextPrayer}</Text>
+          <Text style={[styles.kicker, compact && styles.kickerCompact, { color: colors.muted }]}>
+            {kk.dashboard.nextPrayer}
+          </Text>
           <Text style={[styles.bigName, compact && styles.bigNameCompact, { color: colors.text }]} numberOfLines={1}>
             {next.label}
           </Text>
@@ -129,18 +136,22 @@ export function DashboardNextPrayerHero({
         <Text style={[styles.subLeft, { color: colors.muted }]}>{kk.dashboard.loadError}</Text>
       )}
 
-      <View
-        style={[
-          styles.barTrack,
-          {
-            backgroundColor: isDark ? "rgba(212, 175, 55, 0.12)" : "rgba(20, 45, 32, 0.08)",
-          },
-        ]}
-      >
+      <View style={[styles.barTrack, styles.barTrackRel]}>
+        <LinearGradient
+          colors={nextPrayerBarTrackGradient(isDark)}
+          locations={[0, 0.52, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={StyleSheet.absoluteFillObject}
+        />
         <View
           style={[
             styles.barFill,
-            { width: `${Math.round(progress * 1000) / 10}%`, backgroundColor: acc },
+            {
+              width: `${Math.round(progress * 1000) / 10}%`,
+              backgroundColor: nextPrayerProgressFillHex(isDark),
+              zIndex: 1,
+            },
           ]}
         />
       </View>
@@ -191,8 +202,17 @@ const styles = StyleSheet.create({
   timeCol: { alignItems: "flex-end", maxWidth: "50%" },
   clock: { fontSize: 17, fontWeight: "800" },
   clockCompact: { fontSize: 15 },
-  dateLine: { fontSize: 12, fontWeight: "700", marginTop: 2, textAlign: "right" },
-  hijriLine: { fontSize: 11, fontWeight: "600", marginTop: 1, textAlign: "right", opacity: 0.92 },
+  /** Хижра — бірінші жол (негізгі күнтізбе жолы) */
+  hijriLinePrimary: { fontSize: 12, fontWeight: "700", marginTop: 2, textAlign: "right", opacity: 0.95 },
+  /** Григориан DD MM YYYY — екінші жол */
+  gregTechLine: {
+    fontSize: 10,
+    fontWeight: "600",
+    marginTop: 1,
+    textAlign: "right",
+    opacity: 0.88,
+    fontVariant: ["tabular-nums"],
+  },
   kicker: { fontSize: 13, fontWeight: "700", marginBottom: 2 },
   kickerCompact: { fontSize: 12, marginBottom: 0 },
   bigName: { fontSize: 30, fontWeight: "900", letterSpacing: 0.3, marginBottom: 4 },
@@ -205,5 +225,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 10,
   },
+  barTrackRel: { position: "relative" },
   barFill: { height: "100%", borderRadius: 4 },
 });

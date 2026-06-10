@@ -2,11 +2,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const K = {
   onboardingDone: "raqat_onboarding_done",
+  /** Орын + хабарлама + дағыс рұқсаттары бір рет сұралғаны */
+  firstLaunchPermissionsBurst: "raqat_first_launch_perm_burst_v1",
   city: "raqat_city",
   country: "raqat_country",
   savedCities: "raqat_saved_cities",
   notifEnabled: "raqat_notif_enabled",
   iftarEnabled: "raqat_iftar_enabled",
+  /** Намаз уақыты хабарламасының дыбыс түрі (жинақтағы MP3 немесе дыбыссыз) */
+  prayerNotifSoundId: "raqat_prayer_notif_sound_id",
+  /** Әр намазға жеке азан дыбысын өшіру (JSON array: fajr/dhuhr/asr/maghrib/isha) */
+  prayerNotifMutedSalatKeys: "raqat_prayer_notif_muted_salat_keys_v1",
+  /** Ескі boolean кілт (миграция үшін) */
+  prayerNotifSoundEnabledLegacy: "raqat_prayer_notif_sound_enabled",
   prayerSourceMode: "raqat_prayer_source_mode",
   prayerMosqueShiftMin: "raqat_prayer_mosque_shift_min",
   tasbihDhikrId: "raqat_tasbih_dhikr_id",
@@ -14,7 +22,10 @@ const K = {
   tasbihCount: "raqat_tasbih_count",
   /** Әр зікір id үшін жеке санау (JSON: { "1": 5, "2": 0, ... }) */
   tasbihDhikrCountsMap: "raqat_tasbih_dhikr_counts_map",
+  qiblaMotionMode: "raqat_qibla_motion_mode_v1",
 } as const;
+
+export type QiblaMotionMode = "balanced" | "fast";
 
 export type TasbihGoalMode = "33" | "99" | "default";
 export type PrayerSourceMode = "calc" | "mosque";
@@ -28,6 +39,14 @@ export async function getOnboardingDone(): Promise<boolean> {
 
 export async function setOnboardingDone(): Promise<void> {
   await AsyncStorage.setItem(K.onboardingDone, "1");
+}
+
+export async function getFirstLaunchPermissionsBurstDone(): Promise<boolean> {
+  return (await AsyncStorage.getItem(K.firstLaunchPermissionsBurst)) === "1";
+}
+
+export async function setFirstLaunchPermissionsBurstDone(): Promise<void> {
+  await AsyncStorage.setItem(K.firstLaunchPermissionsBurst, "1");
 }
 
 export async function getSelectedCity(): Promise<{ city: string; country: string }> {
@@ -88,6 +107,112 @@ export async function setIftarEnabled(on: boolean): Promise<void> {
   await AsyncStorage.setItem(K.iftarEnabled, on ? "1" : "0");
 }
 
+export type PrayerNotifSoundId =
+  | "off"
+  | "adhan_haramain"
+  | "adhan_madina_clear"
+  | "adhan_makkah_live"
+  | "adhan_soft_cc0"
+  | "adhan_takbir_high";
+
+export type PrayerNotifSalatKey = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
+
+const PRAYER_SOUND_IDS: PrayerNotifSoundId[] = [
+  "off",
+  "adhan_haramain",
+  "adhan_madina_clear",
+  "adhan_makkah_live",
+  "adhan_soft_cc0",
+  "adhan_takbir_high",
+];
+
+export const PRAYER_NOTIF_SALAT_KEYS: PrayerNotifSalatKey[] = [
+  "fajr",
+  "dhuhr",
+  "asr",
+  "maghrib",
+  "isha",
+];
+
+/** Баптаулар тізімі — тек таңдаулы 5 азан. */
+export const PRAYER_NOTIF_SOUND_UI_ORDER: PrayerNotifSoundId[] = [
+  "adhan_haramain",
+  "adhan_madina_clear",
+  "adhan_makkah_live",
+  "adhan_soft_cc0",
+  "adhan_takbir_high",
+];
+
+function isPrayerNotifSoundId(x: string | null): x is PrayerNotifSoundId {
+  return x != null && (PRAYER_SOUND_IDS as string[]).includes(x);
+}
+
+export async function getPrayerNotifSoundId(): Promise<PrayerNotifSoundId> {
+  const raw = await AsyncStorage.getItem(K.prayerNotifSoundId);
+  if (isPrayerNotifSoundId(raw)) return raw;
+  const migrated = migrateLegacyPrayerNotifSoundId(raw);
+  if (migrated) {
+    await AsyncStorage.setItem(K.prayerNotifSoundId, migrated);
+    return migrated;
+  }
+  const legacy = await AsyncStorage.getItem(K.prayerNotifSoundEnabledLegacy);
+  /** Ескі нұсқадан жаңарғанда — бұрынғы қосқышқа сәйкес; чисто орнатқанда — азан әдепкісі */
+  const next: PrayerNotifSoundId =
+    legacy === "0" ? "off" : "adhan_haramain";
+  await AsyncStorage.setItem(K.prayerNotifSoundId, next);
+  return next;
+}
+
+function migrateLegacyPrayerNotifSoundId(raw: string | null): PrayerNotifSoundId | null {
+  switch (raw) {
+    case "azan_madina":
+      return "adhan_madina_clear";
+    case "azan_makkah":
+      return "adhan_makkah_live";
+    case "azan_soft":
+      return "adhan_soft_cc0";
+    case "azan_takbir":
+      return "adhan_takbir_high";
+    case "azan_classic":
+    case "system":
+    case "bell":
+    case "chime":
+      return "adhan_haramain";
+    default:
+      return null;
+  }
+}
+
+export async function setPrayerNotifSoundId(id: PrayerNotifSoundId): Promise<void> {
+  await AsyncStorage.setItem(K.prayerNotifSoundId, id);
+}
+
+function isPrayerNotifSalatKey(x: unknown): x is PrayerNotifSalatKey {
+  return typeof x === "string" && (PRAYER_NOTIF_SALAT_KEYS as string[]).includes(x);
+}
+
+export async function getPrayerNotifMutedSalatKeys(): Promise<PrayerNotifSalatKey[]> {
+  const raw = await AsyncStorage.getItem(K.prayerNotifMutedSalatKeys);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const deduped = new Set<PrayerNotifSalatKey>();
+    for (const x of parsed) {
+      if (isPrayerNotifSalatKey(x)) deduped.add(x);
+    }
+    return PRAYER_NOTIF_SALAT_KEYS.filter((k) => deduped.has(k));
+  } catch {
+    return [];
+  }
+}
+
+export async function setPrayerNotifMutedSalatKeys(keys: PrayerNotifSalatKey[]): Promise<void> {
+  const allowed = new Set(keys.filter(isPrayerNotifSalatKey));
+  const ordered = PRAYER_NOTIF_SALAT_KEYS.filter((k) => allowed.has(k));
+  await AsyncStorage.setItem(K.prayerNotifMutedSalatKeys, JSON.stringify(ordered));
+}
+
 export async function getPrayerSourceMode(): Promise<PrayerSourceMode> {
   const v = await AsyncStorage.getItem(K.prayerSourceMode);
   return v === "mosque" ? "mosque" : "calc";
@@ -107,6 +232,15 @@ export async function getPrayerMosqueShiftMin(): Promise<number> {
 export async function setPrayerMosqueShiftMin(shiftMin: number): Promise<void> {
   const n = Math.max(-30, Math.min(30, Math.trunc(shiftMin)));
   await AsyncStorage.setItem(K.prayerMosqueShiftMin, String(n));
+}
+
+export async function getQiblaMotionMode(): Promise<QiblaMotionMode> {
+  const v = await AsyncStorage.getItem(K.qiblaMotionMode);
+  return v === "fast" ? "fast" : "balanced";
+}
+
+export async function setQiblaMotionMode(mode: QiblaMotionMode): Promise<void> {
+  await AsyncStorage.setItem(K.qiblaMotionMode, mode);
 }
 
 export async function getTasbihPrefs(): Promise<{

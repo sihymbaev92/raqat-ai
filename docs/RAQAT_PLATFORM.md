@@ -21,7 +21,7 @@ RAQAT — исламдық контент пен құралдарды бірік
 | **Proof** | шамамен **100** белсенді пайдаланушы | Идея сатылады: күндіз қайта оралу, бір сценарийді нақты аяқтау |
 | **Growth** | **1000+** және тұрақты өсу | Тарату, сақтау (retention), сөз жүзінде ұсыныс |
 
-Метрикаларды (DAU, қайта оралу, бірінші аптаның retention) өнім шешімдерімен байланыстыру керек; техникалық толығырақ: `docs/PLATFORM_ROADMAP_API_AI_USERS.md`, `PLATFORM_GPT_HANDOFF.md`.
+Метрикаларды (DAU, қайта оралу, бірінші аптаның retention) өнім шешімдерімен байланыстыру керек; техникалық толығырақ: `docs/PLATFORM_ROADMAP_API_AI_USERS.md`, [`docs/README.md`](README.md) (бұрынғы `PLATFORM_GPT_HANDOFF.md` бөлінді).
 
 ### 2) DAILY VALUE — user күнде не үшін кіреді?
 
@@ -43,7 +43,7 @@ RAQAT — исламдық контент пен құралдарды бірік
 
 ### Техникамен үйлесім (қысқа бриф)
 
-Толық инженерлік мәтін: **`docs/PLATFORM_GPT_HANDOFF.md`**. Мазмұны қысқаша:
+Толық инженерлік мәтін: **[`docs/README.md`](README.md)** (кіріс), [`architecture/`](architecture/README.md), [`platform_api/`](platform_api/README.md); архив [`docs/archive/PLATFORM_GPT_HANDOFF_2026-05.md`](archive/PLATFORM_GPT_HANDOFF_2026-05.md). Мазмұны қысқаша:
 
 | Құрамдас | Мазмұны |
 |----------|---------|
@@ -176,7 +176,7 @@ API-да карказ endpointтер: `platform_api/roadmap_routes.py` (501/401,
 
 ## XI бөлім. Өнім қабаттары (жол картасы)
 
-Мақсат: **пайдаланушы қай клиенттен кірсе де — бір жүйе** (бір аккаунт, бір тарих, бір контент саясаты). Төменде — стратегиялық қабаттар; техникалық деталь `PLATFORM_GPT_HANDOFF.md`, auth/API — `PLATFORM_ROADMAP_API_AI_USERS.md`.
+Мақсат: **пайдаланушы қай клиенттен кірсе де — бір жүйе** (бір аккаунт, бір тарих, бір контент саясаты). Төменде — стратегиялық қабаттар; техникалық деталь [`README.md`](README.md), auth/API — `PLATFORM_ROADMAP_API_AI_USERS.md`.
 
 ### 1. Client layer (клиенттер)
 
@@ -232,7 +232,7 @@ API-да карказ endpointтер: `platform_api/roadmap_routes.py` (501/401,
 | **Түнгі/тәуліктік сақтық көшірме** | `bash scripts/backup_sqlite.sh` — SQLite файлы; PostgreSQL болса `pg_dump` + § `MIGRATION_SQLITE_TO_POSTGRES.md`. |
 | **Healthcheck** | `bash scripts/healthcheck_raqat.sh` — API `/ready` (дерекқор), резерв `/health`, бот процесі; cron. |
 | **Cutover дайындығы** | `DATABASE_URL`, миграциялар, `docs/MIGRATION_SQLITE_TO_POSTGRES.md` §15. |
-| **Бот ↔ API JWT** | `.env`-те `RAQAT_PLATFORM_API_BASE` + `RAQAT_BOT_LINK_SECRET` — `/start` link (`PLATFORM_GPT_HANDOFF.md`). |
+| **Бот ↔ API JWT** | `.env`-те `RAQAT_PLATFORM_API_BASE` + `RAQAT_BOT_LINK_SECRET` — `/start` link ([`platform_api/integration.md`](platform_api/integration.md)). |
 
 ### Деңгей B — бір дерек, бір API (қолданушы тәжірибесі)
 

@@ -1,12 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
   <uses-permission android:name="android.permission.CAMERA"/>
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-  <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
   <uses-permission android:name="android.permission.VIBRATE"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+  <uses-permission android:name="android.permission.WAKE_LOCK"/>
+  <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -16,11 +21,8 @@
   </queries>
   <queries>
     <package android:name="com.google.android.googlequicksearchbox"/>
-    <intent>
-      <action android:name="android.speech.RecognitionService"/>
-    </intent>
   </queries>
-  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false" android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/network_security_config">
+  <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:roundIcon="@mipmap/ic_launcher_round" android:allowBackup="true" android:largeHeap="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false" android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/network_security_config">
     <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/notification_icon_color"/>
     <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/notification_icon"/>
     <meta-data android:name="expo.modules.notifications.default_notification_color" android:resource="@color/notification_icon_color"/>
@@ -46,46 +48,34 @@
         <data android:scheme="imamai"/>
       </intent-filter>
     </activity>
-    <receiver android:name=".PrayerTimesWidgetProvider" android:exported="true" android:label="@string/widget_prayer_label">
+    <receiver android:name=".PrayerHomeStripWidgetProvider" android:exported="true" android:label="@string/widget_prayer_home_strip_label">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
       </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_times_widget_info"/>
-    </receiver>
-    <receiver android:name=".PrayerNextWidgetProvider" android:exported="true" android:label="@string/widget_prayer_next_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_next_widget_info"/>
-    </receiver>
-    <receiver android:name=".PrayerStripWidgetProvider" android:exported="true" android:label="@string/widget_prayer_strip_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_strip_widget_info"/>
-    </receiver>
-    <receiver android:name=".PrayerMorningWidgetProvider" android:exported="true" android:label="@string/widget_prayer_morning_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_morning_widget_info"/>
-    </receiver>
-    <receiver android:name=".PrayerEveningWidgetProvider" android:exported="true" android:label="@string/widget_prayer_evening_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_evening_widget_info"/>
-    </receiver>
-    <receiver android:name=".PrayerTwoColWidgetProvider" android:exported="true" android:label="@string/widget_prayer_twocol_label">
-      <intent-filter>
-        <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-      </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_two_col_widget_info"/>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/prayer_home_strip_widget_info"/>
     </receiver>
     <receiver android:name=".PrayerWidgetBootReceiver" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.BOOT_COMPLETED"/>
       </intent-filter>
     </receiver>
+    <receiver android:name=".PrayerWidgetTickReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="kz.raqat.app.action.PRAYER_WIDGET_TICK"/>
+      </intent-filter>
+    </receiver>
+    <receiver android:name=".PrayerAzanAlarmReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="kz.raqat.app.action.PRAYER_AZAN_FULLSCREEN"/>
+      </intent-filter>
+    </receiver>
+    <service
+        android:name=".QiblaWidgetSensorService"
+        android:exported="false"
+        android:foregroundServiceType="specialUse">
+      <property
+          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+          android:value="Prayer widget qibla compass sensor updates" />
+    </service>
   </application>
 </manifest>

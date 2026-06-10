@@ -1,16 +1,19 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  Pressable,
-  ActivityIndicator,
-  RefreshControl,
+  RefreshControl
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { kk } from "../i18n/kk";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { MoreStackParamList } from "../navigation/types";
 import {
   loadQuranListCache,
@@ -20,25 +23,77 @@ import {
   type CachedSurah,
 } from "../storage/quranListCache";
 import { getRaqatApiBase, isRaqatApiOnlyMode } from "../config/raqatApiBase";
+import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { fetchQuranSurahs } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
-import { surahArabicFromBundled } from "../constants/surahBundledMeta";
+import { QURAN_JUZ_STARTS, juzForSurahAyah, type QuranJuzStart } from "../data/quranJuzBoundaries";
+import {
+  mushafStartPageForSurah,
+  surahListMetaSubtitle,
+  surahListNumberedTitle,
+} from "../data/surahListMeta";
+import {
+  QuranSurahListJuzHeader,
+  QuranSurahListRow,
+} from "../components/quran/QuranSurahListRow";
+import type { ThemeColors } from "../theme/colors";
+import { QuranContinueReadingCard } from "../components/quran/QuranContinueReadingCard";
+import { useQuranContinueReading } from "../quran/useQuranContinueReading";
+import { navigateToHatim } from "../navigation/navigateToMoreStack";
+import { navigateToQuranSettings } from "../navigation/navigateToSettings";
+import { DomainSettingsHeaderButton, domainSettingsHeaderRightContainerStyle } from "../components/settings/DomainSettingsHeaderButton";
+import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "QuranList">;
 };
 
+type QuranListRow =
+  | { kind: "surah"; surah: CachedSurah }
+  | { kind: "juz"; meta: QuranJuzStart }
+  | { kind: "juzHeader"; juz: number };
+
+function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
+  return {
+    screenBg: isDark ? colors.bg : "#F2F2F7",
+  };
+}
+
 const SURAH_API = "https://api.alquran.cloud/v1/surah";
 
 export function QuranListScreen({ navigation }: Props) {
-  const { colors } = useAppTheme();
+  const { colors, isDark } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const { tr } = useKkAutoTranslator();
   const [list, setList] = useState<CachedSurah[]>([]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={domainSettingsHeaderRightContainerStyle(insets)}>
+          <DomainSettingsHeaderButton
+            colors={colors}
+            onPress={() => navigateToQuranSettings(navigation)}
+            accessibilityLabel={kk.settings.headerQuranSettingsA11y}
+          />
+        </View>
+      ),
+    });
+  }, [navigation, colors, insets.right]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fromCache, setFromCache] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [mode, setMode] = useState<"surah" | "juz">("surah");
+  const { continueRead, streakDays } = useQuranContinueReading();
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadQuranBookFonts().catch(() => {});
+    }, [])
+  );
 
   const fetchRemote = useCallback(async (): Promise<boolean> => {
     const base = getRaqatApiBase();
@@ -46,7 +101,10 @@ export function QuranListScreen({ navigation }: Props) {
     const bearer = ((await getValidAccessToken()) ?? "").trim() || undefined;
     if (base) {
       try {
-        const data = await fetchQuranSurahs(base, { authorizationBearer: bearer });
+        const data = await fetchQuranSurahs(base, {
+          contentSecret: getRaqatContentReadSecret(),
+          authorizationBearer: bearer,
+        });
         const arr = parseSurahsFromPlatformIndex(data);
         if (arr?.length) {
           setList(arr);
@@ -146,13 +204,39 @@ export function QuranListScreen({ navigation }: Props) {
     }
   }, [fetchRemote]);
 
-  const styles = makeStyles(colors);
+  const listRows = useMemo<QuranListRow[]>(() => {
+    if (mode === "juz") return QURAN_JUZ_STARTS.map((meta) => ({ kind: "juz", meta }));
+    const rows: QuranListRow[] = [];
+    let lastJuz = 0;
+    for (const surah of list) {
+      const juz = juzForSurahAyah(surah.number, 1);
+      if (juz !== lastJuz) {
+        rows.push({ kind: "juzHeader", juz });
+        lastJuz = juz;
+      }
+      rows.push({ kind: "surah", surah });
+    }
+    return rows;
+  }, [mode, list]);
+
+  const listPalette = useMemo(() => quranSurahListPalette(colors, isDark), [colors, isDark]);
+  const styles = makeStyles(colors, listPalette.screenBg);
+  const openQuranReaderAt = useCallback(
+    (surah: number, ayah = 1) => {
+      navigation.navigate("QuranSurah", {
+        surahNumber: surah,
+        initialAyah: ayah,
+        mushafLayout: true,
+      });
+    },
+    [navigation]
+  );
 
   if (loading && !list.length) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.accent} />
-        <Text style={styles.muted}>{kk.quran.loading}</Text>
+        <RaqatOrnamentSpinner size={52} />
+        <Text style={styles.muted}>{tr(kk.quran.loading)}</Text>
       </View>
     );
   }
@@ -169,20 +253,55 @@ export function QuranListScreen({ navigation }: Props) {
   return (
     <FlatList
       style={styles.root}
-      data={list}
-      numColumns={2}
-      keyExtractor={(item) => String(item.number)}
-      columnWrapperStyle={styles.colWrap}
+      data={listRows}
+      keyExtractor={(item) =>
+        item.kind === "surah"
+          ? `s-${item.surah.number}`
+          : item.kind === "juzHeader"
+            ? `jh-${item.juz}`
+            : `j-${item.meta.juz}`
+      }
       contentContainerStyle={styles.pad}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
       }
       ListHeaderComponent={
         <View style={styles.listHeader}>
-          {fromCache ? <Text style={styles.cacheBanner}>{kk.common.fromCache}</Text> : null}
+          <View style={styles.modeWrap}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.modeBtn,
+                mode === "surah" && styles.modeBtnActive,
+                pressed && { opacity: 0.9 },
+              ]}
+              onPress={() => setMode("surah")}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === "surah" }}
+              accessibilityLabel={kk.quran.listModeSurahA11y}
+            >
+              <Text style={[styles.modeTxt, mode === "surah" && styles.modeTxtActive]}>
+                {tr(kk.quran.modeSurah)}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.modeBtn,
+                mode === "juz" && styles.modeBtnActive,
+                pressed && { opacity: 0.9 },
+              ]}
+              onPress={() => setMode("juz")}
+              accessibilityRole="button"
+              accessibilityState={{ selected: mode === "juz" }}
+              accessibilityLabel={kk.quran.listModeJuzA11y}
+            >
+              <Text style={[styles.modeTxt, mode === "juz" && styles.modeTxtActive]}>
+                {tr(kk.quran.modeJuz)}
+              </Text>
+            </Pressable>
+          </View>
           <Pressable
             style={({ pressed }) => [styles.hatimRow, pressed && { opacity: 0.9 }]}
-            onPress={() => navigation.navigate("Hatim")}
+            onPress={() => navigateToHatim(navigation)}
             accessibilityRole="button"
             accessibilityLabel={kk.features.hatimTitle}
           >
@@ -190,57 +309,119 @@ export function QuranListScreen({ navigation }: Props) {
               <Text style={styles.hatimEmoji}>📗</Text>
             </View>
             <View style={styles.hatimTxtCol}>
-              <Text style={styles.hatimTitle}>{kk.features.hatimTitle}</Text>
-              <Text style={styles.hatimSub}>{kk.quran.hatimInQuranHint}</Text>
+              <Text style={styles.hatimTitle}>{tr(kk.features.hatimTitle)}</Text>
+              <Text style={styles.hatimSub}>{tr(kk.quran.hatimInQuranHint)}</Text>
             </View>
             <Text style={styles.hatimChev}>›</Text>
           </Pressable>
+          {continueRead ? (
+            <QuranContinueReadingCard
+              colors={colors}
+              surahTitle={surahDisplayTitle(
+                continueRead.surah,
+                list.find((x) => x.number === continueRead.surah)?.englishName ?? ""
+              )}
+              ayah={continueRead.ayah}
+              streakDays={streakDays}
+              onPress={() => openQuranReaderAt(continueRead.surah, continueRead.ayah)}
+              style={styles.continueRowMargin}
+            />
+          ) : null}
+          {fromCache ? <Text style={styles.cacheBanner}>{tr(kk.common.fromCache)}</Text> : null}
         </View>
       }
       renderItem={({ item }) => {
-        const arName = item.name.trim() ? item.name : surahArabicFromBundled(item.number);
+        if (item.kind === "juzHeader") {
+          return (
+            <QuranSurahListJuzHeader
+              juz={item.juz}
+              label={tr(kk.quran.juzSectionHeader(item.juz))}
+              colors={colors}
+              isDark={isDark}
+            />
+          );
+        }
+        if (item.kind === "surah") {
+          const s = item.surah;
+          const kkTitle = surahDisplayTitle(s.number, s.englishName);
+          const ayahCount = s.numberOfAyahs ?? 0;
+          return (
+            <QuranSurahListRow
+              surahNumber={s.number}
+              numberedTitle={tr(surahListNumberedTitle(s.number, s.englishName))}
+              metaSubtitle={tr(surahListMetaSubtitle(s.number, ayahCount))}
+              mushafPage={mushafStartPageForSurah(s.number)}
+              onPress={() => openQuranReaderAt(s.number)}
+              accessibilityLabel={kk.hatim.openSurahRowA11y(kkTitle)}
+              colors={colors}
+              isDark={isDark}
+            />
+          );
+        }
+        const j = item.meta;
+        const surahTitle = surahDisplayTitle(j.startSurah, "");
         return (
-          <Pressable
-            style={({ pressed }) => [styles.cell, pressed && { opacity: 0.85 }]}
-            onPress={() =>
-              navigation.navigate("QuranSurah", {
-                surahNumber: item.number,
-                englishName: surahDisplayTitle(item.number, item.englishName),
-                arabicName: arName,
-              })
-            }
-          >
-            <View style={styles.cellRow1}>
-              <Text style={styles.num}>{item.number}</Text>
-              <Text style={styles.kkTitle} numberOfLines={2}>
-                {surahDisplayTitle(item.number, item.englishName)}
-              </Text>
-            </View>
-            <Text style={styles.ar} numberOfLines={1}>
-              {arName}
-            </Text>
-            <Text style={styles.ayahs}>
-              {item.numberOfAyahs ?? "—"} {kk.quran.ayahs}
-            </Text>
-          </Pressable>
+          <QuranSurahListRow
+            surahNumber={j.startSurah}
+            numberedTitle={tr(kk.quran.juzTitle(j.juz))}
+            metaSubtitle={tr(kk.quran.juzStartsAtLine(surahTitle, j.startAyah))}
+            mushafPage={mushafStartPageForSurah(j.startSurah)}
+            onPress={() => openQuranReaderAt(j.startSurah, j.startAyah)}
+            accessibilityLabel={`${kk.quran.juzTitle(j.juz)}. ${kk.quran.juzStartsAtLine(surahTitle, j.startAyah)}`}
+            colors={colors}
+            isDark={isDark}
+          />
         );
       }}
     />
   );
 }
 
-function makeStyles(colors: import("../theme/colors").ThemeColors) {
+function makeStyles(colors: ThemeColors, screenBg: string) {
+  const uiBg = screenBg;
+  const uiCard = colors.card;
+  const uiBorder = colors.border;
+  const uiText = colors.text;
+  const uiMuted = colors.muted;
   return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.bg },
-    pad: { paddingHorizontal: 8, paddingBottom: 40 },
-    listHeader: { paddingHorizontal: 4, marginBottom: 4 },
+    root: { flex: 1, backgroundColor: uiBg },
+    pad: { paddingHorizontal: 12, paddingBottom: 40 },
+    listHeader: { paddingHorizontal: 2, marginBottom: 6 },
+    modeWrap: {
+      flexDirection: "row",
+      backgroundColor: uiCard,
+      borderRadius: 14,
+      padding: 4,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: uiBorder,
+    },
+    modeBtn: {
+      flex: 1,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 8,
+    },
+    modeBtnActive: {
+      backgroundColor: colors.accentSurface,
+    },
+    modeTxt: {
+      color: uiMuted,
+      fontSize: 16,
+      fontWeight: "700",
+    },
+    modeTxtActive: {
+      color: uiText,
+    },
+    continueRowMargin: { marginBottom: 10 },
     hatimRow: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
+      backgroundColor: uiCard,
       borderRadius: 12,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: uiBorder,
       paddingVertical: 12,
       paddingHorizontal: 12,
       marginBottom: 10,
@@ -253,68 +434,31 @@ function makeStyles(colors: import("../theme/colors").ThemeColors) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: uiBorder,
     },
     hatimEmoji: { fontSize: 20 },
     hatimTxtCol: { flex: 1, minWidth: 0 },
-    hatimTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
-    hatimSub: { color: colors.muted, fontSize: 12, marginTop: 2 },
-    hatimChev: { color: colors.muted, fontSize: 22, fontWeight: "200" },
-    colWrap: { gap: 8, paddingHorizontal: 4, marginBottom: 8 },
+    hatimTitle: { color: uiText, fontSize: 16, fontWeight: "700" },
+    hatimSub: { color: uiMuted, fontSize: 12, marginTop: 2 },
+    hatimChev: { color: uiMuted, fontSize: 22, fontWeight: "200" },
     cacheBanner: {
       color: colors.accent,
       fontSize: 12,
       marginBottom: 10,
       padding: 10,
-      backgroundColor: colors.card,
+      backgroundColor: uiCard,
       borderRadius: 10,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: uiBorder,
     },
     center: {
       flex: 1,
-      backgroundColor: colors.bg,
+      backgroundColor: uiBg,
       justifyContent: "center",
       alignItems: "center",
       padding: 24,
     },
     err: { color: colors.error, textAlign: "center", marginBottom: 8 },
-    muted: { color: colors.muted },
-    cell: {
-      flex: 1,
-      minWidth: 0,
-      backgroundColor: colors.card,
-      borderRadius: 10,
-      paddingVertical: 8,
-      paddingHorizontal: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    cellRow1: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      marginBottom: 2,
-    },
-    num: {
-      fontSize: 12,
-      fontWeight: "800",
-      color: colors.accent,
-      minWidth: 22,
-    },
-    kkTitle: {
-      color: colors.scriptureMeaningKk,
-      fontWeight: "700",
-      fontSize: 13,
-      flex: 1,
-      lineHeight: 17,
-    },
-    ar: {
-      color: colors.scriptureArabic,
-      fontSize: 11,
-      writingDirection: "rtl",
-      textAlign: "right",
-    },
-    ayahs: { color: colors.muted, fontSize: 9, marginTop: 2 },
+    muted: { color: uiMuted },
   });
 }

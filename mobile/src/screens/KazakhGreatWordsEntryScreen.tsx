@@ -1,0 +1,70 @@
+import React, { useLayoutEffect, useMemo } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useAppTheme } from "../theme/ThemeContext";
+import type { ThemeColors } from "../theme/colors";
+import { kk } from "../i18n/kk";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
+import type { MoreStackParamList } from "../navigation/types";
+import { getAuthorById, getEntryById } from "../content/greatWordsCatalog";
+
+type Props = NativeStackScreenProps<MoreStackParamList, "KazakhGreatWordsEntry">;
+
+export function KazakhGreatWordsEntryScreen({ route, navigation }: Props) {
+  const { entryId } = route.params;
+  const { colors } = useAppTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { tr, translated } = useKkAutoTranslator();
+  const g = kk.features.greatWordsGuide;
+  const entry = getEntryById(entryId);
+  const author = entry ? getAuthorById(entry.authorId) : undefined;
+  const mergedMeta =
+    entry?.mergedCount && entry.mergedAuthorNames?.length
+      ? `${g.mergedTopicMeta(entry.mergedCount)} · ${entry.mergedAuthorNames.join(", ")}`
+      : null;
+
+  useLayoutEffect(() => {
+    const t = entry?.title?.trim();
+    const short = t && t.length > 42 ? `${t.slice(0, 40)}…` : t;
+    navigation.setOptions({ title: short ?? g.entryScreenTitle });
+  }, [navigation, entry, g.entryScreenTitle]);
+
+  if (!entry) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.muted}>{g.entryNotFound}</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <Text style={styles.title} accessibilityRole="header">
+        {tr(entry.title)}
+      </Text>
+      <Text style={styles.meta} selectable>
+        {mergedMeta ??
+          `${g.attributionPrefix} ${author?.name ?? entry.authorId}${
+            entry.karaSozNumber != null ? ` · ${g.karaSozLabel(entry.karaSozNumber)}` : ""
+          }`}
+      </Text>
+      <Text style={styles.body} selectable>
+        {tr(entry.body)}
+      </Text>
+      <GuideAutoTranslateBanner colors={colors} visible={translated} />
+    </ScrollView>
+  );
+}
+
+function makeStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    content: { padding: 16, paddingBottom: 40 },
+    center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+    muted: { color: colors.muted, fontSize: 15 },
+    title: { fontSize: 18, fontWeight: "900", color: colors.text, marginBottom: 8, lineHeight: 26 },
+    meta: { fontSize: 12, color: colors.muted, marginBottom: 16, fontStyle: "italic" },
+    body: { fontSize: 15, lineHeight: 24, color: colors.text, fontWeight: "500" },
+  });
+}

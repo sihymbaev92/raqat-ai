@@ -1,0 +1,225 @@
+/** Auto-generated section index — scripts/import_muftyat_hajj_book.py */
+
+export type HajjMuftyatSection = {
+  id: string;
+  title: string;
+  startPage: number;
+  endPage: number;
+  defaultOpen?: boolean;
+};
+
+export const HAJJ_MUFTYAT_SECTIONS: HajjMuftyatSection[] = 
+[
+  {
+    "id": "talbiyah",
+    "title": "Тәлбия",
+    "startPage": 7,
+    "endPage": 9
+  },
+  {
+    "id": "qajylyq",
+    "title": "Қажылық",
+    "startPage": 3,
+    "endPage": 5,
+    "defaultOpen": true
+  },
+  {
+    "id": "ихрам",
+    "title": "Ихрам",
+    "startPage": 6,
+    "endPage": 6
+  },
+  {
+    "id": "мекке",
+    "title": "Мекке",
+    "startPage": 10,
+    "endPage": 11
+  },
+  {
+    "id": "мәсжид-харам",
+    "title": "Мәсжид Харам",
+    "startPage": 12,
+    "endPage": 16
+  },
+  {
+    "id": "қағба",
+    "title": "Қағба",
+    "startPage": 17,
+    "endPage": 22
+  },
+  {
+    "id": "тауаф",
+    "title": "Тауаф",
+    "startPage": 23,
+    "endPage": 24
+  },
+  {
+    "id": "бірінші-айналым",
+    "title": "Бірінші айналым",
+    "startPage": 25,
+    "endPage": 26
+  },
+  {
+    "id": "екінші-айналым",
+    "title": "Екінші айналым",
+    "startPage": 27,
+    "endPage": 28
+  },
+  {
+    "id": "үшінші-айналым",
+    "title": "Үшінші айналым",
+    "startPage": 29,
+    "endPage": 29
+  },
+  {
+    "id": "төртінші-айналым",
+    "title": "Төртінші айналым",
+    "startPage": 30,
+    "endPage": 31
+  },
+  {
+    "id": "бесінші-айналым",
+    "title": "Бесінші айналым",
+    "startPage": 32,
+    "endPage": 33
+  },
+  {
+    "id": "алтыншы-айналым",
+    "title": "Алтыншы айналым",
+    "startPage": 34,
+    "endPage": 34
+  },
+  {
+    "id": "жетінші-айналым",
+    "title": "Жетінші айналым",
+    "startPage": 35,
+    "endPage": 38
+  },
+  {
+    "id": "ибраһим-мақамы",
+    "title": "Ибраһим мақамы",
+    "startPage": 39,
+    "endPage": 42
+  },
+  {
+    "id": "исмайыл-дуалы",
+    "title": "Исмайыл дуалы",
+    "startPage": 43,
+    "endPage": 44
+  },
+  {
+    "id": "зәмзәм-құдығы",
+    "title": "Зәмзәм құдығы",
+    "startPage": 45,
+    "endPage": 50
+  },
+  {
+    "id": "сағи",
+    "title": "Сағи",
+    "startPage": 51,
+    "endPage": 52
+  },
+  {
+    "id": "бірінші-сағи",
+    "title": "Бірінші сағи",
+    "startPage": 53,
+    "endPage": 56
+  },
+  {
+    "id": "екінші-сағи",
+    "title": "Екінші сағи",
+    "startPage": 57,
+    "endPage": 59
+  },
+  {
+    "id": "үшінші-сағи",
+    "title": "Үшінші сағи",
+    "startPage": 60,
+    "endPage": 62
+  },
+  {
+    "id": "төртінші-сағи",
+    "title": "Төртінші сағи",
+    "startPage": 63,
+    "endPage": 65
+  },
+  {
+    "id": "бесінші-сағи",
+    "title": "Бесінші сағи",
+    "startPage": 66,
+    "endPage": 68
+  },
+  {
+    "id": "алтыншы-сағи",
+    "title": "Алтыншы сағи",
+    "startPage": 69,
+    "endPage": 71
+  },
+  {
+    "id": "жетінші-сағи",
+    "title": "Жетінші сағи",
+    "startPage": 72,
+    "endPage": 76
+  },
+  {
+    "id": "меккедегі-тарихи-жерлер",
+    "title": "Меккедегі тарихи жерлер",
+    "startPage": 77,
+    "endPage": 83
+  },
+  {
+    "id": "мина",
+    "title": "Мина",
+    "startPage": 84,
+    "endPage": 85
+  },
+  {
+    "id": "арафат-тауы",
+    "title": "Арафат тауы",
+    "startPage": 86,
+    "endPage": 86
+  },
+  {
+    "id": "уқуф",
+    "title": "Уқуф",
+    "startPage": 87,
+    "endPage": 115
+  },
+  {
+    "id": "мүздәлифа",
+    "title": "Мүздәлифа",
+    "startPage": 116,
+    "endPage": 120
+  },
+  {
+    "id": "рәмил-жамрат",
+    "title": "Рәмил-жамрат",
+    "startPage": 121,
+    "endPage": 121
+  },
+  {
+    "id": "құрбан-айты",
+    "title": "Құрбан айты",
+    "startPage": 122,
+    "endPage": 124
+  },
+  {
+    "id": "әййәм-әт-тәшриқ",
+    "title": "Әййәм әт-тәшриқ",
+    "startPage": 125,
+    "endPage": 128
+  },
+  {
+    "id": "қоштасу-тауафы",
+    "title": "Қоштасу тауафы",
+    "startPage": 129,
+    "endPage": 136
+  },
+  {
+    "id": "мәдина",
+    "title": "Мәдина",
+    "startPage": 137,
+    "endPage": 211
+  }
+]
+;

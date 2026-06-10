@@ -1,6 +1,7 @@
 import { InteractionManager } from "react-native";
 import {
   loadHadithCorpus,
+  resolveBundledFullCorpus,
   saveHadithCorpus,
   clearHadithCorpusStorage,
   countHadithByCollection,
@@ -26,7 +27,7 @@ const MIN_FULL_CORPUS = 500;
 /** Әр жинақтан кем дегенде осынша жол болуы керек (бір ғана кітап қалса — қайта сидинг). */
 const MIN_COLLECTION_HEALTH = 3500;
 
-/** `hadith-sahih-seed.json` сияқты үлгі: Бұхари 1 + Муслим 1 — толық корпус емес */
+/** Ескі үлгі корпус (Бұхари 1 + Муслим 1 сияқты) қалса, оны толық корпус емес деп санаймыз. */
 function isPlaceholderTinyCorpus(c: HadithCorpus | null): boolean {
   const n = c?.hadiths?.length ?? 0;
   if (n === 0) return true;
@@ -40,19 +41,28 @@ function sahihOnly(rows: SahihHadithEntry[]): SahihHadithEntry[] {
   return rows.filter((h) => hadithCollectionBucket(h) != null);
 }
 
-function pickBundledCorpus(fromDb: HadithCorpus, seed: HadithCorpus): HadithCorpus {
-  const raw =
-    Array.isArray(fromDb.hadiths) && fromDb.hadiths.length > 0 ? fromDb : seed;
+function pickBundledCorpus(fromDb: HadithCorpus): HadithCorpus | null {
+  if (!Array.isArray(fromDb.hadiths) || fromDb.hadiths.length === 0) return null;
   const filtered: HadithCorpus = {
-    ...raw,
-    hadiths: sahihOnly(raw.hadiths ?? []),
+    ...fromDb,
+    hadiths: sahihOnly(fromDb.hadiths ?? []),
   };
-  return filtered.hadiths.length > 0 ? filtered : seed;
+  return filtered.hadiths.length > 0 ? filtered : null;
 }
+
+/** Бандл схема нұсқасы: 5 — en/ru/tr аудармалары қосылды. Ескі (4) сидинг қайта жазылады. */
+const BUNDLE_SCHEMA_VERSION = 5;
 
 async function seedBundledHadithIfNeededImpl(): Promise<boolean> {
   let existing = await loadHadithCorpus();
   let n = existing?.hadiths?.length ?? 0;
+
+  /** Жаңа бандл нұсқасы (аудармалармен) — ескі сидингті тазалап қайта толтыру. */
+  if (existing && (existing.version ?? 0) < BUNDLE_SCHEMA_VERSION) {
+    await clearHadithCorpusStorage();
+    existing = await loadHadithCorpus();
+    n = existing?.hadiths?.length ?? 0;
+  }
 
   /** AsyncStorage-та тек 2 жолдық үлгі қалған — тазалап толық бандлмен қайта толтыру */
   if (existing && isPlaceholderTinyCorpus(existing)) {
@@ -83,17 +93,11 @@ async function seedBundledHadithIfNeededImpl(): Promise<boolean> {
 
   if (n >= MIN_HADITHS_TO_SKIP_RESEED) return false;
 
-  /* eslint-disable @typescript-eslint/no-require-imports — тек сидинг кезінде (~МБ JSON) */
   await runWhenHeavyWorkAllowed();
   await yieldToUi();
-  const seedJson = require("../../assets/bundled/hadith-sahih-seed.json");
-  await yieldToUi();
-  const fromDbJson = require("../../assets/bundled/hadith-from-db.json");
-  /* eslint-enable @typescript-eslint/no-require-imports */
-
-  const fromDb = fromDbJson as HadithCorpus;
-  const seed = seedJson as HadithCorpus;
-  const hadithBundle = pickBundledCorpus(fromDb, seed);
+  const fromDb = await resolveBundledFullCorpus();
+  if (!fromDb) return false;
+  const hadithBundle = pickBundledCorpus(fromDb);
 
   if (!hadithBundle?.hadiths?.length) return false;
 
@@ -115,8 +119,7 @@ async function seedBundledHadithIfNeededImpl(): Promise<boolean> {
     return true;
   } catch {
     /**
-     * Толық корпус AsyncStorage-қа сыймаса да, `loadHadithCorpus` бандлдан оқи алады —
-     * 2-жолдық үлгіге түсіріп жібермейміз (Бұхари/Муслим «1+1» қалған күй).
+     * Толық корпус AsyncStorage-қа сыймаса да, `loadHadithCorpus` бандлдан оқи алады.
      */
     return false;
   }

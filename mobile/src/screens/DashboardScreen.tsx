@@ -1,53 +1,78 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import {
   View,
   Text,
   StyleSheet,
   Platform,
-  InteractionManager,
-  Image,
   ImageBackground,
-  useWindowDimensions,
   type ImageResizeMode,
   type ImageSourcePropType,
-  StatusBar,
-  ActivityIndicator,
-  ScrollView,
-  RefreshControl,
+  Linking,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import * as Haptics from "expo-haptics";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { AppIconBadge } from "../components/AppIconBadge";
 import type { MciName } from "../theme/appIcons";
 import { menuIconAssets } from "../theme/menuIconAssets";
-import { CommonActions, useFocusEffect, useIsFocused, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  applyPrayerTimeShift,
   fetchPrayerTimesForLocation,
   fetchPrayerTimesForLocationForDate,
+  isPrayerTimesResultForLocalToday,
   type PrayerTimesResult,
 } from "../api/prayerTimes";
 import { useAppTheme } from "../theme/ThemeContext";
-import { kk } from "../i18n/kk";
-import { getOnboardingDone, getSelectedCity, getNotifEnabled, getIftarEnabled } from "../storage/prefs";
+import { BRAND_FONT_FACE } from "../fonts/brandFont";
+import { kk, APP_BRAND_KK } from "../i18n/kk";
+import { homeHeaderContrastTextBase, homeHeaderBrandTitleStyle, homeHeaderDateLineStyle } from "../theme/homeHeaderContrastText";
+import { typography, uiFontStyle, uiText } from "../theme/typography";
+import {
+  getIftarEnabled,
+  getNotifEnabled,
+  getOnboardingDone,
+  getPrayerMosqueShiftMin,
+  getPrayerSourceMode,
+  getSelectedCity,
+  setOnboardingDone,
+} from "../storage/prefs";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
-import { formatRelativePastKk } from "../utils/formatRelativePastKk";
-import { VoiceAssistantHeaderButton } from "../components/voice/VoiceAssistantHeaderButton";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import { fireInAppPrayerAlert } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import type { HomeTabCompositeNavigation } from "../navigation/types";
+import { navigateToAppSettings } from "../navigation/navigateToSettings";
+import { navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
+import { runAfterInteractions } from "../utils/uiDefer";
 import { shortPrayerName } from "../components/CompactPrayerTimesRow";
 import { nextSalatRow, parseMinutes } from "../utils/prayerSchedule";
 import { DashboardPrayerWidget } from "../components/DashboardPrayerWidget";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
+import { RasterImage } from "@/ui/RasterImage";
+import { DashboardNewsRotatorCard } from "../components/DashboardNewsRotatorCard";
+import type { DashboardNewsItem } from "../content/dashboardNewsItems";
+import { DashboardHomeServicesGrid } from "../components/dashboard/DashboardHomeServicesGrid";
+import { DashboardHalalProductsRotator } from "../components/dashboard/DashboardHalalProductsRotator";
+import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../config/dashboardHomeServices";
+import { PRAYER_TIMES_HERO_NEXT_BG } from "../config/dashboardPrayerHero";
 import { TiltParallaxImage } from "../components/TiltParallaxImage";
-import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
-import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
-import { qiblaAlignHint } from "../lib/qiblaHints";
-import { PRAYER_TIMES_HERO_BG } from "../config/dashboardPrayerHero";
+import { useQiblaStable } from "../context/QiblaSensorContext";
+import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
+import { useAppLocale } from "../i18n/runtime";
 import { getKzPresetCoords } from "../constants/kzCities";
+import { fetchOpenMeteoCurrent, type OpenMeteoCurrent } from "../services/openMeteoCurrent";
+import { ScreenFitScrollView } from "../components/ScreenFit";
+
+function openWebRoute(path: string): boolean {
+  if (Platform.OS !== "web" || typeof window === "undefined") return false;
+  window.location.assign(path);
+  return true;
+}
+
 /**
  * Тор + бүйір карточкалары: терезе еніне қарай максималды растр (тайл мен қақпа арасында шықпау).
  * Тор ені ≈ 31% − padding; қақпа бағанасы = сол растр ені.
@@ -68,6 +93,18 @@ function dashboardRasterBoxPx(windowWidth: number, windowHeight?: number): numbe
 
 type Row = { key: string; label: string; time: string };
 
+function prayerLabelForKey(key: string): string {
+  const labels: Record<string, string> = {
+    fajr: kk.prayer.fajr,
+    sun: kk.prayer.sunrise,
+    dhuhr: kk.prayer.dhuhr,
+    asr: kk.prayer.asr,
+    maghrib: kk.prayer.maghrib,
+    isha: kk.prayer.isha,
+  };
+  return labels[key] ?? key;
+}
+
 function matchesClockMinute(now: Date, timeStr: string): boolean {
   if (!timeStr?.trim()) return false;
   const target = parseMinutes(timeStr);
@@ -77,13 +114,24 @@ function matchesClockMinute(now: Date, timeStr: string): boolean {
 
 function rowsFromResult(d: PrayerTimesResult): Row[] {
   return [
-    { key: "fajr", label: kk.prayer.fajr, time: d.fajr },
-    { key: "sun", label: kk.prayer.sunrise, time: d.sunrise },
-    { key: "dhuhr", label: kk.prayer.dhuhr, time: d.dhuhr },
-    { key: "asr", label: kk.prayer.asr, time: d.asr },
-    { key: "maghrib", label: kk.prayer.maghrib, time: d.maghrib },
-    { key: "isha", label: kk.prayer.isha, time: d.isha },
+    { key: "fajr", label: prayerLabelForKey("fajr"), time: d.fajr },
+    { key: "sun", label: prayerLabelForKey("sun"), time: d.sunrise },
+    { key: "dhuhr", label: prayerLabelForKey("dhuhr"), time: d.dhuhr },
+    { key: "asr", label: prayerLabelForKey("asr"), time: d.asr },
+    { key: "maghrib", label: prayerLabelForKey("maghrib"), time: d.maghrib },
+    { key: "isha", label: prayerLabelForKey("isha"), time: d.isha },
   ];
+}
+
+async function getDashboardPrayerShiftMin(): Promise<number> {
+  const [sourceMode, shiftMin] = await Promise.all([getPrayerSourceMode(), getPrayerMosqueShiftMin()]);
+  return sourceMode === "mosque" ? shiftMin : 0;
+}
+
+function signedDegHomeHeader(c: number): string {
+  const r = Math.round(c);
+  if (r > 0) return `+${r}°`;
+  return `${r}°`;
 }
 
 /** Басты бет карточкалары — жеңіл тереңдік, жарықта тым қатты көлеңке емес */
@@ -100,293 +148,230 @@ function cardShadow(isDark: boolean) {
   });
 }
 
-function HomeHeaderLeft({
-  navigation,
+/** Басты бет шапка биіктігі — status bar + бір қатар (күн/бренд/баптаулар). */
+function homeDashboardHeaderMetrics(insets: { top: number }) {
+  const statusTop =
+    Platform.OS === "web"
+      ? 0
+      : insets.top;
+  /** Екі жол күн (11/14 × 2). */
+  const rowH = 28;
+  return {
+    statusTop,
+    rowH,
+    headerH: statusTop + rowH,
+  };
+}
+
+/** Баптаулар түймесі өлшемі (құбыламен бір қатарда). */
+const HEADER_SETTINGS_BTN = 24;
+/** headerRight — баптаулар (ауа райы — намаз карточкасында) */
+/** React Navigation header ішкі padding — баптауларды экран/oң safe-area шетіне. */
+const HEADER_SETTINGS_RIGHT_EDGE_NUDGE = Platform.select({
+  web: -16,
+  ios: -12,
+  android: -10,
+  default: -12,
+}) as number;
+/** Күн/ауа райы — сол жақтан сәл оңға. */
+const HEADER_DATE_WEATHER_RIGHT_NUDGE = 8;
+/** RAHAT OMIR — шапка ортасында. */
+function HomeHeaderBrandTitle({
   colors,
+  isDark,
 }: {
-  navigation: HomeTabCompositeNavigation;
   colors: ThemeColors;
+  isDark: boolean;
 }) {
   return (
-    <View
+    <Text
       style={{
-        flexDirection: "row",
-        alignItems: "center",
-        flex: 1,
-        minWidth: 0,
-        minHeight: 42,
-        gap: 6,
-        justifyContent: "flex-start",
+        ...homeHeaderContrastTextBase(colors, isDark),
+        ...homeHeaderBrandTitleStyle("sm"),
+        textAlign: "center",
+        width: "100%",
       }}
+      numberOfLines={1}
+      accessibilityRole="header"
     >
-      <View
-        style={{
-          minWidth: 0,
-          marginLeft: 0,
-          marginRight: 6,
-          alignItems: "flex-start",
-          flex: 1,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "900",
-            letterSpacing: 0.5,
-            color: colors.text,
-            textAlign: "left",
-          }}
-          accessibilityRole="header"
-          numberOfLines={1}
-        >
-          {kk.dashboard.brandTitle}
-        </Text>
-      </View>
+      {APP_BRAND_KK}
+    </Text>
+  );
+}
+
+function HomeHeaderLeft({
+  colors,
+  isDark,
+}: {
+  colors: ThemeColors;
+  isDark: boolean;
+}) {
+  const locale = useAppLocale();
+  const now = new Date();
+  const { gregorian, hijri } = formatDashboardHeaderDateLines(now, locale);
+  const dateLineStyle = homeHeaderDateLineStyle(colors, isDark);
+
+  return (
+    <View style={{ flex: 1, minWidth: 0, paddingLeft: 2, marginLeft: HEADER_DATE_WEATHER_RIGHT_NUDGE }}>
+      <Text style={dateLineStyle} numberOfLines={1}>
+        {gregorian}
+      </Text>
+      <Text style={dateLineStyle} numberOfLines={1}>
+        {hijri}
+      </Text>
     </View>
   );
 }
 
-function HomeHeaderCenter({
+function HomeHeaderSettingsButton({
   navigation,
   colors,
 }: {
   navigation: HomeTabCompositeNavigation;
   colors: ThemeColors;
 }) {
-  const insets = useSafeAreaInsets();
-  const { bearing, refreshBearing } = useQiblaStable();
-  const { rotateDeg, headingHasSample } = useQiblaMotion();
-  const bearingReady = bearing != null;
-  const motionReady = bearingReady && headingHasSample;
-  const qiblaAligned =
-    motionReady && qiblaAlignHint(rotateDeg, bearing, { headingReady: true }) === "aligned";
-
-  /**
-   * Құбыла: RAQAT / баптаулар қатарымен визуалды теңестіру — notch үшін жоғары тартуды азайтып, сәл төмен орналастырамыз.
-   */
-  const ringOuter = 52;
-  const compassBox = 40;
-  const pointerSize = 36;
-  const islandNudge =
-    Platform.OS === "ios"
-      ? Math.min(7, Math.max(0, insets.top - 46) * 0.42)
-      : Math.min(5, Math.max(0, insets.top - 26) * 0.22);
-  /** Төменге түсіру: бұрынғы теріс margin орнына жеңіл теңестіру */
-  const headerQiblaDownNudge = Math.round(4 + islandNudge * 0.25);
-
   return (
-    <View
-      style={{
-        position: "absolute",
-        left: "50%",
-        marginLeft: -ringOuter / 2,
-        width: ringOuter,
+    <Pressable
+      oyuBackdrop={false}
+      onPress={() => navigateToAppSettings(navigation)}
+      style={({ pressed }) => ({
+        width: HEADER_SETTINGS_BTN,
+        height: HEADER_SETTINGS_BTN,
         alignItems: "center",
         justifyContent: "center",
-      }}
+        opacity: pressed ? 0.72 : 1,
+      })}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={kk.settings.headerSettingsA11y}
     >
-      <View
-        style={{
-          width: ringOuter,
-          height: ringOuter,
-          marginTop: headerQiblaDownNudge,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Pressable
-          onPress={() => navigation.navigate("Qibla")}
-          onLongPress={() => void refreshBearing()}
-          style={{
-            width: compassBox + 8,
-            height: compassBox + 8,
-            borderRadius: (compassBox + 8) / 2,
-            backgroundColor: qiblaAligned
-              ? "rgba(52, 211, 153, 0.42)"
-              : bearingReady
-                ? `${colors.success}28`
-                : colors.accentSurfaceStrong,
-            borderWidth: qiblaAligned ? 2.5 : 1.5,
-            borderColor: qiblaAligned
-              ? "rgba(52, 251, 153, 0.95)"
-              : `${colors.accent}55`,
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            ...Platform.select({
-              ios: qiblaAligned
-                ? {
-                    shadowColor: "#34F3A6",
-                    shadowOffset: { width: 0, height: 0 },
-                    shadowOpacity: 0.95,
-                    shadowRadius: 14,
-                  }
-                : {
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 1 },
-                    shadowOpacity: 0.12,
-                    shadowRadius: 2,
-                  },
-              android: { elevation: qiblaAligned ? 10 : 2 },
-              default: {},
-            }),
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={kk.tabs.qibla}
-        >
-          <View style={{ opacity: motionReady ? 1 : 0.85 }} pointerEvents="none">
-            <QiblaArrowPointer
-              colors={colors}
-              size={pointerSize}
-              rotateDeg={rotateDeg}
-              aligned={qiblaAligned}
-              showDialRing={false}
-              showDialHalo
-              showTopMarker={false}
-              needlePulse={false}
-              showPivotHub={false}
-              minimalDial
-              centerOyuMedallion={false}
-              ornamentNeedle={false}
-              showAlignLed
-              showAlignLedInMinimal
-            />
-          </View>
-        </Pressable>
-      </View>
-    </View>
+      <MaterialIcons name="tune" size={19} color={colors.text} />
+    </Pressable>
   );
 }
 
-function HomeHeaderRight({
+function HomeHeaderActions({
   navigation,
   colors,
 }: {
   navigation: HomeTabCompositeNavigation;
   colors: ThemeColors;
 }) {
+  return <HomeHeaderSettingsButton navigation={navigation} colors={colors} />;
+}
+
+/** Компакт шапка — RN header орнына (артық бос орын жоқ). */
+function HomeHeaderBar({
+  colors,
+  isDark,
+  navigation,
+  headerMetrics,
+  insetsRight,
+}: {
+  colors: ThemeColors;
+  isDark: boolean;
+  navigation: HomeTabCompositeNavigation;
+  headerMetrics: ReturnType<typeof homeDashboardHeaderMetrics>;
+  insetsRight: number;
+}) {
+  const { statusTop, rowH } = headerMetrics;
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "flex-end",
-        gap: 6,
-        marginRight: -2,
+        paddingTop: statusTop,
+        minHeight: statusTop + rowH,
+        paddingBottom: 0,
+        marginBottom: 2,
+        paddingRight: Math.max(insetsRight, 0) + HEADER_SETTINGS_RIGHT_EDGE_NUDGE,
       }}
     >
-      <VoiceAssistantHeaderButton />
-      <Pressable
-        onPress={() =>
-          navigation.dispatch(
-            CommonActions.navigate({
-              name: "MoreStack",
-              params: { screen: "Settings" },
-            })
-          )
-        }
+      <View style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+        <HomeHeaderLeft colors={colors} isDark={isDark} />
+      </View>
+      <View
+        pointerEvents="none"
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: colors.accentSurfaceStrong,
+          position: "absolute",
+          left: 0,
+          right: 0,
+          top: statusTop,
+          height: rowH,
           alignItems: "center",
           justifyContent: "center",
         }}
-        accessibilityRole="button"
-        accessibilityLabel={kk.settings.headerSettingsA11y}
       >
-        <MaterialIcons name="settings" size={22} color={colors.accent} />
-      </Pressable>
+        <HomeHeaderBrandTitle colors={colors} isDark={isDark} />
+      </View>
+      <HomeHeaderActions navigation={navigation} colors={colors} />
     </View>
   );
 }
 
 export function DashboardScreen() {
   const insets = useSafeAreaInsets();
-  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const rasterBox = dashboardRasterBoxPx(windowWidth, windowHeight);
   const { colors, isDark } = useAppTheme();
+  const locale = useAppLocale();
   const navigation = useNavigation<HomeTabCompositeNavigation>();
-  const tabFocused = useIsFocused();
-  const { refreshBearing, resumeHeadingSubscription } = useQiblaStable();
+  const headerMetrics = useMemo(() => homeDashboardHeaderMetrics(insets), [insets.top]);
+  const { resumeHeadingSubscription } = useQiblaStable();
   const [refreshing, setRefreshing] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   /** Бүгінгі парыздар өткен соң келесі таң/күн — «келесі намаз» сағатын дұрыс көрсету */
   const [tomorrowRows, setTomorrowRows] = useState<Row[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [fromCache, setFromCache] = useState(false);
-  /** Намаз кэшінің `savedAt` (ISO) — сақталған уақытты көрсету үшін */
-  const [prayerCacheSavedAt, setPrayerCacheSavedAt] = useState<string | null>(null);
   const [cityLabel, setCityLabel] = useState("");
-  const prayerWeatherCoords = useMemo(
-    () => getKzPresetCoords(cityLabel.trim(), "Kazakhstan"),
-    [cityLabel]
-  );
+  const [countryLabel, setCountryLabel] = useState("Kazakhstan");
+  const [weatherSnap, setWeatherSnap] = useState<OpenMeteoCurrent | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
   const [prayerNotifEnabled, setPrayerNotifEnabled] = useState(true);
   /** Намаз минуты кіргенде (экран ашық) — қысқа баннер */
   const [momentBanner, setMomentBanner] = useState<string | null>(null);
   const momentPulseId = useRef<string>("");
   const [showOnboarding, setShowOnboarding] = useState(false);
-  /** Фокустағы уақыт жүктемесін шектеу — таб ауыстырып қайта кіргенде қатып қалмасын */
   const lastFocusPrayerLoadAt = useRef(0);
-  /** Тор тайлдарының артқы дақы — бұрынғы көк-жасылдан сәл жұмсақ */
-  const accentSoft = colors.accentSurface;
+  const weatherCoords = useMemo(
+    () => (cityLabel ? getKzPresetCoords(cityLabel, countryLabel) : null),
+    [cityLabel, countryLabel]
+  );
+
+  useEffect(() => {
+    setRows((prev) => prev.map((row) => ({ ...row, label: prayerLabelForKey(row.key) })));
+    setTomorrowRows((prev) =>
+      prev ? prev.map((row) => ({ ...row, label: prayerLabelForKey(row.key) })) : prev
+    );
+  }, [locale]);
+
+  useEffect(() => {
+    if (!weatherCoords) {
+      setWeatherSnap(null);
+      setWeatherLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const tick = async () => {
+      setWeatherLoading(true);
+      const w = await fetchOpenMeteoCurrent(weatherCoords.lat, weatherCoords.lon);
+      if (!cancelled) {
+        setWeatherSnap(w);
+        setWeatherLoading(false);
+      }
+    };
+    void tick();
+    const id = setInterval(() => void tick(), 20 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [weatherCoords?.lat, weatherCoords?.lon]);
+
   useLayoutEffect(() => {
-    const headerH =
-      Platform.OS === "ios"
-        ? insets.top + 44
-        : (StatusBar.currentHeight ?? 0) + 48;
-    /** Бір желілі тайтл — жоғары панель биіктігі */
-    const headerVertPad = Platform.OS === "ios" ? 4 : 2;
     navigation.setOptions({
-      headerTitleAlign: "center",
-      headerTitleContainerStyle: {
-        position: "absolute",
-        left: 0,
-        right: 0,
-        alignItems: "center",
-        justifyContent: "center",
-        pointerEvents: "box-none",
-        overflow: "visible",
-      },
-      headerTitle: () => <HomeHeaderCenter navigation={navigation} colors={colors} />,
-      headerLeftContainerStyle: {
-        paddingLeft: 0,
-        marginLeft: 0,
-        marginTop: 0,
-        paddingTop: headerVertPad,
-        paddingBottom: 0,
-        alignItems: "flex-start" as const,
-        justifyContent: "center" as const,
-        alignSelf: "stretch" as const,
-        flexGrow: 1,
-        flexShrink: 1,
-        maxWidth: "100%",
-      },
-      headerStyle: {
-        backgroundColor: colors.bg,
-        height: headerH,
-      },
-      headerRightContainerStyle: {
-        paddingRight: 0,
-        marginRight: 0,
-        alignItems: "flex-end" as const,
-        justifyContent: "center" as const,
-        flexGrow: 0,
-      },
-      headerRight: () => <HomeHeaderRight navigation={navigation} colors={colors} />,
-      headerLeft: () => <HomeHeaderLeft navigation={navigation} colors={colors} />,
+      headerShown: false,
     });
-  }, [
-    navigation,
-    colors.text,
-    colors.bg,
-    colors.accent,
-    colors.accentSurfaceStrong,
-    colors.success,
-    insets.top,
-  ]);
+  }, [navigation]);
 
   useEffect(() => {
     let cancelled = false;
@@ -410,7 +395,11 @@ export function DashboardScreen() {
       const tm = new Date();
       tm.setDate(tm.getDate() + 1);
       tm.setHours(12, 0, 0, 0);
-      const pt = await fetchPrayerTimesForLocationForDate(city, country, tm, 3);
+      const [ptRaw, shiftMin] = await Promise.all([
+        fetchPrayerTimesForLocationForDate(city, country, tm),
+        getDashboardPrayerShiftMin(),
+      ]);
+      const pt = shiftMin === 0 ? ptRaw : applyPrayerTimeShift(ptRaw, shiftMin);
       if (cancelled) return;
       if (!pt.error) setTomorrowRows(rowsFromResult(pt));
       else setTomorrowRows(null);
@@ -432,13 +421,14 @@ export function DashboardScreen() {
       cached.country === country &&
       !cached.error &&
       !Number.isNaN(Date.parse(cached.savedAt)) &&
-      Date.now() - Date.parse(cached.savedAt) < 12 * 60 * 1000;
+      Date.now() - Date.parse(cached.savedAt) < 12 * 60 * 1000 &&
+      isPrayerTimesResultForLocalToday(cached);
 
     if (mode === "focus" && cacheRecent && cached) {
       setRows(rowsFromResult(cached));
       setCityLabel(cached.city);
+      setCountryLabel(cached.country);
       setFromCache(true);
-      setPrayerCacheSavedAt(cached.savedAt);
       setErr(null);
       return;
     }
@@ -449,29 +439,35 @@ export function DashboardScreen() {
       cached &&
       cached.city === city &&
       cached.country === country &&
-      !cached.error
+      !cached.error &&
+      isPrayerTimesResultForLocalToday(cached)
     ) {
       setRows(rowsFromResult(cached));
       setCityLabel(cached.city);
+      setCountryLabel(cached.country);
       setFromCache(true);
-      setPrayerCacheSavedAt(cached.savedAt);
       setErr(null);
       usedCache = true;
     }
 
-    const fresh = await fetchPrayerTimesForLocation(city, country, 3);
+    const [freshRaw, shiftMin] = await Promise.all([
+      fetchPrayerTimesForLocation(city, country),
+      getDashboardPrayerShiftMin(),
+    ]);
+    const fresh = shiftMin === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, shiftMin);
 
     if (!fresh.error) {
       setRows(rowsFromResult(fresh));
       setCityLabel(fresh.city);
+      setCountryLabel(fresh.country);
       setFromCache(false);
-      setPrayerCacheSavedAt(null);
       setErr(null);
       await savePrayerCache(fresh);
       const [en, iftar] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
       await reschedulePrayerNotifications(fresh, {
         enabled: en,
         iftarExtra: iftar,
+        prayerTimesAlreadyAdjusted: true,
       });
       return;
     }
@@ -484,12 +480,16 @@ export function DashboardScreen() {
     setErr(fresh.error ?? kk.dashboard.loadError);
     setRows([]);
     setFromCache(false);
-    setPrayerCacheSavedAt(null);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     void (async () => {
+      if (Platform.OS === "web") {
+        await setOnboardingDone();
+        if (!cancelled) setShowOnboarding(false);
+        return;
+      }
       const done = await getOnboardingDone();
       if (!cancelled && !done) setShowOnboarding(true);
     })();
@@ -505,30 +505,58 @@ export function DashboardScreen() {
       const cached = await loadPrayerCache();
       if (cancelled) return;
       if (cached && cached.city === city && cached.country === country && !cached.error) {
-        setRows(rowsFromResult(cached));
-        setCityLabel(cached.city);
-        setFromCache(true);
-        setPrayerCacheSavedAt(cached.savedAt);
-        setErr(null);
-        /** Хабарламалар кестесін UI сызылғаннан кейін — бірінші кадрды бұғаттамау */
-        InteractionManager.runAfterInteractions(() => {
-          if (cancelled) return;
-          void (async () => {
-            const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
+        if (isPrayerTimesResultForLocalToday(cached)) {
+          setRows(rowsFromResult(cached));
+          setCityLabel(cached.city);
+          setCountryLabel(cached.country);
+          setFromCache(true);
+          setErr(null);
+          /** Хабарламалар кестесін UI сызылғаннан кейін — бірінші кадрды бұғаттамау */
+          runAfterInteractions(() => {
             if (cancelled) return;
-            await reschedulePrayerNotifications(cached, { enabled: en, iftarExtra: ift });
-          })();
-        });
+            void (async () => {
+              const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
+              if (cancelled) return;
+              await reschedulePrayerNotifications(cached, {
+                enabled: en,
+                iftarExtra: ift,
+                prayerTimesAlreadyAdjusted: true,
+              });
+            })();
+          });
+        } else {
+          void load("full");
+        }
+      } else {
+        void load("full");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [load]);
+
+  /** Күн ауысып кэш ескірсе — қолданба алдыңғы табта ашық тұрса да жаңарту */
+  useEffect(() => {
+    const id = setInterval(() => {
+      void (async () => {
+        try {
+          const c = await loadPrayerCache();
+          if (!c || c.error) return;
+          if (!isPrayerTimesResultForLocalToday(c)) {
+            await load("full");
+          }
+        } catch {
+          /* */
+        }
+      })();
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [load]);
 
   useFocusEffect(
     useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(() => {
+      const task = runAfterInteractions(() => {
         const now = Date.now();
         if (now - lastFocusPrayerLoadAt.current < 12_000) return;
         lastFocusPrayerLoadAt.current = now;
@@ -541,9 +569,10 @@ export function DashboardScreen() {
   /** Дұға/тәспі табынан қайтқанда немесе Баптаулардан қаладан кейін: сенсор жазылымы + құбыла бұрышы жаңарсын */
   useFocusEffect(
     useCallback(() => {
+      if (Platform.OS === "web") return undefined;
       resumeHeadingSubscription();
-      void refreshBearing();
-    }, [refreshBearing, resumeHeadingSubscription])
+      return undefined;
+    }, [resumeHeadingSubscription])
   );
 
   useFocusEffect(
@@ -578,8 +607,14 @@ export function DashboardScreen() {
         setMomentBanner(kk.prayer.momentBanner(shortPrayerName(hit.key)));
         if (momentPulseId.current !== pulse) {
           momentPulseId.current = pulse;
-          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-          void fireInAppPrayerAlert(hit.label, hit.time).catch(() => {});
+          void fireInAppPrayerAlert(hit.label, hit.time, hit.key)
+            .then((fired) => {
+              if (fired) {
+                return Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              return undefined;
+            })
+            .catch(() => {});
         }
       };
       tick();
@@ -594,63 +629,168 @@ export function DashboardScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([load("full"), refreshBearing()]);
+      await Promise.all(
+        Platform.OS === "web" ? [load("full")] : [load("full")]
+      );
     } finally {
       setRefreshing(false);
     }
-  }, [load, refreshBearing]);
+  }, [load]);
 
   const next = nextSalatRow(rows, tomorrowRows);
-  const styles = makeStyles(colors, isDark);
+  const scrollTopPad = 0;
+  const styles = useMemo(
+    () => makeStyles(colors, isDark, scrollTopPad),
+    [colors, isDark, scrollTopPad]
+  );
   const timesPending = rows.length === 0 && err === null;
-  /** Промо (Халал / AI): сол сурет ені — жиекке дейін толтыру үшін бекітілген бағана */
-  const promoImageColW = Math.min(108, Math.max(76, Math.round(windowWidth * 0.24)));
-  const goQuranList = () => navigation.navigate("MoreStack", { screen: "QuranList" });
-  const goMoreStackScreen = (screen: "Halal" | "ImamAI") =>
-    navigation.dispatch(
-      CommonActions.navigate({
-        name: "MoreStack",
-        params: { screen },
-        merge: true,
-      })
-    );
-  const goAi = () => goMoreStackScreen("ImamAI");
-  const goHalal = () => goMoreStackScreen("Halal");
-  const goDuas = () => navigation.navigate("Duas", { screen: "DuasHome" });
-  const goTasbih = () => navigation.navigate("Tasbih", { screen: "TasbihList" });
-  const goAsma = () => navigation.navigate("AsmaAlHusna");
-  const goTradition = () => navigation.navigate("MoreStack", { screen: "KazakhTradition" });
+  const goQuranList = useCallback(
+    () => {
+      if (openWebRoute("/more/quran")) return;
+      navigateToMoreStackScreen("QuranList", undefined, navigation);
+    },
+    [navigation]
+  );
+  const goNamazGuide = useCallback(
+    () => {
+      if (openWebRoute("/more/namaz-guide")) return;
+      navigateToMoreStackScreen("NamazGuide", undefined, navigation);
+    },
+    [navigation]
+  );
+  const goKmdbHub = useCallback(
+    () => {
+      if (openWebRoute("/more/kmdb")) return;
+      navigateToMoreStackScreen("KmdbHub", undefined, navigation);
+    },
+    [navigation]
+  );
+  const goHalal = useCallback(
+    () => {
+      if (openWebRoute("/more/halal")) return;
+      navigateToMoreStackScreen("Halal", undefined, navigation);
+    },
+    [navigation]
+  );
+  const goDuas = useCallback(() => {
+    if (openWebRoute("/duas")) return;
+    navigation.navigate("Duas", { screen: "DuasHome" });
+  }, [navigation]);
+  const goTasbih = useCallback(() => {
+    if (openWebRoute("/tasbih")) return;
+    navigation.navigate("Tasbih", { screen: "TasbihList" });
+  }, [navigation]);
+  const goAsma = useCallback(
+    () => {
+      if (openWebRoute("/asma")) return;
+      navigateToRootStackScreen("AsmaAlHusna", undefined, navigation);
+    },
+    [navigation]
+  );
+  const goPrayerTimes = useCallback(() => {
+    if (openWebRoute("/prayer")) return;
+    navigation.navigate("PrayerTab");
+  }, [navigation]);
+  const goKazakhTraditionBlock = useCallback(
+    (scrollToBlockTitle: string) => {
+      navigateToMoreStackScreen("KazakhTradition", { scrollToBlockTitle }, navigation);
+    },
+    [navigation]
+  );
+  const goTradition = useCallback(
+    () => {
+      if (openWebRoute("/more/tradition")) return;
+      navigateToMoreStackScreen("KazakhTradition", undefined, navigation);
+    },
+    [navigation]
+  );
+
+  const onNewsItemPress = useCallback(
+    (item: DashboardNewsItem) => {
+      const url = (item.articleUrl ?? "").trim();
+      if (url) {
+        void Linking.openURL(url);
+        return;
+      }
+      if (item.target) {
+        navigateToMoreStackScreen(item.target.screen, item.target.params, navigation);
+      }
+    },
+    [navigation]
+  );
+
+  const onHomeServicePress = useCallback(
+    (key: DashboardHomeServiceKey) => {
+      if (openWebRoute(dashboardHomeServiceWebPath(key))) return;
+      switch (key) {
+        case "quran":
+          goQuranList();
+          break;
+        case "hadith":
+          navigateToMoreStackScreen("HadithHub", undefined, navigation);
+          break;
+        case "namaz":
+          goNamazGuide();
+          break;
+        case "tajweed":
+          navigateToMoreStackScreen("TajweedGuide", undefined, navigation);
+          break;
+        case "duas":
+          goDuas();
+          break;
+        case "tasbih":
+          goTasbih();
+          break;
+        case "tradition":
+          goTradition();
+          break;
+        case "seerah":
+          navigateToMoreStackScreen("Seerah", undefined, navigation);
+          break;
+        case "asma":
+          goAsma();
+          break;
+        case "hajj":
+          navigateToMoreStackScreen("Hajj", undefined, navigation);
+          break;
+        case "ai":
+          goKmdbHub();
+          break;
+        case "halal":
+          goHalal();
+          break;
+        default:
+          break;
+      }
+    },
+    [
+      navigation,
+      goDuas,
+      goTasbih,
+      goNamazGuide,
+      goQuranList,
+      goTradition,
+      goAsma,
+      goKmdbHub,
+      goHalal,
+    ]
+  );
 
   return (
     <>
-      <ScrollView
-        style={styles.root}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: Math.max(24, insets.bottom + 32) },
+      <View
+        testID="screen-main-home"
+        style={[
+          styles.root,
+          styles.fixedScreen,
+          { paddingBottom: 0 },
         ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void onRefresh()}
-            tintColor={colors.accent}
-            colors={Platform.OS === "android" ? [colors.accent] : undefined}
-          />
-        }
       >
         {fromCache && err ? (
           <View style={styles.cacheBanner}>
             <Text style={styles.cacheBannerTitle}>{kk.common.offlineBadge}</Text>
-            {prayerCacheSavedAt ? (
-              <Text style={styles.cacheBannerMeta}>
-                {kk.dashboard.cacheSavedLabel(formatRelativePastKk(prayerCacheSavedAt))}
-              </Text>
-            ) : null}
             <Text style={styles.cacheBannerErr}>{err}</Text>
             <Text style={styles.cacheBannerHint}>{kk.dashboard.offlineCachedTimesHint}</Text>
-            <Text style={styles.cacheBannerHint}>{kk.dashboard.pullToRefreshHint}</Text>
             <Pressable
               onPress={() => void onRefresh()}
               disabled={refreshing}
@@ -663,7 +803,7 @@ export function DashboardScreen() {
               ]}
             >
               {refreshing ? (
-                <ActivityIndicator size="small" color={colors.accent} />
+                <RaqatOrnamentSpinner size={22} />
               ) : (
                 <Text style={styles.retryButtonLabel}>{kk.common.retry}</Text>
               )}
@@ -687,7 +827,7 @@ export function DashboardScreen() {
               ]}
             >
               {refreshing ? (
-                <ActivityIndicator size="small" color={colors.accent} />
+                <RaqatOrnamentSpinner size={22} />
               ) : (
                 <Text style={styles.retryButtonLabel}>{kk.common.retry}</Text>
               )}
@@ -695,270 +835,75 @@ export function DashboardScreen() {
           </View>
         ) : null}
 
-        {fromCache && !err && prayerCacheSavedAt && rows.length > 0 ? (
-          <Text style={styles.cacheFootnote}>
-            {kk.dashboard.cacheSavedLabel(formatRelativePastKk(prayerCacheSavedAt))}
-          </Text>
-        ) : null}
+        <HomeHeaderBar
+          colors={colors}
+          isDark={isDark}
+          navigation={navigation}
+          headerMetrics={headerMetrics}
+          insetsRight={insets.right}
+        />
 
-        <Pressable
-          onPress={() => navigation.navigate("PrayerTimes")}
-          accessibilityRole="button"
-          accessibilityLabel={kk.dashboard.openPrayerDetailA11y}
-          style={({ pressed }) => [styles.prayerHeroPress, pressed && { opacity: 0.97 }]}
+        <ScreenFitScrollView
+          style={styles.screenBody}
+          bottom={16 + insets.bottom}
+          includeHorizontalPadding={false}
+          showsVerticalScrollIndicator={false}
         >
-          <ImageBackground
-            source={PRAYER_TIMES_HERO_BG}
-            style={styles.prayerHeroBg}
-            imageStyle={styles.prayerHeroBgImage}
-            resizeMode="cover"
-          >
-            <DashboardPrayerWidget
+          <View style={styles.prayerHeroWrap}>
+            <ImageBackground
+              source={PRAYER_TIMES_HERO_NEXT_BG}
+              style={styles.prayerHeroBg}
+              imageStyle={styles.prayerHeroBgImage}
+              resizeMode="cover"
+              resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+              accessibilityIgnoresInvertColors
+            >
+              <DashboardPrayerWidget
+                colors={colors}
+                isDark={isDark}
+                rows={rows}
+                tomorrowRows={tomorrowRows}
+                next={next}
+                pending={timesPending}
+                momentBanner={momentBanner}
+                cityLabel={cityLabel}
+                weatherSnap={weatherSnap}
+                weatherLoading={weatherLoading}
+                weatherUnavailable={!weatherCoords}
+                onPressQibla={() => navigation.navigate("Qibla")}
+                homeMockup
+                onPress={goPrayerTimes}
+              />
+            </ImageBackground>
+          </View>
+
+          <DashboardHomeServicesGrid
+            colors={colors}
+            isDark={isDark}
+            onPress={onHomeServicePress}
+          />
+
+          <View style={styles.newsSection}>
+            <DashboardHalalProductsRotator
               colors={colors}
               isDark={isDark}
-              rows={rows}
-              tomorrowRows={tomorrowRows}
-              next={next}
-              pending={timesPending}
-              momentBanner={momentBanner}
-              cityLabel={cityLabel}
-              weatherCoords={prayerWeatherCoords}
-              prayerNotifEnabled={prayerNotifEnabled}
-              compact
+              onOpenCatalog={goHalal}
             />
-          </ImageBackground>
-        </Pressable>
-
-        <View style={styles.promoRow}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.heroPromoCard,
-              cardShadow(isDark),
-              pressed && styles.cardPress,
-            ]}
-            onPress={goHalal}
-            accessibilityRole="button"
-            accessibilityLabel={kk.features.halalTitle}
-          >
-            <View style={[styles.heroPromoImageCol, { width: promoImageColW }]}>
-              <Image
-                source={menuIconAssets.tileHalal}
-                style={[styles.heroPromoImage, { width: promoImageColW }, styles.heroPromoImageLight]}
-                resizeMode="cover"
-                accessibilityIgnoresInvertColors
-              />
-              <View style={styles.heroPromoImageOverlay} pointerEvents="none" />
-            </View>
-            <View style={styles.heroPromoTextCol}>
-              <Text style={styles.heroPromoHeadlineHalal} numberOfLines={1} adjustsFontSizeToFit>
-                {kk.dashboard.promoHalalHeadline}
-              </Text>
-              <Text style={styles.heroPromoSublineHalal} numberOfLines={1}>
-                {kk.dashboard.promoHalalSubline}
-              </Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.heroPromoCard,
-              cardShadow(isDark),
-              pressed && styles.cardPress,
-            ]}
-            onPress={goAi}
-            accessibilityRole="button"
-            accessibilityLabel={kk.dashboard.aiRowTitle}
-          >
-            <View style={[styles.heroPromoImageCol, { width: promoImageColW }]}>
-              <Image
-                source={menuIconAssets.promoAi}
-                style={[styles.heroPromoImage, { width: promoImageColW }, styles.heroPromoImageLight]}
-                resizeMode="cover"
-                accessibilityIgnoresInvertColors
-              />
-              <View style={styles.heroPromoImageOverlay} pointerEvents="none" />
-            </View>
-            <View style={[styles.heroPromoTextCol, styles.heroPromoTextColAi]}>
-              <Text style={styles.heroPromoHeadlineAi} numberOfLines={1} adjustsFontSizeToFit>
-                {kk.dashboard.promoAiHeadline}
-              </Text>
-              <Text style={styles.heroPromoSublineAi} numberOfLines={1}>
-                {kk.dashboard.promoAiSubline}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
-
-        <View style={styles.serviceGridWrap}>
-          {/** Үстіңгі қатар: Құран — Намаз — Дәстір */}
-          <View style={styles.serviceRow3}>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.heroQuran}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.dashboard.heroQuranTitle}
-                subLabel={kk.dashboard.quranCardSub}
-                onPress={goQuranList}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.08}
-                imageScale={1.18}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tileNamaz}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.namazGuide.shortTitle}
-                subLabel={kk.dashboard.namazCardSub}
-                onPress={() => navigation.navigate("MoreStack", { screen: "NamazGuide" })}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                tiltParallax={tabFocused}
-                hideTitles
-                mediaImageAspectRatio={1.06}
-                imageScale={1.28}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tileDinTradition}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.dashboard.traditionTileShort}
-                subLabel={kk.dashboard.traditionTileSub}
-                onPress={goTradition}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.1}
-                imageScale={1.04}
-              />
-            </View>
+            <DashboardNewsRotatorCard
+              colors={colors}
+              isDark={isDark}
+              onOpenItem={onNewsItemPress}
+              mockupCards
+            />
           </View>
-          {/** Ортаңғы қатар: Сира — Тәжуид — Қажылық */}
-          <View style={styles.serviceRow3}>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tileSeerah}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.dashboard.tileSeerah}
-                subLabel={kk.dashboard.seerahCardSub}
-                onPress={() => navigation.navigate("MoreStack", { screen: "Seerah" })}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.02}
-                imageScale={1.06}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tileTajweed}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.dashboard.arabicLettersTile}
-                subLabel={kk.dashboard.tajweedCardSub}
-                onPress={() => navigation.navigate("MoreStack", { screen: "TajweedGuide" })}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1}
-                imageScale={1.28}
-                imageTranslateY={7}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tileHajj}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.features.hajjTitle}
-                subLabel={kk.dashboard.hajjCardSub}
-                onPress={() => navigation.navigate("MoreStack", { screen: "Hajj" })}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.03}
-                imageScale={1.02}
-              />
-            </View>
-          </View>
-          {/** Ең төменгі қатар: Дұға — 99 есім — Тәспі */}
-          <View style={styles.serviceRow3}>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tabDuas}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.dashboard.duasShort}
-                subLabel={kk.dashboard.heroDuaSub}
-                onPress={goDuas}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.02}
-                imageScale={1.05}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tabAsma}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.tabs.asma}
-                subLabel={kk.tabs.asmaSub}
-                onPress={goAsma}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1.06}
-                imageScale={1.07}
-              />
-            </View>
-            <View style={styles.serviceCell3}>
-              <Tile
-                iconImage={menuIconAssets.tabTasbih}
-                iconColor={colors.accent}
-                colors={colors}
-                rasterBox={rasterBox}
-                label={kk.tabs.tasbih}
-                onPress={goTasbih}
-                styles={styles}
-                accentSoft={accentSoft}
-                imageEdgeToEdge
-                hideTitles
-                mediaImageAspectRatio={1}
-                imageResizeMode="contain"
-              />
-            </View>
-          </View>
-        </View>
-      </ScrollView>
-      <OnboardingModal
-        visible={showOnboarding}
-        onClose={() => setShowOnboarding(false)}
-      />
+        </ScreenFitScrollView>
+      </View>
+      {Platform.OS !== "web" ? (
+        <OnboardingModal
+          visible={showOnboarding}
+          onClose={() => setShowOnboarding(false)}
+        />
+      ) : null}
     </>
   );
 }
@@ -978,12 +923,13 @@ function Tile({
   accentSoft,
   imageEdgeToEdge,
   imageLighten,
-  imageScale,
+  imageDarken,
   imageTranslateY,
   imageResizeMode,
   mediaImageAspectRatio,
-  hideTitles,
   tiltParallax,
+  onLongPress,
+  longPressLabel,
 }: {
   emoji?: string;
   glyph?: React.ReactNode;
@@ -996,19 +942,19 @@ function Tile({
   /** Скриннот: кішіп субтитр */
   subLabel?: string;
   onPress: () => void;
+  onLongPress?: () => void;
+  longPressLabel?: string;
   styles: Record<string, object>;
   accentSoft: string;
   /** Суретті тайл қоршауына дейін үлкейту (қажылық / сира / тәжуид) */
   imageEdgeToEdge?: boolean;
-  /** Тор тайлдарында негізгі тақырып пен субтитрді көрсетпеу (доступтілік үшін label сақталады) */
-  hideTitles?: boolean;
   /** Беткі суретті ашығырақ ету үшін ақ қабат (0..1) */
   imageLighten?: number;
-  /** Тек imageEdgeToEdge: суретті масштабтау (әдепкі — толық толтыру; керек болса ғана беріңіз) */
-  imageScale?: number;
+  /** Сира / тәжуид / қажылық: сәл қараңғырату — қара қабат opacity (0..~0.32) */
+  imageDarken?: number;
   /** Тек imageEdgeToEdge: суретті тігінен жылжыту (px) */
   imageTranslateY?: number;
-  /** Тек imageEdgeToEdge: әдепкі cover; contain — кесілмей толық сурет (мысалы зікір тайлы) */
+  /** Тек imageEdgeToEdge: әдепкі cover — анық кесу; contain жазу қырқылмасын */
   imageResizeMode?: ImageResizeMode;
   /** Сурет қабатының ені/биіктігі (үлкенірек = қысқарақ биіктік). Әдепкі 1.07 */
   mediaImageAspectRatio?: number;
@@ -1025,16 +971,22 @@ function Tile({
         pressed && styles.tilePress,
       ]}
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
-      accessibilityLabel={subLabel && hideTitles ? `${label}. ${subLabel}` : label}
+      accessibilityLabel={subLabel ? `${label}. ${subLabel}` : label}
+      accessibilityHint={longPressLabel}
     >
       {iconImage && imageEdgeToEdge ? (
         <View style={styles.tileMediaColumn}>
           <View
             style={[
               styles.tileMediaImageWrap,
-              { aspectRatio: mediaImageAspectRatio ?? 1.07, backgroundColor: colors.card },
-              hideTitles ? { borderBottomLeftRadius: 12, borderBottomRightRadius: 12 } : null,
+              (imageResizeMode ?? "cover") === "contain" ? styles.tileMediaImageWrapContain : null,
+              {
+                aspectRatio: mediaImageAspectRatio ?? 1.07,
+                backgroundColor: colors.card,
+                padding: 0,
+              },
             ]}
           >
             {tiltParallax ? (
@@ -1044,25 +996,19 @@ function Tile({
                 resizeMode={imageResizeMode ?? "cover"}
                 imageStyle={[
                   styles.tileMediaImage,
-                  (() => {
-                    const t: { scale?: number; translateY?: number }[] = [];
-                    if (typeof imageScale === "number") t.push({ scale: imageScale });
-                    if (typeof imageTranslateY === "number") t.push({ translateY: imageTranslateY });
-                    return t.length ? { transform: t } : null;
-                  })(),
+                  typeof imageTranslateY === "number"
+                    ? { transform: [{ translateY: imageTranslateY }] }
+                    : null,
                 ]}
               />
             ) : (
-              <Image
+              <RasterImage
                 source={iconImage}
                 style={[
                   styles.tileMediaImage,
-                  (() => {
-                    const t: { scale?: number; translateY?: number }[] = [];
-                    if (typeof imageScale === "number") t.push({ scale: imageScale });
-                    if (typeof imageTranslateY === "number") t.push({ translateY: imageTranslateY });
-                    return t.length ? { transform: t } : null;
-                  })(),
+                  typeof imageTranslateY === "number"
+                    ? { transform: [{ translateY: imageTranslateY }] }
+                    : null,
                 ]}
                 resizeMode={imageResizeMode ?? "cover"}
                 accessibilityIgnoresInvertColors
@@ -1071,20 +1017,16 @@ function Tile({
             {typeof imageLighten === "number" && imageLighten > 0 ? (
               <View style={[styles.tileMediaLight, { opacity: Math.min(0.45, Math.max(0, imageLighten)) }]} />
             ) : null}
+            {typeof imageDarken === "number" && imageDarken > 0 ? (
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.tileMediaLight,
+                  { backgroundColor: "#000000", opacity: Math.min(0.32, Math.max(0.04, imageDarken)) },
+                ]}
+              />
+            ) : null}
           </View>
-          {hideTitles ? null : (
-            <>
-              <View style={styles.tileMediaSpacer} />
-              <Text style={[styles.quickLabel, styles.quickLabelMedia]} numberOfLines={1}>
-                {label}
-              </Text>
-              {subLabel ? (
-                <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={1}>
-                  {subLabel}
-                </Text>
-              ) : null}
-            </>
-          )}
         </View>
       ) : iconImage ? (
         <AppIconBadge
@@ -1092,7 +1034,7 @@ function Tile({
           colors={colors}
           tintBg={accentSoft}
           iconColor={iconColor}
-          imageOpacity={0.82}
+          imageOpacity={1}
           size="lg"
           boxPx={rasterBox}
           border={false}
@@ -1118,40 +1060,38 @@ function Tile({
           <Text style={styles.tileEmoji}>{emoji ?? ""}</Text>
         </View>
       )}
-      {!imageEdgeToEdge || !iconImage ? (
-        hideTitles ? null : (
-          <>
-            <Text style={styles.quickLabel} numberOfLines={1}>
-              {label}
-            </Text>
-            {subLabel ? (
-              <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={1}>
-                {subLabel}
-              </Text>
-            ) : null}
-          </>
-        )
-      ) : null}
     </Pressable>
   );
 }
 
-function makeStyles(colors: ThemeColors, isDark: boolean) {
-  const cardBorder = isDark ? "rgba(34, 197, 94, 0.16)" : colors.border;
-  const ornamentBorder = isDark ? "rgba(124,58,10,0.38)" : "rgba(124,58,10,0.28)";
-  const ornamentSurface = isDark ? "rgba(124,58,10,0.12)" : "rgba(124,58,10,0.06)";
+function makeStyles(colors: ThemeColors, isDark: boolean, scrollTopPad: number) {
+  const cardBorder = isDark ? "rgba(34, 197, 94, 0.32)" : colors.border;
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    scrollContent: {
+    fixedScreen: {
+      flex: 1,
+      minHeight: 0,
       paddingHorizontal: 12,
-      paddingTop: 8,
-      /** Төменгі шегініс — ScrollView contentContainerStyle ішінде insets.bottom қосылады */
-      paddingBottom: 0,
+      paddingTop: scrollTopPad,
     },
-    /** Намаз карточкасы: артқы сурет + glass (сурет: assets/dashboard/prayer_times_hero.png) */
-    prayerHeroPress: {
-      marginBottom: 10,
-      borderRadius: 22,
+    screenBody: {
+      flex: 1,
+      minHeight: 0,
+    },
+    launcherShellClosed: {
+      flexShrink: 0,
+      width: "100%",
+    },
+    launcherShellOpen: {
+      flex: 1,
+      minHeight: 0,
+      width: "100%",
+    },
+    /** Намаз hero: `prayer_times_hero_next.png` (мешіт аркасы) + glass үсті */
+    prayerHeroWrap: {
+      marginTop: 0,
+      marginBottom: 4,
+      borderRadius: 18,
       overflow: "hidden",
       ...Platform.select({
         ios: {
@@ -1164,21 +1104,53 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
         default: {},
       }),
     },
+    prayerHeroWrapLauncherOpen: {
+      marginBottom: 4,
+    },
     prayerHeroBg: {
       width: "100%",
-      minHeight: 212,
     },
     prayerHeroBgImage: {
-      borderRadius: 22,
+      borderRadius: 18,
     },
-    /** Халал + Рақат AI: бір қатарда екі промо карточка */
-    promoRow: {
-      flexDirection: "row",
+    launcherPrayerHeaderBg: {
+      width: "100%",
+      borderRadius: 12,
+      overflow: "hidden",
+    },
+    /** Халал + AI промо (Құрбан айт — төмендегі тордан кейін) */
+    promoStack: {
+      flexDirection: "column",
       alignItems: "stretch",
-      justifyContent: "space-between",
       gap: 8,
       marginTop: 6,
       marginBottom: 6,
+    },
+    promoUnifiedCard: {
+      flexDirection: "column",
+      alignItems: "stretch",
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: cardBorder,
+      overflow: "hidden",
+    },
+    promoUnifiedSplitRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      minHeight: 108,
+    },
+    promoUnifiedDivider: {
+      width: StyleSheet.hairlineWidth * 2,
+      minWidth: 1,
+      alignSelf: "stretch",
+      backgroundColor: cardBorder,
+    },
+    /** Жаңалық каруселі — намаз hero астында, қалған орынды алады */
+    newsSection: {
+      width: "100%",
+      marginTop: 2,
+      marginBottom: 4,
     },
     cardPress: {
       opacity: 0.92,
@@ -1200,34 +1172,18 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     cacheBannerTitle: {
       color: colors.accent,
-      fontSize: 15,
-      fontWeight: "800",
-      marginBottom: 6,
-    },
-    cacheBannerMeta: {
-      color: colors.muted,
-      fontSize: 12,
-      fontWeight: "600",
+      ...uiFontStyle("semibold"),
+      ...typography.base,
       marginBottom: 6,
     },
     cacheBannerErr: {
       color: colors.error,
-      fontSize: 13,
-      lineHeight: 19,
+      ...typography.sm,
       marginBottom: 8,
-    },
-    cacheFootnote: {
-      color: colors.muted,
-      fontSize: 11,
-      lineHeight: 16,
-      marginBottom: 6,
-      marginTop: -2,
-      paddingHorizontal: 2,
     },
     cacheBannerHint: {
       color: colors.muted,
-      fontSize: 12,
-      lineHeight: 17,
+      ...typography.xs,
       marginBottom: 6,
     },
     errBanner: {
@@ -1257,20 +1213,53 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     retryButtonLabel: {
       color: colors.accent,
-      fontSize: 15,
-      fontWeight: "800",
+      ...uiFontStyle("semibold"),
+      ...typography.base,
     },
     heroPromoCard: {
       flex: 1,
       minWidth: 0,
-      minHeight: 84,
-      flexDirection: "row",
+      minHeight: 92,
+      flexDirection: "column",
       alignItems: "stretch",
       backgroundColor: colors.card,
       borderRadius: 18,
       borderWidth: 1,
       borderColor: cardBorder,
       overflow: "hidden",
+    },
+    /** Халал промо: сурет солда, ХАЛАЛ ДАМУ оңда */
+    heroPromoHalalRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      flex: 1,
+      minHeight: 92,
+    },
+    heroPromoHalalImageCol: {
+      width: "42%",
+      maxWidth: 118,
+      minWidth: 78,
+      flexShrink: 0,
+      height: 92,
+      backgroundColor: "transparent",
+      overflow: "hidden",
+      justifyContent: "center",
+      alignItems: "center",
+      borderTopLeftRadius: 16,
+      borderBottomLeftRadius: 16,
+      position: "relative",
+    },
+    heroPromoHalalImg: {
+      width: "100%",
+      height: "100%",
+    },
+    heroPromoHalalTextCol: {
+      flex: 1,
+      minWidth: 0,
+      justifyContent: "center",
+      paddingVertical: 8,
+      paddingLeft: 4,
+      paddingRight: 10,
     },
     /** Сол бағана: сурет толық көрінсін (вебте absoluteFill биіктігі 0 болмауы үшін height бекітілген) */
     heroPromoImageCol: {
@@ -1288,14 +1277,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     heroPromoImage: {
       height: 84,
     },
-    heroPromoImageLight: {
-      opacity: 0.9,
-    },
-    heroPromoImageOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "#FFFFFF",
-      opacity: 0.12,
-    },
     heroPromoTextCol: {
       flex: 1,
       minWidth: 0,
@@ -1303,11 +1284,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       paddingVertical: 6,
       paddingLeft: 8,
       paddingRight: 10,
-    },
-    /** AI промо: мәтінді робот суретіне сәл жақындату */
-    heroPromoTextColAi: {
-      paddingLeft: 3,
-      paddingRight: 8,
     },
     heroPromoHeadlineHalal: {
       color: colors.text,
@@ -1322,7 +1298,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
           textShadowRadius: 1.2,
         },
         android: {
-          fontFamily: "sans-serif-black",
+          fontFamily: BRAND_FONT_FACE.extrabold,
         },
         default: {},
       }),
@@ -1336,23 +1312,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       letterSpacing: 0.25,
       lineHeight: 17,
     },
-    heroPromoHeadlineAi: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: "900",
-      letterSpacing: 0.35,
-      lineHeight: 17,
-    },
-    heroPromoSublineAi: {
-      marginTop: 2,
-      color: colors.text,
-      opacity: 0.84,
-      fontSize: 14,
-      fontWeight: "800",
-      letterSpacing: 0.25,
-      lineHeight: 17,
-    },
-    err: { color: colors.error, marginBottom: 6, fontSize: 14, lineHeight: 20 },
+    err: { color: colors.error, marginBottom: 6, ...typography.sm },
     serviceGridWrap: {
       width: "100%",
       gap: 8,
@@ -1360,7 +1320,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       padding: 8,
       borderRadius: 20,
       borderWidth: 1,
-      borderColor: ornamentBorder,
+      borderColor: colors.border,
       backgroundColor: colors.accentSurface,
     },
     /** 3 тайл бір қатарда (үсті: құран, намаз, дәстүр; астында: сира, тәжуид, қажылық) */
@@ -1378,14 +1338,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       width: "100%",
       minWidth: 0,
     },
-    tileSub: {
-      fontSize: 9,
-      lineHeight: 11,
-      fontWeight: "600",
-      textAlign: "center",
-      marginTop: 0,
-      paddingHorizontal: 2,
-    },
     menuGrid: {
       flexDirection: "row",
       flexWrap: "nowrap",
@@ -1400,7 +1352,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       paddingVertical: 4,
       paddingHorizontal: 4,
       borderWidth: 1,
-      borderColor: ornamentBorder,
+      borderColor: colors.border,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
@@ -1443,6 +1395,17 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       overflow: "hidden",
       borderTopLeftRadius: 12,
       borderTopRightRadius: 12,
+      borderBottomLeftRadius: 12,
+      borderBottomRightRadius: 12,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.card,
+    },
+    tileMediaImageWrapContain: {
+      paddingHorizontal: 2,
+      paddingVertical: 2,
     },
     tileMediaLight: {
       ...StyleSheet.absoluteFillObject,
@@ -1461,21 +1424,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       marginBottom: 2,
     },
     tileEmoji: { fontSize: 13 },
-    quickLabel: {
-      color: colors.text,
-      fontSize: 12,
-      lineHeight: 15,
-      fontWeight: "900",
-      textAlign: "center",
-      letterSpacing: 0.08,
-      marginTop: 2,
-    },
-    quickLabelMedia: {
-      marginTop: 0,
-      paddingTop: 1,
-      paddingBottom: 0,
-      paddingHorizontal: 2,
-    },
-    hint: { color: colors.muted, fontSize: 12, marginTop: 16, lineHeight: 18 },
+    hint: { color: colors.muted, ...typography.xs, marginTop: 16 },
   });
 }

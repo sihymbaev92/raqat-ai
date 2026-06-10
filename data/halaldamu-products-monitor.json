@@ -1,0 +1,53 @@
+{
+  "checked_at": "2026-06-08T09:23:54.439249+00:00",
+  "origin": "https://halaldamu.kz",
+  "proxy_base": "https://api.rahatomir.com/api/v1/halal-damu",
+  "search_term": "сүт",
+  "products_api_has_data": false,
+  "companies": {
+    "url": "https://halaldamu.kz/wp-json/halal-bot/v1/companies?per_page=1&page=1",
+    "http_status": 200,
+    "success": true,
+    "items_len": 3775,
+    "total": 3775,
+    "error": null,
+    "elapsed_ms": 17178
+  },
+  "products_list": {
+    "url": "https://halaldamu.kz/wp-json/halal-bot/v1/products?per_page=5&page=1",
+    "http_status": 200,
+    "success": true,
+    "items_len": 0,
+    "total": 0,
+    "error": null,
+    "elapsed_ms": 2774
+  },
+  "products_search": {
+    "url": "https://halaldamu.kz/wp-json/halal-bot/v1/products?search=%D1%81%D2%AF%D1%82&per_page=5&page=1",
+    "http_status": 200,
+    "success": true,
+    "items_len": 0,
+    "total": 0,
+    "error": null,
+    "elapsed_ms": 2945
+  },
+  "products_search_proxy": {
+    "url": "https://api.rahatomir.com/api/v1/halal-damu/halal-bot/v1/products?search=%D1%81%D2%AF%D1%82&per_page=5&page=1",
+    "http_status": 200,
+    "success": true,
+    "items_len": 0,
+    "total": 0,
+    "error": null,
+    "elapsed_ms": 3238
+  },
+  "additives_sample": {
+    "url": "https://halaldamu.kz/wp-json/halal-bot/v1/additives?search=e471&per_page=3",
+    "http_status": 200,
+    "success": true,
+    "items_len": 0,
+    "total": 0,
+    "error": null,
+    "elapsed_ms": 624
+  },
+  "recommendation_kk": "Өнімдер API әлі бос — тек ұйымдар + additives + AI тексеру; halaldamu.kz-ға хат жіберу."
+}

@@ -3,6 +3,7 @@ apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
+def generatedPrayerAzanResDir = file("$buildDir/generated/res/prayerAzan")
 
 // Play Store release: `android/keystore.properties` + JKS (қоса gitке кірмейді; мысал: keystore.properties.example).
 def keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -29,6 +30,10 @@ react {
     // works correctly with Expo projects.
     cliFile = new File(["node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })"].execute(null, rootDir).text.trim())
     bundleCommand = "export:embed"
+
+    // Әдепкіде `debug` variant үшін JS bundle generate етілмейді (Metro күтеді).
+    // Орнатылған debug APK-да соңғы код кірсін: бос тізім = еш variant bundle-сіз қалмайды.
+    debuggableVariants = []
 
     /* Folders */
      //   The root of your project, i.e. where "package.json" lives. Default is '../..'
@@ -102,13 +107,14 @@ android {
         applicationId 'kz.raqat.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.0.4"
+        // app.config.js android.versionCode + expo.version (синхрон ұстаңыз)
+        versionCode 9
+        versionName "1.0.9"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
         ndk {
-            abiFilters "armeabi-v7a", "arm64-v8a"
+            abiFilters "arm64-v8a"
         }
     }
     signingConfigs {
@@ -151,6 +157,9 @@ android {
     androidResources {
         ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
     }
+    sourceSets {
+        main.res.srcDirs += generatedPrayerAzanResDir
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -158,6 +167,27 @@ android {
     testOptions {
         animationsDisabled true
     }
+}
+
+tasks.register("copyPrayerAzanRawResources", Copy) {
+    doFirst {
+        def expected = (1..5).collect { String.format("prayer_azan_user_%02d.mp3", it) }
+        def missing = expected.findAll { !file("$projectRoot/assets/sounds/$it").isFile() }
+        if (!missing.isEmpty()) {
+            throw new GradleException(
+                "Missing prayer azan sound assets: ${missing.join(', ')}. " +
+                "Restore mobile/assets/sounds/prayer_azan_user_01.mp3..05.mp3 before release builds."
+            )
+        }
+    }
+    from("$projectRoot/assets/sounds") {
+        include "prayer_azan_user_*.mp3"
+    }
+    into("$generatedPrayerAzanResDir/raw")
+}
+
+tasks.named("preBuild").configure {
+    dependsOn("copyPrayerAzanRawResources")
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`

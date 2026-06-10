@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import sqlite3
 import sys
@@ -49,6 +50,7 @@ BOOKS: list[tuple[str, str, int | None]] = [
 TARGETS: dict[str, tuple[str, str]] = {
     "en": ("text_en", "eng"),
     "ru": ("text_ru", "rus"),
+    "tr": ("text_tr", "tur"),
 }
 
 
@@ -73,7 +75,14 @@ def fetch_text(edition: str, hadith_no: int) -> tuple[str | None, str]:
                 if not isinstance(t, str) or not t.strip():
                     return None, "empty_api"
                 return clean_text_content(t), "ok"
-            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError):
+            except (
+                urllib.error.HTTPError,
+                urllib.error.URLError,
+                TimeoutError,
+                OSError,
+                json.JSONDecodeError,
+                http.client.HTTPException,
+            ):
                 time.sleep(0.5 * (attempt + 1))
                 last_err = "fetch_error"
     return None, last_err
@@ -161,9 +170,9 @@ def main() -> int:
     ap.add_argument("--db", default=str(ROOT / "global_clean.db"))
     ap.add_argument(
         "--target",
-        choices=("en", "ru", "all"),
+        choices=("en", "ru", "tr", "all"),
         default="en",
-        help="en=text_en (Sahih International style), ru=Russian, all=both",
+        help="en=text_en (Sahih International), ru=Russian, tr=Turkish, all=en+ru+tr",
     )
     ap.add_argument("--force-all", action="store_true")
     ap.add_argument("--workers", type=int, default=5)
@@ -178,7 +187,7 @@ def main() -> int:
 
     targets: list[tuple[str, str]] = []
     if args.target == "all":
-        targets = [TARGETS["en"], TARGETS["ru"]]
+        targets = [TARGETS["en"], TARGETS["ru"], TARGETS["tr"]]
     else:
         targets = [TARGETS[args.target]]
 

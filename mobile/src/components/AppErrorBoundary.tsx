@@ -1,8 +1,41 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
+import { kk } from "../i18n/kk";
+import { reportClientError } from "../services/clientErrorReporter";
 
 type Props = { children: ReactNode };
 type State = { err: Error | null };
+
+const WEB_ERROR_RELOAD_KEY = "raqat_web_error_reload_once_v2";
+
+function isLikelyStaleWebBundleError(e: Error): boolean {
+  const text = `${e.name}: ${e.message}`;
+  return (
+    text.includes("ChunkLoadError") ||
+    text.includes("Loading chunk") ||
+    text.includes("Failed to fetch dynamically imported module") ||
+    text.includes("Importing a module script failed") ||
+    text.includes("Requiring unknown module") ||
+    text.includes("quranSurahListColors") ||
+    text.includes("scriptureArabicTextStyle") ||
+    text.includes("toEasternArabicIndic") ||
+    text.includes("mushafPageForSurahAyah") ||
+    text.includes("is not a function")
+  );
+}
+
+function reloadWebOnceForStaleBundle(e: Error): void {
+  if (Platform.OS !== "web" || typeof window === "undefined" || !isLikelyStaleWebBundleError(e)) return;
+  try {
+    if (window.sessionStorage?.getItem(WEB_ERROR_RELOAD_KEY) === "1") return;
+    window.sessionStorage?.setItem(WEB_ERROR_RELOAD_KEY, "1");
+  } catch {
+    /* sessionStorage may be disabled. */
+  }
+  const path = window.location.pathname || "/";
+  const sep = path.includes("?") ? "&" : "?";
+  window.location.replace(`${path}${sep}rv=${Date.now()}`);
+}
 
 /**
  * Суық іске қосуда рендер қатесін (ақ экран) ұстап, қайта кіру сынағы.
@@ -16,15 +49,17 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(e: Error, info: ErrorInfo): void {
     console.error("AppErrorBoundary", e, info.componentStack);
+    void reportClientError({ kind: "render", error: e, componentStack: info.componentStack });
+    reloadWebOnceForStaleBundle(e);
   }
 
   render(): ReactNode {
     if (this.state.err) {
       return (
         <View style={styles.root}>
-          <Text style={styles.title}>Қолданба қатесі</Text>
+          <Text style={styles.title}>{kk.common.appErrorTitle}</Text>
           <Text style={styles.hint}>
-            «Қайта» — қайта сынау. Себепті көшіру: лог / экран.
+            {kk.common.appErrorHint}
           </Text>
           <ScrollView style={styles.pre}>
             <Text style={styles.msg} selectable>
@@ -35,9 +70,9 @@ export class AppErrorBoundary extends Component<Props, State> {
             style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
             onPress={() => this.setState({ err: null })}
             accessibilityRole="button"
-            accessibilityLabel="Қайта"
+            accessibilityLabel={kk.common.retry}
           >
-            <Text style={styles.btnTxt}>Қайта</Text>
+            <Text style={styles.btnTxt}>{kk.common.retry}</Text>
           </Pressable>
         </View>
       );

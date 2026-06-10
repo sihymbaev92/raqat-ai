@@ -64,3 +64,38 @@ export function buildHadithLetterSections(rows: SahihHadithEntry[]): HadithLette
     data: sortHadithRowsByReference(map.get(title) ?? []),
   }));
 }
+
+/** Кітап тарауы — экспортта «Chapter: …» префиксі. */
+export function formatHadithChapterTitle(chapterKk: string | undefined): string {
+  const raw = (chapterKk ?? "").trim();
+  if (!raw) return "";
+  return raw.replace(/^Chapter:\s*/i, "").trim() || raw;
+}
+
+/**
+ * Кітап реті: алдымен хадис № бойынша, содан тарау бойынша топтау (тарау кітап ішіндегі реті).
+ */
+export function buildHadithBookOrderSections(rows: SahihHadithEntry[]): HadithLetterSection[] {
+  if (!rows.length) return [];
+  const sorted = sortHadithRowsByReference(rows);
+  const sections: HadithLetterSection[] = [];
+  let currentTitle = "";
+  let bucket: SahihHadithEntry[] = [];
+
+  const flush = () => {
+    if (!bucket.length) return;
+    sections.push({ title: currentTitle, data: bucket });
+    bucket = [];
+  };
+
+  for (const h of sorted) {
+    const title = formatHadithChapterTitle(h.chapterKk) || "—";
+    if (title !== currentTitle) {
+      flush();
+      currentTitle = title;
+    }
+    bucket.push(h);
+  }
+  flush();
+  return sections;
+}

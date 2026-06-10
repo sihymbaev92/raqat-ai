@@ -1,8 +1,11 @@
 import React, { useMemo, useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Linking } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import { ECOSYSTEM_VERSION, ECOSYSTEM_STAGE, getInstitutionCatalog } from "../ecosystem";
 import type { InstitutionSource } from "../ecosystem/types";
 import { persistCatalogLineage } from "../storage/provenanceRegistry";
@@ -25,6 +28,7 @@ function institutionTypeLabel(t: InstitutionSource["type"]): string {
 export function EcosystemScreen() {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
+  const { tr, translated } = useKkAutoTranslator();
   const catalog = useMemo(() => getInstitutionCatalog(), []);
 
   useEffect(() => {
@@ -33,28 +37,28 @@ export function EcosystemScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.h1}>{kk.ecosystem.title}</Text>
-      <Text style={styles.mission}>{kk.ecosystem.mission}</Text>
+      <Text style={styles.h1}>{tr(kk.ecosystem.title)}</Text>
+      <Text style={styles.mission}>{tr(kk.ecosystem.mission)}</Text>
 
-      <Text style={[styles.label, styles.labelSpaced]}>{kk.ecosystem.howTitle}</Text>
-      <Text style={styles.howIntro}>{kk.ecosystem.howIntro}</Text>
+      <Text style={[styles.label, styles.labelSpaced]}>{tr(kk.ecosystem.howTitle)}</Text>
+      <Text style={styles.howIntro}>{tr(kk.ecosystem.howIntro)}</Text>
       {kk.ecosystem.howSteps.map((line, i) => (
         <Text key={i} style={styles.howStep}>
-          {i + 1}. {line}
+          {i + 1}. {tr(line)}
         </Text>
       ))}
 
-      <Text style={[styles.label, styles.labelSpaced]}>{kk.ecosystem.catalogTitle}</Text>
-      <Text style={styles.catalogHint}>{kk.ecosystem.catalogHint}</Text>
-      <Text style={styles.localStore}>{kk.ecosystem.localStoreNote}</Text>
+      <Text style={[styles.label, styles.labelSpaced]}>{tr(kk.ecosystem.catalogTitle)}</Text>
+      <Text style={styles.catalogHint}>{tr(kk.ecosystem.catalogHint)}</Text>
+      <Text style={styles.localStore}>{tr(kk.ecosystem.localStoreNote)}</Text>
       {catalog.map((item) => (
         <View key={item.id} style={styles.catalogCard}>
           <View style={styles.catalogTop}>
             <Text style={styles.catalogName}>{item.name}</Text>
             <Text style={styles.typeBadge}>{institutionTypeLabel(item.type)}</Text>
           </View>
-          {item.country ? <Text style={styles.catalogMeta}>{item.country}</Text> : null}
-          {item.descriptionKk ? <Text style={styles.catalogDesc}>{item.descriptionKk}</Text> : null}
+          {item.country ? <Text style={styles.catalogMeta}>{tr(item.country)}</Text> : null}
+          {item.descriptionKk ? <Text style={styles.catalogDesc}>{tr(item.descriptionKk)}</Text> : null}
           {item.websiteUrl ? (
             <Pressable onPress={() => Linking.openURL(item.websiteUrl!)}>
               <Text style={styles.link}>{item.websiteUrl}</Text>
@@ -62,23 +66,23 @@ export function EcosystemScreen() {
           ) : null}
 
           <View style={styles.provBox}>
-            <Text style={styles.provTitle}>{kk.ecosystem.provenanceTitle}</Text>
+            <Text style={styles.provTitle}>{tr(kk.ecosystem.provenanceTitle)}</Text>
             <Text style={styles.provText}>
-              {kk.ecosystem.originLabel} {item.provenance.origin}
+              {tr(kk.ecosystem.originLabel)} {item.provenance.origin}
             </Text>
             <Text style={styles.provText}>
-              {kk.ecosystem.recordedAtLabel}{" "}
+              {tr(kk.ecosystem.recordedAtLabel)}{" "}
               {item.provenance.recordedAt.includes("T")
                 ? item.provenance.recordedAt.split("T")[0]
                 : item.provenance.recordedAt}
             </Text>
             {item.provenance.licenseHint ? (
               <Text style={styles.provText}>
-                {kk.ecosystem.licenseLabel} {item.provenance.licenseHint}
+                {tr(kk.ecosystem.licenseLabel)} {item.provenance.licenseHint}
               </Text>
             ) : null}
             <Text style={styles.provEvidence}>
-              {kk.ecosystem.evidenceLabel} {item.provenance.evidenceKk}
+              {tr(kk.ecosystem.evidenceLabel)} {tr(item.provenance.evidenceKk)}
             </Text>
             {item.provenance.evidenceUrl ? (
               <Pressable onPress={() => Linking.openURL(item.provenance.evidenceUrl!)}>
@@ -89,24 +93,25 @@ export function EcosystemScreen() {
         </View>
       ))}
 
-      <Text style={[styles.label, styles.labelSpaced]}>{kk.ecosystem.pillarsTitle}</Text>
+      <Text style={[styles.label, styles.labelSpaced]}>{tr(kk.ecosystem.pillarsTitle)}</Text>
       <View style={styles.pillar}>
-        <Text style={styles.pillarTitle}>{kk.ecosystem.pillar1Title}</Text>
-        <Text style={styles.pillarBody}>{kk.ecosystem.pillar1Body}</Text>
+        <Text style={styles.pillarTitle}>{tr(kk.ecosystem.pillar1Title)}</Text>
+        <Text style={styles.pillarBody}>{tr(kk.ecosystem.pillar1Body)}</Text>
       </View>
       <View style={styles.pillar}>
-        <Text style={styles.pillarTitle}>{kk.ecosystem.pillar2Title}</Text>
-        <Text style={styles.pillarBody}>{kk.ecosystem.pillar2Body}</Text>
+        <Text style={styles.pillarTitle}>{tr(kk.ecosystem.pillar2Title)}</Text>
+        <Text style={styles.pillarBody}>{tr(kk.ecosystem.pillar2Body)}</Text>
       </View>
       <View style={styles.pillar}>
-        <Text style={styles.pillarTitle}>{kk.ecosystem.pillar3Title}</Text>
-        <Text style={styles.pillarBody}>{kk.ecosystem.pillar3Body}</Text>
+        <Text style={styles.pillarTitle}>{tr(kk.ecosystem.pillar3Title)}</Text>
+        <Text style={styles.pillarBody}>{tr(kk.ecosystem.pillar3Body)}</Text>
       </View>
 
-      <Text style={styles.roadmap}>{kk.ecosystem.roadmap}</Text>
+      <Text style={styles.roadmap}>{tr(kk.ecosystem.roadmap)}</Text>
       <Text style={styles.footer}>
         {kk.ecosystem.versionLine(ECOSYSTEM_VERSION, ECOSYSTEM_STAGE)}
       </Text>
+      <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </ScrollView>
   );
 }

@@ -121,7 +121,7 @@ flowchart LR
 ## Репозиторийдегі орын
 
 - Осы жол: `docs/PLATFORM_ROADMAP_API_AI_USERS.md`
-- Ағымдағы платформа сипаттамасы: `docs/RAQAT_PLATFORM.md`, `docs/PLATFORM_GPT_HANDOFF.md`
+- Ағымдағы платформа сипаттамасы: `docs/RAQAT_PLATFORM.md`, `docs/README.md`, `docs/handoff/gpt-sre-summary.md`
 - API коды: `platform_api/` — келесі endpointтер осы жерге қосылады
 
 ---

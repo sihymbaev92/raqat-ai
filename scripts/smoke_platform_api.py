@@ -12,6 +12,12 @@ Legacy (`main.py`) және `app.main` (`success`/`data` орамы) екі жа
 Bootstrap логин + /users/me (құпияны env арқылы беру ұсынылады):
   RAQAT_SMOKE_AUTH_PASSWORD='...' .venv/bin/python scripts/smoke_platform_api.py --api-base http://127.0.0.1:8787 --auth-login
   (опция: RAQAT_SMOKE_AUTH_USERNAME, әдепкі admin)
+
+Hatim sync roundtrip (логин + GET/PUT/GET /me/hatim):
+  RAQAT_SMOKE_AUTH_PASSWORD='...' .venv/bin/python scripts/smoke_platform_api.py --api-base https://api.rahatomir.com --auth-login --hatim
+
+Quran last-read roundtrip (#104 / SIM-03 API gate):
+  RAQAT_SMOKE_AUTH_PASSWORD='...' .venv/bin/python scripts/smoke_platform_api.py --api-base https://api.rahatomir.com --auth-login --quran-last-read
 """
 from __future__ import annotations
 
@@ -81,6 +87,18 @@ def _http_post_json(
     return _http(url, headers=h, method="POST", data=data, timeout=timeout)
 
 
+def _http_put_json(
+    url: str,
+    *,
+    headers: dict[str, str],
+    payload: dict[str, Any],
+    timeout: float = 15.0,
+) -> tuple[int, dict[str, Any]]:
+    data = json.dumps(payload).encode("utf-8")
+    h = {**headers, "Content-Type": "application/json"}
+    return _http(url, headers=h, method="PUT", data=data, timeout=timeout)
+
+
 def _extract_access_token(body: dict[str, Any]) -> str | None:
     """Legacy auth (`ok` + токендер түбінде) немесе `app.main` (`success` + `data`)."""
     if body.get("ok") is True and isinstance(body.get("access_token"), str):
@@ -107,9 +125,25 @@ def main() -> int:
     p.add_argument("--metadata", action="store_true", help="GET /api/v1/metadata/changes")
     p.add_argument("--if-none-match", default="", dest="if_none_match", help="metadata If-None-Match")
     p.add_argument(
+        "--skip-surahs",
+        action="store_true",
+        help="Skip /api/v1/quran/surahs count gate (prod PG quran table may be empty; mobile uses bundle)",
+    )
+    p.add_argument(
         "--auth-login",
         action="store_true",
         help="POST /api/v1/auth/login + GET /api/v1/users/me (RAQAT_SMOKE_AUTH_PASSWORD немесе --auth-password)",
+    )
+    p.add_argument(
+        "--hatim",
+        action="store_true",
+        help="--auth-login кейін GET/PUT/GET /api/v1/me/hatim roundtrip (логин міндетті)",
+    )
+    p.add_argument(
+        "--quran-last-read",
+        action="store_true",
+        dest="quran_last_read",
+        help="--auth-login кейін GET/PUT/GET /api/v1/me/quran-last-read roundtrip",
     )
     p.add_argument("--auth-username", default="", help="Әдепкі: RAQAT_SMOKE_AUTH_USERNAME немесе admin")
     p.add_argument(
@@ -122,6 +156,8 @@ def main() -> int:
     base = args.api_base.rstrip("/")
     headers: dict[str, str] = {}
     sec = args.content_secret.strip()
+    if not sec:
+        sec = (os.getenv("RAQAT_CONTENT_READ_SECRET") or os.getenv("RAQAT_CONTENT_SECRET") or "").strip()
     if sec:
         headers["X-Raqat-Content-Secret"] = sec
 
@@ -144,7 +180,7 @@ def main() -> int:
     surahs = d.get("surahs")
     ok_surahs = st == 200 and isinstance(surahs, list) and len(surahs) > 0
     out["checks"]["/api/v1/quran/surahs"] = {"status": st, "ok": ok_surahs, "count": len(surahs) if isinstance(surahs, list) else 0}
-    if not ok_surahs:
+    if not ok_surahs and not args.skip_surahs:
         if st in (401, 403) and not sec:
             out["checks"]["/api/v1/quran/surahs"]["hint"] = "try --content-secret if API enforces X-Raqat-Content-Secret"
         print(json.dumps(out, ensure_ascii=False, indent=2))
@@ -198,6 +234,69 @@ def main() -> int:
         if not ok_me:
             print(json.dumps(out, ensure_ascii=False, indent=2))
             return 8
+
+        if args.hatim:
+            st_h, b_h = _http(f"{base}/api/v1/me/hatim", headers=auth_h)
+            ok_get = st_h == 200 and b_h.get("ok") is True and isinstance(b_h.get("read_surahs"), list)
+            out["checks"]["GET /api/v1/me/hatim"] = {"status": st_h, "ok": ok_get}
+            if not ok_get:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 9
+            st_p, b_p = _http_put_json(
+                f"{base}/api/v1/me/hatim",
+                headers=auth_h,
+                payload={"read_surahs": [1, 2, 114]},
+            )
+            ok_put = st_p == 200 and b_p.get("ok") is True and b_p.get("read_surahs") == [1, 2, 114]
+            out["checks"]["PUT /api/v1/me/hatim"] = {"status": st_p, "ok": ok_put}
+            if not ok_put:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 10
+            st_h2, b_h2 = _http(f"{base}/api/v1/me/hatim", headers=auth_h)
+            ok_get2 = st_h2 == 200 and b_h2.get("read_surahs") == [1, 2, 114]
+            out["checks"]["GET /api/v1/me/hatim (verify)"] = {"status": st_h2, "ok": ok_get2}
+            if not ok_get2:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 11
+
+        if args.quran_last_read:
+            st_g, b_g = _http(f"{base}/api/v1/me/quran-last-read", headers=auth_h)
+            ok_get_lr = st_g == 200 and b_g.get("ok") is True
+            out["checks"]["GET /api/v1/me/quran-last-read"] = {"status": st_g, "ok": ok_get_lr}
+            if not ok_get_lr:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 12
+            payload = {
+                "global": {"surah": 2, "ayah": 255, "ts": "2026-05-25T12:00:00.000Z"},
+                "by_surah": {"2": 255},
+            }
+            st_p, b_p = _http_put_json(
+                f"{base}/api/v1/me/quran-last-read",
+                headers=auth_h,
+                payload=payload,
+            )
+            g = b_p.get("global") if isinstance(b_p.get("global"), dict) else {}
+            ok_put_lr = (
+                st_p == 200
+                and b_p.get("ok") is True
+                and int(g.get("surah", 0)) == 2
+                and int(g.get("ayah", 0)) == 255
+            )
+            out["checks"]["PUT /api/v1/me/quran-last-read"] = {"status": st_p, "ok": ok_put_lr}
+            if not ok_put_lr:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 13
+            st_v, b_v = _http(f"{base}/api/v1/me/quran-last-read", headers=auth_h)
+            gv = b_v.get("global") if isinstance(b_v.get("global"), dict) else {}
+            ok_verify_lr = (
+                st_v == 200
+                and int(gv.get("surah", 0)) == 2
+                and int(gv.get("ayah", 0)) == 255
+            )
+            out["checks"]["GET /api/v1/me/quran-last-read (verify)"] = {"status": st_v, "ok": ok_verify_lr}
+            if not ok_verify_lr:
+                print(json.dumps(out, ensure_ascii=False, indent=2))
+                return 14
 
     print(json.dumps(out, ensure_ascii=False, indent=2))
     print("--- smoke_platform_api: OK ---")

@@ -5,7 +5,9 @@ from handlers.feedback import feedback_handler, feedback_text_router, is_feedbac
 from handlers.language import language_text_router
 from handlers.onboarding import guide_text_router, is_guide_request_text
 from handlers.translation import translation_text_router
-from handlers.hadith import hadith_show, hadith_search_router
+from handlers.hadith import hadith_search_router
+from handlers.link_code import link_code_message_handler
+from services.platform_link_code_service import is_platform_link_code_text
 from services.voice_service import is_language_switch_command
 from state.memory import USER_STATE
 from services.language_service import menu_text_matches
@@ -24,7 +26,7 @@ def _menu_action(action: str):
 
 
 def register_common_message_handlers(dp: Dispatcher) -> None:
-    dp.message.register(hadith_show, _menu_action("hadith"))
+    dp.message.register(link_code_message_handler, F.text.func(is_platform_link_code_text))
     dp.message.register(feedback_handler, _menu_action("feedback"))
     dp.message.register(guide_text_router, F.text.func(is_guide_request_text))
     dp.message.register(language_text_router, _state_is("language_select"))

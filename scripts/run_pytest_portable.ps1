@@ -10,9 +10,10 @@ $Py = Join-Path $Root "platform_api\.venv\Scripts\python.exe"
 if (-not (Test-Path $Py)) {
     Write-Error "Missing platform_api\.venv - run scripts\setup_venv_platform_api.ps1 first."
 }
-$env:PYTHONPATH = "platform_api"
+$env:PYTHONPATH = "$Root;$Root\platform_api"
 $tests = @(
     "tests/test_auth_link.py",
+    "tests/test_platform_api.py",
     "tests/test_content_and_bot_sync_api.py",
     "tests/test_dialect_sql.py",
     "tests/test_get_db.py",
@@ -24,7 +25,12 @@ $tests = @(
     "tests/test_quran_translit.py",
     "tests/test_text_cleanup.py",
     "tests/test_voice_service.py",
-    "tests/test_pg_migrate_integration.py"
+    "tests/test_pg_migrate_integration.py",
+    "tests/test_islamic_kb.py",
+    "tests/test_islamic_kb_browse.py",
+    "tests/test_islamic_kb_home_feed.py",
+    "tests/test_ai_reply_guards.py",
+    "tests/test_halal_damu_proxy.py"
 ) | ForEach-Object { Join-Path $Root $_ }
 Set-Location $Root
 # Startup smoke: DB схема үйлесімділігі (міндетті бағандар + info warnings)

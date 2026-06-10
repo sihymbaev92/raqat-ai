@@ -10,8 +10,20 @@ Docker: `docker compose --profile workers up` (`infra/docker/docker-compose.yml`
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 
 from celery import Celery
+
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv(_ROOT / ".env")
+except ImportError:
+    pass
 
 
 def _int_env(name: str, default: int) -> int:

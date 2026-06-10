@@ -1,6 +1,6 @@
 /**
- * Транскрипция негізінен `assets/bundled/quran-kk-from-db.json` (asyldin) арқылы толықтырылады.
- * Қосымша оверрайд қажет болмаса бос қалдыруға болады.
+ * Көрсетілетін қазақ транскрипциясы — бандлдағы кітаптық кирил (resolveQuranTranslitForDisplay).
+ * Мұнда тек нақты түзетулер; басмала бандлда «бисмилләһир рахманир рахиим».
  */
 type AyahMap = Record<number, string>;
 type SurahMap = Record<number, AyahMap>;

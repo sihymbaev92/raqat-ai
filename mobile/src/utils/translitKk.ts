@@ -41,7 +41,7 @@ const ARABIC_TO_KK_CYR_MAP: Record<string, string> = {
 
 const LETTER_RE = /[A-Za-zА-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ]/;
 const BAD_CHAR_RE = /[0-9_*=@#~|\\]/;
-const ALLOWED_CHARS_RE = /^[A-Za-zА-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ'’`\-.,():;!?/ ]+$/;
+const ALLOWED_CHARS_RE = /^[A-Za-zА-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ'’`\-.,():;!?/ ·]+$/;
 
 export function arabicToKkCyrillicFallback(ar: string): string {
   const clean = ar
@@ -75,24 +75,54 @@ export function normalizeTranslitText(raw?: string): string {
     const repl: Array<[RegExp, string]> = [
       [/a/g, "а"],
       [/A/g, "А"],
+      [/b/g, "б"],
+      [/B/g, "Б"],
       [/c/g, "с"],
       [/C/g, "С"],
+      [/d/g, "д"],
+      [/D/g, "Д"],
       [/e/g, "е"],
       [/E/g, "Е"],
+      [/f/g, "ф"],
+      [/F/g, "Ф"],
+      [/g/g, "г"],
+      [/G/g, "Г"],
+      [/i/g, "і"],
+      [/I/g, "І"],
+      [/j/g, "ж"],
+      [/J/g, "Ж"],
+      [/k/g, "к"],
+      [/K/g, "К"],
+      [/l/g, "л"],
+      [/L/g, "Л"],
+      [/m/g, "м"],
+      [/M/g, "М"],
+      [/n/g, "н"],
+      [/N/g, "Н"],
       [/o/g, "о"],
       [/O/g, "О"],
       [/p/g, "р"],
       [/P/g, "Р"],
+      [/q/g, "қ"],
+      [/Q/g, "Қ"],
+      [/r/g, "р"],
+      [/R/g, "Р"],
+      [/s/g, "с"],
+      [/S/g, "С"],
+      [/t/g, "т"],
+      [/T/g, "Т"],
+      [/u/g, "у"],
+      [/U/g, "У"],
+      [/v/g, "в"],
+      [/V/g, "В"],
+      [/w/g, "у"],
+      [/W/g, "У"],
       [/x/g, "х"],
       [/X/g, "Х"],
       [/y/g, "у"],
       [/Y/g, "У"],
-      [/k/g, "к"],
-      [/K/g, "К"],
-      [/m/g, "м"],
-      [/M/g, "М"],
-      [/t/g, "т"],
-      [/T/g, "Т"],
+      [/z/g, "з"],
+      [/Z/g, "З"],
       [/h/g, "һ"],
       [/H/g, "Һ"],
     ];
@@ -110,8 +140,17 @@ export function isUsableTranslit(raw?: string): boolean {
   return true;
 }
 
+/** Transliteration must use phonetic «Аллаһумма», not Kazakh «Аллаһ тағалам». */
+export function normalizeAllahummaTranslit(raw?: string): string {
+  let text = normalizeTranslitText(raw);
+  if (!text) return text;
+  text = text.replace(/^Аллаһ тағалам,\s*/u, "Аллаһумма, ");
+  text = text.replace(/^Аллаһ тағалам\s+/u, "Аллаһумма, ");
+  return text;
+}
+
 export function pickBestTranslit(ar: string, translitRaw?: string): string {
-  const t = normalizeTranslitText(translitRaw);
+  const t = normalizeAllahummaTranslit(translitRaw);
   if (isUsableTranslit(t)) return t;
   return arabicToKkCyrillicFallback(ar);
 }

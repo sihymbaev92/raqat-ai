@@ -54,7 +54,7 @@ flowchart TB
 | Модаль | Не істейді | Жолы |
 |--------|------------|------|
 | **Офлайн** | Құран мәтіні (бандл JSON), хадис корпусы (бандл → AsyncStorage), 99 есім (`asma-al-husna-kk.json`), тәсбих дұғалар | `mobile/assets/bundled/*`, `hadithCorpus.ts`, `bundledHadithSeed.ts` |
-| **Онлайн** | Контент инкременттік жаңарту (ETag / `metadata/changes`), аккаунт, AI чат, т.б. API арқылы | `contentSync.ts`, `docs/PLATFORM_GPT_HANDOFF.md` §2 (синк) |
+| **Онлайн** | Контент инкременттік жаңарту (ETag / `metadata/changes`), аккаунт, AI чат, т.б. API арқылы | `contentSync.ts`, `docs/architecture/overview.md` |
 
 ```mermaid
 flowchart LR
@@ -104,12 +104,12 @@ flowchart LR
 
 ### Бот және веб (қысқа)
 
-- **Бот:** жоғарыдағы кесте; ұзақ мерзімде **бір көз = API** режимі экожүйені жеңілдетеді (`docs/PLATFORM_GPT_HANDOFF.md` §1.2).
+- **Бот:** жоғарыдағы кесте; ұзақ мерзімде **бір көз = API** режимі экожүйені жеңілдетеді (`docs/architecture/overview.md`).
 - **Веб:** кем дегенде **статистика** API арқылы (`/api/v1/stats/content`); толық оқу интерфейсі келешекте сол API-ға байланады.
 
 ### Толық техникалық бриф
 
-- Барлық қабаттар, JWT, AI прокси, инкременттік синхрон: [`docs/PLATFORM_GPT_HANDOFF.md`](docs/PLATFORM_GPT_HANDOFF.md).
+- Барлық қабаттар, JWT, AI прокси, инкременттік синхрон: [`docs/README.md`](docs/README.md), [`docs/platform_api/`](docs/platform_api/README.md).
 - Құран: [`docs/QURAN_GPT_HANDOFF.md`](docs/QURAN_GPT_HANDOFF.md).
 - Хадис: [`docs/HADITH_DATA_PROVENANCE.md`](docs/HADITH_DATA_PROVENANCE.md).
 

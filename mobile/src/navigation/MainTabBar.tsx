@@ -1,86 +1,52 @@
 import React from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  Platform,
-  Image,
-  useWindowDimensions,
-  type ViewStyle,
-} from "react-native";
+import { View, Text, StyleSheet, Platform, useWindowDimensions, type ViewStyle } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
+import { tabIcons, type MciName } from "../theme/appIcons";
+import { typography, uiFontStyle } from "../theme/typography";
 import { kk } from "../i18n/kk";
-import { menuIconAssets } from "../theme/menuIconAssets";
+import { useAppLocale } from "../i18n/runtime";
+import type { MainTabParamList } from "./types";
 
-type MciName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-
-/**
- * Төменгі қатар: Дұғалар | 99 есім | Тәспі
- * (Басты бет — әдепкі экран, бірақ төменгі жолда жоқ; Дұғалар/Тәспіден «Басты» арқылы)
- */
 /** @react-navigation/bottom-tabs ішіндегі getPaddingBottom-пен үйлесімді төменгі шегініс */
 function tabBarPaddingBottom(bottom: number): number {
   return Math.max(bottom - Platform.select({ ios: 10, default: 2 }), 0);
 }
 
-/** Үстіңгі сызудан айырып, иконкалар+мәтінді төменірек (экран астына) жылжыту. */
-const TAB_BAR_TOP_PAD = Platform.select({ ios: 10, default: 8 });
-const TAB_BAR_EXTRA_BOTTOM = 4;
+const TAB_BAR_TOP_PAD = Platform.select({ ios: 8, default: 6 });
+const TAB_BAR_EXTRA_BOTTOM = 2;
 
-export function MainTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
+type VisibleTab = {
+  name: keyof Pick<
+    MainTabParamList,
+    "Home" | "Articles" | "PrayerTab" | "Saved" | "Profile"
+  >;
+  label: string;
+  icon: { active: MciName; inactive: MciName };
+};
+
+function visibleTabs(): VisibleTab[] {
+  return [
+    { name: "Home", label: kk.navigation.tabHome, icon: tabIcons.home },
+    { name: "Articles", label: kk.navigation.tabArticles, icon: tabIcons.articles },
+    { name: "PrayerTab", label: kk.navigation.tabPrayerTimes, icon: tabIcons.prayer },
+    { name: "Saved", label: kk.navigation.tabSaved, icon: tabIcons.saved },
+    { name: "Profile", label: kk.navigation.tabProfile, icon: tabIcons.profile },
+  ];
+}
+
+export function MainTabBar({ state, navigation, insets }: BottomTabBarProps) {
+  const locale = useAppLocale();
   const { width: windowWidth } = useWindowDimensions();
-  /** Төменгі қатар: иконкаларды айқынырақ үлкейту */
-  const tabRasterSize = Math.min(78, Math.max(58, Math.round(windowWidth * 0.2)));
+  const tabIconBox = Math.min(40, Math.max(28, Math.round(windowWidth * 0.085)));
   const { colors } = useAppTheme();
-  const tabPadBottom =
-    tabBarPaddingBottom(insets.bottom) + TAB_BAR_EXTRA_BOTTOM;
+  const tabPadBottom = tabBarPaddingBottom(insets.bottom) + TAB_BAR_EXTRA_BOTTOM;
   const styles = makeStyles(colors);
-
-  const duasRoute = state.routes.find((r) => r.name === "Duas");
-  const tasbihRoute = state.routes.find((r) => r.name === "Tasbih");
-  if (!duasRoute || !tasbihRoute) {
-    return null;
-  }
-
   const currentName = state.routes[state.index]?.name;
-  const duasFocused = currentName === "Duas";
-  const tasbihFocused = currentName === "Tasbih";
-
-  const parent = navigation.getParent();
-
-  const goDuas = () => {
-    const e = navigation.emit({
-      type: "tabPress",
-      target: duasRoute.key,
-      canPreventDefault: true,
-    });
-    if (!duasFocused && !e.defaultPrevented) {
-      navigation.navigate("Duas");
-    }
-  };
-
-  const goAsma = () => {
-    parent?.navigate("AsmaAlHusna" as never);
-  };
-
-  const goTasbih = () => {
-    const e = navigation.emit({
-      type: "tabPress",
-      target: tasbihRoute.key,
-      canPreventDefault: true,
-    });
-    if (!tasbihFocused && !e.defaultPrevented) {
-      navigation.navigate("Tasbih");
-    }
-  };
-
-  const duasLabel = kk.dashboard.duasShort;
-  const asmaLabel = kk.tabs.asmaSub;
-  const tasbihLabel = kk.tabs.tasbih;
+  const tabs = React.useMemo(() => visibleTabs(), [locale]);
 
   return (
     <View
@@ -94,71 +60,48 @@ export function MainTabBar({ state, descriptors, navigation, insets }: BottomTab
         },
       ]}
     >
-      <Pressable
-        onPress={goDuas}
-        style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityState={{ selected: duasFocused }}
-        accessibilityLabel={duasLabel}
-      >
-        <TabIconWrap
-          focused={duasFocused}
-          colors={colors}
-          imageSource={menuIconAssets.tabDuas}
-          iconStyles={styles}
-          iconSize={tabRasterSize}
-        />
-        <Text
-          style={[styles.tabLabel, { color: duasFocused ? colors.accent : colors.muted }]}
-          numberOfLines={1}
-        >
-          {duasLabel}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={goAsma}
-        style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityState={{ selected: false }}
-        accessibilityLabel={kk.tabs.asma}
-      >
-        <TabIconWrap
-          focused={false}
-          colors={colors}
-          imageSource={menuIconAssets.tabAsma}
-          iconStyles={styles}
-          iconSize={tabRasterSize}
-        />
-        <Text style={[styles.tabLabel, { color: colors.muted }]} numberOfLines={1}>
-          {asmaLabel}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={goTasbih}
-        style={({ pressed }) => [styles.sideTab, pressed && { opacity: 0.92 }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityState={{ selected: tasbihFocused }}
-        accessibilityLabel={tasbihLabel}
-      >
-        <TabIconWrap
-          focused={tasbihFocused}
-          colors={colors}
-          imageSource={menuIconAssets.tabTasbih}
-          iconStyles={styles}
-          iconSize={tabRasterSize}
-        />
-        <Text
-          style={[styles.tabLabel, { color: tasbihFocused ? colors.accent : colors.muted }]}
-          numberOfLines={1}
-        >
-          {tasbihLabel}
-        </Text>
-      </Pressable>
+      {tabs.map((tab) => {
+        const route = state.routes.find((r) => r.name === tab.name);
+        if (!route) return null;
+        const focused = currentName === tab.name;
+        const onPress = () => {
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          });
+          if (!focused && !event.defaultPrevented) {
+            navigation.navigate(tab.name);
+          }
+        };
+        return (
+          <Pressable
+            key={tab.name}
+            oyuBackdrop={false}
+            onPress={onPress}
+            style={({ pressed }) => [styles.tab, pressed && { opacity: 0.92 }]}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityState={{ selected: focused }}
+            accessibilityLabel={tab.label}
+            testID={`main-tab-${tab.name}`}
+          >
+            <TabIconWrap
+              focused={focused}
+              colors={colors}
+              iconName={focused ? tab.icon.active : tab.icon.inactive}
+              iconStyles={styles}
+              iconSize={tabIconBox}
+            />
+            <Text
+              style={[styles.tabLabel, { color: focused ? colors.accent : colors.muted }]}
+              numberOfLines={1}
+            >
+              {tab.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -167,76 +110,20 @@ function TabIconWrap({
   focused,
   colors,
   iconName,
-  imageSource,
   iconStyles,
-  iconSize = 30,
+  iconSize = 28,
 }: {
   focused: boolean;
   colors: ThemeColors;
-  iconName?: MciName;
-  imageSource?: React.ComponentProps<typeof Image>["source"];
+  iconName: MciName;
   iconStyles: { iconWrap: ViewStyle };
-  /** Дұғалар / тәспі сияқты нақты бейнелерді сәл үлкінірек көрсету */
   iconSize?: number;
 }) {
   const tint = focused ? colors.accent : colors.muted;
-  /** Сыртқы шеңбер: фокус жиек + ішкі дөңгелек клип */
-  const ringPad = 4;
-  const outer = iconSize + ringPad * 2;
-  const outerR = outer / 2;
-  const innerR = iconSize / 2;
+  const glyphSize = Math.round(iconSize * 0.55);
   return (
-    <View
-      style={[
-        iconStyles.iconWrap,
-        {
-          width: outer,
-          height: outer,
-          borderRadius: outerR,
-          borderWidth: focused ? 1.5 : 0,
-          borderColor: focused ? colors.accent : "transparent",
-          backgroundColor: focused ? colors.accentSurface : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-        },
-      ]}
-    >
-      {imageSource != null ? (
-        <View
-          style={{
-            width: iconSize,
-            height: iconSize,
-            borderRadius: innerR,
-            overflow: "hidden",
-            backgroundColor: colors.bg,
-          }}
-        >
-          <Image
-            source={imageSource}
-            style={{
-              width: iconSize,
-              height: iconSize,
-              opacity: focused ? 1 : 0.72,
-            }}
-            resizeMode="cover"
-            accessibilityIgnoresInvertColors
-          />
-        </View>
-      ) : iconName ? (
-        <View
-          style={{
-            width: iconSize,
-            height: iconSize,
-            borderRadius: innerR,
-            overflow: "hidden",
-            backgroundColor: "transparent",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <MaterialCommunityIcons name={iconName} size={Math.round(iconSize * 0.62)} color={tint} />
-        </View>
-      ) : null}
+    <View style={[iconStyles.iconWrap, { width: iconSize, height: iconSize }]}>
+      <MaterialCommunityIcons name={iconName} size={glyphSize} color={tint} />
     </View>
   );
 }
@@ -245,40 +132,34 @@ function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrap: {
       flexDirection: "row",
-      /** Биік бағанада иконка+мәтін ортада емес, төменгі шекке туралы тұруы керек */
       alignItems: "flex-end",
       justifyContent: "space-between",
-      paddingTop: 0,
-      paddingHorizontal: 4,
+      paddingHorizontal: 2,
       borderTopWidth: StyleSheet.hairlineWidth,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 10,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
         },
-        android: { elevation: 10 },
+        android: { elevation: 8 },
       }),
     },
-    sideTab: {
+    tab: {
       flex: 1,
       alignItems: "center",
       justifyContent: "flex-end",
-      paddingTop: 0,
-      paddingBottom: 0,
-      minHeight: 46,
+      minHeight: 44,
       minWidth: 0,
+      paddingBottom: 0,
     },
     tabLabel: {
-      fontSize: 10,
-      fontWeight: "700",
-      marginTop: 1,
-      marginBottom: 0,
-      lineHeight: 12,
+      ...uiFontStyle("bold"),
+      ...typography.tab,
+      marginTop: 2,
       textAlign: "center",
     },
-    /** Негізгі өлшемдер TabIconWrap ішінде iconSize бойынша есептеледі */
     iconWrap: {
       alignItems: "center",
       justifyContent: "center",

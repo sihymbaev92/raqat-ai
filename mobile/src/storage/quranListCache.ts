@@ -1,4 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  ensureBundledSurahListLoaded,
+  getBundledSurahList,
+} from "../services/bundledQuranReader";
 
 const KEY = "raqat_quran_surah_list_v1";
 
@@ -63,15 +67,23 @@ function normalize(raw: unknown[]): CachedSurah[] {
 }
 
 export async function loadQuranListCache(): Promise<QuranListCachePayload | null> {
+  await ensureBundledSurahListLoaded().catch(() => {});
+  const bundled = getBundledSurahList();
   try {
     const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return null;
-    const j = JSON.parse(raw) as QuranListCachePayload;
-    if (!Array.isArray(j?.list) || !j?.savedAt) return null;
-    return { list: normalize(j.list), savedAt: j.savedAt };
+    if (raw) {
+      const j = JSON.parse(raw) as QuranListCachePayload;
+      if (Array.isArray(j?.list) && j?.savedAt) {
+        return { list: normalize(j.list), savedAt: j.savedAt };
+      }
+    }
   } catch {
-    return null;
+    /* ignore */
   }
+  if (bundled?.length) {
+    return { list: bundled, savedAt: "bundled" };
+  }
+  return null;
 }
 
 export async function saveQuranListCache(list: CachedSurah[]): Promise<void> {

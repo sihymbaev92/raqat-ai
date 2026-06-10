@@ -35,11 +35,12 @@ class LanguageServiceTests(unittest.TestCase):
         self.assertIn("🌐 LANGUAGE", texts)
         self.assertIn("💬 FEEDBACK", texts)
         self.assertIn("📖 QURAN", texts)
+        self.assertNotIn("📚 HADITH", texts)
         self.assertNotIn("💧 WUDU", texts)
 
     def test_hadith_falls_back_to_english_for_chinese(self):
         choice = resolve_hadith_text_choice("zh")
-        self.assertEqual(choice["actual"], "text_ar")
+        self.assertEqual(choice["actual"], "text_en")
 
     def test_quran_marks_chinese_translation_as_missing_in_current_db(self):
         choice = resolve_quran_text_choice("zh")

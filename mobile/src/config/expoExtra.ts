@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 
 /**
- * app.json → extra (expoConfig) және EAS/standalone-дағы embedded manifest.extra.
+ * app.config.js → extra (expoConfig) және EAS/standalone-дағы embedded manifest.extra.
  * Кей build-та `expoConfig` бос, ал `extra` тек `manifest` / `manifest2`-да болуы мүмкін
  * (Android кірістірілген манифест, EAS OTA — нұсқаға байланысты).
  */

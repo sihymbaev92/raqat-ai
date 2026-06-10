@@ -108,9 +108,19 @@ def _patch(xml_path: Path, hosts: list[str]) -> tuple[bool, list[str]]:
     )
     marker = "</domain-config>"
     idx = text.find(marker)
-    if idx < 0:
-        raise SystemExit(f"XML ішінде {marker!r} табылмады: {xml_path}")
-    new_text = text[:idx] + block + "\n" + text[idx:]
+    if idx >= 0:
+        new_text = text[:idx] + block + "\n" + text[idx:]
+    else:
+        root_marker = "</network-security-config>"
+        root_idx = text.find(root_marker)
+        if root_idx < 0:
+            raise SystemExit(f"XML ішінде {root_marker!r} табылмады: {xml_path}")
+        domain_config = (
+            '  <domain-config cleartextTrafficPermitted="true">'
+            f"{block}\n"
+            "  </domain-config>\n"
+        )
+        new_text = text[:root_idx] + domain_config + text[root_idx:]
     xml_path.write_text(new_text, encoding="utf-8")
     return True, to_add
 

@@ -1,19 +1,26 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
-  Image,
-  Pressable,
   Text,
   StyleSheet,
   Modal,
-  Dimensions,
+  Platform,
+  useWindowDimensions,
   type ImageSourcePropType,
   type StyleProp,
   type ImageStyle,
+  type ViewStyle,
+  PixelRatio,
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import { RasterImage } from "@/ui/RasterImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
+import { guideLightboxFitSize, guideThumbFitContain, resolveGuideImageThumbImageStyle } from "../utils/guideLightboxFit";
+import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetAspect";
+import { ZoomableImageContent } from "./zoom/ZoomableImageContent";
+import { kk } from "../i18n/kk";
 
 type Props = {
   source: ImageSourcePropType;
@@ -24,6 +31,20 @@ type Props = {
   closeLabel: string;
   /** Кіші суретті басып ашу (a11y) */
   openImageA11y: string;
+  /** Берілсе, модалда сурет шеттері кеспелмей сыйыстырылады */
+  imageAspectRatio?: number;
+  /** Кіші превью үстіндегі ақ әсер (инфографикада өшіріңіз) */
+  softenThumbOverlay?: boolean;
+  /** Превью толық енін алу (тәжуид беттері) */
+  fillWidth?: boolean;
+  /** 🔍 белгісін жасыру */
+  hideZoomHint?: boolean;
+  /** Превью экран еніне/биіктігіне contain арқылы сыйсын (намаз оқулығы). */
+  fitThumbToScreen?: boolean;
+  /** fitThumbToScreen: scroll+card padding (px). */
+  thumbHorizontalInset?: number;
+  /** fitThumbToScreen: max биіктік — экран биіктігінің үлесі. */
+  maxThumbHeightRatio?: number;
 };
 
 /**
@@ -35,34 +56,135 @@ export function GuideImageLightbox({
   thumbStyle,
   closeLabel,
   openImageA11y,
+  imageAspectRatio,
+  softenThumbOverlay = false,
+  fillWidth = false,
+  hideZoomHint = false,
+  fitThumbToScreen = false,
+  thumbHorizontalInset = 56,
+  maxThumbHeightRatio = 0.48,
 }: Props) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
-  const { width, height } = Dimensions.get("window");
+  const { width, height } = useWindowDimensions();
+  const pixelRatio = PixelRatio.get();
+  const effectiveAspect = useMemo(() => {
+    if (imageAspectRatio != null && imageAspectRatio > 0) return imageAspectRatio;
+    return imageAssetAspectRatio(source);
+  }, [imageAspectRatio, source]);
+
+  const sourcePixels = useMemo(() => imageAssetPixelSize(source), [source]);
+
+  const fittedThumbSize = useMemo(() => {
+    if (!fitThumbToScreen || effectiveAspect == null || effectiveAspect <= 0) return null;
+    const maxW = Math.max(1, width - thumbHorizontalInset);
+    const maxH = Math.max(120, height * maxThumbHeightRatio);
+    return guideThumbFitContain(maxW, maxH, effectiveAspect, sourcePixels, pixelRatio);
+  }, [
+    fitThumbToScreen,
+    effectiveAspect,
+    width,
+    height,
+    thumbHorizontalInset,
+    maxThumbHeightRatio,
+    sourcePixels,
+    pixelRatio,
+  ]);
+
+  const modalImageSize = useMemo(() => {
+    if (effectiveAspect == null || effectiveAspect <= 0) {
+      return { width, height: height * 0.78 };
+    }
+    return guideLightboxFitSize(width, height, insets.top, effectiveAspect);
+  }, [width, height, insets.top, effectiveAspect]);
+
+  /** Android: absoluteFill + scale contain ортадан кесіп көрсетуі мүмкін — өлшем Image-ке тікелей. */
+  const thumbImageStyle = useMemo((): StyleProp<ImageStyle> => {
+    const flat = StyleSheet.flatten(thumbStyle) ?? {};
+    const chrome = resolveGuideImageThumbImageStyle(thumbStyle);
+
+    if (fittedThumbSize) {
+      return [
+        chrome,
+        {
+          width: fittedThumbSize.width,
+          height: fittedThumbSize.height,
+          alignSelf: "center",
+        },
+      ];
+    }
+
+    const width = (flat.width as ImageStyle["width"]) ?? "100%";
+
+    if (typeof flat.height === "number") {
+      return [chrome, { width, height: flat.height, alignSelf: "stretch" }];
+    }
+    if (effectiveAspect != null && effectiveAspect > 0) {
+      return [chrome, { width, aspectRatio: effectiveAspect, alignSelf: "stretch" }];
+    }
+    return [chrome, { width, height: 220, alignSelf: "stretch" }];
+  }, [thumbStyle, effectiveAspect, fittedThumbSize]);
+
+  const thumbFrameStyle = useMemo((): StyleProp<ViewStyle> => {
+    const base: ViewStyle[] = [styles.thumbFrame];
+    if (fillWidth) base.push(styles.thumbFrameFill);
+    if (fittedThumbSize) {
+      base.push({
+        width: "100%",
+        alignItems: "center",
+        minHeight: fittedThumbSize.height,
+      });
+    }
+    return base;
+  }, [fillWidth, fittedThumbSize]);
 
   return (
     <>
-      <Pressable
-        onPress={() => setOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel={openImageA11y}
-        style={({ pressed }) => [styles.thumbWrap, pressed && { opacity: 0.92 }]}
-      >
-        <Image source={source} style={thumbStyle} resizeMode="contain" />
-        <View style={[styles.zoomHint, { borderColor: colors.border, backgroundColor: colors.card }]}>
-          <MaterialCommunityIcons name="magnify-plus-outline" size={16} color={colors.accent} />
-        </View>
-      </Pressable>
+      <View style={[styles.thumbWrap, fillWidth && styles.thumbWrapFill]}>
+        <Pressable
+          oyuBackdrop={false}
+          onPress={() => setOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={openImageA11y}
+          style={({ pressed }) => [
+            styles.thumbPressable,
+            fillWidth && styles.thumbPressableFill,
+            pressed && { opacity: 0.92 },
+          ]}
+        >
+          <View style={thumbFrameStyle}>
+            <RasterImage
+              source={source}
+              style={thumbImageStyle}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+            {softenThumbOverlay ? <View style={styles.thumbLightenOverlay} pointerEvents="none" /> : null}
+            {hideZoomHint ? null : (
+              <View
+                style={[styles.zoomHint, { borderColor: colors.border, backgroundColor: colors.card }]}
+                pointerEvents="none"
+              >
+                <MaterialCommunityIcons name="magnify-plus-outline" size={16} color={colors.accent} />
+              </View>
+            )}
+          </View>
+        </Pressable>
+      </View>
 
       <Modal
         visible={open}
         transparent
         animationType="fade"
+        statusBarTranslucent
+        hardwareAccelerated={Platform.OS === "android"}
+        presentationStyle="overFullScreen"
         onRequestClose={() => setOpen(false)}
       >
         <View style={styles.modalRoot}>
           <View style={[styles.modalTopBar, { paddingTop: 8 + insets.top }]}>
             <Pressable
+              oyuBackdrop={false}
               style={styles.closeBtn}
               onPress={() => setOpen(false)}
               accessibilityRole="button"
@@ -72,11 +194,14 @@ export function GuideImageLightbox({
               <Text style={styles.closeTxt}>{closeLabel}</Text>
             </Pressable>
           </View>
+          <Text style={[styles.pinchHint, { top: 12 + insets.top }]} pointerEvents="none">
+            {kk.common.imagePinchZoomHint}
+          </Text>
           <View style={styles.modalImageArea}>
-            <Image
+            <ZoomableImageContent
               source={source}
-              style={{ width, height: height * 0.78 }}
-              resizeMode="contain"
+              width={modalImageSize.width}
+              height={modalImageSize.height}
             />
           </View>
         </View>
@@ -87,8 +212,31 @@ export function GuideImageLightbox({
 
 const styles = StyleSheet.create({
   thumbWrap: {
+    alignSelf: "stretch",
+    width: "100%",
+    alignItems: "center",
+  },
+  thumbWrapFill: {
+    alignItems: "stretch",
+  },
+  thumbPressable: {
+    alignSelf: "stretch",
+  },
+  thumbPressableFill: {
+    width: "100%",
+  },
+  thumbFrame: {
     position: "relative",
     alignSelf: "stretch",
+  },
+  thumbFrameFill: {
+    width: "100%",
+  },
+  thumbLightenOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "#FFFFFF",
+    opacity: 0.05,
+    borderRadius: 14,
   },
   zoomHint: {
     position: "absolute",
@@ -110,6 +258,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     paddingHorizontal: 8,
     paddingBottom: 4,
+    zIndex: 2,
   },
   closeBtn: {
     flexDirection: "row",
@@ -122,6 +271,16 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 15,
+  },
+  pinchHint: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    zIndex: 2,
+    color: "rgba(255,255,255,0.72)",
+    fontSize: 12,
+    lineHeight: 16,
+    textAlign: "center",
   },
   modalImageArea: {
     flex: 1,
