@@ -113,7 +113,8 @@ SQLite: `data/hadith_scrape.sqlite3`. Fatua **пәтуа** мәтіні → `isl
 | Файл | Мазмұны |
 |------|---------|
 | `mobile/assets/bundled/hadith-sahih-seed.json` | Шағын үлгі; ішінде `provenance` блогы (нұсқа, ескерту). |
-| `mobile/assets/bundled/hadith-from-db.json` | DB экспортынан (`hadith_corpus_sync.py export`) — толық/жартылай корпус. |
+| `mobile/assets/bundled/hadith-from-db-seed.json` | Қолданбаға кіретін compact offline seed. |
+| `mobile/assets/bundled/hadith-from-db.json` | DB экспортынан (`hadith_corpus_sync.py export`) — толық/жартылай корпус; generated/runtime asset, git-ке кірмейді. |
 
 ---
 

@@ -92,13 +92,14 @@ export type HadithCorpus = {
 };
 
 /**
- * Таңдалған тілге сәйкес хадис мәтіні. en→textEn (Sahih International), ru→textRu (fawaz),
- * kk→textKk. Сол тілде мәтін болмаса бос жол қайтады (UI дереккөз сілтемесін көрсетеді).
+ * Таңдалған тілге сәйкес хадис мәтіні. Source-only жолдарда бекітілмеген
+ * аудармаларды көрсетпейміз; UI тек дереккөз сілтемесін көрсетеді.
  */
 export function hadithTextForLocale(
-  entry: Pick<SahihHadithEntry, "textKk" | "textRu" | "textEn" | "textTr" | "arabic">,
+  entry: Pick<SahihHadithEntry, "textKk" | "textRu" | "textEn" | "textTr" | "arabic" | "sourceOnly">,
   locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
 ): string {
+  if (entry.sourceOnly && locale !== "ar") return "";
   if (locale === "en") return (entry.textEn ?? "").trim();
   if (locale === "ru") return (entry.textRu ?? "").trim();
   if (locale === "tr") return (entry.textTr ?? "").trim();

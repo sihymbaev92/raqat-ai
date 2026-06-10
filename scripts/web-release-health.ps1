@@ -69,7 +69,7 @@ foreach ($route in @("/", "/more/quran", "/more/surah/1", "/more/mushaf-book/1")
 }
 
 foreach ($asset in @(
-  "/assets/bundled/hadith-from-db.json",
+  "/assets/bundled/hadith-from-db-seed.json",
   "/assets/bundled/quran-translations-offline.json",
   "/assets/bundled/offline-auto-translations-core.json"
 )) {

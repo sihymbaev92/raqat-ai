@@ -88,4 +88,6 @@ mobile/assets/quran/ayah_map.json
 
 # Superseded offline translation generator output; app uses *-core.json.
 mobile/assets/bundled/offline-auto-translations.json
+# Full hadith corpus is generated/API runtime data; app bundles the compact seed.
+mobile/assets/bundled/hadith-from-db.json
 node_modules

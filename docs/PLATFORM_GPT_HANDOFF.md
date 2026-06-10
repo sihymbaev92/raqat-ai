@@ -306,7 +306,7 @@ Read deeper:
 Hadith:
 
 - Screens: `HadithHubScreen`, `HadithListScreen`, `HadithDetailScreen`, scraped Muftyat list/detail.
-- Data: `mobile/assets/bundled/hadith-from-db.json`, `hadith-sahih-seed.json`, `external-hadith-kk.json`, `extracted-hadith-muftyat.json`.
+- Data: app-bundled compact seed `mobile/assets/bundled/hadith-from-db-seed.json`; generated/runtime full corpus `mobile/assets/bundled/hadith-from-db.json`; plus `hadith-sahih-seed.json`, `external-hadith-kk.json`, `extracted-hadith-muftyat.json`.
 - Cross-link component: `components/hadith/HadithCrossLinkBar.tsx`.
 - Export/quality scripts in `mobile/package.json`: `export:hadith-json`, `export:scraped-hadith-muftyat`, `extract:hadith-quotes`, `hadith:quality`, `hadith:normalize`.
 - Provenance: [HADITH_DATA_PROVENANCE.md](HADITH_DATA_PROVENANCE.md).

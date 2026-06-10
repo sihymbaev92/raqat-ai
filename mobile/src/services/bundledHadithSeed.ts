@@ -18,14 +18,14 @@ function yieldToUi(): Promise<void> {
 }
 
 /**
- * SQLite `hadith_corpus_sync.py export` (сахих Бұхари+Муслим, --only-with-kk емес)
- * корпусы ~14645 жол. Одан аз болса — жаңа бандлмен қайта сидинг.
+ * Bundled native corpus is intentionally compact. Full Sahih Bukhari+Muslim stays
+ * outside the app bundle as a generated/API runtime asset.
  */
-const MIN_HADITHS_TO_SKIP_RESEED = 14_000;
+const MIN_HADITHS_TO_SKIP_RESEED = 1_000;
 /** Одан аз болса — дерек бүлінген немесе ескі шағын JSON (мысалы 2 жол) деп санаймыз. */
 const MIN_FULL_CORPUS = 500;
 /** Әр жинақтан кем дегенде осынша жол болуы керек (бір ғана кітап қалса — қайта сидинг). */
-const MIN_COLLECTION_HEALTH = 3500;
+const MIN_COLLECTION_HEALTH = 500;
 
 /** Ескі үлгі корпус (Бұхари 1 + Муслим 1 сияқты) қалса, оны толық корпус емес деп санаймыз. */
 function isPlaceholderTinyCorpus(c: HadithCorpus | null): boolean {
@@ -119,7 +119,7 @@ async function seedBundledHadithIfNeededImpl(): Promise<boolean> {
     return true;
   } catch {
     /**
-     * Толық корпус AsyncStorage-қа сыймаса да, `loadHadithCorpus` бандлдан оқи алады.
+     * Seed AsyncStorage-қа сыймаса да, `loadHadithCorpus` бандлдан оқи алады.
      */
     return false;
   }

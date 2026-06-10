@@ -1,23 +1,26 @@
 /**
- * Web: толық хадис корпусын (~52 МБ) JS бандлға кіргізбей, runtime fetch арқылы аламыз
- * (nginx /assets/bundled/hadith-from-db.json — copy-web-bundled-json.js көшіреді).
+ * Web: толық хадис корпусын JS бандлға кіргізбей, runtime fetch арқылы аламыз.
+ * Егер generated full corpus deploy-да жоқ болса, tracked compact seed-ке fallback жасаймыз.
  */
 import type { HadithCorpus } from "./hadithCorpus";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
 
 let cache: HadithCorpus | null | undefined;
 
+async function fetchCorpusAsset(fileName: string): Promise<HadithCorpus | null> {
+  const r = await fetch(bundledJsonRemoteUrl(fileName), {
+    cache: "force-cache",
+  });
+  if (!r.ok) return null;
+  return (await r.json()) as HadithCorpus;
+}
+
 export async function loadBundledHadithCorpusJson(): Promise<HadithCorpus | null> {
   if (cache !== undefined) return cache;
   try {
-    const r = await fetch(bundledJsonRemoteUrl("hadith-from-db.json"), {
-      cache: "force-cache",
-    });
-    if (!r.ok) {
-      cache = null;
-      return null;
-    }
-    cache = (await r.json()) as HadithCorpus;
+    cache =
+      (await fetchCorpusAsset("hadith-from-db.json")) ??
+      (await fetchCorpusAsset("hadith-from-db-seed.json"));
     return cache ?? null;
   } catch {
     cache = null;

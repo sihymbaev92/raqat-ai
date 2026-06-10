@@ -85,7 +85,7 @@ else
 fi
 
 for asset in \
-  /assets/bundled/hadith-from-db.json \
+  /assets/bundled/hadith-from-db-seed.json \
   /assets/bundled/quran-translations-offline.json \
   /assets/bundled/offline-auto-translations-core.json; do
   code="$(curl -fsS -o /dev/null -w '%{http_code}' --connect-timeout 15 "${WEB_URL}${asset}" || true)"

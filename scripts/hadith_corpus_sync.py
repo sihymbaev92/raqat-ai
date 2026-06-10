@@ -9,7 +9,8 @@ SQLite hadith ↔ RAQAT қолданбасының HadithCorpus JSON синхр�
   .venv/bin/python scripts/hadith_corpus_sync.py export --db global_clean.db \\
     --out mobile/assets/bundled/hadith-from-db.json
   Тек қазақшасы барлар (жеңіл бандл): сол командаға `--only-with-kk` қосыңыз.
-  Толық сахих қамту: `--only-with-kk`-сыз экспортта Бұхари+Муслимнің барлық жолдары (text_kk бос болса да) JSON-ға кіреді; қолданба `hadith-from-db.json` арқылы сидингтеледі.
+  Толық сахих қамту: `--only-with-kk`-сыз экспортта Бұхари+Муслимнің барлық жолдары (text_kk бос болса да) JSON-ға кіреді.
+  `hadith-from-db.json` — generated/runtime asset; mobile app bundle tracked compact seed (`hadith-from-db-seed.json`) қолданады.
 
 Импорт — әдепкіде тек сол екі жинақ жолдары жаңартылады:
   .venv/bin/python scripts/hadith_corpus_sync.py import-json --db global_clean.db \\
