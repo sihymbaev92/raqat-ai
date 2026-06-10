@@ -33,6 +33,8 @@ platform_api/*.zip
 *.tar.gz
 *.tgz
 *.zip
+mobile/dist/
+mobile/dist-*/
 
 # Logs / telemetry
 logs/
