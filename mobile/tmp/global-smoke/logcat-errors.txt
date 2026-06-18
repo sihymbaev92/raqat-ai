@@ -1,9 +1,0 @@
-﻿
-> 06-12 02:57:55.022  1690  2316 V SemWifiScanPool: updateScanResult, full scan:1 configKeys: 1 pool_bssid:5 
-pool_configKeys:5
-> 06-12 02:57:55.022  1690  2316 D WifiConnectivityMonitor: onScanResultUpdated
-  06-12 02:57:55.022  1690  2316 D WifiConnectivityMonitor: mMaxScannedCountryCode : 
-  06-12 02:57:55.026  1382  1570 D SemNativeCarrierFeature_vendor: getInstance
-  06-12 02:57:55.028 21113 20432 I FrewleTileCacheManagerV: (REDACTED) Fetched %d AP models from cache
-
-

@@ -75,6 +75,17 @@ mobile/.tmp/
 
 # Local Android SDK/tooling (never commit)
 .tools/
+.build-tmp/
+
+# Mobile QA/tmp artifacts (local only)
+mobile/tmp/
+mobile/test-results/
+mobile/kaaba-hajj-screen.png
+mobile/manual-sweep-home.xml
+qa-screens/
+talbiyah-*.png
+talbiyah-ui.xml
+qibla-fixed-install.png
 
 # OS
 .DS_Store
