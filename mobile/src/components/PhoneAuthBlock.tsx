@@ -33,10 +33,16 @@ function normalizePhoneInput(raw: string): string {
 function apiErrorMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const detail = (body as { detail?: unknown }).detail;
-  if (typeof detail === "string") return detail;
+  const clean = (m: string): string | null => {
+    const t = m.trim();
+    if (!t) return null;
+    if (/(twilio|server|api|env|config|raqat_|expo_|platform|token|jwt|http|port)/i.test(t)) return null;
+    return t;
+  };
+  if (typeof detail === "string") return clean(detail);
   if (detail && typeof detail === "object" && "message" in detail) {
     const m = (detail as { message?: unknown }).message;
-    if (typeof m === "string") return m;
+    if (typeof m === "string") return clean(m);
   }
   return null;
 }
@@ -89,8 +95,7 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError, compact }: P
     try {
       const r = await postAuthPhoneStart(base, p);
       if (r.status === 503) {
-        const m = apiErrorMessage(r);
-        onError(m ?? kk.account.phoneSmsUnavailable);
+        onError(kk.account.phoneSmsUnavailable);
         setChallengeId(null);
         return;
       }

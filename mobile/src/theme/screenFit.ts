@@ -66,6 +66,13 @@ export function screenFitScrollContentStyle(
   };
 }
 
+export function screenFitExplicitEdgeStyle(opts: { top?: number; bottom?: number } = {}): ViewStyle | null {
+  const out: ViewStyle = {};
+  if (opts.top != null) out.paddingTop = opts.top;
+  if (opts.bottom != null) out.paddingBottom = opts.bottom;
+  return Object.keys(out).length ? out : null;
+}
+
 const ScreenFitContext = createContext<ScreenFitMetrics | null>(null);
 
 export function ScreenFitProvider({ children }: { children: ReactNode }) {

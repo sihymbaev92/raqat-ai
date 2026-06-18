@@ -2,10 +2,13 @@ import {
   cdnAyahBitrateKbps,
   quranAyahMp3Url,
   quranReciterHasAudioForGlobalAyah,
+  quranReciterSupportsArabicKaraoke,
   quranReciterUsesAyahAudio,
 } from "../quranSudaisAudio";
 import {
   QURAN_ABDULRAHMAN_MOSSAD_EDITION,
+  QURAN_ALAFASY_EDITION,
+  QURAN_HUSARY_EDITION,
   QURAN_KK_HALIFAH_ALTAI_EDITION,
   QURAN_RU_KULIEV_EDITION,
 } from "../../config/quranReciters";
@@ -39,24 +42,42 @@ describe("quranAyahMp3Url", () => {
     );
   });
 
-  it("араб қарилары үшін әдепті 192 kbps (Судәис)", () => {
+  it("Судәис үшін Quran.com timing-пен сәйкес MP3 source қолданады", () => {
     const u = quranAyahMp3Url(1, "ar.abdurrahmaansudais");
-    expect(u).toContain("/quran/audio/192/");
+    expect(u).toBe("https://verses.quran.com/Sudais/mp3/001001.mp3");
+    expect(quranAyahMp3Url(8, "ar.abdurrahmaansudais")).toBe(
+      "https://verses.quran.com/Sudais/mp3/002001.mp3"
+    );
   });
 
-  it("Әл-Афаси үшін 128 kbps", () => {
-    const u = quranAyahMp3Url(5, "ar.alafasy");
-    expect(u).toContain("/quran/audio/128/ar.alafasy/5.mp3");
+  it("Әл-Афаси үшін Quran.com timing-пен сәйкес MP3 source қолданады", () => {
+    const u = quranAyahMp3Url(1, QURAN_ALAFASY_EDITION);
+    expect(u).toBe("https://verses.quran.com/Alafasy/mp3/001001.mp3");
   });
 
-  it("Абдурахман Моссад үшін бар таңдаулы сүреге archive mp3 қайтарады", () => {
-    const u = quranAyahMp3Url(1365, QURAN_ABDULRAHMAN_MOSSAD_EDITION);
-    expect(u).toBe("https://ia904706.us.archive.org/13/items/010_20221110/010.mp3");
-    expect(quranReciterUsesAyahAudio(QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toBe(false);
+  it("Mahmud Al-Husary үшін Quran.com segment timing source-ымен бірдей audio қайтарады", () => {
+    const u = quranAyahMp3Url(1, QURAN_HUSARY_EDITION);
+    expect(u).toBe("https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/001001.mp3");
+    expect(quranReciterUsesAyahAudio(QURAN_HUSARY_EDITION)).toBe(true);
+    expect(quranReciterHasAudioForGlobalAyah(1, QURAN_HUSARY_EDITION)).toBe(true);
   });
 
-  it("Абдурахман Моссад source-та жоқ сүреге қате береді", () => {
-    expect(quranReciterHasAudioForGlobalAyah(1, QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toBe(false);
-    expect(() => quranAyahMp3Url(1, QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toThrow();
+  it("ескі Mossad preference-ін Husary URL-ына көшіреді", () => {
+    expect(quranReciterHasAudioForGlobalAyah(1, QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toBe(true);
+    expect(quranAyahMp3Url(1, QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toBe(
+      "https://mirrors.quranicaudio.com/everyayah/Husary_64kbps/001001.mp3"
+    );
+  });
+});
+
+describe("quranReciterSupportsArabicKaraoke", () => {
+  it("enables Arabic word karaoke only for reciters with exact Quran.com timing", () => {
+    expect(quranReciterSupportsArabicKaraoke("ar.abdurrahmaansudais")).toBe(true);
+    expect(quranReciterSupportsArabicKaraoke(QURAN_HUSARY_EDITION)).toBe(true);
+    expect(quranReciterSupportsArabicKaraoke(QURAN_ALAFASY_EDITION)).toBe(true);
+    expect(quranReciterSupportsArabicKaraoke(QURAN_ABDULRAHMAN_MOSSAD_EDITION)).toBe(true);
+    expect(quranReciterSupportsArabicKaraoke("ar.mahermuaiqly")).toBe(false);
+    expect(quranReciterSupportsArabicKaraoke(QURAN_KK_HALIFAH_ALTAI_EDITION)).toBe(false);
+    expect(quranReciterSupportsArabicKaraoke(QURAN_RU_KULIEV_EDITION)).toBe(false);
   });
 });

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TextInput,
   FlatList,
-  Linking,
   type ListRenderItem,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
@@ -13,6 +12,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HubScreenHero } from "../components/HubScreenHero";
+import { EmbeddedSiteSheet } from "../components/EmbeddedSiteSheet";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
 import { HalalFilterChipRow, type HalalFilterChip } from "../components/HalalFilterChipRow";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
@@ -36,6 +36,7 @@ import type { DashboardNewsItem } from "../content/dashboardNewsItems";
 import type { MoreStackParamList } from "../navigation/types";
 import type { KbSiteFilter } from "../components/RaqatKbShelf";
 import { screenFitScrollContentStyle, useScreenFitMetrics } from "../theme/screenFit";
+import { beginLatestRequest } from "../utils/latestRequestGuard";
 
 const SEARCH_DEBOUNCE_MS = 420;
 const BROWSE_LIMIT = 20;
@@ -102,7 +103,7 @@ export function OfficialKnowledgePortalScreen() {
   const screenFit = useScreenFitMetrics();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const listContentStyle = useMemo(
-    () => [screenFitScrollContentStyle(screenFit, { bottom: 28, includeHorizontalPadding: true }), styles.listContent],
+    () => [styles.listContent, screenFitScrollContentStyle(screenFit, { bottom: 28, includeHorizontalPadding: true })],
     [screenFit, styles.listContent]
   );
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
@@ -120,10 +121,14 @@ export function OfficialKnowledgePortalScreen() {
   const [items, setItems] = useState<PlatformIslamicKbArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [embeddedArticle, setEmbeddedArticle] = useState<{ title: string; url: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const requestSeqRef = useRef(0);
 
   const load = useCallback(async (q: string, siteFilter: KbSiteFilter) => {
+    const { isCurrentRequest } = beginLatestRequest(requestSeqRef);
     await hydrateRaqatApiBaseOverride();
+    if (!isCurrentRequest()) return;
     const base = getRaqatApiBase();
     const term = q.trim();
     setLoading(true);
@@ -143,8 +148,9 @@ export function OfficialKnowledgePortalScreen() {
           site: siteFilter || undefined,
           timeoutMs: 12_000,
         });
+        if (!isCurrentRequest()) return;
         if (!res.ok) {
-          setError(res.error || kk.aiChat.kbSearchError);
+          setError(kk.aiChat.kbSearchError);
           setItems([]);
           return;
         }
@@ -161,6 +167,7 @@ export function OfficialKnowledgePortalScreen() {
           site: siteFilter,
           timeoutMs: 12_000,
         });
+        if (!isCurrentRequest()) return;
         if (res.ok && (res.results?.length ?? 0) > 0) {
           setItems(res.results ?? []);
           return;
@@ -168,13 +175,15 @@ export function OfficialKnowledgePortalScreen() {
       }
 
       const news = await loadOfficialHomeNewsItems();
+      if (!isCurrentRequest()) return;
       const mapped = news.map(dashboardNewsToArticle);
       setItems(filterBySite(mapped, siteFilter));
     } catch {
+      if (!isCurrentRequest()) return;
       setError(kk.aiChat.kbSearchError);
       setItems([]);
     } finally {
-      setLoading(false);
+      if (isCurrentRequest()) setLoading(false);
     }
   }, []);
 
@@ -185,6 +194,7 @@ export function OfficialKnowledgePortalScreen() {
     }, query.trim().length >= 2 ? SEARCH_DEBOUNCE_MS : 0);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
+      requestSeqRef.current += 1;
     };
   }, [query, site, load]);
 
@@ -221,7 +231,12 @@ export function OfficialKnowledgePortalScreen() {
               {item.url ? (
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
-                  onPress={() => void Linking.openURL(item.url)}
+                  onPress={() =>
+                    setEmbeddedArticle({
+                      title: item.title || kk.knowledgePortal.untitled,
+                      url: item.url,
+                    })
+                  }
                   accessibilityRole="link"
                   accessibilityLabel={kk.aiChat.kbSearchReadFullA11y(item.title)}
                 >
@@ -263,7 +278,7 @@ export function OfficialKnowledgePortalScreen() {
         <View style={styles.partnerRow}>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => void Linking.openURL(FATUA_KK_URL)}
+            onPress={() => setEmbeddedArticle({ title: FATUA_KZ_LABEL_KK, url: FATUA_KK_URL })}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openFatuaA11y}
           >
@@ -272,7 +287,7 @@ export function OfficialKnowledgePortalScreen() {
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => void Linking.openURL(MUFTYAT_KK_URL)}
+            onPress={() => setEmbeddedArticle({ title: MUFTYAT_KZ_LABEL_KK, url: MUFTYAT_KK_URL })}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openMuftyatA11y}
           >
@@ -307,18 +322,27 @@ export function OfficialKnowledgePortalScreen() {
   );
 
   return (
-    <FlatList
-      testID="screen-main-articles"
-      data={items}
-      keyExtractor={(item) => `${item.document_id}-${item.url}`}
-      renderItem={renderItem}
-      ListHeaderComponent={listHeader}
-      contentContainerStyle={listContentStyle}
-      keyboardShouldPersistTaps="handled"
-      ListEmptyComponent={
-        !loading ? <Text style={styles.empty}>{kk.knowledgePortal.feedEmpty}</Text> : null
-      }
-    />
+    <>
+      <FlatList
+        testID="screen-main-articles"
+        data={items}
+        keyExtractor={(item) => `${item.document_id}-${item.url}`}
+        renderItem={renderItem}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={listContentStyle}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          !loading ? <Text style={styles.empty}>{kk.knowledgePortal.feedEmpty}</Text> : null
+        }
+      />
+      <EmbeddedSiteSheet
+        visible={Boolean(embeddedArticle)}
+        url={embeddedArticle?.url ?? ""}
+        title={embeddedArticle?.title ?? kk.knowledgePortal.title}
+        colors={colors}
+        onClose={() => setEmbeddedArticle(null)}
+      />
+    </>
   );
 }
 

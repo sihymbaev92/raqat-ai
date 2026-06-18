@@ -4,7 +4,9 @@ import { getMuftyatPageText } from "../content/tajweedMuftyatPageText";
 import {
   buildTajweedArabicSpeakOptions,
   prepareTajweedArabicSpeech,
+  primeWebSpeechVoices,
   resolveArabicTtsOptions,
+  speakWebArabicUtterance,
 } from "./tajweedArabicTts";
 
 type VoiceRow = {
@@ -58,7 +60,13 @@ export async function resolveKazakhTtsOptions(): Promise<{ language: string; voi
 export function prepareMuftyatKkSpeech(input: string): string {
   let t = (input ?? "").trim();
   if (!t) return t;
-  t = t.replace(/\s*\.\s*\./g, ". ");
+  t = t
+    .replace(/\s*\.\s*\./g, ". ")
+    .replace(/([А-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ])-+\s*\.\s*([А-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ])/gu, "$1$2")
+    .replace(/әр\s*\.\s*қайсысына/giu, "әрқайсысына")
+    .replace(/кажет/giu, "қажет")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+([,.;:!?])/g, "$1");
   return t.trim();
 }
 
@@ -70,15 +78,6 @@ function buildKkSpeakOptions(opt: { language: string; voice?: string }) {
     ...(useVoice ? { voice: opt.voice } : {}),
     rate: Platform.OS === "android" ? 0.88 : 0.92,
     pitch: 1.0,
-  };
-}
-
-function buildKkLetterNameSpeakOptions(opt: { language: string; voice?: string }) {
-  return {
-    ...buildKkSpeakOptions(opt),
-    rate: Platform.OS === "android" ? 0.78 : 0.82,
-    pitch: 1.02,
-    volume: 1.0,
   };
 }
 
@@ -160,7 +159,7 @@ export async function speakMuftyatPage(page: number, cb: MuftyatSpeechCallbacks 
     await pauseAfterStop();
     const kkOpt = await resolveKazakhTtsOptions();
     const arOpt = await resolveArabicTtsOptions();
-    const kkText = prepareMuftyatKkSpeech(row.text);
+    const kkText = prepareMuftyatKkSpeech(row.displayText || row.text);
     if (gen !== queueGen || activeKey !== key) return;
 
     if (kkText) {
@@ -190,6 +189,7 @@ export function isMuftyatPageSpeaking(page: number): boolean {
   return activeKey === `page-${page}`;
 }
 
+/** Әліпби карточкалары: толық әріп атауы емес, қысқа дыбыс оқылады. */
 const TAJWEED_LETTER_SPEECH: Record<string, string> = {
   ا: "أَ",
   ب: "بَ",
@@ -226,18 +226,14 @@ export function prepareTajweedLetterSpeech(ar: string): string {
   return TAJWEED_LETTER_SPEECH[letter] ?? letter;
 }
 
-export function prepareTajweedLetterNameSpeech(nameKk: string | undefined, ar: string): string {
-  const name = prepareMuftyatKkSpeech((nameKk ?? "").trim());
-  return name || prepareTajweedLetterSpeech(ar);
-}
-
 /**
- * Әріп карточкасы — мысал сөзді емес, таза әріп атауын оқиды: "алиф", "син", "шин", "ғойн"...
+ * Әріп карточкасы — мысал сөзді де, толық әріп атауын да емес,
+ * қысқа дыбысты оқиды: "بَ", "سَ", "شَ", "غَ"...
  */
 export async function speakTajweedLetter(
   ar: string,
   _example?: string,
-  nameKk?: string,
+  _nameKk?: string,
 ): Promise<boolean> {
   const gen = ++queueGen;
   const key = `letter-${ar}`;
@@ -247,13 +243,17 @@ export async function speakTajweedLetter(
     await pauseAfterStop();
     if (cancelled()) return false;
 
-    const text = prepareTajweedLetterNameSpeech(nameKk, ar);
+    const text = prepareTajweedArabicSpeech(prepareTajweedLetterSpeech(ar));
     if (!text) return false;
 
     try {
-      const kkOpt = await resolveKazakhTtsOptions();
+      if (Platform.OS === "web") {
+        await speakWebArabicUtterance(text);
+        return true;
+      }
+      const arOpt = await resolveArabicTtsOptions({ preferMale: true });
       if (cancelled()) return false;
-      await speakOnce(text, buildKkLetterNameSpeakOptions(kkOpt));
+      await speakOnceRobust(text, buildTajweedArabicSpeakOptions(arOpt, { preferMale: true }));
     } catch {
       return false;
     }
@@ -268,7 +268,10 @@ export async function speakTajweedLetter(
 
 /** Алфавит экраны ашылғанда дауыс тізімін алдын ала жүктеу (Android бос массив bug). */
 export function warmTajweedLetterSpeech(): void {
-  void resolveKazakhTtsOptions();
+  if (Platform.OS === "web") {
+    primeWebSpeechVoices();
+  }
+  void resolveArabicTtsOptions({ preferMale: true });
 }
 
 export function isTajweedLetterSpeaking(ar: string): boolean {

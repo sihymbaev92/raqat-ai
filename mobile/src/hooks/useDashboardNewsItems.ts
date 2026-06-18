@@ -9,7 +9,8 @@ import {
 } from "../services/platformApiClient";
 import { loadOfficialHomeNewsItems } from "../services/officialSitesBootstrap";
 import { getValidAccessToken } from "../storage/authTokens";
-import { readOfficialHomeFeedCache, OFFICIAL_HOME_FEED_TTL_MS } from "../storage/officialHomeFeedCache";
+import { readOfficialHomeFeedCacheSnapshot, OFFICIAL_HOME_FEED_TTL_MS } from "../storage/officialHomeFeedCache";
+import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import {
   DASHBOARD_NEWS_BROWSE_LIMIT,
   buildDashboardKurbanAitNewsItems,
@@ -40,6 +41,7 @@ export function useDashboardNewsItems(): State {
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(true);
   const loadSeqRef = useRef(0);
+  const didInitialRefreshRef = useRef(false);
 
   const applyFallback = useCallback(() => {
     setItems(buildDashboardKurbanAitNewsItems());
@@ -70,25 +72,34 @@ export function useDashboardNewsItems(): State {
     return mapKbArticles(merged);
   }, []);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { skipFreshCacheRefresh?: boolean }) => {
     const seq = ++loadSeqRef.current;
-    setLoading(true);
+    let shouldRefreshNetwork = true;
     try {
-      const cached = await readOfficialHomeFeedCache();
+      const cached = await readOfficialHomeFeedCacheSnapshot();
       if (seq !== loadSeqRef.current) return;
-      const hasCached = Boolean(cached?.length);
-      if (cached?.length) {
-        // Кэш экранды тез толтырады, бірақ жаңа ресми feed-ті бәрібір сұраймыз.
-        setItems(cached);
+      const hasCached = Boolean(cached?.items.length);
+      if (cached?.items.length && cached.fresh) {
+        setItems(cached.items);
         setUsingFallback(false);
         setLoading(false);
+        shouldRefreshNetwork = !(opts?.skipFreshCacheRefresh || didInitialRefreshRef.current);
+      } else if (!hasCached) {
+        applyFallback();
+        setLoading(false);
       }
+      if (!shouldRefreshNetwork) return;
+
+      setLoading(!hasCached);
+      await runWhenHeavyWorkAllowed();
+      if (seq !== loadSeqRef.current) return;
 
       const officialItems = await loadOfficialHomeNewsItems().catch(() => [] as DashboardNewsItem[]);
       if (seq !== loadSeqRef.current) return;
       if (officialItems.length > 0) {
         setItems(officialItems);
         setUsingFallback(false);
+        didInitialRefreshRef.current = true;
         return;
       }
 
@@ -97,6 +108,7 @@ export function useDashboardNewsItems(): State {
       if (kbItems.length > 0) {
         setItems(kbItems);
         setUsingFallback(false);
+        didInitialRefreshRef.current = true;
         return;
       }
 
@@ -114,7 +126,7 @@ export function useDashboardNewsItems(): State {
     void load();
     const interval = setInterval(() => void load(), OFFICIAL_HOME_FEED_TTL_MS);
     const onAppState = (next: AppStateStatus) => {
-      if (next === "active") void load();
+      if (next === "active") void load({ skipFreshCacheRefresh: true });
     };
     const sub = AppState.addEventListener("change", onAppState);
     return () => {

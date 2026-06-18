@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Image, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { RasterImage } from "@/ui/RasterImage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp, NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -177,7 +178,7 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator>
       <View style={styles.hero}>
-        <Image source={topic.image} style={styles.heroImage} resizeMode="cover" />
+        <RasterImage source={topic.image} style={styles.heroImage} resizeMode="cover" />
         <View style={styles.heroShade} />
         <View style={styles.heroTop}>
           <Pressable oyuBackdrop={false} onPress={() => nav.goBack()} hitSlop={8}>
@@ -253,16 +254,16 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
 
       {audios.length ? (
         <>
-          <TraditionSectionHeader title={tr("Бата аудиолары")} palette={palette} />
+          <TraditionSectionHeader title={tr("Бата мәтін үлгілері")} palette={palette} />
           {audios.map((audio) => (
             <View key={audio.id} style={styles.audioCard}>
               <View style={styles.audioIcon}>
-                <MaterialIcons name="volume-up" size={18} color={palette.buttonGoldText} />
+                <MaterialIcons name="notes" size={18} color={palette.buttonGoldText} />
               </View>
               <View style={styles.audioTextCol}>
                 <Text style={styles.audioTitle}>{tr(audio.title)}</Text>
                 <Text style={styles.audioMeta}>
-                  {audio.duration} · {tr(audio.sourceLabel)}
+                  {tr("мәтін үлгісі")} · {audio.duration} · {tr(audio.sourceLabel)}
                 </Text>
                 <Text style={styles.audioBody}>{tr(audio.text)}</Text>
               </View>

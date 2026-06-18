@@ -3,6 +3,17 @@ import {
   lookupHalalProductsSeedByBarcode,
   searchHalalProductsSeed,
 } from "../halalProductsSeedKz";
+import seedBundle from "../../../assets/bundled/halal-products-seed-kz.json";
+
+type SeedItem = {
+  title: string;
+  ingredients?: string | null;
+  certificateStatus?: string | null;
+  companyId?: number | null;
+};
+
+const seedItems = (seedBundle as { items: SeedItem[] }).items;
+const hasLatinAndCyrillic = (word: string) => /[A-Za-z]/.test(word) && /[А-Яа-яЁёӘәҒғҚқҢңӨөҰұҮүҺһІі]/.test(word);
 
 describe("halalProductsSeedKz", () => {
   it("loads bundled seed count", () => {
@@ -25,5 +36,31 @@ describe("halalProductsSeedKz", () => {
   it("search matches ingredients token", () => {
     const hit = searchHalalProductsSeed("желатин", 10);
     expect(hit.some((p) => (p.ingredients ?? "").toLowerCase().includes("желатин"))).toBe(true);
+  });
+
+  it("does not keep mixed Latin/Cyrillic OCR typos inside one seed title word", () => {
+    const bad = seedItems.flatMap((item) =>
+      item.title
+        .split(/\s+/)
+        .filter(hasLatinAndCyrillic)
+        .map((word) => `${item.title}: ${word}`)
+    );
+
+    expect(bad).toEqual([]);
+  });
+
+  it("does not mark pork-containing manual seed rows as active certified products", () => {
+    const risky = seedItems.filter((item) => /шошқа/i.test(item.ingredients ?? ""));
+
+    expect(risky.length).toBeGreaterThan(0);
+    expect(risky).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          certificateStatus: "review_required",
+          companyId: null,
+        }),
+      ])
+    );
+    expect(risky.every((item) => item.certificateStatus !== "active")).toBe(true);
   });
 });

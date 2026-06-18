@@ -24,7 +24,7 @@ import {
 } from "../../theme/quranComReadingTheme";
 import type { AyahMarkerRecord } from "../../storage/quranAyahMarkers";
 import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSurahCache";
-import { mushafBookPageRenderBackend } from "../../quran/mushafPageRenderBackend";
+import { mushafBookEffectiveRenderBackend } from "../../quran/mushafPageRenderBackend";
 import type { MushafAyahMapFile } from "../../quran/mushafAyahMap";
 import { MushafBookPageWebp } from "./MushafBookPageWebp";
 import { MushafBookPageSvg } from "./MushafBookPageSvg";
@@ -104,11 +104,14 @@ type Props = {
 
 /** Hafs 604: backend — text-hafs | svg | webp | qcf4. */
 export function MushafBookPageScroll(props: Props) {
-  if (props.showTajweedColors || props.arabicScriptEdition !== "madinah") {
+  if (props.arabicScriptEdition !== "madinah") {
     return <MushafBookPageTextHafs {...props} />;
   }
 
-  const backend = mushafBookPageRenderBackend(props.readingThemeId);
+  const backend = mushafBookEffectiveRenderBackend(props.readingThemeId, {
+    showTajweedColors: props.showTajweedColors,
+    arabicScriptEdition: props.arabicScriptEdition,
+  });
 
   if (backend === "webp" || backend === "svg" || backend === "qcf4") {
     if (backend === "qcf4") {
@@ -210,6 +213,7 @@ function MushafBookPageQcf4Route(props: Props) {
     isActive = true,
     showReaderMeaning,
     showReaderTranslit,
+    showTajweedColors,
     mushafTextScale = 1,
     playingRef,
     ayahAudioIsPlaying,
@@ -234,6 +238,7 @@ function MushafBookPageQcf4Route(props: Props) {
       isActive={isActive}
       showReaderMeaning={showReaderMeaning}
       showReaderTranslit={showReaderTranslit}
+      showTajweedColors={showTajweedColors}
       mushafTextScale={mushafTextScale}
       playingRef={playingRef}
       ayahAudioIsPlaying={ayahAudioIsPlaying}
@@ -403,6 +408,7 @@ function MushafBookPageTextHafs({
               {effectiveShowReaderMeaning || effectiveShowReaderTranslit || playingRef || loadingAyahAudio
                 ? seg.ayahs.map((a) => (
                     (() => {
+                      const resolved = resolveMushafBookAyah(a);
                       const isLoad = loadingAyahAudio?.surah === seg.surah && loadingAyahAudio.ayah === a.numberInSurah;
                       const hasLoaded = playingRef?.surah === seg.surah && playingRef.ayah === a.numberInSurah;
                       const isPlayingNow = hasLoaded && ayahAudioIsPlaying;
@@ -413,16 +419,16 @@ function MushafBookPageTextHafs({
                           <Text style={st.mushafSecondaryAyahRibbon}>
                             {titleKk} · {a.numberInSurah}
                           </Text>
-                          {effectiveShowReaderTranslit && a.translit ? (
-                            <Text style={st.mushafAyahKiril}>{a.translit}</Text>
+                          {effectiveShowReaderTranslit && resolved.translit ? (
+                            <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
                           ) : null}
-                          {effectiveShowReaderMeaning && quranAyahMeaningForLocale(a, getCurrentLocale()) ? (
-                            <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(a, getCurrentLocale())}</Text>
+                          {effectiveShowReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
+                            <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
                           ) : null}
                           {isAudioFocus ? (
                             <Pressable
                               oyuBackdrop={false}
-                              onPress={() => onToggleAudio({ surah: seg.surah, ayah: a.numberInSurah }, a)}
+                              onPress={() => onToggleAudio({ surah: seg.surah, ayah: a.numberInSurah }, resolved)}
                               disabled={isLoad}
                               accessibilityRole="button"
                               accessibilityState={{ busy: isLoad }}

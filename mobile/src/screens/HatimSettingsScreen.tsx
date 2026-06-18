@@ -5,6 +5,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import { kk } from "../i18n/kk";
 import { makeSettingsStyles } from "../components/settings/settingsUi";
 import { SettingsHatimHub } from "../components/settings/SettingsHatimHub";
+import { QURAN_KK_TEXT_PROVENANCE_KK } from "../config/quranKkTranslation";
 import { makeSettingsScreenShell } from "./settings/settingsScreenShell";
 
 export function HatimSettingsScreen() {
@@ -20,6 +21,7 @@ export function HatimSettingsScreen() {
     >
       <Text style={shell.h1}>{kk.hatim.settingsTitle}</Text>
       <Text style={ui.sectionSub}>{kk.hatim.settingsSubtitle}</Text>
+      <Text style={ui.sectionSub}>{QURAN_KK_TEXT_PROVENANCE_KK}</Text>
       <SettingsHatimHub colors={colors} />
     </ScrollView>
   );

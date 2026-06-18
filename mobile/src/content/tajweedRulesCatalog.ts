@@ -57,7 +57,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[m[",
     labelKk: "Мәдд — лазым (6)",
     detailKk: "Міндетті ұзын мәдд — әдетте 6 харакат.",
-    colorLight: "#1e3a8a",
+    colorLight: "#000ebc",
     colorDark: "#60a5fa",
   },
   {
@@ -73,7 +73,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[q[",
     labelKk: "Қалқала",
     detailKk: "ق ط ب ج د сукунмен — қысқа «секіру» дыбысы.",
-    colorLight: "#dc2626",
+    colorLight: "#dd0008",
     colorDark: "#f87171",
   },
   {
@@ -81,7 +81,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[g[",
     labelKk: "Ғунна",
     detailKk: "Мұрыннан екі харакат созылуы (нун/мим ғунна).",
-    colorLight: "#ea580c",
+    colorLight: "#ff7e1e",
     colorDark: "#fdba74",
   },
   {
@@ -97,7 +97,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[c[",
     labelKk: "Ихфа шафави",
     detailKk: "Мим сәкиннен кейін ب — ерін жабық, дыбыс жеңіл.",
-    colorLight: "#c026d3",
+    colorLight: "#d500b7",
     colorDark: "#f0abfc",
   },
   {
@@ -105,7 +105,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[w[",
     labelKk: "Идғам шафави",
     detailKk: "Мим сәкиннен кейін м — қосарланып, 2 харакат ғунна.",
-    colorLight: "#16a34a",
+    colorLight: "#58b800",
     colorDark: "#6ee7b7",
   },
   {
@@ -113,7 +113,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[i[",
     labelKk: "Иқлаб",
     detailKk: "Нун сәкиннен кейін ب — дыбыс мимге ауысады.",
-    colorLight: "#0891b2",
+    colorLight: "#26bffd",
     colorDark: "#67e8f9",
   },
   {
@@ -121,7 +121,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[a[",
     labelKk: "Идғам (ғуннамен)",
     detailKk: "Нун келесі әріпке сіңісіп, ғуннамен оқылады.",
-    colorLight: "#059669",
+    colorLight: "#169777",
     colorDark: "#34d399",
   },
   {
@@ -129,7 +129,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[u[",
     labelKk: "Идғам (ғуннасыз)",
     detailKk: "Нун келесі әріпке сіңісіп, ғуннасыз оқылады.",
-    colorLight: "#15803d",
+    colorLight: "#169200",
     colorDark: "#4ade80",
   },
   {
@@ -137,7 +137,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[d[",
     labelKk: "Идғам мутәжанисайн",
     detailKk: "Ұқсас дыбысты әріптердің бірі жұмсартылады.",
-    colorLight: "#78716c",
+    colorLight: "#a1a1a1",
     colorDark: "#a8a29e",
   },
   {
@@ -145,7 +145,7 @@ export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
     tagOpen: "[b[",
     labelKk: "Идғам мутақарибайн",
     detailKk: "Жақын маһражды әріптер бірігіп оқылады.",
-    colorLight: "#78716c",
+    colorLight: "#a1a1a1",
     colorDark: "#a8a29e",
   },
 ];

@@ -17,7 +17,7 @@
       android:textStyle="bold"
       android:maxLines="1"
       android:ellipsize="end"
-      android:includeFontPadding="false" />
+      android:includeFontPadding="true" />
 
   <TextView
       android:id="@+id/widget_next_countdown"

@@ -7,7 +7,6 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Linking,
   type ListRenderItem,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
@@ -32,6 +31,7 @@ import { RaqatAiExampleChips } from "../components/RaqatAiExampleChips";
 import { RaqatKbShelf } from "../components/RaqatKbShelf";
 import { RaqatKbStatusBar } from "../components/RaqatKbStatusBar";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
+import { EmbeddedSiteSheet } from "../components/EmbeddedSiteSheet";
 import { isRaqatAiKbOnlyClient } from "../config/raqatAiKbOnly";
 import type { PlatformIslamicKbArticle } from "../services/platformApiClient";
 import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
@@ -57,6 +57,7 @@ import {
   AI_CHAT_STAGED_FULL_MS,
   AI_HTTP_RETRY_MAX_DEFAULT,
   resolveAiTimeoutMs,
+  withReligiousComplianceGuardrail,
 } from "../config/aiRequestPolicy";
 
 const STORAGE_KEY = "raqat_ai_chat_messages_v1";
@@ -106,6 +107,8 @@ function buildPromptWithHistory(prev: ChatMsg[], nextUserText: string, kbOnly: b
     ? [
         "Тарих төменде; соңында жаңа сұрақ.",
         "Жауап тек Fatua.kz / Muftyat.kz индексіндегі үзінділерге сүйен; ойдан аят, хадис немесе жаңа пәтуа қоспа.",
+        "Өзіңнен фиқһтық үкім шығарма: дереккөз жеткіліксіз болса «индексте нақты дерек табылмады» деп ашық айт.",
+        "Нақты жеке жағдайларда Fatua.kz / Muftyat.kz толық мәтінін оқуға немесе білікті ұстаз/имамға жүгінуге бағытта.",
         "Қазақша, қысқа; материал жеткіліксіз болса — ресми сайттарға жүгіну туралы айт.",
       ]
     : [
@@ -126,11 +129,7 @@ function buildPromptWithHistory(prev: ChatMsg[], nextUserText: string, kbOnly: b
     }
   }
   lines.push(`Жаңа сұрақ: ${nextUserText.trim()}`);
-  let body = lines.join("\n\n");
-  if (body.length > MAX_PROMPT_CHARS) {
-    body = body.slice(-MAX_PROMPT_CHARS);
-  }
-  return body;
+  return withReligiousComplianceGuardrail(lines.join("\n\n"), MAX_PROMPT_CHARS);
 }
 
 function truncateText(s: string, max = 180): string {
@@ -243,8 +242,7 @@ function buildGroundedAiPrompt(
     "Тарих:",
     historyPrompt,
   ].join("\n");
-  if (grounded.length <= MAX_PROMPT_CHARS) return grounded;
-  return grounded.slice(-MAX_PROMPT_CHARS);
+  return withReligiousComplianceGuardrail(grounded, MAX_PROMPT_CHARS);
 }
 
 function mergeRefsAndBody(refs: string, body: string): string {
@@ -278,10 +276,12 @@ function AiSourcesCompact({
   sources,
   colors,
   messageId,
+  onOpenSource,
 }: {
   sources: AiChatSource[];
   colors: ThemeColors;
   messageId: string;
+  onOpenSource: (source: { title: string; url: string }) => void;
 }) {
   const styles = useMemo(
     () =>
@@ -344,7 +344,7 @@ function AiSourcesCompact({
           <Pressable
             key={`${messageId}_src_${si}`}
             style={({ pressed }) => [styles.linkRow, pressed && { opacity: 0.88 }]}
-            onPress={() => void Linking.openURL(url)}
+            onPress={() => onOpenSource({ title: label, url })}
             accessibilityRole="link"
             accessibilityLabel={kk.aiChat.sourceOpenA11y(label)}
           >
@@ -370,6 +370,7 @@ export function RaqatAIChatScreen() {
   const keyboardOffset = useKeyboardOffset();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const route = useRoute<RouteProp<MoreStackParamList, "ImamAI">>();
+  const [embeddedSource, setEmbeddedSource] = useState<{ title: string; url: string } | null>(null);
   /** Төменгі жүйелік навигация + клавиатура: Android-да жазу жолы клавиатура үстінде қалуы үшін kb қосылады. */
   const inputBottomPad =
     10 +
@@ -389,7 +390,15 @@ export function RaqatAIChatScreen() {
   const handledAutoSendPromptRef = useRef<string>("");
   const listRef = useRef<FlatList<ChatMsg>>(null);
   const messagesRef = useRef<ChatMsg[]>([]);
+  const mountedRef = useRef(true);
   messagesRef.current = messages;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -436,6 +445,7 @@ export function RaqatAIChatScreen() {
     const t = (overrideText ?? input).trim();
     if (!t || loading || !canChat) return;
     await hydrateRaqatApiBaseOverride();
+    if (!mountedRef.current) return;
     setApiBaseTick((n) => n + 1);
     const base = getRaqatApiBase();
     setInput("");
@@ -449,6 +459,7 @@ export function RaqatAIChatScreen() {
         asmaImmediate,
         kk.aiChat.apiMissingDetail,
       ]);
+      if (!mountedRef.current) return;
       setMessages((m) => [
         ...m,
         {
@@ -482,6 +493,7 @@ export function RaqatAIChatScreen() {
     };
 
     const patchAssistant = (patch: Partial<ChatMsg>) => {
+      if (!mountedRef.current) return;
       setMessages((m) => m.map((x) => (x.id === assistantId ? { ...x, ...patch } : x)));
     };
     const stage: { quran: string; asma: string } = {
@@ -510,6 +522,7 @@ export function RaqatAIChatScreen() {
           authorizationBearer,
         }),
       ]);
+      if (!mountedRef.current) return;
       const quranResult = quranSettled[0];
       if (quranResult?.status === "fulfilled") {
         stage.quran = formatQuranBlock(quranResult.value.items);
@@ -539,6 +552,7 @@ export function RaqatAIChatScreen() {
         timeoutMs: quickRound1Ms,
         detailLevel: "quick",
       });
+      if (!mountedRef.current) return;
       let quickRes = quickPrimary;
       let quickText = normalizeAiServerReplyText(
         typeof quickRes.text === "string" ? normalizeAiNarrative(quickRes.text.trim()) : "",
@@ -552,6 +566,7 @@ export function RaqatAIChatScreen() {
           timeoutMs: quickRound2Ms,
           detailLevel: "quick",
         });
+        if (!mountedRef.current) return;
         quickRes = quickRetry;
         quickText = normalizeAiServerReplyText(
           typeof quickRes.text === "string" ? normalizeAiNarrative(quickRes.text.trim()) : "",
@@ -593,7 +608,7 @@ export function RaqatAIChatScreen() {
       });
       return;
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoading(false);
     }
 
     try {
@@ -603,6 +618,7 @@ export function RaqatAIChatScreen() {
         detailLevel: "full",
         stagedPipeline: true,
       });
+      if (!mountedRef.current) return;
       let fullText = normalizeAiServerReplyText(
         typeof fullRes.text === "string" ? normalizeAiNarrative(fullRes.text.trim()) : "",
         fullRes
@@ -620,6 +636,7 @@ export function RaqatAIChatScreen() {
           retryPrompt: undefined,
         });
       } else {
+        if (!mountedRef.current) return;
         setMessages((m) =>
           m.map((x) =>
             x.id === assistantId
@@ -640,6 +657,7 @@ export function RaqatAIChatScreen() {
         );
       }
     } catch {
+      if (!mountedRef.current) return;
       setMessages((m) =>
         m.map((x) =>
           x.id === assistantId
@@ -682,6 +700,7 @@ export function RaqatAIChatScreen() {
     async (item: ChatMsg) => {
       if (!item.retryPrompt || loading) return;
       await hydrateRaqatApiBaseOverride();
+      if (!mountedRef.current) return;
       setApiBaseTick((n) => n + 1);
       const base = getRaqatApiBase();
       if (!base) return;
@@ -713,9 +732,11 @@ export function RaqatAIChatScreen() {
           detailLevel: "full",
           stagedPipeline: true,
         });
+        if (!mountedRef.current) return;
         const fullText = typeof fullRes.text === "string" ? fullRes.text.trim() : "";
         if (fullRes.ok !== false && (fullRes.status === undefined || fullRes.status === 200) && fullText) {
           const refs = (item.refsBlock ?? "").trim();
+          if (!mountedRef.current) return;
           setMessages((m) =>
             m.map((x) =>
               x.id === item.id
@@ -735,6 +756,7 @@ export function RaqatAIChatScreen() {
       } catch {
         // handled below
       }
+      if (!mountedRef.current) return;
       setMessages((m) =>
         m.map((x) =>
           x.id === item.id ? { ...x, detailLoading: false, detailLoadError: true } : x
@@ -842,10 +864,21 @@ export function RaqatAIChatScreen() {
           </View>
         ) : null}
         {showSources ? (
-          <AiSourcesCompact sources={item.sources!} colors={colors} messageId={item.id} />
+          <AiSourcesCompact
+            sources={item.sources!}
+            colors={colors}
+            messageId={item.id}
+            onOpenSource={setEmbeddedSource}
+          />
         ) : null}
         {showKbNoSourceWarning ? (
-          <Text style={styles.kbNoSourceWarning}>{kk.aiChat.kbNoSourceWarning}</Text>
+          <View style={styles.kbNoSourceBox}>
+            <MaterialIcons name="report-problem" size={18} color={colors.error} />
+            <View style={styles.kbNoSourceTextCol}>
+              <Text style={styles.kbNoSourceTitle}>{kk.aiChat.kbNoSourceIncompleteTitle}</Text>
+              <Text style={styles.kbNoSourceWarning}>{kk.aiChat.kbNoSourceIncompleteBody}</Text>
+            </View>
+          </View>
         ) : null}
       </View>
     </View>
@@ -861,6 +894,12 @@ export function RaqatAIChatScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? kavOffset : 0}
     >
+      <View style={styles.persistentSafetyNotice}>
+        <MaterialIcons name="verified-user" size={16} color={colors.accent} />
+        <Text style={styles.persistentSafetyNoticeText} numberOfLines={1}>
+          {kk.aiChat.persistentSafetyNotice}
+        </Text>
+      </View>
       <FlatList
         ref={listRef}
         data={messages}
@@ -950,6 +989,13 @@ export function RaqatAIChatScreen() {
         </Pressable>
       </View>
     </KeyboardAvoidingView>
+      <EmbeddedSiteSheet
+        visible={Boolean(embeddedSource)}
+        url={embeddedSource?.url ?? ""}
+        title={embeddedSource?.title ?? kk.aiChat.sourcesTitle}
+        colors={colors}
+        onClose={() => setEmbeddedSource(null)}
+      />
     </>
   );
 }
@@ -957,6 +1003,27 @@ export function RaqatAIChatScreen() {
 function makeStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     flex: { flex: 1, backgroundColor: colors.bg },
+    persistentSafetyNotice: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      marginHorizontal: 12,
+      marginTop: 8,
+      marginBottom: 2,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    persistentSafetyNoticeText: {
+      flex: 1,
+      minWidth: 0,
+      color: colors.muted,
+      fontSize: 12,
+      fontWeight: "800",
+    },
     configBox: {
       padding: 14,
       margin: 12,
@@ -981,6 +1048,25 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     configNavBtnTxt: { color: "#ffffff", fontWeight: "800", fontSize: 15 },
     listContent: { paddingHorizontal: 18, paddingTop: 14 },
+    safetyNotice: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
+      padding: 11,
+      marginBottom: 8,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    safetyNoticeText: {
+      flex: 1,
+      minWidth: 0,
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 18,
+      fontWeight: "700",
+    },
     portalBanner: {
       flexDirection: "row",
       alignItems: "center",
@@ -1067,8 +1153,28 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.muted,
       fontSize: 12,
       lineHeight: 18,
+    },
+    kbNoSourceBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
       marginTop: 8,
-      fontStyle: "italic",
+      padding: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: `${colors.error}55`,
+      backgroundColor: isDark ? "rgba(220,38,38,0.10)" : "rgba(220,38,38,0.06)",
+    },
+    kbNoSourceTextCol: {
+      flex: 1,
+      minWidth: 0,
+    },
+    kbNoSourceTitle: {
+      color: colors.error,
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: "900",
+      marginBottom: 2,
     },
     detailFailBox: { marginTop: 6, gap: 6 },
     retryBtn: {

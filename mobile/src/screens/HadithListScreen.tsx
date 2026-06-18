@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState, memo, startTransition } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState, memo, startTransition } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { useFocusEffect } from "@react-navigation/native";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -21,6 +22,7 @@ import type { MoreStackParamList } from "../navigation/types";
 import {
   loadHadithCorpus,
   invalidateHadithCorpusMemoryCache,
+  releaseHadithCorpusMemoryCache,
   clearHadithCorpusStorage,
   hadithCollectionBucket,
   type HadithCorpus,
@@ -379,6 +381,23 @@ export function HadithListScreen({ navigation }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<CollTab>("bukhari");
   const [viewMode, setViewMode] = useState<HadithViewMode>("unique");
+  const didFocusOnceRef = useRef(false);
+  const [focusEpoch, setFocusEpoch] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (didFocusOnceRef.current) {
+        setFocusEpoch((v) => v + 1);
+      } else {
+        didFocusOnceRef.current = true;
+      }
+      return () => {
+        setCorpus(null);
+        setLists(null);
+        releaseHadithCorpusMemoryCache();
+      };
+    }, [])
+  );
 
   /**
    * Алдымен диск/жадтан оқимыз — қайталама пайдаланушыға сидингті күтпей ашамыз.
@@ -415,7 +434,7 @@ export function HadithListScreen({ navigation }: Props) {
     startTransition(() => {
       setCorpus(c);
     });
-  }, [ensureCorpus]);
+  }, [ensureCorpus, focusEpoch]);
 
   /** Корпус жүктелу (бөлу viewMode бойынша бөлек эффектте). */
   useEffect(() => {

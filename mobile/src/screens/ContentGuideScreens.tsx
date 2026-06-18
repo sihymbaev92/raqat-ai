@@ -5,6 +5,7 @@ import {
   Modal,
   StyleSheet,
   ScrollView,
+  Platform,
   type ImageSourcePropType,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
@@ -32,6 +33,8 @@ import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
 
 const WUDU_THEORY_ACC_KEY = "wudu-theory";
+const NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER = Platform.OS === "android" ? 0.45 : undefined;
+const NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO = 0.34;
 type NamazPrimarySectionKey = "wudu" | "five-prayers";
 
 type NamazStudyCard = {
@@ -344,6 +347,8 @@ function NamazGuideBody({
               openImageA11y={`${step.title}. ${step.desc}. ${kk.namazGuide.openImageA11y}`}
               softenThumbOverlay={false}
               fitThumbToScreen
+              maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
+              thumbResizeMultiplier={NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER}
             />
           </View>
           <View style={styles.visualStepCardBody}>
@@ -441,6 +446,8 @@ function NamazGuideBody({
                 openImageA11y={`${v.title}. ${v.desc}. ${kk.namazGuide.openImageA11y}`}
                 softenThumbOverlay={false}
                 fitThumbToScreen
+                maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
+                thumbResizeMultiplier={NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER}
               />
             </View>
             <View style={styles.visualStepCardBody}>
@@ -587,6 +594,7 @@ function NamazGuideBody({
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
+            removeClippedSubviews={Platform.OS === "android"}
           >
             {selectedPrimarySection === "wudu" ? renderWuduContent() : renderFivePrayerContent()}
           </ScrollView>
@@ -622,6 +630,7 @@ function NamazGuideBody({
             style={styles.root}
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
+            removeClippedSubviews={Platform.OS === "android"}
           >
             <View style={styles.visualStepCard}>
               <View style={styles.ltrImageWrap}>
@@ -634,6 +643,8 @@ function NamazGuideBody({
                   openImageA11y={`${selectedPrayerCard.title}. ${selectedPrayerCard.subtitle}. ${kk.namazGuide.openImageA11y}`}
                   softenThumbOverlay={false}
                   fitThumbToScreen
+                  maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
+                  thumbResizeMultiplier={NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER}
                 />
               </View>
               <View style={styles.visualStepCardBody}>

@@ -3,12 +3,12 @@ import { headingFromLocationHeading } from "../qiblaLocationHeading";
 describe("headingFromLocationHeading", () => {
   const declKz = 9;
 
-  test("Android: қолданба decl шамасы Expo true-дан ауытқысanda да |t−m| деклинация ауқымында болса true қолданылады", () => {
+  test("Android: magHeading бар болса, қолданба declination қосылған бағыт қолданылады", () => {
     const m = 100;
     const expoTrue = (m + 8.1 + 360) % 360;
     const h = { magHeading: m, trueHeading: expoTrue, accuracy: 3 };
     const fromMagDecl = headingFromLocationHeading(h, declKz, "android");
-    expect(fromMagDecl).toBeCloseTo(expoTrue, 5);
+    expect(fromMagDecl).toBeCloseTo((m + declKz) % 360, 5);
   });
 
   test("Android: true≈mag бірақ аймақта деклинация үлкен — географиялық mag+decl", () => {

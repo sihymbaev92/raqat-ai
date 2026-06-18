@@ -14,14 +14,14 @@ export type HalalInstantCompanyFilter = {
   certificateStatus?: string;
 };
 
-/** Бір мекеменің WP-де қайталанған id/жazba дубликаттарын ажырату. */
+/** Бір мекеменің WP-де қайталанған id/жазба дубликаттарын ажырату. */
 export function halalCompanyFingerprint(c: HalalDamuCompanyCard): string {
   const title = (c.title ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   const addr = (c.address ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return `${title}|${addr}`;
 }
 
-/** id + атау/мekенжай бойынша қайталануларды алып тастайды. */
+/** id + атау/мекенжай бойынша қайталануларды алып тастайды. */
 export function dedupeHalalCompanyCards<T extends HalalDamuCompanyCard>(items: T[]): T[] {
   const seenId = new Set<number>();
   const seenFp = new Set<string>();

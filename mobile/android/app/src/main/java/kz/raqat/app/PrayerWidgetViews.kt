@@ -219,6 +219,7 @@ object PrayerWidgetViews {
   fun buildHomeStripRemoteViews(context: Context): RemoteViews {
     val rv = RemoteViews(context.packageName, R.layout.widget_prayer_home_strip)
     val parsed = PrayerWidgetPayload.parse(context, readPayloadJson(context))
+    bindHomeBackground(rv, parsed)
     if (parsed == null) {
       bindHomeTopBar(context, rv, null)
       bindFiveStripGrid(context, rv, emptyList(), null)
@@ -235,6 +236,26 @@ object PrayerWidgetViews {
     }
     bindOpenTap(rv, R.id.widget_home_strip_root, context, RC_HOME_STRIP)
     return rv
+  }
+
+  private fun bindHomeBackground(rv: RemoteViews, parsed: PrayerDayParsed?) {
+    rv.setInt(
+      R.id.widget_home_strip_root,
+      "setBackgroundResource",
+      homeBackgroundForWeather(parsed?.weatherCode)
+    )
+  }
+
+  private fun homeBackgroundForWeather(code: Int?): Int {
+    if (code == null) return R.drawable.widget_prayer_home_bg
+    return when (code) {
+      0 -> R.drawable.widget_prayer_home_bg_sunny
+      1, 2, 3, 45, 48 -> R.drawable.widget_prayer_home_bg_cloudy
+      51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82 -> R.drawable.widget_prayer_home_bg_rain
+      71, 73, 75, 77, 85, 86 -> R.drawable.widget_prayer_home_bg_snow
+      95, 96, 99 -> R.drawable.widget_prayer_home_bg_storm
+      else -> R.drawable.widget_prayer_home_bg_cloudy
+    }
   }
 
   private fun nextInSubset(next: PrayerRow?, subset: List<PrayerRow>): PrayerRow? =

@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useState } from "react";
-import { View, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet, Text } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -73,6 +73,19 @@ export function TajweedGuideScreen() {
 
   return (
     <View style={styles.bookWrap}>
+      <View style={[styles.bookHeader, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
+        <Pressable
+          oyuBackdrop={false}
+          onPress={goHome}
+          style={({ pressed }) => [styles.bookBackButton, pressed && { opacity: 0.72 }]}
+          accessibilityRole="button"
+          accessibilityLabel={kk.common.back}
+        >
+          <MaterialIcons name="arrow-back" size={21} color={colors.text} />
+          <Text style={[styles.bookBackText, { color: colors.text }]}>{kk.common.back}</Text>
+        </Pressable>
+        <Text style={[styles.bookHeaderTitle, { color: colors.text }]}>{kk.tajweedGuide.pagesHeading}</Text>
+      </View>
       <TajweedMuftyatBook key={`book-${bookStartPage}`} initialPage={bookStartPage} />
     </View>
   );
@@ -81,4 +94,29 @@ export function TajweedGuideScreen() {
 const styles = StyleSheet.create({
   homeContent: { flexGrow: 1 },
   bookWrap: { flex: 1 },
+  bookHeader: {
+    minHeight: 48,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  bookBackButton: {
+    minHeight: 38,
+    paddingRight: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  bookBackText: {
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  bookHeaderTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "800",
+    paddingRight: 56,
+  },
 });

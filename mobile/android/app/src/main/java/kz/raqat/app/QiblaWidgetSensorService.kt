@@ -426,51 +426,41 @@ class QiblaWidgetSensorService : Service(), SensorEventListener {
 
 
     fun ensureRunning(context: Context) {
-
-      if (!hasHomeStripWidgets(context)) return
-
-      val app = context.applicationContext
-
-      try {
-
-        val intent = Intent(app, QiblaWidgetSensorService::class.java)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-          app.startForegroundService(intent)
-
-        } else {
-
-          app.startService(intent)
-
-        }
-
-      } catch (_: Throwable) {
-
-        /* фон шектеуі */
-
-      }
-
+      // Persistent widget compass updates require a foreground notification.
+      // The product choice is to avoid that notification and use the latest
+      // heading pushed while the app is open.
+      stopServiceIfRunning(context)
     }
 
 
 
     fun stopIfIdle(context: Context) {
+      stopServiceIfRunning(context)
+    }
 
-      if (hasHomeStripWidgets(context)) return
-
+    private fun stopServiceIfRunning(context: Context) {
       val app = context.applicationContext
-
-      try {
-
-        app.stopService(Intent(app, QiblaWidgetSensorService::class.java))
-
-      } catch (_: Throwable) {
-
-        /* */
-
+      if (!isServiceRegistered(app)) {
+        return
       }
+      try {
+        app.stopService(Intent(app, QiblaWidgetSensorService::class.java))
+      } catch (_: Throwable) {
+        /* service might not be registered in newer builds */
+      }
+    }
 
+    private fun isServiceRegistered(context: Context): Boolean {
+      return try {
+        @Suppress("DEPRECATION")
+        context.packageManager.getServiceInfo(
+          ComponentName(context, QiblaWidgetSensorService::class.java),
+          0
+        )
+        true
+      } catch (_: Throwable) {
+        false
+      }
     }
 
   }

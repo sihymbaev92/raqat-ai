@@ -95,6 +95,12 @@ describe("hatimProgress", () => {
     expect(read).toEqual(new Set());
   });
 
+  it("serializes overlapping toggles so neither local mutation is lost", async () => {
+    await Promise.all([toggleHatimSurah(1), toggleHatimSurah(2)]);
+
+    expect(await loadHatimProgress()).toEqual(new Set([1, 2]));
+  });
+
   it("hatimProgressFraction computes pct", () => {
     expect(hatimProgressFraction(new Set([1, 2, 3]))).toEqual({
       read: 3,
@@ -173,6 +179,38 @@ describe("hatimProgress", () => {
     );
     expect(await loadHatimProgress()).toEqual(new Set([1, 10, 11, 12]));
     expect(await loadHatimResume()).toEqual({ surah: 4, ayah: 12 });
+  });
+
+  it("merges remote sync with the latest local state when the user toggles during fetch", async () => {
+    await AsyncStorage.setItem(
+      KEY_V2,
+      JSON.stringify({
+        v: 2,
+        readSurahs: [1],
+        resume: { surah: 4, ayah: 12 },
+        updatedAt: "",
+      })
+    );
+    let resolveFetch: (value: { ok: boolean; read_surahs: number[] }) => void = () => undefined;
+    (fetchMeHatim as jest.Mock).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+
+    const syncPromise = syncHatimWithServerBidirectional();
+    await Promise.resolve();
+    await toggleHatimSurah(36);
+    resolveFetch({ ok: true, read_surahs: [2] });
+    await syncPromise;
+
+    expect(await loadHatimProgress()).toEqual(new Set([1, 2, 36]));
+    expect(putMeHatim).toHaveBeenLastCalledWith(
+      "https://api.raqat.kz",
+      "access-token",
+      [1, 2, 36]
+    );
   });
 
   it("syncHatimWithServerBidirectional does not push when remote already includes local", async () => {

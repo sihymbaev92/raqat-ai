@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { AppState, View, Platform } from "react-native";
+import { Animated, AppState, Easing, Platform, StyleSheet, View } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QiblaArrowPointer } from "./QiblaArrowPointer";
@@ -27,6 +27,7 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
   const motionReady = bearingReady && headingHasSample;
   const qiblaAligned =
     motionReady && qiblaAlignHint(rotateDeg, bearing, { headingReady: true }) === "aligned";
+  const alignPulse = React.useRef(new Animated.Value(0)).current;
 
   const ringOuter = size === "lg" ? 46 : size === "sm" ? 32 : variant === "hero" ? 38 : 34;
   const compassBox = size === "lg" ? 38 : size === "sm" ? 24 : variant === "hero" ? 30 : 26;
@@ -35,8 +36,8 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
   const heroOuterRing =
     variant === "hero"
       ? qiblaAligned
-        ? "rgba(52, 251, 153, 0.72)"
-        : "rgba(255, 255, 255, 0.46)"
+        ? "rgba(52, 251, 153, 0.88)"
+        : "rgba(255, 255, 255, 0.74)"
       : qiblaAligned
         ? "rgba(52, 251, 153, 0.95)"
         : `${colors.accent}55`;
@@ -46,6 +47,51 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
       : Math.min(4, Math.max(0, insets.top - 26) * 0.2);
   const headerQiblaDownNudge = Math.round(3 + islandNudge * 0.22);
   const verticalNudge = variant === "header" ? headerQiblaDownNudge : 0;
+  const alignedGlowSize = chipSize + (variant === "hero" ? 22 : 18);
+  const alignedRaySize = chipSize + (variant === "hero" ? 34 : 26);
+  const alignedGlowScale = alignPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.74, 1.34],
+  });
+  const alignedGlowOpacity = alignPulse.interpolate({
+    inputRange: [0, 0.52, 1],
+    outputRange: [0.5, 0.22, 0.05],
+  });
+  const alignedRayScale = alignPulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.58, 1],
+  });
+  const alignedRayOpacity = alignPulse.interpolate({
+    inputRange: [0, 0.42, 1],
+    outputRange: [0.14, 0.52, 0.18],
+  });
+
+  useEffect(() => {
+    if (!qiblaAligned) {
+      alignPulse.stopAnimation();
+      alignPulse.setValue(0);
+      return undefined;
+    }
+
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(alignPulse, {
+          toValue: 1,
+          duration: 950,
+          easing: Easing.out(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(alignPulse, {
+          toValue: 0,
+          duration: 1050,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [alignPulse, qiblaAligned]);
 
   useEffect(() => {
     if (Platform.OS === "web") return undefined;
@@ -74,8 +120,40 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
           alignItems: "center",
           justifyContent: "center",
           marginTop: verticalNudge,
+          overflow: "visible",
         }}
       >
+        {qiblaAligned ? (
+          <>
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.alignedGlow,
+                {
+                  width: alignedGlowSize,
+                  height: alignedGlowSize,
+                  borderRadius: alignedGlowSize / 2,
+                  opacity: alignedGlowOpacity,
+                  transform: [{ scale: alignedGlowScale }],
+                },
+              ]}
+            />
+            {["0deg", "45deg", "90deg", "135deg"].map((rotate) => (
+              <Animated.View
+                key={rotate}
+                pointerEvents="none"
+                style={[
+                  styles.alignedRay,
+                  {
+                    width: alignedRaySize,
+                    opacity: alignedRayOpacity,
+                    transform: [{ rotate }, { scaleX: alignedRayScale }],
+                  },
+                ]}
+              />
+            ))}
+          </>
+        ) : null}
         <Pressable
           onPress={onPress}
           onLongPress={() => setCameraOpen(true)}
@@ -84,19 +162,20 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
             width: chipSize,
             height: chipSize,
             borderRadius: chipSize / 2,
-            backgroundColor: qiblaAligned
-              ? "rgba(52, 211, 153, 0.42)"
-              : bearingReady
-                ? variant === "hero"
-                  ? "rgba(255, 255, 255, 0.14)"
-                  : `${colors.success}28`
-                : variant === "hero"
-                  ? "rgba(255, 255, 255, 0.10)"
+            backgroundColor: variant === "hero"
+              ? qiblaAligned
+                ? "rgba(52, 211, 153, 0.18)"
+                : "rgba(255, 255, 255, 0.16)"
+              : qiblaAligned
+                ? "rgba(52, 211, 153, 0.42)"
+                : bearingReady
+                  ? `${colors.success}28`
                   : colors.accentSurfaceStrong,
-            borderWidth: qiblaAligned ? 2 : variant === "hero" ? 1.75 : 1.5,
+            borderWidth: variant === "hero" ? 1.5 : qiblaAligned ? 2 : 1.5,
             borderColor: heroOuterRing,
             alignItems: "center",
             justifyContent: "center",
+            zIndex: 2,
             ...Platform.select({
               ios: qiblaAligned
                 ? {
@@ -111,7 +190,7 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
                     shadowOpacity: 0.1,
                     shadowRadius: 2,
                   },
-              android: { elevation: qiblaAligned ? 8 : 2 },
+              android: { elevation: variant === "hero" ? 0 : qiblaAligned ? 8 : 2 },
               default: {},
             }),
           }}
@@ -126,7 +205,7 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
               rotateDeg={rotateDeg}
               aligned={qiblaAligned}
               showDialRing={false}
-              showDialHalo={variant === "hero"}
+              showDialHalo={false}
               showTopMarker={false}
               needlePulse
               showPivotHub={false}
@@ -143,3 +222,18 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  alignedGlow: {
+    position: "absolute",
+    backgroundColor: "rgba(52, 251, 153, 0.46)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.72)",
+  },
+  alignedRay: {
+    position: "absolute",
+    height: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+});

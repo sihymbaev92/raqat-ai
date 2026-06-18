@@ -56,6 +56,7 @@ const NEARBY_FETCH_OPTS = {
 };
 
 const RADIUS_OPTIONS_KM = [5, 10] as const;
+const NEARBY_RENDER_LIMIT = 30;
 
 type NearbyLookupKind = "institution" | "product" | "mosque";
 
@@ -160,25 +161,25 @@ export function HalalNearbyBlock({
   }, []);
 
   const displayedInstitutions = useMemo(
-    () => filterCompaniesByQuery(institutionRows, searchText),
+    () => filterCompaniesByQuery(institutionRows, searchText).slice(0, NEARBY_RENDER_LIMIT),
     [institutionRows, searchText]
   );
 
   const displayedProducts = useMemo(
-    () => filterProductsByQuery(productRows, searchText),
+    () => filterProductsByQuery(productRows, searchText).slice(0, NEARBY_RENDER_LIMIT),
     [productRows, searchText]
   );
 
   const displayedMosques = useMemo(
     () => {
       const q = searchText.trim().toLowerCase();
-      if (!q) return mosqueRows;
+      if (!q) return mosqueRows.slice(0, NEARBY_RENDER_LIMIT);
       return mosqueRows.filter((m) => {
         const name = m.name.toLowerCase();
         const addr = (m.address ?? "").toLowerCase();
         const region = (m.regionName ?? "").toLowerCase();
         return name.includes(q) || addr.includes(q) || region.includes(q);
-      });
+      }).slice(0, NEARBY_RENDER_LIMIT);
     },
     [mosqueRows, searchText]
   );
@@ -769,7 +770,9 @@ export function HalalNearbyBlock({
                 ) : (
                   <>
                     <MaterialCommunityIcons name="mosque" size={56} color={colors.accent} />
-                    <Text style={[styles.mosqueHeroTxt, { color: colors.accent }]}>Мешіт</Text>
+                    <Text style={[styles.mosqueHeroTxt, { color: colors.accent }]}>
+                      {kk.features.halalNearbyMosqueFallbackTitle}
+                    </Text>
                   </>
                 )}
               </View>
@@ -814,16 +817,18 @@ export function HalalNearbyBlock({
                 <View style={styles.mosqueInfoRow}>
                   <MaterialIcons name="place" size={20} color={colors.accent} />
                   <View style={styles.mosqueInfoTextCol}>
-                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Мекенжай</Text>
+                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>{kk.features.halalHubAddress}</Text>
                     <Text style={[styles.mosqueInfoValue, { color: colors.text }]}>
-                      {selectedMosque?.address || "Мекенжай көрсетілмеген"}
+                      {selectedMosque?.address || kk.features.halalNearbyMosqueAddressMissing}
                     </Text>
                   </View>
                 </View>
                 <View style={styles.mosqueInfoRow}>
                   <MaterialIcons name="person" size={20} color={colors.accent} />
                   <View style={styles.mosqueInfoTextCol}>
-                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Имам</Text>
+                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>
+                      {kk.features.halalNearbyMosqueImamLabel}
+                    </Text>
                     <Text style={[styles.mosqueInfoValue, { color: colors.text }]}>
                       {selectedMosqueDetail?.imamName
                         ? [
@@ -832,7 +837,7 @@ export function HalalNearbyBlock({
                           ]
                             .filter(Boolean)
                             .join(" ")
-                        : "Ашық деректе табылмады"}
+                        : kk.features.halalNearbyMosqueOpenDataMissing}
                     </Text>
                     {selectedMosqueDetail?.note ? (
                       <Text style={[styles.mosqueInfoNote, { color: colors.muted }]}>
@@ -844,7 +849,7 @@ export function HalalNearbyBlock({
                 <View style={styles.mosqueInfoRow}>
                   <MaterialIcons name="phone" size={20} color={colors.accent} />
                   <View style={styles.mosqueInfoTextCol}>
-                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Телефон</Text>
+                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>{kk.features.halalHubPhone}</Text>
                     {selectedMosqueDetail?.phone ? (
                       <Pressable
                         onPress={() => {
@@ -852,7 +857,7 @@ export function HalalNearbyBlock({
                           if (url) void Linking.openURL(url);
                         }}
                         accessibilityRole="button"
-                        accessibilityLabel={`Қоңырау шалу: ${selectedMosqueDetail.phone}`}
+                        accessibilityLabel={kk.features.halalNearbyMosqueCallA11y(selectedMosqueDetail.phone)}
                         style={({ pressed }) => [styles.mosquePhoneBtn, pressed && { opacity: 0.82 }]}
                       >
                         <Text style={[styles.mosqueInfoValue, { color: colors.accent }]}>
@@ -861,7 +866,7 @@ export function HalalNearbyBlock({
                       </Pressable>
                     ) : (
                       <Text style={[styles.mosqueInfoValue, { color: colors.text }]}>
-                        Ашық деректе табылмады
+                        {kk.features.halalNearbyMosqueOpenDataMissing}
                       </Text>
                     )}
                   </View>
@@ -870,7 +875,9 @@ export function HalalNearbyBlock({
                   <View style={styles.mosqueInfoRow}>
                     <MaterialIcons name="language" size={20} color={colors.accent} />
                     <View style={styles.mosqueInfoTextCol}>
-                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Сайт / әлеуметтік желі</Text>
+                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>
+                        {kk.features.halalNearbyMosqueWebsiteLabel}
+                      </Text>
                       <View style={styles.mosqueSourceList}>
                         {selectedMosqueLinks.map((url) => (
                           <Pressable
@@ -898,7 +905,9 @@ export function HalalNearbyBlock({
                   <View style={styles.mosqueInfoRow}>
                     <MaterialIcons name="schedule" size={20} color={colors.accent} />
                     <View style={styles.mosqueInfoTextCol}>
-                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Жұмыс уақыты</Text>
+                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>
+                        {kk.features.halalNearbyMosqueScheduleLabel}
+                      </Text>
                       <Text style={[styles.mosqueInfoValue, { color: colors.text }]}>
                         {selectedMosqueDetail.scheduleText}
                       </Text>
@@ -908,10 +917,10 @@ export function HalalNearbyBlock({
                 <View style={styles.mosqueInfoRow}>
                   <MaterialIcons name="info-outline" size={20} color={colors.accent} />
                   <View style={styles.mosqueInfoTextCol}>
-                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Ақпарат</Text>
+                    <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>{kk.features.halalHubDescription}</Text>
                     <Text style={[styles.mosqueInfoValue, { color: colors.text }]}>
                       {selectedMosqueDetail?.info ??
-                        "2GIS каталогындағы мешіт. Имам/телефон бойынша ашық дерек әзір табылмады."}
+                        kk.features.halalNearbyMosqueInfoFallback}
                     </Text>
                   </View>
                 </View>
@@ -919,7 +928,9 @@ export function HalalNearbyBlock({
                   <View style={styles.mosqueInfoRow}>
                     <MaterialIcons name="verified" size={20} color={colors.accent} />
                     <View style={styles.mosqueInfoTextCol}>
-                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>Дереккөз</Text>
+                      <Text style={[styles.mosqueInfoLabel, { color: colors.muted }]}>
+                        {kk.features.halalNearbyMosqueSourceLabel}
+                      </Text>
                       <View style={styles.mosqueSourceList}>
                         {selectedMosqueDetail.sources.map((source) => (
                           <Pressable
@@ -967,7 +978,7 @@ export function HalalNearbyBlock({
                     pressed && { opacity: 0.9 },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="2GIS картасын ашу"
+                  accessibilityLabel={kk.features.halalNearbyMosqueOpen2GisA11y}
                 >
                   <MaterialIcons name="open-in-new" size={20} color={colors.accent} />
                   <Text style={[styles.mosqueSecondaryBtnTxt, { color: colors.accent }]}>2GIS</Text>

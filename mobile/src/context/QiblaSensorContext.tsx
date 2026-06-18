@@ -19,6 +19,7 @@ import { getQiblaMotionMode, getSelectedCity, setQiblaMotionMode } from "../stor
 import { pushAndroidWidgetQiblaHeading } from "../storage/prayerCache";
 import { getRootNavReady, getRootNavState, subscribeRootNavState } from "../voice/rootNavStateStore";
 import { shouldRunQiblaMotionSensors } from "../voice/deriveGlobalVoiceEntry";
+import { canUseNativeDeviceHeading, startNativeDeviceHeading, stopNativeDeviceHeading } from "../lib/qiblaNativeDeviceHeading";
 
 export type QiblaPerm = "unknown" | "granted" | "denied" | "services_disabled";
 
@@ -234,8 +235,9 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMotionMode = useCallback((m: "balanced" | "fast") => {
-    setMotionModeState(m);
-    void setQiblaMotionMode(m);
+    const next = m === "fast" ? "balanced" : m;
+    setMotionModeState(next);
+    void setQiblaMotionMode(next);
   }, []);
 
   useEffect(() => {
@@ -557,8 +559,9 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMotionMode = useCallback((m: "balanced" | "fast") => {
-    setMotionModeState(m);
-    void setQiblaMotionMode(m);
+    const next = m === "fast" ? "balanced" : m;
+    setMotionModeState(next);
+    void setQiblaMotionMode(next);
   }, []);
 
   const motionValue = useMemo<QiblaMotionValue>(
@@ -591,6 +594,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   }, [heading, headingHasSample]);
 
   const headingSubRef = useRef<Location.LocationSubscription | null>(null);
+  const nativeHeadingStopRef = useRef<(() => void) | null>(null);
   const magSubRef = useRef<ReturnType<typeof Magnetometer.addListener> | null>(null);
   const accelSubRef = useRef<ReturnType<typeof Accelerometer.addListener> | null>(null);
   const accelRef = useRef<Vec3>({ x: 0, y: 0, z: 9.81 });
@@ -601,12 +605,18 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     if (Platform.OS === "web") {
       return;
     }
+    let disposed = false;
+    let startSeq = 0;
 
     const canRun = () => perm === "granted" && shouldRunSensorsFromStore();
 
     const off = () => {
+      startSeq += 1;
       headingSubRef.current?.remove();
       headingSubRef.current = null;
+      nativeHeadingStopRef.current?.();
+      nativeHeadingStopRef.current = null;
+      stopNativeDeviceHeading();
       magSubRef.current?.remove();
       magSubRef.current = null;
       accelSubRef.current?.remove();
@@ -618,20 +628,24 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       setCompassQuality("unknown");
     };
 
-    const startMagnetometerFallback = async () => {
+    const startMagnetometerFallback = async (seq: number) => {
       if (!(await Magnetometer.isAvailableAsync())) {
         return;
       }
+      if (disposed || seq !== startSeq || !canRun()) return;
       const interval = motionModeRef.current === "fast" ? 30 : 70;
       Magnetometer.setUpdateInterval(interval);
       if (await Accelerometer.isAvailableAsync()) {
         Accelerometer.setUpdateInterval(interval);
       }
+      if (disposed || seq !== startSeq || !canRun()) return;
       smHeadRef.current = Number.NaN;
       accelRef.current = { x: 0, y: 0, z: 9.81 };
       accelReadyRef.current = false;
       if (await Accelerometer.isAvailableAsync()) {
+        if (disposed || seq !== startSeq || !canRun()) return;
         accelSubRef.current = Accelerometer.addListener((a) => {
+          if (disposed || seq !== startSeq) return;
           const v: Vec3 = { x: a.x, y: a.y, z: a.z };
           if (Math.hypot(v.x, v.y, v.z) > 0.35) {
             const prev = accelRef.current;
@@ -644,7 +658,9 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
           }
         });
       }
+      if (disposed || seq !== startSeq || !canRun()) return;
       const sub = Magnetometer.addListener((e) => {
+        if (disposed || seq !== startSeq) return;
         const m: Vec3 = { x: e.x, y: e.y, z: e.z };
         const rawMag = magnetometerHeadingDeg(m, accelRef.current, accelReadyRef.current, Platform.OS);
         const raw = normHeadingDeg(rawMag + declRef.current);
@@ -659,6 +675,35 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       lastSubscribed.current = true;
     };
 
+    const applyHeadingSample = (raw: number, accuracy: number | null, quality: QiblaCompassQuality) => {
+      const mode = motionModeRef.current;
+      smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
+      setHeading(smHeadRef.current);
+      setHeadingHasSample(true);
+      setHeadingAccuracyDeg(accuracy);
+      setCompassQuality(quality);
+    };
+
+    const startNativeHeading = async (seq: number): Promise<boolean> => {
+      if (!canUseNativeDeviceHeading()) {
+        return false;
+      }
+      if (disposed || seq !== startSeq || !canRun()) return false;
+      const stop =
+        (await startNativeDeviceHeading((magneticHeadingDeg) => {
+          if (disposed || seq !== startSeq) return;
+          const raw = normHeadingDeg(magneticHeadingDeg + declRef.current);
+          applyHeadingSample(raw, null, "high");
+        })) ?? (() => undefined);
+      if (disposed || seq !== startSeq || !canRun()) {
+        stop();
+        return false;
+      }
+      nativeHeadingStopRef.current = stop;
+      lastSubscribed.current = true;
+      return true;
+    };
+
     const on = () => {
       if (!canRun()) {
         off();
@@ -666,7 +711,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       }
       void (async () => {
         if (lastSubscribed.current) {
-          if (headingSubRef.current) {
+          if (headingSubRef.current || nativeHeadingStopRef.current) {
             return;
           }
           if (magSubRef.current) {
@@ -679,28 +724,36 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
           }
         }
         off();
+        const seq = startSeq;
         smHeadRef.current = Number.NaN;
         /** Орын+деклинация дайын болмай тұрып компас жазу — mag+0° race болдырмаймыз. */
         if (bearingRef.current == null) {
           await refreshBearing();
         }
-        if (!canRun()) {
+        if (disposed || seq !== startSeq || !canRun()) {
+          return;
+        }
+        if (await startNativeHeading(seq)) {
           return;
         }
         try {
           const sub = await Location.watchHeadingAsync((ev) => {
+            if (disposed || seq !== startSeq) return;
             const raw = headingFromLocationHeading(ev, declRef.current, Platform.OS);
-            const mode = motionModeRef.current;
-            smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
-            setHeading(smHeadRef.current);
-            setHeadingHasSample(true);
-            setHeadingAccuracyDeg(typeof ev.accuracy === "number" ? ev.accuracy : null);
-            setCompassQuality(compassQualityFromHeadingAccuracy(ev.accuracy));
+            applyHeadingSample(
+              raw,
+              typeof ev.accuracy === "number" ? ev.accuracy : null,
+              compassQualityFromHeadingAccuracy(ev.accuracy)
+            );
           });
+          if (disposed || seq !== startSeq || !canRun()) {
+            sub.remove();
+            return;
+          }
           headingSubRef.current = sub;
           lastSubscribed.current = true;
         } catch {
-          await startMagnetometerFallback();
+          await startMagnetometerFallback(seq);
         }
       })();
     };
@@ -711,6 +764,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => {
+      disposed = true;
       unNav();
       off();
     };

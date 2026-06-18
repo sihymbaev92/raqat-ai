@@ -126,3 +126,10 @@ export function getBundledQuranAyahTranslation(
   const row = getSurahRows(surah).find((item) => item.numberInSurah === ayah);
   return String(row?.[field] ?? "").trim();
 }
+
+/** Web-та route ауысқанда full offline translation JSON reference-ын босату. */
+export function releaseBundledQuranTranslationsMemory(): void {
+  bundle = {};
+  mapsBySurah = null;
+  loadPromise = null;
+}

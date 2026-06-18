@@ -25,7 +25,7 @@ export type TraditionUnderstandingStep = {
 };
 
 const LANE_RECOMMENDATIONS: Record<TraditionPracticeLaneId, string[]> = {
-  family: ["besikke-salu", "tusaukeser", "jeti-ata", "qudalyk", "qyz-uzatu"],
+  family: ["besikke-salu", "tusaukeser", "qudalyk", "qyz-uzatu"],
   ceremony: ["shildehana", "at-qoyu-aqiqa", "sundet-toi", "betashar", "nauryz"],
   social: ["qonaq-kutu", "asar", "salem-beru", "bata-beru", "qurban-et-bolisu"],
   faith: ["bata-beru", "salem-beru", "qurban-et-bolisu", "at-qoyu-aqiqa", "sundet-toi"],

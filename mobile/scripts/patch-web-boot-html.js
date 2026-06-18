@@ -30,6 +30,20 @@ const bootBlock = `
 
 let html = fs.readFileSync(indexPath, "utf8");
 const buildId = (process.env.RAQAT_WEB_BUILD_ID || `${Date.now()}`).trim();
+function withCacheControlHead(input) {
+  const cleaned = input
+    .replace(/\s*<meta http-equiv="Cache-Control" content="[^"]*" \/?>/gi, "")
+    .replace(/\s*<meta http-equiv="Pragma" content="[^"]*" \/?>/gi, "")
+    .replace(/\s*<meta http-equiv="Expires" content="[^"]*" \/?>/gi, "")
+    .replace(/\s*<meta name="raqat-web-build-id" content="[^"]*" \/?>/gi, "");
+  const cacheHead = [
+    `  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />`,
+    `  <meta http-equiv="Pragma" content="no-cache" />`,
+    `  <meta http-equiv="Expires" content="0" />`,
+    `  <meta name="raqat-web-build-id" content="${buildId}" />`,
+  ].join("\n");
+  return cleaned.replace("</head>", `${cacheHead}\n</head>`);
+}
 function withScriptCacheBust(input) {
   return input.replace(
     /src="(\/_expo\/static\/js\/web\/[^"]+\.js)(?:\?rv=[^"]*)?"/g,
@@ -38,7 +52,7 @@ function withScriptCacheBust(input) {
 }
 
 if (html.includes("raqat-web-boot")) {
-  fs.writeFileSync(indexPath, withScriptCacheBust(html), "utf8");
+  fs.writeFileSync(indexPath, withScriptCacheBust(withCacheControlHead(html)), "utf8");
   console.log("patch-web-boot-html: already patched");
   process.exit(0);
 }
@@ -58,5 +72,5 @@ if (plausible) {
 }
 
 fs.writeFileSync(indexPath, html, "utf8");
-fs.writeFileSync(indexPath, withScriptCacheBust(html), "utf8");
+fs.writeFileSync(indexPath, withScriptCacheBust(withCacheControlHead(html)), "utf8");
 console.log("patch-web-boot-html: OK");

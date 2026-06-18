@@ -44,9 +44,9 @@ from usage_routes import router as usage_router
 from app.api.v1.endpoints.halal import router as halal_text_router
 from bot_sync_routes import router as bot_sync_router
 from halal_damu_routes import router as halal_damu_router
-from genealogy_routes import router as genealogy_router
-from family_tree_routes import router as family_tree_router
+from image_proxy_routes import router as image_proxy_router
 from monitoring_routes import router as monitoring_router
+from weather_routes import router as weather_router
 
 APP_NAME = "RAQAT Platform API"
 VERSION = "0.1.0"
@@ -85,6 +85,17 @@ def _require_redis_or_exit() -> None:
         sys.exit(1)
 
 
+def _cors_origins() -> list[str]:
+    raw = (os.getenv("CORS_ORIGINS") or "").strip()
+    if raw:
+        return [origin.strip() for origin in raw.split(",") if origin.strip()]
+    env = (os.getenv("RAQAT_ENV") or os.getenv("ENVIRONMENT") or "").strip().lower()
+    if env in {"prod", "production", "staging"}:
+        logger.warning("CORS_ORIGINS is unset in %s; browser cross-origin access is disabled.", env)
+        return []
+    return ["*"]
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """
@@ -95,52 +106,18 @@ async def lifespan(_app: FastAPI):
     """
     _require_redis_or_exit()
     if is_postgresql_configured():
-        logger.info("Startup schema gate: PostgreSQL mode detected, skipping SQLite migrations.")
-        from db.community_schema import ensure_community_tables
-        from db.dialect_sql import is_psycopg_connection
+        logger.info("Startup schema gate: PostgreSQL mode detected, ensuring app schema.")
         from db.get_db import get_db
-        from db.oauth_phone_schema import ensure_oauth_phone_tables
-        from db.user_data_schema import ensure_user_data_tables
-
-        def _pg_commit_if_needed(conn) -> None:
-            if is_psycopg_connection(conn):
-                try:
-                    conn.commit()
-                except Exception:
-                    logger.exception("PostgreSQL: commit after DDL failed")
-
-        # Әр схеманы бөлек: бірі қателессе, қауым дұға кестелері бар болуы мүмкін.
-        try:
-            with get_db() as conn:
-                ensure_community_tables(conn)
-                _pg_commit_if_needed(conn)
-            logger.info("PostgreSQL: community_dua / community_dua_amen tables OK.")
-        except Exception:
-            logger.exception("PostgreSQL: ensure_community_tables failed")
+        from db.postgresql_schema import ensure_postgresql_app_tables
 
         try:
             with get_db() as conn:
-                ensure_user_data_tables(conn)
-                _pg_commit_if_needed(conn)
-            logger.info("PostgreSQL: user_data tables OK.")
-        except Exception:
-            logger.exception("PostgreSQL: ensure_user_data_tables failed")
-
-        try:
-            with get_db() as conn:
-                ensure_oauth_phone_tables(conn)
-                _pg_commit_if_needed(conn)
-            logger.info("PostgreSQL: oauth_phone tables OK.")
-        except Exception:
-            logger.exception("PostgreSQL: ensure_oauth_phone_tables failed")
-
-        try:
-            with get_db() as conn:
-                ensure_platform_link_code_tables(conn)
-                _pg_commit_if_needed(conn)
-            logger.info("PostgreSQL: platform_link_codes tables OK.")
-        except Exception:
-            logger.exception("PostgreSQL: ensure_platform_link_code_tables failed")
+                ensure_postgresql_app_tables(conn)
+                conn.commit()
+            logger.info("PostgreSQL: app schema OK.")
+        except Exception as exc:
+            logger.critical("FATAL: PostgreSQL startup schema gate failed: %s", exc, exc_info=True)
+            raise
     else:
         db_path = sqlite_database_path()
         run_schema_migrations(db_path)
@@ -170,12 +147,12 @@ app.include_router(usage_router)
 # Мәтіндік халал сүзгі (мобильді: POST/GET /api/v1/halal/*) — бұрын тек app.api.v1.router ішінде болған, main-ге тіркелмеген.
 app.include_router(halal_text_router, prefix="/api/v1")
 app.include_router(halal_damu_router)
-app.include_router(genealogy_router)
-app.include_router(family_tree_router)
+app.include_router(image_proxy_router)
 app.include_router(monitoring_router)
+app.include_router(weather_router)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

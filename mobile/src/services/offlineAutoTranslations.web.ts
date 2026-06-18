@@ -1,4 +1,5 @@
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
+import { isUsableOfflineAutoTranslation } from "./offlineAutoTranslationSafety";
 
 export type OfflineAutoTranslateTarget =
   | "ru"
@@ -74,7 +75,7 @@ export function getOfflineAutoTranslation(
   if (!source) return null;
   const translated = bundle.targets?.[target]?.[hashAutoTranslateSource(source)];
   const out = (translated ?? "").trim();
-  return out || null;
+  return isUsableOfflineAutoTranslation(out) ? out : null;
 }
 
 export function hasOfflineAutoTranslation(

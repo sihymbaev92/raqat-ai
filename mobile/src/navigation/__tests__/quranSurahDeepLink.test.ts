@@ -32,6 +32,18 @@ describe("quranSurahDeepLink", () => {
     });
   });
 
+  it("parses continuous mushaf-book query for Hatim reading", () => {
+    expect(
+      parseMushafBookQueryParams(
+        "more/mushaf-book/1?focusSurah=1&focusAyah=1&continuousMushaf=1"
+      )
+    ).toEqual({
+      focusSurah: 1,
+      focusAyah: 1,
+      continuousMushaf: true,
+    });
+  });
+
   it("returns null for plain scroll surah path", () => {
     expect(parseQuranSurahDeepPath("more/surah/2")).toBeNull();
     expect(parseQuranSurahDeepPath("more/surah/2/10")).toBeNull();

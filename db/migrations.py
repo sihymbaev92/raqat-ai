@@ -934,10 +934,7 @@ def _migration_014_repair_user_data_tables(conn) -> None:
 
 
 def _migration_020_genealogy_clans(conn) -> None:
-    """Қазақ шежіресі: иерархиялық ру ағашы (genealogy_clans + source_refs)."""
-    from db.genealogy_schema import ensure_genealogy_tables
-
-    ensure_genealogy_tables(conn)
+    """Removed: genealogy feature dropped (no-op for legacy migration version)."""
 
 
 def _migration_021_platform_quran_last_read(conn) -> None:
@@ -948,17 +945,11 @@ def _migration_021_platform_quran_last_read(conn) -> None:
 
 
 def _migration_022_genealogy_persons(conn) -> None:
-    """Шежіре P2: атақты/қazірgi тұлғalar (genealogy_persons)."""
-    from db.genealogy_persons_schema import ensure_genealogy_persons_tables
-
-    ensure_genealogy_persons_tables(conn)
+    """Removed: genealogy feature dropped (no-op for legacy migration version)."""
 
 
 def _migration_023_family_tree(conn) -> None:
-    """GENEALOGY-P3: жеке отбасылық шежіре."""
-    from db.family_tree_schema import ensure_family_tree_tables
-
-    ensure_family_tree_tables(conn)
+    """Removed: genealogy feature dropped (no-op for legacy migration version)."""
 
 
 def _migration_024_platform_quran_ayah_markers(conn) -> None:

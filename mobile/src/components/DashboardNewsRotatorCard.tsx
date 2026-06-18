@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, Platform, Linking, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { FlatList as GestureHandlerFlatList } from "react-native-gesture-handler";
@@ -36,7 +36,7 @@ function newsA11yLabel(item: DashboardNewsItem): string {
   return kk.dashboard.newsOpenTopic(item.title);
 }
 
-function NewsSlide({ item, slideWidth, styles, onOpenItem, mockupCards }: NewsSlideProps) {
+const NewsSlide = memo(function NewsSlide({ item, slideWidth, styles, onOpenItem, mockupCards }: NewsSlideProps) {
   const hasRemoteImage = Boolean(item.imageUrl);
   if (mockupCards) {
     return (
@@ -56,6 +56,8 @@ function NewsSlide({ item, slideWidth, styles, onOpenItem, mockupCards }: NewsSl
             source={item.image}
             style={styles.mockupImage}
             resizeMode={hasRemoteImage ? "cover" : "contain"}
+            resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+            resizeMultiplier={Platform.OS === "android" ? 0.72 : undefined}
             zoomNested
             accessibilityIgnoresInvertColors
           />
@@ -69,6 +71,11 @@ function NewsSlide({ item, slideWidth, styles, onOpenItem, mockupCards }: NewsSl
         <Text style={styles.mockupTitle} numberOfLines={2}>
           {item.title}
         </Text>
+        {item.sourceLabel ? (
+          <Text style={styles.mockupSource} numberOfLines={1}>
+            {item.sourceLabel}
+          </Text>
+        ) : null}
       </Pressable>
     );
   }
@@ -105,16 +112,18 @@ function NewsSlide({ item, slideWidth, styles, onOpenItem, mockupCards }: NewsSl
           source={item.image}
           style={styles.heroImage}
           resizeMode={hasRemoteImage ? "cover" : "contain"}
+          resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+          resizeMultiplier={Platform.OS === "android" ? 0.72 : undefined}
           zoomNested
           accessibilityIgnoresInvertColors
         />
       </View>
     </Pressable>
   );
-}
+});
 
 /** Басты бет: Fatua/Muftyat немесе API жоқ болса Құрбан айт каруселі. */
-export function DashboardNewsRotatorCard({ colors, isDark, onOpenItem, mockupCards }: Props) {
+export const DashboardNewsRotatorCard = memo(function DashboardNewsRotatorCard({ colors, isDark, onOpenItem, mockupCards }: Props) {
   const { items } = useDashboardNewsItems();
   const [index, setIndex] = useState(0);
   const [slideWidth, setSlideWidth] = useState(0);
@@ -240,6 +249,11 @@ export function DashboardNewsRotatorCard({ colors, isDark, onOpenItem, mockupCar
           }
         }}
         scrollEventThrottle={16}
+        initialNumToRender={1}
+        maxToRenderPerBatch={1}
+        updateCellsBatchingPeriod={120}
+        windowSize={1}
+        removeClippedSubviews={Platform.OS !== "web"}
         style={styles.list}
         contentContainerStyle={mockupCards ? styles.mockupListContent : undefined}
       />
@@ -256,7 +270,7 @@ export function DashboardNewsRotatorCard({ colors, isDark, onOpenItem, mockupCar
       ) : null}
     </View>
   );
-}
+});
 
 function makeStyles(colors: ThemeColors, isDark: boolean) {
   const cardBorder = isDark ? "rgba(34, 197, 94, 0.32)" : colors.border;
@@ -424,6 +438,14 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "800",
       lineHeight: 13,
       marginTop: 3,
+      paddingHorizontal: 1,
+    },
+    mockupSource: {
+      color: colors.muted,
+      fontSize: 8,
+      fontWeight: "800",
+      lineHeight: 10,
+      marginTop: 1,
       paddingHorizontal: 1,
     },
   });

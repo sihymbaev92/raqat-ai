@@ -10,6 +10,8 @@ import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_BUNDLE = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db.json"
+RUNTIME_SEED_BUNDLE = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db-seed.json"
 
 PATS = [
     r"The user wants",
@@ -57,10 +59,19 @@ def latin_ratio(text: str) -> float:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Scan hadith textKk for meta/English garbage.")
+    parser.add_argument(
+        "--json",
+        type=Path,
+        default=DEFAULT_BUNDLE if DEFAULT_BUNDLE.is_file() else RUNTIME_SEED_BUNDLE,
+        help="HadithCorpus JSON bundle",
+    )
     parser.add_argument("--strict", action="store_true", help="Exit non-zero if any issue is found.")
     parser.add_argument("--top", type=int, default=40)
     args = parser.parse_args()
-    path = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db.json"
+    path = args.json
+    if not path.is_file():
+        print(f"Bundle not found: {path}", file=sys.stderr)
+        return 1
     data = json.loads(path.read_text(encoding="utf-8"))
     hadiths = data.get("hadiths") or []
     meta_ids: list[str] = []

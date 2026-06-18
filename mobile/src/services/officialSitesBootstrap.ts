@@ -10,6 +10,7 @@ import {
   type PlatformHomeFeedItem,
   type PlatformHomeFeedResponse,
 } from "./platformApiClient";
+import { Platform } from "react-native";
 import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { getValidAccessToken } from "../storage/authTokens";
@@ -42,7 +43,11 @@ export function pickRicherOfficialNewsFeed(
   return newsFeedScore(apiItems) >= newsFeedScore(directItems) ? apiItems : directItems;
 }
 
-/** API proxy → тікелей сайт fetch (fatua.kz + muftyat.kz). */
+export function shouldFetchDirectOfficialHomeFeeds(platformOS = Platform.OS): boolean {
+  return platformOS !== "web";
+}
+
+/** API proxy → native-та ғана тікелей сайт fetch (web-та CORS үшін proxy/cache ғана). */
 export async function loadOfficialHomeNewsItems(): Promise<DashboardNewsItem[]> {
   await hydrateRaqatApiBaseOverride();
   const apiBase = getRaqatApiBase();
@@ -59,7 +64,9 @@ export async function loadOfficialHomeNewsItems(): Promise<DashboardNewsItem[]> 
           () => ({ ok: false as const, results: [] as PlatformHomeFeedItem[] })
         )
       : Promise.resolve({ ok: false as const, results: [] as PlatformHomeFeedItem[] }),
-    fetchOfficialSiteHomeFeeds(DASHBOARD_NEWS_BROWSE_LIMIT).catch(() => []),
+    shouldFetchDirectOfficialHomeFeeds()
+      ? fetchOfficialSiteHomeFeeds(DASHBOARD_NEWS_BROWSE_LIMIT).catch(() => [])
+      : Promise.resolve([]),
   ]);
 
   const apiItems = mapApi(apiRes.results ?? []);

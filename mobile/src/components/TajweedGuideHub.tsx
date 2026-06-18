@@ -46,6 +46,7 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
   return (
     <View style={styles.wrap}>
       <Text style={styles.intro}>{tr(kk.tajweedGuide.intro)}</Text>
+      <Text style={styles.safetyNote}>{tr(kk.tajweedGuide.sourceSafetyNote)}</Text>
       <View style={styles.onlineCard}>
         <View style={styles.onlineTop}>
           <Text style={styles.onlineEyebrow}>{tr(kk.tajweedGuide.onlineLessonEyebrow)}</Text>
@@ -175,6 +176,12 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
       paddingHorizontal: 12,
       paddingVertical: 10,
+    },
+    safetyNote: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 18,
+      marginBottom: 12,
     },
     studyCard: {
       backgroundColor: colors.card,

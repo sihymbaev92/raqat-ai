@@ -1,0 +1,32 @@
+﻿
+> 06-12 03:21:36.766 23355 23396 I ReactNativeJS: Running "main"
+  06-12 03:21:36.824 19481 19512 I SCS@AiSearch user 0: (AppsDataWorker) [androidx.work-1] entering in doWork():  
+  06-12 03:21:36.825 19481 19512 I SCS@AiSearch user 0: (AppsDataObserver) [androidx.work-1] entering in execute():  
+  06-12 03:21:36.825 19481 19512 I SCS@AiSearch user 0: (AppsDataObserver-CMD_UPDATE_LIST) changed package count: 1
+> 06-12 03:21:40.932  1690  2316 V SemWifiScanPool: updateScanResult, full scan:1 configKeys: 1 pool_bssid:5 
+pool_configKeys:5
+> 06-12 03:21:40.932  1690  2316 D WifiConnectivityMonitor: onScanResultUpdated
+  06-12 03:21:40.932  1690  2692 I SLocation: ReceiverPairWithWifi - handle Wifi Scans ID = 4
+  06-12 03:21:40.932  1690  2316 D WifiConnectivityMonitor: mMaxScannedCountryCode : 
+  06-12 03:21:40.932  1690  2439 V WindowManager: Finish Transition: TransitionRecord{cd83ae5 id=652 type=OPEN 
+flags=0x0}, caller=com.android.server.wm.WindowOrganizerController.finishTransition:456 
+android.window.IWindowOrganizerController$Stub.onTransact:286 
+com.android.server.wm.WindowOrganizerController.onTransact:219 
+> 06-12 03:21:41.710 23355 23396 W ReactNativeJS: expo-background-fetch: This library is deprecated. Use 
+expo-background-task instead.
+  06-12 03:21:41.717  1690  4454 D PackageManager: setEnabledSetting : userId = 0 packageName = 
+com.samsung.android.networkdiagnostic cmp = androidx.work.impl.background.systemalarm.RescheduleReceiver newState = 1 
+callingPackage = com.samsung.android.networkdiagnostic
+  06-12 03:21:41.717  1690  4454 D ApplicationPolicy: getApplicationStateEnabled : pkg = 
+com.samsung.android.networkdiagnostic userId : 0
+  06-12 03:21:41.718  1690  4454 D ApplicationPolicy: getApplicationComponentState : pkg = 
+com.samsung.android.networkdiagnostic userId : 0
+> 06-12 03:21:51.435  1690  2316 V SemWifiScanPool: updateScanResult, full scan:1 configKeys: 1 pool_bssid:5 
+pool_configKeys:5
+  06-12 03:21:51.435  1690  2692 I SLocation: ReceiverPairWithWifi - handle Wifi Scans ID = 4
+> 06-12 03:21:51.435  1690  2316 D WifiConnectivityMonitor: onScanResultUpdated
+  06-12 03:21:51.435  1690  2316 D WifiConnectivityMonitor: mMaxScannedCountryCode : 
+  06-12 03:21:51.444  1690  2349 D SemWifiSwitchForIndividualAppsService: isSkipPoorLinkCondition - result:1
+  06-12 03:21:51.453  1690  2351 D WifiConnectivityMonitor: MultiNetwork : false || false
+
+

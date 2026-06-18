@@ -31,8 +31,6 @@ const KazakhTraditionScreen = lazyScreen(() => import("../screens/KazakhTraditio
 const KazakhTraditionTopicDetailScreen = lazyScreen(() => import("../screens/KazakhTraditionTopicDetailScreen").then((m) => ({ default: m.KazakhTraditionTopicDetailScreen })));
 const KazakhTraditionArticlesScreen = lazyScreen(() => import("../screens/KazakhTraditionArticlesScreen").then((m) => ({ default: m.KazakhTraditionArticlesScreen })));
 const KazakhTraditionFavoritesScreen = lazyScreen(() => import("../screens/KazakhTraditionFavoritesScreen").then((m) => ({ default: m.KazakhTraditionFavoritesScreen })));
-const GenealogyClansScreen = lazyScreen(() => import("../screens/GenealogyClansScreen").then((m) => ({ default: m.GenealogyClansScreen })));
-const FamilyTreeScreen = lazyScreen(() => import("../screens/FamilyTreeScreen").then((m) => ({ default: m.FamilyTreeScreen })));
 const KurbanAitScreen = lazyScreen(() => import("../screens/KurbanAitScreen").then((m) => ({ default: m.KurbanAitScreen })));
 const KazakhTraditionBooksScreen = lazyScreen(() => import("../screens/KazakhTraditionBooksScreen").then((m) => ({ default: m.KazakhTraditionBooksScreen })));
 const OfficialFatuaBookScreen = lazyScreen(() => import("../screens/OfficialFatuaBookScreen").then((m) => ({ default: m.OfficialFatuaBookScreen })));
@@ -165,16 +163,6 @@ export function MoreNavigator() {
         name="KazakhTraditionFavorites"
         component={KazakhTraditionFavoritesScreen}
         options={{ title: "Таңдаулылар" }}
-      />
-      <Stack.Screen
-        name="GenealogyClans"
-        component={GenealogyClansScreen}
-        options={{ title: kk.features.genealogyTitle }}
-      />
-      <Stack.Screen
-        name="FamilyTree"
-        component={FamilyTreeScreen}
-        options={{ title: kk.features.familyTreeTitle }}
       />
       <Stack.Screen
         name="KurbanAit"

@@ -62,6 +62,7 @@ New-Item -ItemType Directory -Path $staging -Force | Out-Null
 try {
   Copy-Item -Recurse -Force (Join-Path $RepoRoot "db") (Join-Path $staging "db")
   Copy-Item -Recurse -Force (Join-Path $RepoRoot "platform_api") (Join-Path $staging "platform_api")
+  Copy-Item -Recurse -Force (Join-Path $RepoRoot "services") (Join-Path $staging "services")
   Copy-Item -Recurse -Force (Join-Path $RepoRoot "scripts") (Join-Path $staging "scripts")
   foreach ($extra in @("alembic.ini", "requirements-postgres.txt")) {
     $src = Join-Path $RepoRoot $extra

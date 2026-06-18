@@ -5,7 +5,9 @@
 import {
   DEFAULT_QURAN_RECITER_EDITION,
   QURAN_ABDULRAHMAN_MOSSAD_EDITION,
+  QURAN_HUSARY_EDITION,
 } from "../config/quranReciters";
+import { quranComReciterIdForEdition, quranComTimedAudioUrlForEdition } from "../config/quranComReciterMap";
 import { globalAyahToRef } from "../data/quranAyahCounts";
 
 /** CDN-де тек 192 kbps арнада тұрақты ойнайтын араб қарилары. */
@@ -23,34 +25,37 @@ export function cdnAyahBitrateKbps(edition: string): 128 | 192 {
 }
 export const QURAN_SUDAIS_EDITION = "ar.abdurrahmaansudais";
 
-const ABDULRAHMAN_MOSSAD_ARCHIVE_BASE = "https://ia904706.us.archive.org/13/items/010_20221110";
-
-/** Бұл қариде жалпыға ашық source-та толық Құран емес, таңдаулы толық сүрелер ғана бар. */
-export const ABDULRAHMAN_MOSSAD_AVAILABLE_SURAHS = new Set([
-  10, 19, 23, 29, 32, 49, 73, 78, 87, 88, 100, 107,
-]);
-
 export function quranReciterUsesAyahAudio(edition: string): boolean {
-  return edition.trim().toLowerCase() !== QURAN_ABDULRAHMAN_MOSSAD_EDITION;
+  void edition;
+  return true;
 }
 
 export function quranReciterHasAudioForGlobalAyah(globalAyahOneBased: number, edition: string): boolean {
-  const ed = (edition || DEFAULT_QURAN_RECITER_EDITION).trim() || DEFAULT_QURAN_RECITER_EDITION;
-  if (ed !== QURAN_ABDULRAHMAN_MOSSAD_EDITION) return true;
-  const { surah } = globalAyahToRef(globalAyahOneBased);
-  return ABDULRAHMAN_MOSSAD_AVAILABLE_SURAHS.has(surah);
+  void globalAyahOneBased;
+  void edition;
+  return true;
+}
+
+export function quranReciterSupportsArabicKaraoke(edition: string): boolean {
+  return quranComReciterIdForEdition(edition || DEFAULT_QURAN_RECITER_EDITION) != null;
+}
+
+function paddedAyahAudioKey(globalAyahOneBased: number): string {
+  const { surah, ayah } = globalAyahToRef(Math.max(1, Math.min(6236, Math.floor(globalAyahOneBased))));
+  return `${String(surah).padStart(3, "0")}${String(ayah).padStart(3, "0")}`;
+}
+
+function quranComTimedAyahMp3Url(globalAyahOneBased: number, edition: string): string | null {
+  const key = paddedAyahAudioKey(globalAyahOneBased);
+  return quranComTimedAudioUrlForEdition(edition, key);
 }
 
 export function quranAyahMp3Url(globalAyahOneBased: number, edition: string = DEFAULT_QURAN_RECITER_EDITION): string {
   const n = Math.max(1, Math.min(6236, Math.floor(globalAyahOneBased)));
-  const ed = (edition || DEFAULT_QURAN_RECITER_EDITION).trim() || DEFAULT_QURAN_RECITER_EDITION;
-  if (ed === QURAN_ABDULRAHMAN_MOSSAD_EDITION) {
-    const { surah } = globalAyahToRef(n);
-    if (!ABDULRAHMAN_MOSSAD_AVAILABLE_SURAHS.has(surah)) {
-      throw new Error(`Abdulrahman Mossad audio is not available for surah ${surah}`);
-    }
-    return `${ABDULRAHMAN_MOSSAD_ARCHIVE_BASE}/${String(surah).padStart(3, "0")}.mp3`;
-  }
+  const rawEd = (edition || DEFAULT_QURAN_RECITER_EDITION).trim() || DEFAULT_QURAN_RECITER_EDITION;
+  const ed = rawEd === QURAN_ABDULRAHMAN_MOSSAD_EDITION ? QURAN_HUSARY_EDITION : rawEd;
+  const timedUrl = quranComTimedAyahMp3Url(n, ed);
+  if (timedUrl) return timedUrl;
   const br = cdnAyahBitrateKbps(ed);
   return `https://cdn.islamic.network/quran/audio/${br}/${ed}/${n}.mp3`;
 }

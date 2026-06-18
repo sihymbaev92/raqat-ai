@@ -6,7 +6,7 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
-import { ECOSYSTEM_VERSION, ECOSYSTEM_STAGE, getInstitutionCatalog } from "../ecosystem";
+import { getInstitutionCatalog } from "../ecosystem";
 import type { InstitutionSource } from "../ecosystem/types";
 import { persistCatalogLineage } from "../storage/provenanceRegistry";
 
@@ -50,7 +50,6 @@ export function EcosystemScreen() {
 
       <Text style={[styles.label, styles.labelSpaced]}>{tr(kk.ecosystem.catalogTitle)}</Text>
       <Text style={styles.catalogHint}>{tr(kk.ecosystem.catalogHint)}</Text>
-      <Text style={styles.localStore}>{tr(kk.ecosystem.localStoreNote)}</Text>
       {catalog.map((item) => (
         <View key={item.id} style={styles.catalogCard}>
           <View style={styles.catalogTop}>
@@ -65,31 +64,6 @@ export function EcosystemScreen() {
             </Pressable>
           ) : null}
 
-          <View style={styles.provBox}>
-            <Text style={styles.provTitle}>{tr(kk.ecosystem.provenanceTitle)}</Text>
-            <Text style={styles.provText}>
-              {tr(kk.ecosystem.originLabel)} {item.provenance.origin}
-            </Text>
-            <Text style={styles.provText}>
-              {tr(kk.ecosystem.recordedAtLabel)}{" "}
-              {item.provenance.recordedAt.includes("T")
-                ? item.provenance.recordedAt.split("T")[0]
-                : item.provenance.recordedAt}
-            </Text>
-            {item.provenance.licenseHint ? (
-              <Text style={styles.provText}>
-                {tr(kk.ecosystem.licenseLabel)} {item.provenance.licenseHint}
-              </Text>
-            ) : null}
-            <Text style={styles.provEvidence}>
-              {tr(kk.ecosystem.evidenceLabel)} {tr(item.provenance.evidenceKk)}
-            </Text>
-            {item.provenance.evidenceUrl ? (
-              <Pressable onPress={() => Linking.openURL(item.provenance.evidenceUrl!)}>
-                <Text style={styles.link}>{item.provenance.evidenceUrl}</Text>
-              </Pressable>
-            ) : null}
-          </View>
         </View>
       ))}
 
@@ -108,9 +82,6 @@ export function EcosystemScreen() {
       </View>
 
       <Text style={styles.roadmap}>{tr(kk.ecosystem.roadmap)}</Text>
-      <Text style={styles.footer}>
-        {kk.ecosystem.versionLine(ECOSYSTEM_VERSION, ECOSYSTEM_STAGE)}
-      </Text>
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </ScrollView>
   );

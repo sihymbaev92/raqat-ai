@@ -39,7 +39,7 @@ const GLASS_CHIP = "rgba(37, 43, 54, 0.55)";
 const GLASS_CHIP_ACTIVE = "rgba(58, 52, 40, 0.62)";
 const INK = "#FFFFFF";
 /** Вебте панель кең — карточкалар сәл үлкенірек */
-const PRAYER_CARD_WIDTH = Platform.OS === "web" ? 112 : 92;
+const PRAYER_CARD_WIDTH = Platform.OS === "web" ? 120 : 98;
 
 export function PrayerTimesHCarousel({
   colors,
@@ -128,7 +128,7 @@ export function PrayerTimesHCarousel({
                 ]}
               >
                 <View style={[styles.iconChip, { backgroundColor: chipBg }]}>
-                  <MaterialCommunityIcons name={ico} size={16} color={iconColor} />
+                  <MaterialCommunityIcons name={ico} size={18} color={iconColor} />
                 </View>
                 <Text style={[styles.n, { color: nameColor }]} numberOfLines={1}>
                   {name}
@@ -144,24 +144,24 @@ export function PrayerTimesHCarousel({
 }
 
 const styles = StyleSheet.create({
-  scroller: { gap: 8, paddingVertical: 2, paddingRight: 8 },
+  scroller: { gap: 8, paddingVertical: 3, paddingRight: 8 },
   card: {
     width: PRAYER_CARD_WIDTH,
     borderRadius: 16,
     borderWidth: 1.5,
-    paddingVertical: 7,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     alignItems: "center",
   },
   iconChip: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 3,
   },
-  n: { fontSize: 11, fontWeight: "700", textAlign: "center" },
-  t: { fontSize: 14, fontWeight: "900", marginTop: 2, textAlign: "center" },
+  n: { fontSize: 12, fontWeight: "800", textAlign: "center" },
+  t: { fontSize: 16, fontWeight: "900", marginTop: 2, textAlign: "center" },
   pendingSpinner: { marginVertical: 10 },
 });

@@ -12,6 +12,27 @@ from db.dialect_sql import execute as _exec
 from db.dialect_sql import is_psycopg_connection, is_sqlite_connection, table_names
 from db.get_db import get_db_reader, is_postgresql_configured, sqlite_database_path
 
+POSTGRESQL_REQUIRED_TABLES = frozenset(
+    {
+        "platform_identities",
+        "platform_ai_chat_messages",
+        "revoked_refresh_jti",
+        "api_usage_ledger",
+        "platform_password_logins",
+        "platform_oauth_links",
+        "platform_phone_logins",
+        "phone_otp_challenges",
+        "platform_hatim_read",
+        "platform_quran_last_read",
+        "platform_quran_ayah_markers",
+        "platform_link_codes",
+        "community_dua",
+        "community_dua_amen",
+        "quran",
+        "hadith",
+    }
+)
+
 
 def resolve_db_path() -> Path:
     """Жолды `db.get_db.sqlite_database_path()` арқылы ботпен бірдей етіп шешеді."""
@@ -43,6 +64,18 @@ def readiness_ping() -> dict[str, Any]:
     try:
         with get_db_reader() as conn:
             _exec(conn, "SELECT 1", ()).fetchone()
+            if backend == "postgresql":
+                existing = table_names(conn)
+                missing = sorted(POSTGRESQL_REQUIRED_TABLES - existing)
+                if missing:
+                    return {
+                        "ok": False,
+                        "status": "unready",
+                        "backend": backend,
+                        "error": "missing_required_tables",
+                        "missing_tables": missing,
+                        "redis": redis_block,
+                    }
     except Exception as e:
         return {
             "ok": False,

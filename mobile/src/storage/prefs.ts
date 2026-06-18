@@ -50,15 +50,17 @@ export async function setFirstLaunchPermissionsBurstDone(): Promise<void> {
 }
 
 export async function getSelectedCity(): Promise<{ city: string; country: string }> {
-  const city = (await AsyncStorage.getItem(K.city)) ?? "Shymkent";
-  const country = (await AsyncStorage.getItem(K.country)) ?? "Kazakhstan";
+  const city = ((await AsyncStorage.getItem(K.city)) ?? "").trim() || "Shymkent";
+  const country = ((await AsyncStorage.getItem(K.country)) ?? "").trim() || "Kazakhstan";
   return { city, country };
 }
 
 export async function setSelectedCity(city: string, country: string): Promise<void> {
+  const safeCity = city.trim() || "Shymkent";
+  const safeCountry = country.trim() || "Kazakhstan";
   await AsyncStorage.multiSet([
-    [K.city, city.trim()],
-    [K.country, country.trim()],
+    [K.city, safeCity],
+    [K.country, safeCountry],
   ]);
 }
 
@@ -236,11 +238,14 @@ export async function setPrayerMosqueShiftMin(shiftMin: number): Promise<void> {
 
 export async function getQiblaMotionMode(): Promise<QiblaMotionMode> {
   const v = await AsyncStorage.getItem(K.qiblaMotionMode);
-  return v === "fast" ? "fast" : "balanced";
+  if (v === "fast") {
+    await AsyncStorage.setItem(K.qiblaMotionMode, "balanced");
+  }
+  return "balanced";
 }
 
 export async function setQiblaMotionMode(mode: QiblaMotionMode): Promise<void> {
-  await AsyncStorage.setItem(K.qiblaMotionMode, mode);
+  await AsyncStorage.setItem(K.qiblaMotionMode, mode === "fast" ? "balanced" : mode);
 }
 
 export async function getTasbihPrefs(): Promise<{

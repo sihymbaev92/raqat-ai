@@ -41,6 +41,7 @@ import {
 const FAB_RING_COLOR = "rgba(232, 200, 106, 0.55)";
 const FAB_RING_OPEN_COLOR = "rgba(232, 200, 106, 0.78)";
 const SPRING = { damping: 15, stiffness: 170, mass: 0.85 };
+const GRID_UNMOUNT_AFTER_CLOSE_MS = 320;
 
 function tileBorderColor(isDark: boolean): string {
   return isDark ? "rgba(255,255,255,0.18)" : "rgba(15,23,42,0.14)";
@@ -197,6 +198,7 @@ export function DashboardLauncherHub({
   const rows = useMemo(() => chunkLauncherGridRows(items), [items]);
   const closedHeight = metrics.closedMinHeight;
   const [gridLayout, setGridLayout] = useState({ width: 0, height: 0 });
+  const [gridMounted, setGridMounted] = useState(open);
 
   const activeTileSize = useMemo(() => {
     if (!open) return metrics.gridItemSize;
@@ -217,6 +219,15 @@ export function DashboardLauncherHub({
 
   useEffect(() => {
     if (!open) setGridLayout({ width: 0, height: 0 });
+  }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      setGridMounted(true);
+      return undefined;
+    }
+    const id = setTimeout(() => setGridMounted(false), GRID_UNMOUNT_AFTER_CLOSE_MS);
+    return () => clearTimeout(id);
   }, [open]);
 
   useEffect(() => {
@@ -417,40 +428,42 @@ export function DashboardLauncherHub({
           }
           pointerEvents={open ? "auto" : "none"}
         >
-          {rows.map((row, rowIdx) => (
-            <AnimatedGridRow
-              key={`row-${rowIdx}`}
-              rowIdx={rowIdx}
-              rowCount={rows.length}
-              progress={progress}
-              metrics={metrics}
-              fillRow={open}
-            >
-              <View style={[styles.gridRow, open && styles.gridRowFill]}>
-                {row.map((item) => (
-                  <View key={item.key} style={[styles.gridCellWrap, open && styles.gridCellWrapFill]}>
-                    <GridAppTile
-                      item={item}
-                      size={activeTileSize}
-                      corner={activeCorner}
-                      isDark={isDark}
-                      fill={open}
-                      onPress={() => handleGridPress(item.key)}
-                      styles={styles}
-                    />
+          {gridMounted
+            ? rows.map((row, rowIdx) => (
+                <AnimatedGridRow
+                  key={`row-${rowIdx}`}
+                  rowIdx={rowIdx}
+                  rowCount={rows.length}
+                  progress={progress}
+                  metrics={metrics}
+                  fillRow={open}
+                >
+                  <View style={[styles.gridRow, open && styles.gridRowFill]}>
+                    {row.map((item) => (
+                      <View key={item.key} style={[styles.gridCellWrap, open && styles.gridCellWrapFill]}>
+                        <GridAppTile
+                          item={item}
+                          size={activeTileSize}
+                          corner={activeCorner}
+                          isDark={isDark}
+                          fill={open}
+                          onPress={() => handleGridPress(item.key)}
+                          styles={styles}
+                        />
+                      </View>
+                    ))}
+                    {row.length < 3
+                      ? Array.from({ length: 3 - row.length }).map((_, i) => (
+                          <View
+                            key={`pad-${rowIdx}-${i}`}
+                            style={[styles.gridCellWrap, open && styles.gridCellWrapFill]}
+                          />
+                        ))
+                      : null}
                   </View>
-                ))}
-                {row.length < 3
-                  ? Array.from({ length: 3 - row.length }).map((_, i) => (
-                      <View
-                        key={`pad-${rowIdx}-${i}`}
-                        style={[styles.gridCellWrap, open && styles.gridCellWrapFill]}
-                      />
-                    ))
-                  : null}
-              </View>
-            </AnimatedGridRow>
-          ))}
+                </AnimatedGridRow>
+              ))
+            : null}
         </Animated.View>
 
         <View

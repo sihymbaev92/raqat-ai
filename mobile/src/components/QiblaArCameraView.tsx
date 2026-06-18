@@ -11,6 +11,7 @@ import {
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { modalSafeAreaInsets } from "../theme/modalSafeArea";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { QiblaArrowPointer } from "./QiblaArrowPointer";
@@ -52,6 +53,7 @@ type Props = {
  */
 export function QiblaArCameraView({ colors, layout, style, onClose, title }: Props) {
   const insets = useSafeAreaInsets();
+  const modalInsets = modalSafeAreaInsets(insets);
   const [permission, requestPermission] = useCameraPermissions();
   const [ready, setReady] = useState(false);
   const { bearing, refreshBearing } = useQiblaStable();
@@ -118,7 +120,7 @@ export function QiblaArCameraView({ colors, layout, style, onClose, title }: Pro
       />
 
       {layout === "modal" ? (
-        <View style={[styles.topBar, { paddingTop: insets.top + 4 }]}>
+        <View style={[styles.topBar, { paddingTop: modalInsets.top + 4 }]}>
           <Pressable
             onPress={onClose}
             style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.85 }]}
@@ -186,7 +188,7 @@ export function QiblaArCameraView({ colors, layout, style, onClose, title }: Pro
       <View
         style={[
           styles.bottomHud,
-          { paddingBottom: layout === "modal" ? insets.bottom + 16 : 12 },
+          { paddingBottom: layout === "modal" ? modalInsets.bottom + 16 : 12 },
         ]}
         pointerEvents="box-none"
       >

@@ -36,6 +36,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from db.postgresql_schema import POSTGRESQL_CORE_SCHEMA_SQL, ensure_postgresql_app_tables
+
 # gen_random_uuid(): PG 13+ ядро; ескі нұсқалар үшін pgcrypto.
 EXTENSIONS_SQL = """
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -109,6 +111,7 @@ CREATE INDEX IF NOT EXISTS idx_api_usage_created ON api_usage_ledger(created_at)
 CREATE INDEX IF NOT EXISTS idx_api_usage_platform ON api_usage_ledger(platform_user_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_quran_surah_ayah ON quran(surah, ayah);
 """
+BOOTSTRAP_DDL = POSTGRESQL_CORE_SCHEMA_SQL
 
 # Көлемді кестелерден кейін — /metadata/changes since сұраулары үшін.
 INDEXES_AFTER_BULK_SQL = """
@@ -122,6 +125,8 @@ CREATE INDEX IF NOT EXISTS idx_hadith_original_id ON hadith(original_id);
 _SETVAL_TABLES = (
     "api_usage_ledger",
     "platform_ai_chat_messages",
+    "community_dua",
+    "family_edges",
     "quran",
     "hadith",
 )
@@ -262,6 +267,16 @@ _PG_COUNT_WHITELIST = frozenset(
         "api_usage_ledger",
         "quran",
         "hadith",
+        "platform_password_logins",
+        "platform_oauth_links",
+        "platform_phone_logins",
+        "phone_otp_challenges",
+        "platform_hatim_read",
+        "platform_quran_last_read",
+        "platform_quran_ayah_markers",
+        "platform_link_codes",
+        "community_dua",
+        "community_dua_amen",
     }
 )
 
@@ -488,6 +503,7 @@ def _migrate_body(args, sq: sqlite3.Connection, pg) -> int:
         with pg.cursor() as cur:
             cur.execute(EXTENSIONS_SQL)
             cur.execute(BOOTSTRAP_DDL)
+        ensure_postgresql_app_tables(pg)
         pg.commit()
         print("Phase 1: extensions + schema bootstrap OK.")
 
@@ -501,6 +517,16 @@ def _migrate_body(args, sq: sqlite3.Connection, pg) -> int:
                 "revoked_refresh_jti",
                 "hadith",
                 "quran",
+                "community_dua_amen",
+                "community_dua",
+                "platform_link_codes",
+                "platform_quran_ayah_markers",
+                "platform_quran_last_read",
+                "platform_hatim_read",
+                "phone_otp_challenges",
+                "platform_phone_logins",
+                "platform_oauth_links",
+                "platform_password_logins",
             ),
         )
         print("Phase 2: TRUNCATE CASCADE on target tables.")
@@ -546,6 +572,16 @@ def _migrate_body(args, sq: sqlite3.Connection, pg) -> int:
                 "created_at",
             ),
         ),
+        ("platform_password_logins", ("login_key", "platform_user_id", "created_at")),
+        ("platform_oauth_links", ("provider", "oauth_subject", "platform_user_id", "created_at")),
+        ("platform_phone_logins", ("phone_e164", "platform_user_id", "created_at")),
+        ("phone_otp_challenges", ("challenge_id", "phone_e164", "code_hash", "expires_at", "created_at")),
+        ("platform_hatim_read", ("platform_user_id", "surahs_json", "updated_at")),
+        ("platform_quran_last_read", ("platform_user_id", "state_json", "updated_at")),
+        ("platform_quran_ayah_markers", ("platform_user_id", "markers_json", "updated_at")),
+        ("platform_link_codes", ("code_hash", "platform_user_id", "expires_at", "created_at")),
+        ("community_dua", ("id", "body", "client_id", "amen_count", "created_at")),
+        ("community_dua_amen", ("dua_id", "client_id", "created_at")),
     ]
     for name, cols in phase_small:
         if not _table_exists_sqlite(sq, name):
@@ -605,7 +641,18 @@ def _migrate_body(args, sq: sqlite3.Connection, pg) -> int:
                     )
                     print(f"copy quran (COPY): {n} rows")
                     total += n
-        hcols_all = ("id", "source", "text_ar", "text_kk", "text_ru", "text_en", "grade", "updated_at")
+        hcols_all = (
+            "id",
+            "source",
+            "text_ar",
+            "text_kk",
+            "text_ru",
+            "text_en",
+            "grade",
+            "updated_at",
+            "is_repeated",
+            "original_id",
+        )
         if _table_exists_sqlite(sq, "hadith"):
             hhave = {row[1] for row in sq.execute("PRAGMA table_info(hadith)").fetchall()}
             hcols2 = tuple(c for c in hcols_all if c in hhave)
@@ -645,6 +692,16 @@ def _migrate_body(args, sq: sqlite3.Connection, pg) -> int:
             "platform_ai_chat_messages",
             "revoked_refresh_jti",
             "api_usage_ledger",
+            "platform_password_logins",
+            "platform_oauth_links",
+            "platform_phone_logins",
+            "phone_otp_challenges",
+            "platform_hatim_read",
+            "platform_quran_last_read",
+            "platform_quran_ayah_markers",
+            "platform_link_codes",
+            "community_dua",
+            "community_dua_amen",
         )
         if args.with_quran_hadith:
             tables += ("quran", "hadith")

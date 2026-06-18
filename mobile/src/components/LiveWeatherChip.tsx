@@ -217,6 +217,13 @@ export function LiveWeatherChip({
     opacity: flash.value,
     transform: [{ translateY: floatY.value }, { rotate: `${sway.value}deg` }, { scale: pulse.value }],
   }));
+  const fxDriftStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }, { translateX: sway.value * 0.12 }],
+  }));
+  const fxPulseStyle = useAnimatedStyle(() => ({
+    opacity: weatherMotion === "storm" ? 0.22 + flash.value * 0.34 : 1,
+    transform: [{ scale: pulse.value }],
+  }));
 
   const theme = useMemo(() => {
     if (!weatherSnap) return null;
@@ -272,6 +279,61 @@ export function LiveWeatherChip({
         ? 10
         : 11;
   const heroChipSm = variant === "hero" && size === "sm";
+
+  const renderWeatherEffects = (dense: boolean) => {
+    if (weatherMotion === "rain") {
+      return (
+        <Animated.View pointerEvents="none" style={[styles.fxLayer, fxDriftStyle]}>
+          <View style={[styles.fxRain, styles.fxRainA, dense && styles.fxRainDense]} />
+          <View style={[styles.fxRain, styles.fxRainB]} />
+          <View style={[styles.fxRain, styles.fxRainC, dense && styles.fxRainDense]} />
+        </Animated.View>
+      );
+    }
+    if (weatherMotion === "snow") {
+      return (
+        <Animated.View pointerEvents="none" style={[styles.fxLayer, fxDriftStyle]}>
+          <View style={[styles.fxSnow, styles.fxSnowA]} />
+          <View style={[styles.fxSnow, styles.fxSnowB, dense && styles.fxSnowLarge]} />
+          <View style={[styles.fxSnow, styles.fxSnowC]} />
+          {dense ? <View style={[styles.fxSnow, styles.fxSnowD]} /> : null}
+        </Animated.View>
+      );
+    }
+    if (weatherMotion === "cloud") {
+      return (
+        <Animated.View pointerEvents="none" style={[styles.fxLayer, fxDriftStyle]}>
+          <View style={[styles.fxCloud, styles.fxCloudA]} />
+          <View style={[styles.fxCloud, styles.fxCloudB]} />
+          {dense ? <View style={[styles.fxCloud, styles.fxCloudC]} /> : null}
+        </Animated.View>
+      );
+    }
+    if (weatherMotion === "storm") {
+      return (
+        <Animated.View pointerEvents="none" style={[styles.fxLayer, fxPulseStyle]}>
+          <View style={styles.fxStormFlash} />
+          <View style={styles.fxStormBolt} />
+        </Animated.View>
+      );
+    }
+    if (weatherMotion === "night") {
+      return (
+        <Animated.View pointerEvents="none" style={[styles.fxLayer, fxDriftStyle]}>
+          <View style={[styles.fxStar, styles.fxStarA]} />
+          <View style={[styles.fxStar, styles.fxStarB]} />
+          <View style={[styles.fxMoonGlow, dense && styles.fxMoonGlowDense]} />
+        </Animated.View>
+      );
+    }
+    return (
+      <Animated.View pointerEvents="none" style={[styles.fxLayer, fxPulseStyle]}>
+        <View style={[styles.fxSunGlow, weatherMotion === "dawn" && styles.fxDawnGlow, dense && styles.fxSunGlowDense]} />
+        <View style={[styles.fxSunRay, styles.fxSunRayA]} />
+        <View style={[styles.fxSunRay, styles.fxSunRayB]} />
+      </Animated.View>
+    );
+  };
 
   if (loading) {
     if (headerColorful) {
@@ -350,11 +412,12 @@ export function LiveWeatherChip({
           end={{ x: 1, y: 1 }}
           style={[styles.chip, styles.chipHeaderColorful, { borderColor: theme.borderColor }]}
         >
-          <Animated.Text style={[styles.emoji, iconStyle, { fontSize: iconSize }]}>
+          {renderWeatherEffects(false)}
+          <Animated.Text style={[styles.emoji, styles.fxContent, iconStyle, { fontSize: iconSize }]}>
             {weatherEmoji}
           </Animated.Text>
           <Text
-            style={[styles.temp, { color: theme.tempColor, fontSize: tempSize }]}
+            style={[styles.temp, styles.fxContent, { color: theme.tempColor, fontSize: tempSize }]}
             maxFontSizeMultiplier={1.1}
           >
             {tempLine}
@@ -395,24 +458,37 @@ export function LiveWeatherChip({
       accessibilityLabel={kk.dashboard.prayerWeatherA11y(tempLine)}
     >
       <LinearGradient
-        colors={theme!.gradient}
+        colors={
+          variant === "hero"
+            ? ["rgba(255,255,255,0)", "rgba(255,255,255,0)"]
+            : theme!.gradient
+        }
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={[
           styles.chip,
           variant === "hero" && styles.chipHero,
           heroChipSm && styles.chipHeroSm,
-          { borderColor: theme!.borderColor },
+          {
+            borderColor:
+              variant === "hero" ? "rgba(255,255,255,0)" : theme!.borderColor,
+          },
         ]}
       >
-        <Animated.Text style={[styles.emoji, iconStyle, { fontSize: iconSize + 1 }]}>
+        {renderWeatherEffects(variant !== "hero")}
+        <Animated.Text style={[styles.emoji, styles.fxContent, iconStyle, { fontSize: iconSize + 1 }]}>
           {weatherEmoji}
         </Animated.Text>
         <Text
           style={[
             styles.temp,
+            styles.fxContent,
             labelStyle,
-            !labelStyle?.color && theme ? { color: theme.tempColor } : null,
+            !labelStyle?.color && variant === "hero"
+              ? { color: "#fffaf0" }
+              : !labelStyle?.color && theme
+                ? { color: theme.tempColor }
+                : null,
             !labelStyle?.fontSize ? { fontSize: tempSize } : null,
           ]}
           maxFontSizeMultiplier={1.1}
@@ -481,16 +557,10 @@ const styles = StyleSheet.create({
     }),
   },
   wrapHero: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.22,
-        shadowRadius: 6,
-      },
-      android: { elevation: 5 },
-      default: {},
-    }),
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
   },
   chip: {
     flexDirection: "row",
@@ -501,16 +571,19 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     overflow: "hidden",
+    position: "relative",
   },
   chipHero: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    gap: 6,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    gap: 4,
+    backgroundColor: "transparent",
+    borderWidth: 0,
   },
   chipHeroSm: {
-    paddingHorizontal: 7,
-    paddingVertical: 4,
-    gap: 4,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    gap: 3,
   },
   chipLoading: {
     backgroundColor: "rgba(148, 163, 184, 0.25)",
@@ -539,4 +612,167 @@ const styles = StyleSheet.create({
     android: { includeFontPadding: false, textAlignVertical: "center" as const },
     default: {},
   }),
+  fxContent: {
+    zIndex: 2,
+  },
+  fxLayer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: "hidden",
+    zIndex: 0,
+  },
+  fxSunGlow: {
+    position: "absolute",
+    right: -8,
+    top: -12,
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 236, 153, 0.34)",
+  },
+  fxSunGlowDense: {
+    right: -4,
+    width: 48,
+    height: 48,
+  },
+  fxDawnGlow: {
+    backgroundColor: "rgba(251, 146, 60, 0.26)",
+  },
+  fxSunRay: {
+    position: "absolute",
+    width: 28,
+    height: 2,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.24)",
+  },
+  fxSunRayA: {
+    right: 12,
+    top: 8,
+    transform: [{ rotate: "-22deg" }],
+  },
+  fxSunRayB: {
+    right: 4,
+    bottom: 8,
+    transform: [{ rotate: "18deg" }],
+  },
+  fxRain: {
+    position: "absolute",
+    width: 2,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: "rgba(219, 234, 254, 0.62)",
+    transform: [{ rotate: "18deg" }],
+  },
+  fxRainDense: {
+    height: 24,
+  },
+  fxRainA: {
+    right: 8,
+    top: -4,
+  },
+  fxRainB: {
+    right: 25,
+    top: 4,
+    opacity: 0.72,
+  },
+  fxRainC: {
+    left: 10,
+    bottom: -5,
+    opacity: 0.5,
+  },
+  fxSnow: {
+    position: "absolute",
+    width: 4,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.72)",
+  },
+  fxSnowLarge: {
+    width: 5,
+    height: 5,
+  },
+  fxSnowA: {
+    right: 8,
+    top: 6,
+  },
+  fxSnowB: {
+    right: 26,
+    bottom: 6,
+    opacity: 0.82,
+  },
+  fxSnowC: {
+    left: 9,
+    top: 8,
+    opacity: 0.6,
+  },
+  fxSnowD: {
+    left: 30,
+    bottom: 4,
+    opacity: 0.5,
+  },
+  fxCloud: {
+    position: "absolute",
+    height: 15,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  fxCloudA: {
+    right: -2,
+    top: 3,
+    width: 35,
+  },
+  fxCloudB: {
+    right: 18,
+    bottom: 3,
+    width: 30,
+    opacity: 0.7,
+  },
+  fxCloudC: {
+    left: -4,
+    bottom: 5,
+    width: 34,
+    opacity: 0.52,
+  },
+  fxStormFlash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.18)",
+  },
+  fxStormBolt: {
+    position: "absolute",
+    right: 15,
+    top: 0,
+    width: 3,
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: "rgba(253, 224, 71, 0.72)",
+    transform: [{ rotate: "24deg" }],
+  },
+  fxStar: {
+    position: "absolute",
+    width: 3,
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(237, 233, 254, 0.8)",
+  },
+  fxStarA: {
+    right: 9,
+    top: 5,
+  },
+  fxStarB: {
+    right: 31,
+    bottom: 7,
+    opacity: 0.62,
+  },
+  fxMoonGlow: {
+    position: "absolute",
+    right: -8,
+    top: -8,
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: "rgba(196, 181, 253, 0.18)",
+  },
+  fxMoonGlowDense: {
+    width: 44,
+    height: 44,
+  },
 });

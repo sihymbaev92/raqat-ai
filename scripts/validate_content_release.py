@@ -8,6 +8,7 @@ Checks:
 2) content endpoints: /quran/surahs, /quran/1/1
 3) /metadata/changes ETag, then If-None-Match -> 304
 4) if diff exists, fetch one changed quran/hadith record
+5) release gates: auth header required when requested, full surah index minimum
 """
 from __future__ import annotations
 
@@ -56,11 +57,26 @@ def main() -> int:
     p.add_argument("--api-base", default="http://127.0.0.1:8787", help="Platform API base URL")
     p.add_argument("--content-secret", default="", help="X-Raqat-Content-Secret (optional)")
     p.add_argument("--access-token", default="", help="Bearer token with content scope (optional)")
+    p.add_argument(
+        "--require-auth-header",
+        action="store_true",
+        help="Fail if neither content secret nor access token is supplied.",
+    )
+    p.add_argument(
+        "--min-surahs",
+        type=int,
+        default=114,
+        help="Minimum /quran/surahs count expected for release readiness.",
+    )
     args = p.parse_args()
 
     base = args.api_base.rstrip("/")
     h = _with_auth_headers(args.content_secret.strip(), args.access_token.strip())
     out: dict[str, Any] = {"api_base": base, "checks": {}}
+    out["checks"]["auth_header_present"] = bool(h)
+    if args.require_auth_header and not h:
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 9
 
     # 1) Liveness/readiness
     for path in ("/health", "/ready"):
@@ -76,6 +92,13 @@ def main() -> int:
     if code != 200 or not isinstance(surahs, dict) or not surahs.get("ok"):
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 3
+    surah_items = surahs.get("surahs")
+    surah_count = len(surah_items) if isinstance(surah_items, list) else 0
+    out["checks"]["/api/v1/quran/surahs"]["count"] = surah_count
+    if args.min_surahs > 0 and surah_count < args.min_surahs:
+        out["checks"]["/api/v1/quran/surahs"]["min_required"] = args.min_surahs
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+        return 10
 
     code, _, ayah = _http_json(f"{base}/api/v1/quran/1/1", headers=h)
     out["checks"]["/api/v1/quran/1/1"] = {"status": code}

@@ -6,6 +6,7 @@ set -euo pipefail
 #
 # Usage examples:
 #   bash scripts/release_content_pipeline.sh
+#   bash scripts/release_content_pipeline.sh --allow-no-import   # smoke-only, explicit
 #   bash scripts/release_content_pipeline.sh \
 #     --import-cmd ".venv/bin/python scripts/hadith_corpus_sync.py import-json --db ./global_clean.db --input ./hadith.json --allow-errors" \
 #     --import-cmd ".venv/bin/python scripts/import_quran_kk_verified.py --db ./global_clean.db --input ./quran_kk.json"
@@ -26,12 +27,17 @@ CONTENT_SECRET="${RAQAT_CONTENT_READ_SECRET:-}"
 CONTENT_ACCESS_TOKEN="${RAQAT_CONTENT_ACCESS_TOKEN:-}"
 
 declare -a IMPORT_CMDS=()
+ALLOW_NO_IMPORT="${RAQAT_RELEASE_ALLOW_NO_IMPORT:-0}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --import-cmd)
       [[ $# -ge 2 ]] || { echo "Missing value for --import-cmd"; exit 2; }
       IMPORT_CMDS+=("$2")
       shift 2
+      ;;
+    --allow-no-import)
+      ALLOW_NO_IMPORT=1
+      shift
       ;;
     *)
       echo "Unknown arg: $1"
@@ -49,6 +55,7 @@ LOG=".logs/release_content_pipeline_${STAMP}.log"
   echo "DB=$DB"
   echo "API_BASE=$API_BASE"
   echo "IMPORT_CMDS=${#IMPORT_CMDS[@]}"
+  echo "ALLOW_NO_IMPORT=$ALLOW_NO_IMPORT"
 
   echo
   echo "[1/4] Schema migrations"
@@ -63,16 +70,27 @@ LOG=".logs/release_content_pipeline_${STAMP}.log"
     done
   else
     echo
-    echo "[2/4] Import commands skipped (none provided)"
-    echo "Hint: pass --import-cmd \"...\" to bind import to this release run."
+    if [[ "$ALLOW_NO_IMPORT" == "1" ]]; then
+      echo "[2/4] Import commands explicitly skipped (--allow-no-import)"
+    else
+      echo "[2/4] Import commands missing" >&2
+      echo "Pass at least one --import-cmd or set RAQAT_RELEASE_ALLOW_NO_IMPORT=1 for a smoke-only run." >&2
+      exit 21
+    fi
   fi
 
   echo
   echo "[3/4] API validate + mobile sync smoke"
-  "$PY" scripts/validate_content_release.py \
-    --api-base "$API_BASE" \
-    --content-secret "$CONTENT_SECRET" \
+  validate_args=(
+    scripts/validate_content_release.py
+    --api-base "$API_BASE"
+    --content-secret "$CONTENT_SECRET"
     --access-token "$CONTENT_ACCESS_TOKEN"
+  )
+  if [[ "${RAQAT_RELEASE_REQUIRE_AUTH:-1}" == "1" ]]; then
+    validate_args+=(--require-auth-header)
+  fi
+  "$PY" "${validate_args[@]}"
 
   echo
   echo "[4/4] Done"

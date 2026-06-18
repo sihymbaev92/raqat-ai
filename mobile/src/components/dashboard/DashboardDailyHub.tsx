@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
@@ -17,7 +17,7 @@ type Props = {
   navigation: HomeTabCompositeNavigation;
 };
 
-export function DashboardDailyHub({ colors, isDark, navigation }: Props) {
+export const DashboardDailyHub = memo(function DashboardDailyHub({ colors, isDark, navigation }: Props) {
   const { tr } = useKkAutoTranslator();
   const d = kk.dashboard;
   const ayah = useMemo(() => getDailyAyahCard(), []);
@@ -93,7 +93,7 @@ export function DashboardDailyHub({ colors, isDark, navigation }: Props) {
       ) : null}
     </View>
   );
-}
+});
 
 function makeStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({

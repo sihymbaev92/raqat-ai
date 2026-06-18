@@ -87,7 +87,7 @@ export function RaqatKbShelf({ colors, apiBase, onAskAboutArticle }: Props) {
                 site: siteParam,
               });
         if (!res.ok) {
-          setError(res.error || kk.aiChat.kbSearchError);
+          setError(kk.aiChat.kbSearchError);
           setItems([]);
           return;
         }

@@ -16,6 +16,7 @@ from prometheus_metrics import observe_ai_chat
 from ai_multimodal import analyze_halal_image, transcribe_voice, tts_to_payload
 from ai_proxy import generate_ai_reply, generate_ai_reply_meta, _ai_kb_only_mode
 from ai_reply_guards import GEMINI_BUSY_REPLY_KK, is_degraded_ai_reply
+from ai_safety_moderation import moderate_ai_prompt, enforce_ai_reply_safety, enforce_ai_reply_safety
 
 try:
     from islamic_kb.db import kb_stats
@@ -152,6 +153,34 @@ def ai_chat(
 
     if body.async_mode:
         src = "jwt" if pl else "secret"
+        safety = moderate_ai_prompt(body.prompt)
+        if not safety.allowed:
+            _log_ai_event(request, "POST /api/v1/ai/chat blocked", prompt_chars=len(body.prompt), response_chars=0)
+            append_audit_event(
+                str(resolve_db_path()),
+                action="ai.chat.blocked",
+                route="POST /api/v1/ai/chat",
+                actor_type=src,
+                platform_user_id=str(pid) if pid else None,
+                telegram_user_id=tid,
+                summary=(
+                    f"risk_level={safety.risk_level};categories={','.join(safety.categories)};"
+                    f"prompt_chars={len(body.prompt)}"
+                ),
+            )
+            return {
+                "ok": False,
+                "error": "safety_blocked",
+                "text": "",
+                "detail": {
+                    "message_kk": safety.message_kk,
+                    "risk_level": safety.risk_level,
+                    "categories": list(safety.categories),
+                },
+                "user_id": body.user_id,
+                "cached": False,
+                "detail_level": body.detail_level,
+            }
         out = _enqueue_or_503(
             "raqat.ai.chat",
             {
@@ -167,6 +196,35 @@ def ai_chat(
         return {**out, "user_id": body.user_id}
 
     quick = body.detail_level == "quick"
+    safety = moderate_ai_prompt(body.prompt)
+    if not safety.allowed:
+        src = "jwt" if pl else "secret"
+        _log_ai_event(request, "POST /api/v1/ai/chat blocked", prompt_chars=len(body.prompt), response_chars=0)
+        append_audit_event(
+            str(resolve_db_path()),
+            action="ai.chat.blocked",
+            route="POST /api/v1/ai/chat",
+            actor_type=src,
+            platform_user_id=str(pid) if pid else None,
+            telegram_user_id=tid,
+            summary=(
+                f"risk_level={safety.risk_level};categories={','.join(safety.categories)};"
+                f"prompt_chars={len(body.prompt)}"
+            ),
+        )
+        return {
+            "ok": False,
+            "error": "safety_blocked",
+            "text": "",
+            "detail": {
+                "message_kk": safety.message_kk,
+                "risk_level": safety.risk_level,
+                "categories": list(safety.categories),
+            },
+            "user_id": body.user_id,
+            "cached": False,
+            "detail_level": body.detail_level,
+        }
     cache_scope = "kb:" if body.kb_only else "mixed:"
     cache_prompt = f"{cache_scope}quick:{body.prompt}" if quick else f"{cache_scope}{body.prompt}"
 
@@ -212,6 +270,36 @@ def ai_chat(
             },
             "user_id": body.user_id,
             "cached": False,
+            "detail_level": body.detail_level,
+        }
+
+    text, reply_safety = enforce_ai_reply_safety(text)
+    if not reply_safety.allowed:
+        src = "jwt" if pl else "secret"
+        _log_ai_event(request, "POST /api/v1/ai/chat reply blocked", prompt_chars=len(body.prompt), response_chars=0)
+        append_audit_event(
+            str(resolve_db_path()),
+            action="ai.chat.reply_blocked",
+            route="POST /api/v1/ai/chat",
+            actor_type=src,
+            platform_user_id=str(pid) if pid else None,
+            telegram_user_id=tid,
+            summary=(
+                f"risk_level={reply_safety.risk_level};categories={','.join(reply_safety.categories)};"
+                f"prompt_chars={len(body.prompt)}"
+            ),
+        )
+        return {
+            "ok": False,
+            "error": "safety_blocked_reply",
+            "text": text,
+            "detail": {
+                "message_kk": reply_safety.message_kk,
+                "risk_level": reply_safety.risk_level,
+                "categories": list(reply_safety.categories),
+            },
+            "user_id": body.user_id,
+            "cached": cache_hit,
             "detail_level": body.detail_level,
         }
 

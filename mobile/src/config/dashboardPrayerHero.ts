@@ -8,10 +8,11 @@ export const PRAYER_TIMES_HERO_BG = require("../../assets/dashboard/prayer_times
 
 /**
  * Басты бет «Келесі намаз» glass карточкасының артқы суреті.
- * Файл: `mobile/assets/dashboard/prayer_times_hero_next_domes.png` (куполдар, аспан).
+ * Файл: `mobile/assets/dashboard/prayer_times_hero_isha_home.png`.
+ * Home-only thumbnail: басты бетте анық көрінеді, бірақ толық hero bitmap decode ұстамайды.
  */
 export const PRAYER_TIMES_HERO_NEXT_BG =
-  require("../../assets/dashboard/prayer_times_hero_next_domes.png") as ImageSourcePropType;
+  require("../../assets/dashboard/prayer_times_hero_isha_home.png") as ImageSourcePropType;
 
 /**
  * «Намаз уақыты» экраны — уақыт кестесі артындағы фон (кешкі мешіт, сақина арка, күн батуы; Gemini артқы фон).

@@ -94,6 +94,7 @@ export type MushafBookLinkParams = {
   initialPage?: number;
   focusSurah?: number;
   focusAyah?: number;
+  continuousMushaf?: boolean;
 };
 
 /** `mushaf-book?focusSurah=2&focusAyah=1` — query React Navigation path-те жиі жоғалады. */
@@ -116,6 +117,10 @@ export function parseMushafBookQueryParams(rawPath: string): MushafBookLinkParam
   if (ip != null && ip !== "") {
     const n = parseInt(ip, 10);
     if (Number.isFinite(n) && n >= 1 && n <= 604) out.initialPage = n;
+  }
+  const continuous = sp.get("continuousMushaf");
+  if (continuous === "1" || continuous === "true") {
+    out.continuousMushaf = true;
   }
   return out;
 }
@@ -146,11 +151,17 @@ export function applyQuranMushafBookParamsFromDeepLink<S extends NavigationState
   state: S | undefined,
   params: MushafBookLinkParams
 ): S | undefined {
-  if (!state || (!params.focusSurah && !params.focusAyah && !params.initialPage)) return state;
+  if (
+    !state ||
+    (!params.focusSurah && !params.focusAyah && !params.initialPage && !params.continuousMushaf)
+  ) {
+    return state;
+  }
   const extra: Record<string, unknown> = {};
   if (params.focusSurah != null) extra.focusSurah = params.focusSurah;
   if (params.focusAyah != null) extra.focusAyah = params.focusAyah;
   if (params.initialPage != null) extra.initialPage = params.initialPage;
+  if (params.continuousMushaf) extra.continuousMushaf = true;
   return patchRouteParams(state, "QuranMushafBook", extra);
 }
 
@@ -182,10 +193,12 @@ export function getFocusedMushafBookParams(
   const fs = leaf.params.focusSurah;
   const fa = leaf.params.focusAyah;
   const ip = leaf.params.initialPage;
+  const cm = leaf.params.continuousMushaf;
   const out: MushafBookLinkParams = {};
   if (typeof fs === "number" && fs >= 1 && fs <= 114) out.focusSurah = fs;
   if (typeof fa === "number" && fa >= 1) out.focusAyah = fa;
   if (typeof ip === "number" && ip >= 1 && ip <= 604) out.initialPage = ip;
+  if (cm === true) out.continuousMushaf = true;
   return Object.keys(out).length ? out : null;
 }
 

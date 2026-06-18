@@ -21,6 +21,7 @@ import {
   QCF4_PHONE_LINE_PADDING,
   QCF4_PHONE_LINE_SCALE_X,
   QCF4_PHONE_NATIVE_SAFE_INSET,
+  QCF4_PHONE_VERTICAL_SAFE_PADDING,
   QCF4_PHONE_VERTICAL_STRETCH_FACTOR,
   QCF4_PHONE_WEB_SAFE_INSET,
   QCF4_RENDER_LINE_COUNT,
@@ -53,6 +54,11 @@ import {
   qcf4AyahMarkerHeight,
   qcf4AyahMarkerTextColorForPage,
 } from "../../quran/mushafAyahMarkerStyle";
+import {
+  tajweedRuleForWordGlyph,
+  type TajweedRuleKey,
+} from "../../utils/alquranTajweedParse";
+import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
 
 /** 15 жолдық торда барлық аят glyph-тері бір тұрақты өлшеммен тұрсын. */
 const QCF4_GLYPH_SCALE_QCOM = 0.72;
@@ -60,12 +66,15 @@ const QCF4_GLYPH_SCALE_QCOM = 0.72;
 const QCF4_GLYPH_EXTRA_QCOM = 0;
 /** Қаріптің үсті/асты қиылып қалмауы үшін Text lineHeight-қа қауіпсіз коэффициент. */
 const QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM = 1.46;
+const QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y = 1.04;
+const QCF4_NATIVE_LINE_INNER_PADDING = 2;
 /** Жоғарғы джуз/бет жолы. */
 const QCF4_CHROME_JUZ_RESERVE = 28;
 /** Жүз/бет қатары мен сүре рамкасы арасын сәл жақындату. */
 const QCF4_EXTERNAL_SURAH_FRAME_TOP_TIGHTEN = 6;
 const QCF4_READABLE_WEB_FONT =
   `"${QURAN_BOOK_FONT_FACE.scheherazade}", "Scheherazade New", "${QURAN_BOOK_FONT_FACE.lateef}", Lateef, serif`;
+const QCF4_TAJWEED_FETCH_TIMEOUT_MS = 14_000;
 
 type Props = {
   page: MushafBookPageSlice;
@@ -81,6 +90,7 @@ type Props = {
   isActive?: boolean;
   showReaderMeaning: boolean;
   showReaderTranslit: boolean;
+  showTajweedColors?: boolean;
   mushafTextScale?: number;
   playingRef: MushafAyahRef | null;
   ayahAudioIsPlaying: boolean;
@@ -154,6 +164,33 @@ function qcf4SurahHeaderTitle(lineWords: readonly Qcf4Word[]): string | null {
   return surahArabicBannerTitle(header.sura) || null;
 }
 
+function qcf4TajweedUrl(surah: number): string {
+  return `https://api.alquran.cloud/v1/surah/${surah}/quran-tajweed`;
+}
+
+async function fetchQcf4TajweedMap(surah: number): Promise<Record<number, string> | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), QCF4_TAJWEED_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(qcf4TajweedUrl(surah), { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { code?: number; data?: { ayahs?: unknown[] } };
+    if (body.code !== 200 || !Array.isArray(body.data?.ayahs)) return null;
+    const out: Record<number, string> = {};
+    for (const raw of body.data.ayahs) {
+      const ayah = raw as { numberInSurah?: number; text?: string };
+      const n = typeof ayah.numberInSurah === "number" ? ayah.numberInSurah : NaN;
+      const text = (ayah.text ?? "").trim();
+      if (Number.isFinite(n) && text.includes("[")) out[n] = text;
+    }
+    return Object.keys(out).length ? out : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Hafs 604 QCF4 — Madinah glyph JSON + page fonts (offline-friendly CDN). */
 export function MushafBookPageQcf4({
   page,
@@ -167,6 +204,7 @@ export function MushafBookPageQcf4({
   isActive = true,
   showReaderMeaning,
   showReaderTranslit,
+  showTajweedColors = false,
   mushafTextScale = 1,
   playingRef,
   ayahAudioIsPlaying,
@@ -181,6 +219,7 @@ export function MushafBookPageQcf4({
   const [qcfPage, setQcfPage] = useState<Qcf4PageJson | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
+  const [localTajweedByAyah, setLocalTajweedByAyah] = useState<Record<string, string>>({});
 
   const theme = resolveQuranReadingTheme(readingThemeId);
   const minimalChrome = theme.minimalPageChrome;
@@ -234,6 +273,9 @@ export function MushafBookPageQcf4({
   const linesAreaH = fitOneScreen
     ? Math.max(80, pageHeight - chromeReserve - surahFrameReserve)
     : Math.max(80, pageHeight);
+  const phoneVerticalSafePadding =
+    qcomPurePage && isPhoneQcf4Page ? QCF4_PHONE_VERTICAL_SAFE_PADDING : 0;
+  const lineMetricsAreaH = Math.max(80, linesAreaH - phoneVerticalSafePadding * 2);
   const qcomTitleInk = isDark ? "#FFFFFF" : (st.mushafAyahTxt.color ?? "#111111");
   const karaokeWordIndex = useQuranKaraokeWordIndex(Boolean(playingRef && ayahAudioIsPlaying));
 
@@ -286,6 +328,43 @@ export function MushafBookPageQcf4({
     };
   }, [page.mushafPageNumber, isActive, onLoadFailed]);
 
+  useEffect(() => {
+    if (!isActive || !showTajweedColors) return;
+    const missingSurahs = Array.from(
+      new Set(
+        page.ayahs
+          .filter((ayah) => {
+            const key = `${ayah.surahNumber}:${ayah.numberInSurah}`;
+            return !((ayah.textTajweed ?? localTajweedByAyah[key] ?? "").trim().includes("["));
+          })
+          .map((ayah) => ayah.surahNumber)
+      )
+    );
+    if (!missingSurahs.length) return;
+
+    let alive = true;
+    for (const surah of missingSurahs) {
+      void (async () => {
+        const map = await fetchQcf4TajweedMap(surah);
+        if (!alive || !map) return;
+        setLocalTajweedByAyah((prev) => {
+          let changed = false;
+          const next = { ...prev };
+          for (const [ayah, text] of Object.entries(map)) {
+            const key = `${surah}:${ayah}`;
+            if (next[key] === text) continue;
+            next[key] = text;
+            changed = true;
+          }
+          return changed ? next : prev;
+        });
+      })();
+    }
+    return () => {
+      alive = false;
+    };
+  }, [isActive, localTajweedByAyah, page.ayahs, showTajweedColors]);
+
   const renderLines = useMemo(
     () =>
       buildQcf4RenderableLines(qcfPage, {
@@ -301,7 +380,7 @@ export function MushafBookPageQcf4({
   const metricLineCount = qcf4MetricLineCount(renderLineCount);
   const sparseQcf4Page = metricLineCount > renderLineCount;
   const { lineGap, lineHeight } = computeQcf4LineMetrics({
-    linesAreaH,
+    linesAreaH: lineMetricsAreaH,
     renderLineCount: metricLineCount,
     fitOneScreen,
     qcomPurePage,
@@ -320,12 +399,14 @@ export function MushafBookPageQcf4({
       1
   );
   const glyphSize =
-    qcomPurePage && isPhoneQcf4Page
+    qcomPurePage && (isPhoneQcf4Page || Platform.OS !== "web")
       ? qcf4SafeGlyphSizeForLine({
           rawGlyphSize,
           lineHeight,
-          maxGlyphSize: QCF4_PHONE_GLYPH_MAX_QCOM,
+          maxGlyphSize: isPhoneQcf4Page ? QCF4_PHONE_GLYPH_MAX_QCOM : rawGlyphSize,
           lineHeightScale: QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM,
+          visualScaleY: Platform.OS === "web" ? 1 : QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y,
+          lineInnerPadding: Platform.OS === "web" ? 0 : QCF4_NATIVE_LINE_INNER_PADDING,
         })
       : rawGlyphSize;
   const glyphLineHeight =
@@ -347,6 +428,40 @@ export function MushafBookPageQcf4({
         const next = counts.get(ayahKey) ?? 0;
         out.set(`${line.line}:${wi}`, next);
         counts.set(ayahKey, next + 1);
+      });
+    }
+    return out;
+  }, [renderLines]);
+
+  const tajweedTaggedByAyah = useMemo(() => {
+    const out = new Map<string, string>();
+    if (!showTajweedColors) return out;
+    for (const ayah of page.ayahs) {
+      const tagged =
+        ayah.textTajweed || localTajweedByAyah[`${ayah.surahNumber}:${ayah.numberInSurah}`] || "";
+      if (tagged.includes("[")) {
+        out.set(`${ayah.surahNumber}:${ayah.numberInSurah}`, tagged);
+      }
+    }
+    return out;
+  }, [localTajweedByAyah, page.ayahs, showTajweedColors]);
+
+  const glyphIndexInWordByRenderKey = useMemo(() => {
+    const counts = new Map<string, number>();
+    const out = new Map<string, number>();
+    for (const line of renderLines) {
+      line.words.forEach((word, wi) => {
+        const ref = wordAyahRef(word);
+        if (!ref || word.type !== "word") return;
+        const wordRuleIndex =
+          typeof word.position === "number" && word.position > 0
+            ? word.position - 1
+            : (counts.get(`${ref.surah}:${ref.ayah}:ord`) ?? 0);
+        const k = `${ref.surah}:${ref.ayah}:${wordRuleIndex}`;
+        const idx = counts.get(k) ?? 0;
+        out.set(`${line.line}:${wi}`, idx);
+        counts.set(k, idx + 1);
+        counts.set(`${ref.surah}:${ref.ayah}:ord`, (counts.get(`${ref.surah}:${ref.ayah}:ord`) ?? 0) + 1);
       });
     }
     return out;
@@ -376,6 +491,8 @@ export function MushafBookPageQcf4({
         alignSelf: "center",
         justifyContent: sparseQcf4Page ? "center" : "flex-start",
         paddingHorizontal: fitOneScreen ? (isPhoneQcf4Page ? QCF4_PHONE_LINE_PADDING : 6) : 0,
+        paddingTop: phoneVerticalSafePadding,
+        paddingBottom: phoneVerticalSafePadding,
         overflow: "visible",
       }}
     >
@@ -445,9 +562,15 @@ export function MushafBookPageQcf4({
                 : glyphSize;
               const glyphSideBearingPad = readableWebText
                 ? 0
-                : Math.max(2, Math.ceil(displayedFontSize * 0.08));
+                : Math.max(3, Math.ceil(displayedFontSize * (Platform.OS === "web" ? 0.08 : 0.1)));
+              const glyphSideBearingMargin = readableWebText
+                ? 2
+                : Platform.OS === "web"
+                  ? -glyphSideBearingPad
+                  : -Math.floor(glyphSideBearingPad * 0.45);
               const stretchGlyph =
                 !readableWebText && word.type !== "end" && word.type !== "surah_header";
+              const glyphVisualScaleY = Platform.OS === "web" ? 1 : QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y;
               const markerHeight = qcf4AyahMarkerHeight(lineHeight, glyphLineHeight);
               const hl = wordHighlighted(
                 word,
@@ -462,6 +585,19 @@ export function MushafBookPageQcf4({
                 playingRef.ayah === ref.ayah &&
                 ayahAudioIsPlaying &&
                 wordOrdinalByRenderKey.get(`${line.line}:${wi}`) === karaokeWordIndex;
+              const wordOrdinal = wordOrdinalByRenderKey.get(`${line.line}:${wi}`);
+              const wordRuleIndex =
+                typeof word.position === "number" && word.position > 0
+                  ? word.position - 1
+                  : wordOrdinal;
+              const tajweedRule =
+                ref != null && wordRuleIndex != null
+                  ? tajweedRuleForWordGlyph(
+                      tajweedTaggedByAyah.get(`${ref.surah}:${ref.ayah}`),
+                      wordRuleIndex,
+                      glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0
+                    )
+                  : undefined;
               const tappable = ref != null;
               const content =
                 word.type === "end" ? (
@@ -493,18 +629,20 @@ export function MushafBookPageQcf4({
                       fontSize: displayedFontSize,
                       lineHeight: glyphLineHeight,
                       paddingHorizontal: glyphSideBearingPad,
-                      marginHorizontal: readableWebText ? 2 : -glyphSideBearingPad,
+                      marginHorizontal: glyphSideBearingMargin,
                       fontWeight: readableWebText ? "700" : "500",
                       color:
                         word.type === "surah_header"
                           ? QCF4_AYAH_MARKER_BLUE
+                          : tajweedRule
+                            ? tajweedColorForRule(tajweedRule, isDark)
                           : st.mushafAyahTxt.color,
                       textShadowColor:
                         !readableWebText && word.type !== "surah_header"
                           ? st.mushafAyahTxt.color
                           : "transparent",
                       textShadowRadius: readableWebText ? 0 : 0.18,
-                      transform: stretchGlyph ? [{ scaleY: 1.04 }] : undefined,
+                      transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
                       backgroundColor: isCurrentPlayingWord
                         ? "rgba(16, 185, 129, 0.34)"
                         : hl

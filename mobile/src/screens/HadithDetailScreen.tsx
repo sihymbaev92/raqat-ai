@@ -7,7 +7,13 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
-import { loadHadithCorpus, findHadith, hadithTextForLocale, type HadithCorpus } from "../storage/hadithCorpus";
+import {
+  loadHadithCorpus,
+  findHadith,
+  hadithTextForLocale,
+  releaseHadithCorpusMemoryCache,
+  type HadithCorpus,
+} from "../storage/hadithCorpus";
 import { useAppLocale } from "../i18n/runtime";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import { resolveHadithGradeText } from "../content/hadithGrade";
@@ -36,6 +42,7 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     })();
     return () => {
       alive = false;
+      releaseHadithCorpusMemoryCache();
     };
   }, [hadithId]);
 
@@ -114,7 +121,9 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       <Text style={styles.body}>{citation}</Text>
       {sourceOnly ? (
         <Text style={styles.meaningNote}>{kk.hadith.sourceOnlyNote}</Text>
-      ) : null}
+      ) : (
+        <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
+      )}
       {sourceUrl ? (
         <Pressable
           onPress={openSource}

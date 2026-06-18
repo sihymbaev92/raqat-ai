@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { View, Text, Switch, Platform, StyleSheet } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -15,8 +15,10 @@ import { prayerNotifSoundLabelKk } from "../../utils/prayerNotifSoundUi";
 import { PRAYER_NOTIF_SOUND_UI_ORDER, type PrayerNotifSoundId } from "../../storage/prefs";
 import {
   openAndroidExactAlarmSettings,
+  openAndroidFullScreenIntentSettings,
   type PrayerNotificationDiagnostics,
 } from "../../services/prayerNotifications";
+import { scheduleTestAzanAlarmForQa } from "../../services/prayerFullScreenAzan";
 
 export type PrayerNotifWarn = "permission" | "schedule" | null;
 
@@ -49,6 +51,30 @@ export function SettingsPrayerNotificationsSection({
 }: Props) {
   const ui = makeSettingsStyles(colors);
   const styles = makeNotifStyles(colors);
+  const [azanQaBusy, setAzanQaBusy] = useState(false);
+  const [azanQaMessage, setAzanQaMessage] = useState<string | null>(null);
+
+  const runLockedScreenAzanQa = useCallback(async () => {
+    if (Platform.OS !== "android" || azanQaBusy) return;
+    setAzanQaBusy(true);
+    setAzanQaMessage(null);
+    const result = await scheduleTestAzanAlarmForQa(90);
+    onRefreshDiagnostics();
+    if (result.ok) {
+      const permBits = [
+        result.exactAlarmPermissionGranted === false ? "exact alarm жабық" : null,
+        result.fullScreenIntentPermissionGranted === false ? "full-screen жабық" : null,
+      ].filter(Boolean);
+      setAzanQaMessage(
+        permBits.length
+          ? `QA азan ${result.delaySeconds} сек кейін. ${permBits.join(" · ")} — баптаудан қосыңыз.`
+          : `QA азan ${result.delaySeconds} сек кейін. Экранды құлыптап, қолданбаны фонға жіберіңіз.`
+      );
+    } else {
+      setAzanQaMessage(result.error ?? kk.settings.prayerAzanQaFailed);
+    }
+    setAzanQaBusy(false);
+  }, [azanQaBusy, onRefreshDiagnostics]);
 
   return (
     <SettingsSection
@@ -108,10 +134,22 @@ export function SettingsPrayerNotificationsSection({
               {kk.settings.prayerNotifDiagnosticScheduled}: {diagnostics.scheduledPrayerCount}
             </Text>
             {diagnostics.platform === "android" ? (
-              <Text style={styles.diagnosticLine}>
-                Native azan alarms: {diagnostics.nativeAzanAlarmCount}
-                {diagnostics.nativeAzanAlarmLastError ? ` (${diagnostics.nativeAzanAlarmLastError})` : ""}
-              </Text>
+              <>
+                <Text style={styles.diagnosticLine}>
+                  Native azan status: {diagnostics.nativeAzanReliabilityStatus}
+                </Text>
+                <Text style={styles.diagnosticLine}>
+                  Native azan alarms: {diagnostics.nativeAzanAlarmCount}
+                  {diagnostics.nativeAzanAlarmLastError ? ` (${diagnostics.nativeAzanAlarmLastError})` : ""}
+                </Text>
+                <Text style={styles.diagnosticLine}>
+                  Exact alarm: {formatPermissionFlag(diagnostics.nativeAzanExactAlarmPermissionGranted)}
+                </Text>
+                <Text style={styles.diagnosticLine}>
+                  Full-screen intent:{" "}
+                  {formatPermissionFlag(diagnostics.nativeAzanFullScreenIntentPermissionGranted)}
+                </Text>
+              </>
             ) : null}
             <Text style={styles.diagnosticLine}>
               {kk.settings.prayerNotifDiagnosticSound}: {prayerNotifSoundLabelKk(diagnostics.soundId)}
@@ -147,6 +185,31 @@ export function SettingsPrayerNotificationsSection({
                 <Text style={styles.warnLinkTxt}>{kk.settings.notifOpenSystemSettings}</Text>
               </Pressable>
             ) : null}
+            {Number(Platform.Version) >= 34 ? (
+              <Pressable
+                onPress={() => void openAndroidFullScreenIntentSettings()}
+                style={({ pressed }) => [styles.warnLinkBtn, pressed && { opacity: 0.88 }]}
+                accessibilityRole="button"
+                accessibilityLabel={kk.settings.prayerAzanOpenFullScreenSettings}
+              >
+                <Text style={styles.warnLinkTxt}>{kk.settings.prayerAzanOpenFullScreenSettings}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable
+              onPress={() => void runLockedScreenAzanQa()}
+              disabled={azanQaBusy || !notif}
+              style={({ pressed }) => [
+                styles.warnLinkBtn,
+                (pressed || azanQaBusy || !notif) && { opacity: 0.72 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={kk.settings.prayerAzanQaSchedule90s}
+            >
+              <Text style={styles.warnLinkTxt}>
+                {azanQaBusy ? kk.settings.prayerAzanQaScheduling : kk.settings.prayerAzanQaSchedule90s}
+              </Text>
+            </Pressable>
+            {azanQaMessage ? <Text style={styles.diagnosticLine}>{azanQaMessage}</Text> : null}
           </View>
         ) : null}
       </View>
@@ -204,6 +267,11 @@ export function SettingsPrayerNotificationsSection({
       {Platform.OS === "android" ? <Text style={ui.hint}>{kk.settings.androidPrayerWidgetHint}</Text> : null}
     </SettingsSection>
   );
+}
+
+function formatPermissionFlag(value: boolean | null): string {
+  if (value == null) return "unknown";
+  return value ? "granted" : "blocked";
 }
 
 function makeNotifStyles(colors: ThemeColors) {

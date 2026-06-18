@@ -4,6 +4,8 @@ import {
   launcherTileImageStyle,
   launcherTileInsetPx,
 } from "../dashboardLauncherTileImage";
+import { dashboardHomeTileImage } from "../dashboardHomeTileImages";
+import { DASHBOARD_RADIAL_ITEMS } from "../dashboardRadialItems";
 
 describe("dashboardLauncherTileImage", () => {
   it("uses uniform contain inset for all tiles", () => {
@@ -36,5 +38,11 @@ describe("dashboardLauncherTileImage", () => {
     expect(hajj.resizeMode).toBe("contain");
     expect(hajj.paddingRatio).toBe(0.02);
     expect(hajj.scale).toBe(1.2);
+  });
+
+  it("has a small home thumbnail for every dashboard tile", () => {
+    for (const item of DASHBOARD_RADIAL_ITEMS) {
+      expect(dashboardHomeTileImage(item.key)).toBeTruthy();
+    }
   });
 });

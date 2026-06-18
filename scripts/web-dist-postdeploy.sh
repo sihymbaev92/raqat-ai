@@ -7,6 +7,12 @@ INDEX="${WEB}/index.html"
 MANIFEST="${WEB}/.raqat-web-js-manifest.txt"
 [[ -f "$INDEX" ]] || exit 0
 
+# Files intentionally omitted by mobile/scripts/copy-web-bundled-json.js must
+# not survive on the VPS from older deploys.
+rm -f \
+  "${WEB}/assets/bundled/hadith-from-db.json" \
+  "${WEB}/assets/bundled/offline-auto-translations.json"
+
 mapfile -t KEEP < <(grep -oE 'AppEntry-[a-f0-9]+\.js|__common-[a-f0-9]+\.js|__expo-metro-runtime-[a-f0-9]+\.js|BackgroundFetch-[a-f0-9]+\.js' "$INDEX" | sort -u)
 
 if [[ -d "$JS" ]]; then

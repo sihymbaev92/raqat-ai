@@ -94,12 +94,14 @@ type Props = {
   momentBanner?: string | null;
   /** Қала (API атауы) — ортада қазақша көрсетіледі */
   cityLabel?: string;
-  /** Басты бет hero: қала атауының оң жағыnda */
+  /** Басты бет hero: қала атауының оң жағында */
   weatherSnap?: OpenMeteoCurrent | null;
   weatherLoading?: boolean;
   weatherUnavailable?: boolean;
   /** Ортада құбыла көрсеткісі */
   onPressQibla?: () => void;
+  /** Қала/мекенжай жазуын басқанда орын/намаз баптауын ашу */
+  onPressLocationSettings?: () => void;
   /** Намаз хабарламалары қосулы — динамик иконкасы */
   prayerNotifEnabled?: boolean;
   /** Басты бет: таймлайн мен карточка аралықтарын қысқарту */
@@ -257,53 +259,17 @@ function LivePrayerIcon({
     inputRange: [-10, 10],
     outputRange: ["-10deg", "10deg"],
   });
-  const glowOpacity = pulse.interpolate({
-    inputRange: [1, 1.18],
-    outputRange: [active ? 0.42 : 0.22, active ? 0.72 : 0.42],
-    extrapolate: "clamp",
-  });
-  const badgeSize = size + 13;
-  const glowSize = size + 20;
-  const badgeBg = active ? "rgba(255,255,255,0.98)" : "rgba(255,255,255,0.92)";
-  const badgeBorder = active ? color : `${color}88`;
-  const glowBg = `${color}33`;
-
   return (
     <Animated.View
       pointerEvents="none"
       style={{
-        width: badgeSize,
-        height: badgeSize,
-        borderRadius: badgeSize / 2,
+        minWidth: size + 8,
+        minHeight: size + 8,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: badgeBg,
-        borderWidth: 1,
-        borderColor: badgeBorder,
         transform: [{ translateY: floatY }, { rotate }, { scale: pulse }],
-        ...Platform.select({
-          ios: {
-            shadowColor: color,
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: active ? 0.34 : 0.18,
-            shadowRadius: active ? 5 : 3,
-          },
-          android: { elevation: active ? 4 : 2 },
-          default: {},
-        }),
       }}
     >
-      <Animated.View
-        style={{
-          position: "absolute",
-          width: glowSize,
-          height: glowSize,
-          borderRadius: glowSize / 2,
-          backgroundColor: glowBg,
-          opacity: glowOpacity,
-          transform: [{ scale: pulse }],
-        }}
-      />
       <View style={{ zIndex: 2 }}>
         <MaterialCommunityIcons name={name} size={size} color={color} />
       </View>
@@ -505,6 +471,7 @@ export function DashboardPrayerWidget({
   weatherLoading = false,
   weatherUnavailable = false,
   onPressQibla,
+  onPressLocationSettings,
   prayerNotifEnabled = true,
   compact = false,
   scheduleCompact = false,
@@ -566,12 +533,14 @@ export function DashboardPrayerWidget({
     const mockupWeatherGradient = heroWeatherGradientFor(weatherSnap);
     const mockupBody = (
       <View style={styles.mockupShell}>
-        <BlurView
-          pointerEvents="none"
-          tint="dark"
-          intensity={Platform.OS === "ios" ? 12 : 8}
-          style={StyleSheet.absoluteFill}
-        />
+        {Platform.OS === "ios" ? (
+          <BlurView
+            pointerEvents="none"
+            tint="dark"
+            intensity={10}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : null}
         <LinearGradient
           pointerEvents="none"
           colors={mockupWeatherGradient}
@@ -611,13 +580,20 @@ export function DashboardPrayerWidget({
               </View>
             ) : null}
             {mockupCityKk ? (
-              <View style={styles.mockupMetaRight} pointerEvents="none">
-                <View style={styles.mockupCityRow}>
+              <View style={styles.mockupMetaRight} pointerEvents={onPressLocationSettings ? "auto" : "none"}>
+                <Pressable
+                  oyuBackdrop={false}
+                  disabled={!onPressLocationSettings}
+                  onPress={onPressLocationSettings}
+                  accessibilityRole={onPressLocationSettings ? "button" : undefined}
+                  accessibilityLabel={kk.settings.cityChange}
+                  style={({ pressed }) => [styles.mockupCityRow, pressed && { opacity: 0.86 }]}
+                >
                   <LiveLocationPin size={15} color="rgba(255,255,255,0.92)" />
                   <Text style={styles.mockupCityText} numberOfLines={1}>
                     {mockupCityKk}
                   </Text>
-                </View>
+                </Pressable>
               </View>
             ) : null}
           </View>
@@ -728,7 +704,14 @@ export function DashboardPrayerWidget({
           {launcherCityKk || launcherHijri ? (
             <View style={styles.launcherMetaRow}>
               {launcherCityKk ? (
-                <View style={styles.launcherCityRow}>
+                <Pressable
+                  oyuBackdrop={false}
+                  disabled={!onPressLocationSettings}
+                  onPress={onPressLocationSettings}
+                  accessibilityRole={onPressLocationSettings ? "button" : undefined}
+                  accessibilityLabel={kk.settings.cityChange}
+                  style={({ pressed }) => [styles.launcherCityRow, pressed && { opacity: 0.86 }]}
+                >
                   <MaterialCommunityIcons
                     name={locationIcons.cityPin}
                     size={13}
@@ -737,7 +720,7 @@ export function DashboardPrayerWidget({
                   <Text style={styles.launcherMetaText} numberOfLines={1}>
                     {launcherCityKk}
                   </Text>
-                </View>
+                </Pressable>
               ) : (
                 <View style={styles.launcherMetaSpacer} />
               )}
@@ -858,8 +841,15 @@ export function DashboardPrayerWidget({
             ) : null}
           </View>
           {cityKk ? (
-            <View style={styles.metaCenter} pointerEvents="none">
-              <View style={styles.cityRow}>
+            <View style={styles.metaCenter} pointerEvents={onPressLocationSettings ? "auto" : "none"}>
+              <Pressable
+                oyuBackdrop={false}
+                disabled={!onPressLocationSettings}
+                onPress={onPressLocationSettings}
+                accessibilityRole={onPressLocationSettings ? "button" : undefined}
+                accessibilityLabel={kk.settings.cityChange}
+                style={({ pressed }) => [styles.cityRow, pressed && { opacity: 0.86 }]}
+              >
                 <MaterialCommunityIcons
                   name={locationIcons.cityPin}
                   size={compact ? 15 : 16}
@@ -868,7 +858,7 @@ export function DashboardPrayerWidget({
                 <Text style={styles.cityText} numberOfLines={1}>
                   {cityKk}
                 </Text>
-              </View>
+              </Pressable>
             </View>
           ) : null}
         </View>
@@ -1457,28 +1447,28 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     mockupShell: {
       borderRadius: 16,
       overflow: "hidden",
-      borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.24)",
       position: "relative",
       minHeight: 104,
+      backgroundColor: "rgba(7, 32, 36, 0.08)",
     },
     mockupTint: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(8, 32, 38, 0.32)",
+      backgroundColor: "rgba(8, 32, 38, 0.14)",
     },
     mockupTintSun: {
-      backgroundColor: "rgba(70, 91, 30, 0.18)",
+      backgroundColor: "rgba(70, 91, 30, 0.08)",
     },
     mockupTintSnow: {
-      backgroundColor: "rgba(9, 57, 74, 0.2)",
+      backgroundColor: "rgba(9, 57, 74, 0.12)",
     },
     mockupTintRain: {
-      backgroundColor: "rgba(4, 23, 38, 0.42)",
+      backgroundColor: "rgba(4, 23, 38, 0.24)",
     },
     mockupTintStorm: {
-      backgroundColor: "rgba(4, 12, 31, 0.5)",
+      backgroundColor: "rgba(4, 12, 31, 0.32)",
     },
     mockupInner: {
+      position: "relative",
       paddingHorizontal: 10,
       paddingTop: 1,
       paddingBottom: 4,
@@ -1492,6 +1482,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       minHeight: 34,
       marginTop: -1,
       marginBottom: -1,
+      zIndex: 2,
     },
     mockupMetaLeft: {
       flexShrink: 0,
@@ -1522,17 +1513,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: "rgba(52, 251, 153, 0.62)",
-      ...Platform.select({
-        ios: {
-          shadowColor: "#34F3A6",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.95,
-          shadowRadius: 12,
-        },
-        android: { elevation: 7 },
-        default: {},
-      }),
+      backgroundColor: "transparent",
     },
     mockupKaabaBadge: {
       width: 30,
@@ -1540,25 +1521,15 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       borderRadius: 15,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "rgba(255,255,255,0.10)",
-      borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.24)",
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      borderColor: "transparent",
       overflow: "hidden",
     },
     mockupKaabaBadgeAligned: {
-      backgroundColor: "rgba(52, 211, 153, 0.24)",
-      borderColor: "rgba(52, 251, 153, 0.92)",
-      borderWidth: 2,
-      ...Platform.select({
-        ios: {
-          shadowColor: "#34F3A6",
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.95,
-          shadowRadius: 9,
-        },
-        android: { elevation: 8 },
-        default: {},
-      }),
+      backgroundColor: "transparent",
+      borderColor: "transparent",
+      borderWidth: 0,
     },
     mockupKaabaIcon: {
       width: 24,
@@ -1596,6 +1567,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       fontWeight: "700",
       letterSpacing: 0.2,
       textAlign: "left",
+      ...heroTextShadow,
     },
     mockupNextRow: {
       flexDirection: "row",
@@ -1607,6 +1579,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       marginBottom: 0,
       minHeight: 33,
       position: "relative",
+      zIndex: 2,
     },
     mockupNextLeft: {
       flex: 1,
@@ -1622,6 +1595,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       fontWeight: "800",
       letterSpacing: 0.15,
       textAlign: "left",
+      ...heroTextShadow,
     },
     mockupNextCenter: {
       position: "absolute",
@@ -1652,7 +1626,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       alignItems: "stretch",
       justifyContent: "space-between",
       gap: 1,
-      marginTop: 0,
+      marginTop: 1,
     },
     mockupStripCell: {
       flex: 1,
@@ -1667,8 +1641,9 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupStripName: {
       color: "#FFFFFF",
-      fontSize: 9,
-      fontWeight: "800",
+      fontSize: 10,
+      fontWeight: "900",
+      lineHeight: 12,
       textAlign: "center",
       ...heroTextShadow,
     },
@@ -1678,10 +1653,11 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupStripTime: {
       color: "#FFFFFF",
-      fontSize: 10,
+      fontSize: 11,
       fontWeight: "900",
+      lineHeight: 13,
       fontVariant: ["tabular-nums"],
-      letterSpacing: 0.35,
+      letterSpacing: 0.45,
       ...heroTextShadow,
     },
     mockupStripTimeActive: {
@@ -1692,6 +1668,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       color: "#FFFFFF",
       fontSize: 12,
       fontWeight: "900",
+      ...heroTextShadow,
     },
     weatherSunGlow: {
       position: "absolute",

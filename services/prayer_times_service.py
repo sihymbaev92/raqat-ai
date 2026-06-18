@@ -16,7 +16,9 @@ from config.settings import PRAYER_TIMES_CACHE_SECONDS, PRAYER_TIMES_TIMEOUT_SEC
 logger = logging.getLogger("raqat_ai.prayer_times")
 
 ALADHAN_BY_CITY = "https://api.aladhan.com/v1/timingsByCity"
-_PRAYER_TIMES_CACHE: dict[tuple[str, str, int], dict[str, Any]] = {}
+PRAYER_CALCULATION_METHOD = 2
+PRAYER_ASR_SCHOOL_HANAFI = 1
+_PRAYER_TIMES_CACHE: dict[tuple[str, str, int, int], dict[str, Any]] = {}
 
 
 def _normalize_time(value: str) -> str:
@@ -47,14 +49,14 @@ def clear_prayer_times_cache() -> None:
 def fetch_prayer_times_by_city(
     city: str,
     country: str,
-    method: int = 3,
-    school: int = 1,
+    method: int = PRAYER_CALCULATION_METHOD,
+    school: int = PRAYER_ASR_SCHOOL_HANAFI,
     timeout: float | None = None,
 ) -> dict[str, Any] | None:
     """
     Қала/ел бойынша бүгінгі намаз уақыттарын алады.
 
-    method: Aladhan есеп әдісі (әдепкі 3 = Muslim World League).
+    method: Aladhan есеп әдісі (әдепкі 2 = ISNA, mobile app-пен бірдей).
     school: 1 = ханафи (Имам Әбу Ханифа) — екінті уақыты; 0 = шафи. Әдепкі: 1.
     Сәтсіз болса None.
     """

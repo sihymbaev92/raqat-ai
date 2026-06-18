@@ -31,7 +31,6 @@ export function headingFromLocationHeading(
 
   const accLooksGood = typeof acc === "number" && acc >= 2 && acc < 120;
   const magAdjusted = mOk ? normHeadingDeg(m + declEastDeg) : 0;
-  const magTrueAgree = !mOk || !tOk ? true : Math.abs(angleDiff(magAdjusted, t)) <= 28;
 
   const trueMagSepDeg = !mOk || !tOk ? 999 : Math.abs(angleDiff(t, m));
   /**
@@ -40,23 +39,18 @@ export function headingFromLocationHeading(
    */
   const suspiciousTrueEqualsMag =
     mOk && tOk && trueMagSepDeg < 1 && Math.abs(declEastDeg) > 2.5;
-
-  /** Expo true ≈ m + geoDecl; |t−m| деклинация ауқымынан асып кетсе, true сенімсіз. */
-  const magTrueDeltaOk = !mOk || !tOk ? true : trueMagSepDeg <= 52;
-
-  const accSensorOk = typeof acc === "number" && acc >= 2 && acc <= 28;
-  const androidTrueTrusted =
-    accSensorOk && !suspiciousTrueEqualsMag && (magTrueAgree || magTrueDeltaOk);
+  /**
+   * Android-та кей OEM/Expo комбинацияларында trueHeading тұрақсыз немесе magHeading-пен
+   * сәйкес келмей қалады. Қолданбада географиялық declination бар, сондықтан Android үшін
+   * mag+decl бірінші таңдау: бұл Құбылада "кері/қисық" көрсетуді азайтады.
+   */
+  if (platform === "android" && mOk) {
+    return magAdjusted;
+  }
 
   let useTrue = false;
   if (tOk) {
-    if (platform === "ios") {
-      useTrue = accLooksGood && !suspiciousTrueEqualsMag;
-    } else if (platform === "android") {
-      useTrue = androidTrueTrusted;
-    } else {
-      useTrue = accLooksGood && !suspiciousTrueEqualsMag;
-    }
+    useTrue = accLooksGood && !suspiciousTrueEqualsMag;
   }
   if (useTrue && tOk) {
     return normHeadingDeg(t);

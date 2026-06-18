@@ -10,6 +10,7 @@ import type { MoreStackParamList } from "../navigation/types";
 import {
   getScrapedHadithMuftyatBundle,
   searchScrapedHadithMuftyat,
+  scrapedHadithSourceLabel,
   type ScrapedHadithMuftyatItem,
 } from "../content/scrapedHadithMuftyat";
 import { HadithCrossLinkBar } from "../components/hadith/HadithCrossLinkBar";
@@ -35,6 +36,8 @@ export function ScrapedHadithMuftyatListScreen({ navigation }: Props) {
         accessibilityRole="button"
         accessibilityLabel={item.title}
       >
+        <Text style={styles.rowBadge}>{kk.hadith.muftyatExcerpts.articleExcerptBadge}</Text>
+        <Text style={styles.rowSite}>{scrapedHadithSourceLabel(item.sourceSite)}</Text>
         <Text style={styles.rowTitle} numberOfLines={2}>
           {item.title}
         </Text>
@@ -62,6 +65,7 @@ export function ScrapedHadithMuftyatListScreen({ navigation }: Props) {
           : kk.hadith.muftyatExcerpts.count(bundle.itemCount)}{" "}
         · {bundle.sourceOrg}
       </Text>
+      <Text style={styles.disclaimer}>{kk.hadith.muftyatExcerpts.disclaimer}</Text>
       <TextInput
         style={styles.search}
         placeholder={kk.hadith.muftyatExcerpts.searchPlaceholder}
@@ -102,6 +106,13 @@ function makeStyles(colors: ThemeColors) {
       paddingTop: 6,
       paddingBottom: 8,
     },
+    disclaimer: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.muted,
+      paddingHorizontal: 16,
+      paddingBottom: 10,
+    },
     search: {
       marginHorizontal: 16,
       marginBottom: 8,
@@ -125,6 +136,16 @@ function makeStyles(colors: ThemeColors) {
       paddingRight: 36,
     },
     rowTitle: { fontSize: 15, fontWeight: "800", color: colors.text, marginBottom: 6 },
+    rowBadge: {
+      alignSelf: "flex-start",
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.muted,
+      textTransform: "uppercase",
+      letterSpacing: 0.3,
+      marginBottom: 4,
+    },
+    rowSite: { fontSize: 11, fontWeight: "700", color: colors.muted, marginBottom: 4 },
     rowPreview: { fontSize: 13, lineHeight: 19, color: colors.muted },
     chevron: { position: "absolute", right: 10, top: 18 },
     empty: { textAlign: "center", color: colors.muted, marginTop: 24, fontSize: 14 },

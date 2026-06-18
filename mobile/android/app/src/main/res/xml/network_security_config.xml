@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Play release: HTTPS-only. Local/debug HTTP hosts must not ship in production AAB. -->
+<!-- Play release: HTTPS-only. -->
 <network-security-config>
   <base-config cleartextTrafficPermitted="false" />
 </network-security-config>

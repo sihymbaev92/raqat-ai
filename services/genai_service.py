@@ -19,6 +19,15 @@ from config.settings import (
     RAQAT_PLATFORM_API_BASE,
 )
 
+try:
+    from platform_api.ai_safety_moderation import SAFE_REPLY_KK, moderate_ai_prompt
+except ImportError:  # pragma: no cover - platform_api can be absent in minimal bot deploys
+    SAFE_REPLY_KK = (
+        "Бұл сұрақ қауіпсіздік және діни әдеп тұрғысынан жауап беруге жарамайды. "
+        "Діни мәселе бойынша ҚМДБ/Fatua.kz/Muftyat.kz дереккөздеріне және білікті ұстазға жүгініңіз."
+    )
+    moderate_ai_prompt = None
+
 
 def _accept_ai_proxy_secret_header() -> bool:
     return (os.getenv("RAQAT_ACCEPT_AI_PROXY_SECRET_HEADER") or "1").strip().lower() not in (
@@ -222,6 +231,9 @@ def _ask_genai_via_platform_api(prompt: str, user_id: int | None = None) -> str 
     )
     if not data:
         return "AI орталық серверіне қосылу сәтсіз. Кейінірек қайта көріңіз."
+    if data.get("error") == "safety_blocked":
+        detail = data.get("detail") if isinstance(data.get("detail"), dict) else {}
+        return (detail.get("message_kk") or SAFE_REPLY_KK).strip()
     return (data.get("text") or "").strip() or "Жауап алынбады."
 
 
@@ -232,6 +244,11 @@ def ask_genai(prompt: str, user_id: int | None = None) -> str:
     via = _ask_genai_via_platform_api(prompt, user_id=user_id)
     if via is not None:
         return via
+
+    if moderate_ai_prompt is not None:
+        safety = moderate_ai_prompt(prompt)
+        if not safety.allowed:
+            return (safety.message_kk or SAFE_REPLY_KK).strip()
 
     if RAQAT_SINGLE_SOURCE_MODE:
         return (

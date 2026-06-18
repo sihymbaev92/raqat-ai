@@ -1,7 +1,7 @@
 import { mushafAyahMapRemoteUrl } from "../config/mushafPagesBase";
 import type { MushafBookAyah, MushafBookPageSlice } from "./mushafBookTypes";
 
-/** Нормалized 0..1 координат — WebP бетінде аят басу аймағы. */
+/** Нормаланған 0..1 координат — WebP бетінде аят басу аймағы. */
 export type MushafAyahMapHotspot = {
   surah: number;
   ayah: number;

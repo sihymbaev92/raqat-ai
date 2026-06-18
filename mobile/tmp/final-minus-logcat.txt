@@ -1,0 +1,45 @@
+﻿
+> 06-12 03:39:45.658 25255 25255 D AndroidRuntime: >>>>>> START com.android.internal.os.RuntimeInit uid 2000 <<<<<<
+> 06-12 03:39:45.667 25255 25255 I AndroidRuntime: Using default boot image
+> 06-12 03:39:45.667 25255 25255 I AndroidRuntime: Leaving lock profiling enabled
+  06-12 03:39:45.674  1690  1975 D KNOX_MDM_SettingsProvider: isChangeAllowed() : name = enabled_notification_listeners
+  06-12 03:39:45.675 25255 25255 D SecNativeFeatureCppIf: encoded
+  06-12 03:39:45.675 25255 25255 D SecNativeFeatureCppIf: decoding and unzip finish
+> 06-12 03:39:45.676 25255 25255 D AndroidRuntime: addProductProperty not brand or 7
+  06-12 03:39:45.687 14592 25266 I Icing   : Usage reports ok 0, Failed Usage reports 0, indexed 0, rejected 0
+  06-12 03:39:45.692 25255 25255 I app_process: Using non-generational CollectorTypeCC GC.
+  06-12 03:39:45.707 14592 25266 I Icing   : Indexing com.google.android.gms-apps from com.google.android.gms
+> 06-12 03:39:46.025 25255 25255 D AndroidRuntime: Calling main entry com.android.commands.monkey.Monkey
+  06-12 03:39:46.028 25255 25255 W Monkey  : args: [-p, kz.raqat.app, -c, android.intent.category.LAUNCHER, 1]
+  06-12 03:39:46.029 25255 25255 W Monkey  :  arg: "-p"
+  06-12 03:39:46.029 25255 25255 W Monkey  :  arg: "kz.raqat.app"
+> 06-12 03:39:46.232 25255 25255 I AndroidRuntime: VM exiting with result code 0.
+  06-12 03:39:46.228  2550  2703 D SRotationLockTile:  mRotationLocked: true handleUpdateState: false orientation = 
+true
+  06-12 03:39:46.233  1690  1978 V WindowManager: SyncGroup 658: Finished!
+  06-12 03:39:46.233  1690  1978 V WindowManager: performShowLocked: mDrawState=HAS_DRAWN in Window{e2dc6a1 u0 Splash 
+Screen kz.raqat.app}
+> 06-12 03:39:47.373 25294 25331 I ReactNativeJS: Running "main"
+  06-12 03:39:47.386   947   947 E audit   : type=1400 audit(1781217587.384:65351): avc:  denied  { ioctl } for  
+pid=25294 comm=4173796E635461736B202331 path="/data/data/kz.raqat.app/databases/RKStorage" dev="dm-52" ino=123809 
+ioctlcmd=0xf522 scontext=u:r:untrusted_app:s0:c84,c257,c512,c768 
+tcontext=u:object_r:app_data_file:s0:c84,c257,c512,c768 tclass=file permissive=0 SEPF_SM-A525F_12_0001 audit_filtered
+  06-12 03:39:47.426 25294 25331 D CompatibilityChangeReporter: Compat change id reported: 289878283; UID 10340; 
+state: ENABLED
+  06-12 03:39:47.448  1135  1193 I VSyncReactor: Current= 90, Period= 90, hwcPeriod= 90
+> 06-12 03:39:51.713  1690  2316 V SemWifiScanPool: updateScanResult, full scan:1 configKeys: 1 pool_bssid:5 
+pool_configKeys:5
+> 06-12 03:39:51.713  1690  2316 D WifiConnectivityMonitor: onScanResultUpdated
+  06-12 03:39:51.713  1690  2316 D WifiConnectivityMonitor: mMaxScannedCountryCode : 
+  06-12 03:39:51.714  1690  2692 I SLocation: ReceiverPairWithWifi - handle Wifi Scans ID = 4
+  06-12 03:39:51.719 21113 25129 I FrewleTileCacheManagerV: (REDACTED) Fetched %d AP models from cache
+> 06-12 03:39:53.466  1690  1802 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and 
+/data/app/~~Cm0riyhIQrX3ofZleKHalA==/com.microsoft.appmanager-9i2XVYeSjd6Jh9_aNRIZWw==/base.apk' with 1 weak references
+  06-12 03:39:53.466  1690  1802 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and 
+/system/app/HoneyBoard/HoneyBoard.apk' with 1 weak references
+  06-12 03:39:53.467  1690  1802 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and 
+/system/app/SmartReminder/SmartReminder.apk' with 1 weak references
+  06-12 03:39:53.468  1690  1802 W system_server: ApkAssets: Deleting an ApkAssets object '<empty> and 
+/system/priv-app/SamsungGallery2018/SamsungGallery2018.apk' with 1 weak references
+
+

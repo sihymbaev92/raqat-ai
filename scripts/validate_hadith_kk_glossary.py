@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_BUNDLE = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db.json"
+RUNTIME_SEED_BUNDLE = ROOT / "mobile" / "assets" / "bundled" / "hadith-from-db-seed.json"
 DEFAULT_GLOSSARY = ROOT / "scripts" / "hadith_kk_glossary.json"
 
 
@@ -20,7 +21,7 @@ def load_json(path: Path) -> dict:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Validate hadith textKk with glossary/style rules.")
-    p.add_argument("--bundle", type=Path, default=DEFAULT_BUNDLE)
+    p.add_argument("--bundle", type=Path, default=DEFAULT_BUNDLE if DEFAULT_BUNDLE.is_file() else RUNTIME_SEED_BUNDLE)
     p.add_argument("--glossary", type=Path, default=DEFAULT_GLOSSARY)
     p.add_argument("--top", type=int, default=20)
     p.add_argument("--strict", action="store_true", help="Exit non-zero when issues are found.")

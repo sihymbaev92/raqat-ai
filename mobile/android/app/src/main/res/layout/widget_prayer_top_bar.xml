@@ -17,7 +17,7 @@
       android:textStyle="bold"
       android:maxLines="1"
       android:ellipsize="end"
-      android:includeFontPadding="false" />
+      android:includeFontPadding="true" />
 
   <LinearLayout
       android:id="@+id/widget_top_weather_row"

@@ -74,7 +74,7 @@ export function estimateDockRowHeight(tileSize: number): number {
   return tileSize + 8;
 }
 
-/** Launcher ашық: FAB pill — tile өлшеміне байlanбас. */
+/** Launcher ашық: FAB pill — tile өлшеміне байланбайды. */
 export function estimateOpenDockRowHeight(fabPillHeight: number): number {
   return fabPillHeight + 6;
 }

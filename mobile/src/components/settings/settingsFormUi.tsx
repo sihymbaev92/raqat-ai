@@ -22,13 +22,21 @@ export function SettingsBoolRow({
 }) {
   const styles = makeSettingsStyles(colors);
   return (
-    <View style={[styles.rowBetween, disabled && { opacity: 0.5 }]}>
+    <Pressable
+      oyuBackdrop={false}
+      disabled={disabled}
+      onPress={() => onChange(!value)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value, disabled }}
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.rowBetween, disabled && { opacity: 0.5 }, pressed && { opacity: 0.9 }]}
+    >
       <View style={{ flex: 1, paddingRight: 8 }}>
         <Text style={styles.label}>{label}</Text>
         {hint ? <Text style={[styles.hint, { marginTop: 4, marginBottom: 0 }]}>{hint}</Text> : null}
       </View>
       <Switch value={value} onValueChange={onChange} disabled={disabled} />
-    </View>
+    </Pressable>
   );
 }
 

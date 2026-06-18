@@ -29,6 +29,7 @@ Use this right before deploy or APK handoff.
 - New artifact exists in `mobile/android/app/build/outputs/...`.
 - Version/build number updated as intended.
 - Install on a real device and run core smoke flow once.
+- If Android reports `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the installed app uses a different signing key. Use the matching release keystore, or uninstall/reinstall only when losing local app data is acceptable.
 - Build Play artifact first: `cd mobile && npm run build:aab`.
 - Confirm release check passes after the AAB exists: `cd mobile && npm run release:play:check`.
 
@@ -53,9 +54,9 @@ Use this right before deploy or APK handoff.
 
 ## 7) Play Release Notes (kk)
 ```text
-RAHAT OMIR ішкі тест нұсқасы:
-- Намаз хабарламалары мен азан дыбысына диагностика қосылды.
-- Құран/Хатым оқу тұрақтылығы күшейтілді.
-- Халал және мешіт деректерінде дереккөз/расталу күйі анық көрсетіледі.
-- Салт-дәстүр бөліміндегі діни дәлелдер қауіпсіз мағыналық түйін ретінде берілді.
+RAHAT OMIR v1.1.0 ішкі тест нұсқасы:
+- Басты беттегі намаз карточкасының фоны сапалырақ, пикселдену азайтылды.
+- Намаз уақыты мен азан экраны тұрақтандырылды: намаз атауы, уақыт және азан мәтіні анық көрсетіледі.
+- Құбыла баптауында тұрақты режим сақталып, Settings crash түзетілді.
+- Dashboard суреттері жеңілірек жүктеледі, негізгі экрандар телефонда crash-free тексерілді.
 ```

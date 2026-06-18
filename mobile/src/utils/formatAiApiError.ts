@@ -48,10 +48,13 @@ export function formatAiApiError(
     const kind = stringLooksLikeNetworkFailure(d);
     if (kind === "timeout") return kk.aiChat.errorTimeout;
     if (kind === "network") return kk.aiChat.errorNetwork;
-    return d;
+    if (status === 401 || status === 403) return kk.aiChat.errorAuth;
+    if (status === 429) return kk.aiChat.errorRateLimit;
+    if (status === 503) return kk.aiChat.errorServer;
+    return kk.aiChat.error;
   }
   if (d && typeof d === "object" && "message" in d) {
-    return String((d as { message?: string }).message ?? kk.aiChat.error);
+    return messageKkFromDetail(d) ?? kk.aiChat.error;
   }
   if (Array.isArray(d) && d[0] && typeof d[0] === "object" && "msg" in d[0]) {
     return String((d[0] as { msg?: string }).msg ?? kk.aiChat.error);

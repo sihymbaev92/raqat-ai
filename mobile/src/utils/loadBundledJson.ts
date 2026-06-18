@@ -10,6 +10,10 @@ import {
   readAsStringAsync,
   writeAsStringAsync,
 } from "expo-file-system/legacy";
+import quranEnTransliterationFullJson from "../../assets/bundled/quran-en-transliteration-full.json";
+import quranKkFromDbJson from "../../assets/bundled/quran-kk-from-db.json";
+import quranUthmaniFullJson from "../../assets/bundled/quran-uthmani-full.json";
+import surahListApiJson from "../../assets/bundled/surah-list-api.json";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
 import type { BundledJsonName } from "./bundledJsonTypes";
 
@@ -24,33 +28,81 @@ type MetaStore = Partial<Record<BundledJsonName, FileMeta>>;
 const memory = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();
 
+type KkDbAyah = { numberInSurah: number; text_kk?: string; translit?: string };
+type KkDbSurah = { number: number; ayahs?: KkDbAyah[] };
+type KkDbBundle = { data?: { surahs?: KkDbSurah[] } };
+
 function cachePath(name: BundledJsonName): string {
   return `${CACHE_DIR}${name}`;
 }
 
-/** Jest ғана: Metro dynamic require-ды қолдамайды — статик switch. */
+/** Jest ғана: production Metro бұл dynamic require-ды көрмейді, сондықтан ауыр JSON JS bundle-ға кірмейді. */
 function loadFromAssetRequire(name: BundledJsonName): unknown {
+  const testRequire = eval("require") as (path: string) => unknown;
+  const kkDb = (): KkDbBundle =>
+    testRequire("../../assets/bundled/quran-kk-from-db.json") as KkDbBundle;
+  const readerFixtureFromKk = (): { data: { surahs: Array<{ number: number; ayahs: Array<{ numberInSurah: number; text: string }> }> } } => ({
+    data: {
+      surahs: (kkDb().data?.surahs ?? []).map((surah) => ({
+        number: surah.number,
+        ayahs: (surah.ayahs ?? []).map((ayah) => ({
+          numberInSurah: ayah.numberInSurah,
+          text: `آية قرآنية ${surah.number}:${ayah.numberInSurah}`,
+        })),
+      })),
+    },
+  });
+  const translitFixtureFromKk = (): { data: { surahs: Array<{ number: number; ayahs: Array<{ numberInSurah: number; text: string }> }> } } => ({
+    data: {
+      surahs: (kkDb().data?.surahs ?? []).map((surah) => ({
+        number: surah.number,
+        ayahs: (surah.ayahs ?? []).map((ayah) => ({
+          numberInSurah: ayah.numberInSurah,
+          text: (ayah.translit ?? "").trim(),
+        })),
+      })),
+    },
+  });
+
   switch (name) {
+    case "offline-auto-translations-core.json":
+      return {
+        targets: {
+          en: { "1fvitgj": "Quran", "1lstt8w": "Home" },
+          ru: { "1fvitgj": "Коран" },
+        },
+      };
+    case "quran-translations-offline.json":
+      return testRequire("../../assets/bundled/quran-translations-offline.json");
     case "surah-list-api.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/surah-list-api.json");
+      return { data: [] };
     case "quran-uthmani-full.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/quran-uthmani-full.json");
+      return readerFixtureFromKk();
     case "quran-en-transliteration-full.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/quran-en-transliteration-full.json");
+      return translitFixtureFromKk();
     case "quran-kk-from-db.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/quran-kk-from-db.json");
+      return kkDb();
     case "great-words-catalog.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/great-words-catalog.json");
+      return { version: 1, authors: [], entries: [] };
     case "abai-kara-soz-full.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/abai-kara-soz-full.json");
+      return [];
     default:
       throw new Error(`unknown bundled json: ${name}`);
+  }
+}
+
+function loadFromNativeAssetFallback(name: BundledJsonName): unknown | null {
+  switch (name) {
+    case "surah-list-api.json":
+      return surahListApiJson;
+    case "quran-uthmani-full.json":
+      return quranUthmaniFullJson;
+    case "quran-en-transliteration-full.json":
+      return quranEnTransliterationFullJson;
+    case "quran-kk-from-db.json":
+      return quranKkFromDbJson;
+    default:
+      return null;
   }
 }
 
@@ -139,6 +191,11 @@ async function resolveJson<T>(name: BundledJsonName): Promise<T> {
       memory.set(name, data);
       return data;
     } catch (err) {
+      const fallback = loadFromNativeAssetFallback(name);
+      if (fallback != null) {
+        memory.set(name, fallback);
+        return fallback as T;
+      }
       throw new Error(`bundled json unavailable: ${name} (${String(err)})`);
     }
   })();
@@ -153,6 +210,15 @@ async function resolveJson<T>(name: BundledJsonName): Promise<T> {
 
 export async function loadBundledJson<T>(name: BundledJsonName): Promise<T> {
   return resolveJson<T>(name);
+}
+
+/** Үлкен JSON-нан runtime map құрылған соң raw payload-ты RAM cache-тан босату. */
+export function releaseBundledJsonMemory(name?: BundledJsonName): void {
+  if (name) {
+    memory.delete(name);
+    return;
+  }
+  memory.clear();
 }
 
 /** Кэш файлын жою (қайта жүктеу). */

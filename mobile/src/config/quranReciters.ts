@@ -13,8 +13,12 @@ export type QuranReciterOption = {
 
 export const DEFAULT_QURAN_RECITER_EDITION = "ar.abdurrahmaansudais";
 
-/** Абдурахман Моссадтың ашық Archive.org-та бар таңдаулы толық сүрелері. */
+/** Бұрынғы сақталған preference-ті Mahmud Al-Husary-ға көшіру үшін ғана сақталады. */
 export const QURAN_ABDULRAHMAN_MOSSAD_EDITION = "archive.abdulrahman-mossad-selected";
+export const QURAN_HUSARY_EDITION = "ar.husary";
+/** Бұрын picker-де Maher болып тұрды, бірақ Quran.com timed metadata id 7 — Alafasy. */
+export const QURAN_MAHER_MUAIQLY_EDITION = "ar.mahermuaiqly";
+export const QURAN_ALAFASY_EDITION = "ar.alafasy";
 
 /** Қазақша аят аудиосы (аударма оқылуы, CDN 128 kbps). */
 export const QURAN_KK_HALIFAH_ALTAI_EDITION = "kk.khalifahaltai-audio";
@@ -36,9 +40,8 @@ export const QURAN_RECITER_OPTIONS: QuranReciterOption[] = [
   },
   { edition: "ar.abdurrahmaansudais", labelKk: "Әбдіррахман Ас-Судәис", group: "ar" },
   { edition: "ar.abdulbasitmurattal", labelKk: "Қари Әбділбасит (мұратаал)", group: "ar" },
-  { edition: "ar.husary", labelKk: "Махмуд Хали Әл-Һусари", group: "ar" },
-  { edition: "ar.mahermuaiqly", labelKk: "Маһир Әл-Муайқлий", group: "ar" },
-  { edition: QURAN_ABDULRAHMAN_MOSSAD_EDITION, labelKk: "Абдурахман Моссад — таңдаулы сүрелер", group: "ar" },
+  { edition: QURAN_HUSARY_EDITION, labelKk: "Махмуд Халил әл-Хусари", group: "ar" },
+  { edition: QURAN_ALAFASY_EDITION, labelKk: "Мишари Рашид әл-Афаси", group: "ar" },
 ];
 
 export const QURAN_RECITER_GROUP_ORDER: QuranReciterGroup[] = ["kk", "ru", "ar"];
@@ -46,5 +49,7 @@ export const QURAN_RECITER_GROUP_ORDER: QuranReciterGroup[] = ["kk", "ru", "ar"]
 export function normalizeReciterEdition(raw: string | null | undefined): string {
   const s = (raw ?? "").trim();
   if (!s) return DEFAULT_QURAN_RECITER_EDITION;
+  if (s === QURAN_ABDULRAHMAN_MOSSAD_EDITION) return QURAN_HUSARY_EDITION;
+  if (s === QURAN_MAHER_MUAIQLY_EDITION) return QURAN_ALAFASY_EDITION;
   return QURAN_RECITER_OPTIONS.some((o) => o.edition === s) ? s : DEFAULT_QURAN_RECITER_EDITION;
 }

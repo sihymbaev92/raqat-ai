@@ -1,6 +1,7 @@
 import React from "react";
 import { ScrollView, View, type ScrollViewProps, type ViewProps, type ViewStyle } from "react-native";
 import {
+  screenFitExplicitEdgeStyle,
   screenFitContainerStyle,
   screenFitScrollContentStyle,
   useScreenFitMetrics,
@@ -34,6 +35,12 @@ export function ScreenFitScrollView({
     includeHorizontalPadding,
     top,
   });
+  const explicitEdgeStyle = screenFitExplicitEdgeStyle({ top, bottom });
 
-  return <ScrollView {...props} contentContainerStyle={[autoFitContentStyle, contentContainerStyle]} />;
+  return (
+    <ScrollView
+      {...props}
+      contentContainerStyle={[autoFitContentStyle, contentContainerStyle, explicitEdgeStyle]}
+    />
+  );
 }

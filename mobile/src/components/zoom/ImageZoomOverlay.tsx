@@ -13,6 +13,7 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ImageSourcePropType } from "react-native";
 import { ZoomableImageContent } from "./ZoomableImageContent";
 import { kk } from "../../i18n/kk";
+import { modalSafeAreaInsets } from "../../theme/modalSafeArea";
 
 type Props = {
   visible: boolean;
@@ -34,6 +35,7 @@ export function ImageZoomOverlay({
   pinchHint = kk.common.imagePinchZoomHint,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const modalInsets = modalSafeAreaInsets(insets);
   const { width, height } = useWindowDimensions();
 
   return (
@@ -46,8 +48,8 @@ export function ImageZoomOverlay({
       presentationStyle="overFullScreen"
       onRequestClose={onClose}
     >
-      <View style={styles.root}>
-        <View style={[styles.topBar, { paddingTop: 8 + insets.top }]}>
+      <View style={[styles.root, { paddingBottom: modalInsets.bottom }]}>
+        <View style={[styles.topBar, { paddingTop: 8 + modalInsets.top }]}>
           <Pressable
             oyuBackdrop={false}
             style={styles.closeBtn}
@@ -59,7 +61,7 @@ export function ImageZoomOverlay({
             <Text style={styles.closeTxt}>{closeLabel}</Text>
           </Pressable>
         </View>
-        <Text style={[styles.hint, { top: 12 + insets.top }]} pointerEvents="none">
+        <Text style={[styles.hint, { top: 12 + modalInsets.top }]} pointerEvents="none">
           {pinchHint}
         </Text>
         <View style={[styles.imageArea, { width, height: height * 0.82 }]}>

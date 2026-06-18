@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="kk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Тимур — онлайн супермаркет</title>
+    <meta
+      name="description"
+      content="Тимур онлайн супермаркеті: сүт, нан, ет, сусын, дайын тағам, үйге қажет тауарлар және WhatsApp арқылы тапсырыс."
+    />
+    <link rel="stylesheet" href="./styles.css?v=20260616-2000" />
+  </head>
+  <body>
+    <header class="top-shell">
+      <div class="service-bar">
+        <div class="service-bar__left">
+          <button class="city-switch" type="button">📍 Шымкент</button>
+          <span>Жеткізу: 10:00-22:00</span>
+          <span>Қолдау: +7 700 000 00 00</span>
+        </div>
+        <nav class="service-nav" aria-label="Қосымша навигация">
+          <a href="#delivery">Қызмет аймағы</a>
+          <a href="#loyalty">Бонус картасы</a>
+          <a href="#stores">Дүкендер</a>
+          <a href="#contacts">Байланыс</a>
+        </nav>
+      </div>
+
+      <div class="main-header">
+        <a class="brand" href="#home" aria-label="Тимур басты бет">
+          <span class="brand__mark">Т</span>
+          <span class="brand__text">Тимур</span>
+        </a>
+        <button class="catalog-toggle" id="catalogToggle" type="button">☰ Каталог</button>
+        <form class="search" id="searchForm" role="search">
+          <input id="searchInput" type="search" placeholder="Тауар, бренд немесе категория іздеу..." />
+          <button type="submit">Іздеу</button>
+          <div class="search-suggestions" id="searchSuggestions" aria-label="Жылдам іздеу"></div>
+        </form>
+        <div class="header-actions">
+          <button type="button" class="icon-action" id="favoritesButton">♡<span>Таңдаулы</span><b id="favoriteCount">0</b></button>
+          <button type="button" class="icon-action">👤<span>Кіру</span></button>
+          <button type="button" class="cart-button" id="cartButton">
+            🛒 <span>Себет</span> <strong id="cartCount">0</strong>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-shell" id="home">
+      <aside class="catalog-sidebar" id="catalogSidebar" aria-label="Каталог категориялары">
+        <div class="sidebar-head">
+          <strong>Каталог</strong>
+          <button id="closeCatalog" type="button">×</button>
+        </div>
+        <div id="categoryMenu" class="category-menu"></div>
+        <div class="sidebar-card">
+          <span>🚚</span>
+          <strong>Бүгін жеткізу</strong>
+          <small>10:00-22:00 аралығында 4 терезе</small>
+        </div>
+      </aside>
+
+      <section class="content-area">
+        <section class="hero-grid">
+          <article class="hero-banner">
+            <div>
+              <p class="eyebrow">Тимур супермаркеті</p>
+              <h1>Күнделікті керек тауарды тез таңдап, WhatsApp арқылы тапсырыс беріңіз.</h1>
+              <p>Сүт, нан, ет, сусын, дайын тағам, тәттілер және үйге қажет тауарлар бір жерде.</p>
+              <div class="hero-actions">
+                <a class="button button--light" href="#products">Каталогты көру</a>
+                <button class="button button--ghost" type="button" id="heroFillCart">Дайын себет қосу</button>
+              </div>
+              <div class="hero-stats">
+                <span><strong>30 мин</strong> жеткізу</span>
+                <span><strong>15 000 ₸</strong> тегін жеткізу</span>
+                <span><strong>1%</strong> бонус</span>
+              </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+              <span>🥛</span><span>🍞</span><span>🥩</span><span>🧃</span><span>🧴</span>
+            </div>
+          </article>
+          <div class="hero-side">
+            <article class="slot-card">
+              <p class="eyebrow">Жеткізу терезесі</p>
+              <h3>Бүгін бос орындар бар</h3>
+              <div class="slot-pills" id="slotPills"></div>
+              <small>Қала, қойма және курьер жүктемесіне қарай нақты уақытпен көрсетіледі.</small>
+            </article>
+            <div class="mini-promos" id="miniPromos"></div>
+          </div>
+        </section>
+
+        <section class="command-center">
+          <article>
+            <span>1</span>
+            <strong>Тауар таңдаңыз</strong>
+            <small>Каталогтан немесе іздеу арқылы тез табыңыз.</small>
+          </article>
+          <article>
+            <span>2</span>
+            <strong>Себетке қосыңыз</strong>
+            <small>Саны, алмастыру ережесі және ескертуді көрсетіңіз.</small>
+          </article>
+          <article>
+            <span>3</span>
+            <strong>WhatsApp-қа жіберіңіз</strong>
+            <small>Себет дайын мәтін болып ашылады.</small>
+          </article>
+          <article>
+            <span>4</span>
+            <strong>Жеткізіп береміз</strong>
+            <small>Уақытын, төлем түрін және мекенжайды нақтылаймыз.</small>
+          </article>
+        </section>
+
+        <section class="store-strip">
+          <article>
+            <span>🏬</span>
+            <strong>Тимур жедел жеткізу</strong>
+            <small>Қазір ашық · 1.8 км</small>
+          </article>
+          <article>
+            <span>🧊</span>
+            <strong>Салқын тізбек</strong>
+            <small>Сүт, ет, мұздатылған өнім бөлек қапталады</small>
+          </article>
+          <article>
+            <span>✅</span>
+            <strong>Сапа бақылауы</strong>
+            <small>Курьер алдында жарамдылық мерзімі тексеріледі</small>
+          </article>
+          <article>
+            <span>↩</span>
+            <strong>Оңай қайтару</strong>
+            <small>Сәйкес келмесе курьер арқылы қайтару</small>
+          </article>
+        </section>
+
+        <section class="reorder-section">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Сізге ыңғайлы</p>
+              <h2>Жиі алынатын тауарлар</h2>
+            </div>
+            <button class="link-button" id="addReorder" type="button">Себетке қосу</button>
+          </div>
+          <div class="reorder-row" id="reorderRow"></div>
+        </section>
+
+        <section class="promo-strip" id="deals">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Акциялар</p>
+              <h2>Бүгінгі акциялар</h2>
+            </div>
+            <a href="#products">Барлығын көру</a>
+          </div>
+          <div class="promo-row" id="promoRow"></div>
+        </section>
+
+        <section class="smart-sets">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Дайын себеттер</p>
+              <h2>Апталық сатып алу сценарийлері</h2>
+            </div>
+            <button class="link-button" type="button" id="fillFamilyCart">Отбасылық себетті қосу</button>
+          </div>
+          <div class="set-grid">
+            <article>
+              <span>👨‍👩‍👧‍👦</span>
+              <strong>Отбасылық апта</strong>
+              <small>Сүт, нан, ет, сусын, үйге керек</small>
+            </article>
+            <article>
+              <span>🧺</span>
+              <strong>Үйге керек</strong>
+              <small>Тазалық, қағаз, тұрмыстық химия</small>
+            </article>
+            <article>
+              <span>☕</span>
+              <strong>Таңғы ас</strong>
+              <small>Нан, сүт, круассан, ірімшік</small>
+            </article>
+          </div>
+        </section>
+
+        <section class="recipe-section">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Жинақтар</p>
+              <h2>Дайын тағам себеттері</h2>
+            </div>
+          </div>
+          <div class="recipe-grid" id="recipeGrid"></div>
+        </section>
+
+        <section class="personal-section">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Ұсыныстар</p>
+              <h2>Себетке сай тауарлар</h2>
+            </div>
+            <span class="ai-badge">Авто ұсыныс</span>
+          </div>
+          <div class="personal-rail" id="personalRail"></div>
+        </section>
+
+        <section class="market-layout" id="products">
+          <aside class="filters-panel">
+            <div class="filter-header">
+              <strong>Фильтрлер</strong>
+              <button id="resetFilters" type="button">Тазалау</button>
+            </div>
+            <div class="filter-block">
+              <h3>Баға</h3>
+              <label><input type="checkbox" data-filter="price" value="deal" /> Акция бағасы</label>
+              <label><input type="checkbox" data-filter="price" value="low" /> 1000 ₸ дейін</label>
+            </div>
+            <div class="filter-block">
+              <h3>Жеткізу</h3>
+              <label><input type="checkbox" data-filter="delivery" value="fast" /> 30 минут</label>
+              <label><input type="checkbox" data-filter="delivery" value="today" /> Бүгін</label>
+            </div>
+            <div class="filter-block">
+              <h3>Түрі</h3>
+              <label><input type="checkbox" data-filter="type" value="local" /> Жергілікті</label>
+              <label><input type="checkbox" data-filter="type" value="import" /> Импорт</label>
+            </div>
+          </aside>
+
+          <section class="products-section">
+            <div class="section-title section-title--compact">
+              <div>
+                <p class="eyebrow" id="activeCategoryLabel">Барлық категория</p>
+                <h2>Каталог</h2>
+              </div>
+              <select id="sortSelect" aria-label="Сұрыптау">
+                <option value="popular">Танымал</option>
+                <option value="cheap">Арзаны алдымен</option>
+                <option value="expensive">Қымбаты алдымен</option>
+              </select>
+            </div>
+            <div class="mobile-category-row" id="mobileCategoryRow"></div>
+            <div class="product-grid" id="productGrid"></div>
+            <p class="empty-state" id="emptyState" hidden>Сұраныс бойынша тауар табылмады.</p>
+          </section>
+        </section>
+
+        <section class="checkout-preview" id="delivery">
+          <div>
+            <p class="eyebrow">Тапсырыс</p>
+            <h2>Тапсырыс рәсімдеу жолы</h2>
+            <ol class="checkout-steps">
+              <li><span>1</span><strong>Мекенжай</strong><small>Қала, көше, пәтер</small></li>
+              <li><span>2</span><strong>Жеткізу терезесі</strong><small>Бүгін, ертең немесе кейін</small></li>
+              <li><span>3</span><strong>Төлем</strong><small>Онлайн карта, курьерге карта, қолма-қол</small></li>
+            </ol>
+          </div>
+          <div class="delivery-card">
+            <strong>Қызмет көрсету аймағы</strong>
+            <div class="fake-map">
+              <span class="zone"></span>
+              <span class="pin">📍</span>
+            </div>
+            <p>Шымкент қаласы бойынша пилоттық аймақ.</p>
+          </div>
+        </section>
+
+        <section class="trust-board">
+          <article>
+            <strong>Сапа кепілі</strong>
+            <span>Сүт, ет, нан және дайын өнім жарамдылық мерзімімен тексеріледі.</span>
+          </article>
+          <article>
+            <strong>Баға ашықтығы</strong>
+            <span>Жеткізу, жеңілдік, бонус checkout-қа дейін көрінеді.</span>
+          </article>
+          <article>
+            <strong>Қаптау стандарты</strong>
+            <span>Ет, сүт, тұрмыстық химия бөлек пакеттеледі.</span>
+          </article>
+        </section>
+
+        <section class="trust-board business-rules">
+          <article>
+            <strong>Минималды тапсырыс</strong>
+            <span>4 000 ₸ бастап. 15 000 ₸ жоғары болса жеткізу тегін.</span>
+          </article>
+          <article>
+            <strong>Төлем түрлері</strong>
+            <span>Онлайн карта, курьерге карта немесе қолма-қол төлем.</span>
+          </article>
+          <article>
+            <strong>WhatsApp қабылдау</strong>
+            <span>Алғашқы MVP-де себет WhatsApp-қа дайын мәтін болып жіберіледі.</span>
+          </article>
+          <article>
+            <strong>Қайтару және алмастыру</strong>
+            <span>Сәйкес келмеген тауар курьер арқылы қайтарылады, жоқ тауарға ереже алдын ала таңдалады.</span>
+          </article>
+        </section>
+
+        <section class="tracking-demo" id="stores">
+          <div class="section-title">
+            <div>
+              <p class="eyebrow">Бақылау</p>
+              <h2>Тапсырыс статусы</h2>
+            </div>
+          </div>
+          <div class="tracking-grid">
+            <article class="track-step is-done"><span>1</span><strong>Қабылданды</strong><small>Төлем және тапсырыс расталды</small></article>
+            <article class="track-step is-active"><span>2</span><strong>Жиналуда</strong><small>Сатып алушы өнімдерді тексеріп жатыр</small></article>
+            <article class="track-step"><span>3</span><strong>Жолда</strong><small>Курьер картада көрінеді</small></article>
+            <article class="track-step"><span>4</span><strong>Жеткізілді</strong><small>Бағалау және қайтару мүмкіндігі</small></article>
+          </div>
+        </section>
+
+        <section class="loyalty" id="loyalty">
+          <div>
+            <p class="eyebrow">Бонус</p>
+            <h2>Тимур Bonus</h2>
+            <p>Клиенттерге бонус жинау, жеке ұсыныстар және промокод архитектурасы дайын.</p>
+          </div>
+          <button class="button button--primary" type="button">Картаны қосу</button>
+        </section>
+      </section>
+    </main>
+
+    <aside class="cart-drawer" id="cartDrawer">
+      <div class="cart-panel">
+        <div class="cart-head">
+          <div>
+            <p class="eyebrow">Тапсырыс</p>
+            <h2>Себет</h2>
+          </div>
+          <button id="closeCart" type="button">×</button>
+        </div>
+        <div id="cartItems" class="cart-items"></div>
+        <div class="free-delivery-box">
+          <div>
+            <span id="freeDeliveryText">Тегін жеткізуге дейін 15 000 ₸</span>
+            <strong id="freeDeliveryPercent">0%</strong>
+          </div>
+          <div class="free-delivery-meter"><span id="freeDeliveryMeter"></span></div>
+        </div>
+        <div class="cart-recommendations" id="cartRecommendations"></div>
+        <label class="promo-input">
+          <span>Промокод</span>
+          <div class="promo-line">
+            <input id="promoCode" type="text" placeholder="ТИМУР10" />
+            <button id="applyPromo" type="button">Қолдану</button>
+          </div>
+        </label>
+        <div class="checkout-form">
+          <label>
+            <span>Мекенжай</span>
+            <input id="addressInput" type="text" placeholder="Мысалы: Әл-Фараби 12, 45 пәтер" />
+          </label>
+          <label>
+            <span>Жеткізу уақыты</span>
+            <select id="slotSelect">
+              <option value="10:00-13:00">Бүгін 10:00-13:00</option>
+              <option value="13:00-16:00">Бүгін 13:00-16:00</option>
+              <option value="16:00-19:00">Бүгін 16:00-19:00</option>
+              <option value="19:00-22:00">Бүгін 19:00-22:00</option>
+            </select>
+          </label>
+          <label>
+            <span>Төлем</span>
+            <select id="paymentSelect">
+              <option value="online">Онлайн карта</option>
+              <option value="courier-card">Курьерге карта</option>
+              <option value="cash">Қолма-қол</option>
+            </select>
+          </label>
+        </div>
+        <div class="cart-breakdown">
+          <div><span>Тауарлар</span><strong id="itemsSubtotal">0 ₸</strong></div>
+          <div><span>Жеткізу</span><strong id="deliveryFee">0 ₸</strong></div>
+          <div><span>Жеңілдік</span><strong id="discountTotal">0 ₸</strong></div>
+        </div>
+        <div class="cart-total">
+          <span>Барлығы</span>
+          <strong id="cartTotal">0 ₸</strong>
+        </div>
+        <button class="button button--whatsapp button--full" id="whatsappButton" type="button">WhatsApp-қа себетті жіберу</button>
+        <button class="button button--primary button--full" id="checkoutButton" type="button">Тапсырысты рәсімдеу</button>
+      </div>
+    </aside>
+
+    <aside class="product-modal" id="productModal">
+      <div class="product-modal__card">
+        <button id="closeProductModal" class="modal-close" type="button">×</button>
+        <div class="product-modal__image" id="modalProductIcon">🥛</div>
+        <div class="product-modal__body">
+          <p class="eyebrow" id="modalProductCategory">Категория</p>
+          <h2 id="modalProductTitle">Өнім</h2>
+          <p id="modalProductDescription">Өнім сипаттамасы.</p>
+          <div class="product-modal__facts">
+            <span id="modalProductDelivery">30 минут</span>
+            <span id="modalProductUnit">1 кг</span>
+            <span>Сапа тексеріледі</span>
+          </div>
+          <div class="price-row">
+            <strong class="price" id="modalProductPrice">0 ₸</strong>
+            <span class="old-price" id="modalProductOldPrice"></span>
+          </div>
+          <div class="modal-actions">
+            <button class="button button--primary" id="modalAddToCart" type="button">Себетке қосу</button>
+            <button class="button button--outline" id="modalFavorite" type="button">♡ Таңдаулы</button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <nav class="mobile-bottom-bar" aria-label="Жылдам әрекеттер">
+      <a href="#home">🏠<span>Басты</span></a>
+      <a href="#deals">🔥<span>Акция</span></a>
+      <a href="#products">🛒<span>Каталог</span></a>
+      <button id="mobileCartButton" type="button">🧺<span>Себет</span></button>
+    </nav>
+
+    <footer class="footer" id="contacts">
+      <strong>Тимур</strong>
+      <span>Сүт, нан, ет, сусын, дайын тағам және үйге керек тауарлар</span>
+      <a href="tel:+77000000000">+7 700 000 00 00</a>
+    </footer>
+
+    <script src="./app.js?v=20260616-2000"></script>
+  </body>
+</html>

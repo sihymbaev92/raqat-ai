@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Linking, TextInput } from "react-na
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -56,6 +57,7 @@ function hadithBlob(item: ExtractedHadithMuftyatItem): string {
 
 export function HadithHubScreen({ navigation }: Props) {
   const { colors, isDark } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const hadithLocale = useAppLocale();
   const { tr } = useKkAutoTranslator();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
@@ -87,7 +89,10 @@ export function HadithHubScreen({ navigation }: Props) {
   };
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.root}
+      contentContainerStyle={[styles.content, { paddingBottom: 32 + Math.max(insets.bottom, 8) }]}
+    >
       <View style={styles.heroRow}>
         <RasterImage source={menuIconAssets.heroHadith} style={styles.heroImg} resizeMode="contain" />
         <View style={styles.heroText}>
@@ -95,6 +100,7 @@ export function HadithHubScreen({ navigation }: Props) {
           <Text style={styles.lead}>{tr(kk.hadith.hub.leadUnified)}</Text>
         </View>
       </View>
+      <Text style={styles.sectionHint}>{tr(kk.hadith.hub.boundaryNotice)}</Text>
 
       <View style={styles.searchRow}>
         <MaterialIcons name="search" size={20} color={colors.muted} />

@@ -37,6 +37,11 @@ function reloadWebOnceForStaleBundle(e: Error): void {
   window.location.replace(`${path}${sep}rv=${Date.now()}`);
 }
 
+export function appErrorDiagnosticText(error: Error | null, showDetails = __DEV__): string | null {
+  if (!error || !showDetails) return null;
+  return `${error.name}: ${error.message}`;
+}
+
 /**
  * Суық іске қосуда рендер қатесін (ақ экран) ұстап, қайта кіру сынағы.
  */
@@ -55,17 +60,20 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.err) {
+      const diagnosticText = appErrorDiagnosticText(this.state.err);
       return (
         <View style={styles.root}>
           <Text style={styles.title}>{kk.common.appErrorTitle}</Text>
           <Text style={styles.hint}>
             {kk.common.appErrorHint}
           </Text>
-          <ScrollView style={styles.pre}>
-            <Text style={styles.msg} selectable>
-              {this.state.err.name}: {this.state.err.message}
-            </Text>
-          </ScrollView>
+          {diagnosticText ? (
+            <ScrollView style={styles.pre}>
+              <Text style={styles.msg} selectable>
+                {diagnosticText}
+              </Text>
+            </ScrollView>
+          ) : null}
           <Pressable
             style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
             onPress={() => this.setState({ err: null })}

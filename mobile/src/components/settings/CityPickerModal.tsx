@@ -14,6 +14,7 @@ import { KZ_CITY_PRESETS_LIST, type KzCityPreset } from "../../constants/kzCityP
 import { getSavedCities, type SavedCity } from "../../storage/prefs";
 import { kk } from "../../i18n/kk";
 import type { ThemeColors } from "../../theme/colors";
+import { modalSafeAreaInsets } from "../../theme/modalSafeArea";
 
 type Props = {
   visible: boolean;
@@ -37,6 +38,7 @@ export function CityPickerModal({
   onSelect,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const modalInsets = modalSafeAreaInsets(insets);
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState<SavedCity[]>([]);
 
@@ -103,7 +105,7 @@ export function CityPickerModal({
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: insets.top + 8 }]}>
+      <View style={[styles.root, { backgroundColor: colors.bg, paddingTop: modalInsets.top + 8 }]}>
         <View style={styles.topBar}>
           <Pressable onPress={onClose} style={({ pressed }) => [styles.closeBtn, pressed && { opacity: 0.85 }]}>
             <Text style={[styles.closeTxt, { color: colors.accent }]}>{kk.common.cancel}</Text>
@@ -127,7 +129,7 @@ export function CityPickerModal({
           sections={sections}
           keyExtractor={(item, index) => `${item.city}-${index}`}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{ paddingBottom: modalInsets.bottom + 24 }}
           renderSectionHeader={({ section: { title } }) => (
             <Text style={[styles.sectionLabel, { color: colors.muted, backgroundColor: colors.bg }]}>
               {title}

@@ -31,7 +31,7 @@ const NATIVE_EXPO_CONFIG = {
   splash: {
     image: "./assets/splash-icon.png",
     resizeMode: "contain",
-    backgroundColor: "#2a5d67",
+    backgroundColor: "#000000",
   },
   assetBundlePatterns: ["**/*"],
   plugins: [
@@ -69,24 +69,20 @@ const NATIVE_EXPO_CONFIG = {
       },
     ],
     "expo-asset",
-    "expo-background-fetch",
+    "expo-background-task",
     "expo-font",
     [
       "expo-notifications",
       {
         icon: "./assets/notification-icon.png",
         color: "#c5a059",
-        sounds: [
-          "./assets/sounds/prayer_azan_user_01.mp3",
-          "./assets/sounds/prayer_azan_user_02.mp3",
-          "./assets/sounds/prayer_azan_user_03.mp3",
-          "./assets/sounds/prayer_azan_user_04.mp3",
-          "./assets/sounds/prayer_azan_user_05.mp3",
-        ],
+        // Android release uses android/app generated res/raw via copyPrayerAzanRawResources.
+        // Keeping the same MP3 list here duplicates each azan file in the APK.
         mode: "production",
       },
     ],
     "expo-web-browser",
+    "expo-secure-store",
     "expo-apple-authentication",
   ],
   ios: {
@@ -119,10 +115,10 @@ const NATIVE_EXPO_CONFIG = {
   },
   android: {
     softwareKeyboardLayoutMode: "resize",
-    versionCode: 9,
+    versionCode: 10,
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
-      backgroundColor: "#00000000",
+      backgroundColor: "#000000",
     },
     package: "kz.raqat.app",
     permissions: [
@@ -155,7 +151,7 @@ module.exports = ({ config }) => {
     ...config,
     name: "RAHAT OMIR",
     slug: "raqat-mobile",
-    version: "1.0.9",
+    version: "1.1.0",
     owner: "raqat-omir",
     web: {
       favicon: "./assets/favicon.png",

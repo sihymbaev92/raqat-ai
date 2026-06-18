@@ -1,6 +1,5 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { DashboardScreen } from "../screens/DashboardScreen";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useAppLocale } from "../i18n/runtime";
 import type { MainTabParamList } from "./types";
@@ -9,6 +8,7 @@ import { lazyScreen } from "./lazyScreen";
 
 const Stack = createNativeStackNavigator<MainTabParamList>();
 
+const DashboardScreen = lazyScreen(() => import("../screens/DashboardScreen").then((m) => ({ default: m.DashboardScreen })));
 const OfficialKnowledgePortalScreen = lazyScreen(() => import("../screens/OfficialKnowledgePortalScreen").then((m) => ({ default: m.OfficialKnowledgePortalScreen })));
 const PrayerTimesScreen = lazyScreen(() => import("../screens/PrayerTimesScreen").then((m) => ({ default: m.PrayerTimesScreen })));
 const SavedTabScreen = lazyScreen(() => import("../screens/SavedTabScreen").then((m) => ({ default: m.SavedTabScreen })));

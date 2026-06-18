@@ -153,7 +153,12 @@ export function MushafAyah({
         accessibilityLabel={audioA11y}
       >
         {showTajweedColors && (item.textTajweed ?? "").includes("[") ? (
-          <TajweedColoredArabicText taggedText={item.textTajweed!} baseStyle={mushafArabTextStyle} isDark={isDark} />
+          <TajweedColoredArabicText
+            taggedText={item.textTajweed!}
+            plainText={item.text}
+            baseStyle={mushafArabTextStyle}
+            isDark={isDark}
+          />
         ) : (
           <Text style={mushafArabTextStyle}>{item.text}</Text>
         )}

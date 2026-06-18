@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   Image
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
+import * as Application from "expo-application";
 import * as Clipboard from "expo-clipboard";
+import Constants from "expo-constants";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,7 +35,11 @@ import { menuIconAssets } from "../theme/menuIconAssets";
 import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
 import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
-import { postAuthLogin } from "../services/platformApiClient";
+import { postAuthLogin, probePlatformLiveness, type PlatformLivenessProbe } from "../services/platformApiClient";
+import {
+  getPrayerNotificationDiagnostics,
+  type PrayerNotificationDiagnostics,
+} from "../services/prayerNotifications";
 import {
   clearLoginTokens,
   getStoredPlatformUserId,
@@ -43,7 +49,6 @@ import {
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SettingsAccountLoginSection } from "../components/settings/SettingsAccountLoginSection";
 import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
-import { syncFamilyTreeWithServerBidirectional } from "../storage/familyTreeSync";
 import { syncQuranAyahMarkersWithServerBidirectional } from "../storage/quranAyahMarkers";
 import { syncQuranLastReadWithServerBidirectional } from "../storage/quranLastRead";
 import {
@@ -71,6 +76,66 @@ type SettingsMoreLink = keyof Pick<
   MoreStackParamList,
   "TelegramInfo" | "Ecosystem" | "Halal" | "ImamAI"
 >;
+
+type ReleaseDiagnostics = {
+  api: PlatformLivenessProbe | null;
+  prayer: PrayerNotificationDiagnostics | null;
+  checkedAt: Date | null;
+  error: string | null;
+};
+
+function appVersionLine(): string {
+  const version = Application.nativeApplicationVersion ?? Constants.expoConfig?.version ?? "dev";
+  const configBuild =
+    Platform.OS === "android" ? Constants.expoConfig?.android?.versionCode : Constants.expoConfig?.ios?.buildNumber;
+  const build = Application.nativeBuildVersion ?? configBuild;
+  return build != null ? `${version} (${build})` : version;
+}
+
+function boolStatus(value: boolean | null | undefined): string {
+  if (value === true) return "OK";
+  if (value === false) return "Блок";
+  return "Белгісіз";
+}
+
+function nativeAzanStatusLabel(status?: PrayerNotificationDiagnostics["nativeAzanReliabilityStatus"]): string {
+  switch (status) {
+    case "ready":
+      return "Дайын";
+    case "blocked":
+      return "Блок";
+    case "idle":
+      return "Күту";
+    case "unavailable":
+      return "Жоқ";
+    default:
+      return "Тексерілмеді";
+  }
+}
+
+function apiStatusLine(api: PlatformLivenessProbe | null): string {
+  if (!api) return "Тексерілмеді";
+  if (api.ok) {
+    const service = api.health.service ? ` · ${api.health.service}` : "";
+    const version = api.health.version ? ` · ${api.health.version}` : "";
+    return `OK${service}${version}`;
+  }
+  const http = api.httpStatus ? ` HTTP ${api.httpStatus}` : "";
+  return `${api.code}${http}`;
+}
+
+function checkedAtLine(date: Date | null): string {
+  if (!date) return "әлі жоқ";
+  return date.toLocaleTimeString("kk-KZ", { hour: "2-digit", minute: "2-digit" });
+}
+
+function nativeAzanWarningLine(prayer: PrayerNotificationDiagnostics | null): string | null {
+  if (!prayer?.nativeAzanAlarmLastError) return null;
+  if (/SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM/i.test(prayer.nativeAzanAlarmLastError)) {
+    return "Exact alarm рұқсаты жабық: locked-phone Azan QA алдында жүйе баптауынан рұқсат беріңіз.";
+  }
+  return prayer.nativeAzanAlarmLastError;
+}
 
 function labelForThemeScheme(id: ThemeSchemeId): string {
   switch (id) {
@@ -161,14 +226,57 @@ export function SettingsScreen() {
   const [oauthMsg, setOauthMsg] = useState<string | null>(null);
   const [platformPid, setPlatformPid] = useState<string | null>(null);
   const [supportAccountCopied, setSupportAccountCopied] = useState(false);
+  const [diagnostics, setDiagnostics] = useState<ReleaseDiagnostics>({
+    api: null,
+    prayer: null,
+    checkedAt: null,
+    error: null,
+  });
+  const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const supportCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  const loadReleaseDiagnostics = useCallback(async () => {
+    const base = getRaqatApiBase();
+    setDiagnosticsLoading(true);
+    try {
+      const [api, prayer] = await Promise.all([
+        base
+          ? probePlatformLiveness(base, 6000)
+          : Promise.resolve<PlatformLivenessProbe>({
+              ok: false,
+              health: null,
+              code: "unexpected",
+            }),
+        getPrayerNotificationDiagnostics(),
+      ]);
+      if (!mountedRef.current) return;
+      setDiagnostics({ api, prayer, checkedAt: new Date(), error: null });
+    } catch (e) {
+      if (!mountedRef.current) return;
+      const msg = e instanceof Error ? e.message : "Диагностика жүктелмеді";
+      setDiagnostics((prev) => ({ ...prev, checkedAt: new Date(), error: msg }));
+    } finally {
+      if (mountedRef.current) setDiagnosticsLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
+      let alive = true;
       void (async () => {
         await hydrateRaqatApiBaseOverride();
+        if (!alive || !mountedRef.current) return;
         setApiBase(getRaqatApiBase());
-        setPlatformPid(await getStoredPlatformUserId());
+        const pid = await getStoredPlatformUserId();
+        if (!alive || !mountedRef.current) return;
+        setPlatformPid(pid);
+        void loadReleaseDiagnostics();
       })();
-    }, [])
+      return () => {
+        alive = false;
+      };
+    }, [loadReleaseDiagnostics])
   );
 
   const styles = makeStyles(colors);
@@ -184,13 +292,14 @@ export function SettingsScreen() {
     await syncHatimWithServerBidirectional();
     await syncQuranLastReadWithServerBidirectional();
     await syncQuranAyahMarkersWithServerBidirectional();
-    await syncFamilyTreeWithServerBidirectional();
   }, []);
 
   const onOAuthSuccess = useCallback(async () => {
     setOauthMsg(null);
     setLoginMsg(kk.settings.accountLoginOk);
-    setPlatformPid(await getStoredPlatformUserId());
+    const pid = await getStoredPlatformUserId();
+    if (!mountedRef.current) return;
+    setPlatformPid(pid);
     await syncAccountDataAfterLogin();
   }, [syncAccountDataAfterLogin]);
 
@@ -206,8 +315,19 @@ export function SettingsScreen() {
     if (!supportAccount) return;
     await Clipboard.setStringAsync(supportAccount);
     setSupportAccountCopied(true);
-    setTimeout(() => setSupportAccountCopied(false), 2000);
+    if (supportCopyTimerRef.current) clearTimeout(supportCopyTimerRef.current);
+    supportCopyTimerRef.current = setTimeout(() => {
+      supportCopyTimerRef.current = null;
+      setSupportAccountCopied(false);
+    }, 2000);
   }, [supportAccount]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (supportCopyTimerRef.current) clearTimeout(supportCopyTimerRef.current);
+    };
+  }, []);
 
   const languageOptions = APP_LOCALE_OPTIONS.map((opt) => ({
     id: opt.id,
@@ -280,6 +400,76 @@ export function SettingsScreen() {
           />
         </SettingsSection>
       ) : null}
+
+      <SettingsSection
+        colors={colors}
+        title="Қолданба күйі"
+        subtitle="Release алдында версия, API және азан рұқсаттарын бір жерден тексеріңіз."
+      >
+        <SettingsCard colors={colors} panel style={styles.diagnosticsCard}>
+          <View style={styles.diagnosticsHeader}>
+            <View style={styles.diagnosticsTitleRow}>
+              <MaterialIcons name="verified-user" size={22} color={colors.accent} />
+              <View style={styles.diagnosticsTitleText}>
+                <Text style={styles.diagnosticsTitle}>RAHAT OMIR</Text>
+                <Text style={styles.diagnosticsSub}>Соңғы тексеріс: {checkedAtLine(diagnostics.checkedAt)}</Text>
+              </View>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.diagnosticsRefresh, pressed && { opacity: 0.86 }]}
+              onPress={() => void loadReleaseDiagnostics()}
+              disabled={diagnosticsLoading}
+              accessibilityRole="button"
+              accessibilityLabel="Диагностиканы жаңарту"
+            >
+              <Text style={styles.diagnosticsRefreshTxt}>
+                {diagnosticsLoading ? "Тексерілуде..." : "Жаңарту"}
+              </Text>
+            </Pressable>
+          </View>
+          <View style={styles.diagnosticsGrid}>
+            <View style={styles.diagnosticsPill}>
+              <Text style={styles.diagnosticsPillLabel}>Версия</Text>
+              <Text style={styles.diagnosticsPillValue}>{appVersionLine()}</Text>
+            </View>
+            <View style={styles.diagnosticsPill}>
+              <Text style={styles.diagnosticsPillLabel}>API</Text>
+              <Text style={styles.diagnosticsPillValue} numberOfLines={2}>
+                {apiStatusLine(diagnostics.api)}
+              </Text>
+            </View>
+            <View style={styles.diagnosticsPill}>
+              <Text style={styles.diagnosticsPillLabel}>Хабарлама</Text>
+              <Text style={styles.diagnosticsPillValue}>
+                {diagnostics.prayer?.permissionStatus ?? "Тексерілмеді"}
+              </Text>
+            </View>
+            <View style={styles.diagnosticsPill}>
+              <Text style={styles.diagnosticsPillLabel}>Азан</Text>
+              <Text style={styles.diagnosticsPillValue}>
+                {nativeAzanStatusLabel(diagnostics.prayer?.nativeAzanReliabilityStatus)}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.diagnosticsDetails}>
+            <Text style={styles.diagnosticsDetailText}>
+              Намаз schedule: {diagnostics.prayer?.scheduledPrayerCount ?? 0} · Native azan:{" "}
+              {diagnostics.prayer?.nativeAzanAlarmCount ?? 0}
+            </Text>
+            <Text style={styles.diagnosticsDetailText}>
+              Exact alarm: {boolStatus(diagnostics.prayer?.nativeAzanExactAlarmPermissionGranted)} · Full-screen:{" "}
+              {boolStatus(diagnostics.prayer?.nativeAzanFullScreenIntentPermissionGranted)}
+            </Text>
+            {nativeAzanWarningLine(diagnostics.prayer) ? (
+              <Text style={styles.diagnosticsWarn}>{nativeAzanWarningLine(diagnostics.prayer)}</Text>
+            ) : null}
+            {diagnostics.error ? <Text style={styles.diagnosticsWarn}>{diagnostics.error}</Text> : null}
+            <Text style={styles.diagnosticsBase} numberOfLines={1}>
+              API base: {apiBase || "орнатылмаған"}
+            </Text>
+          </View>
+        </SettingsCard>
+      </SettingsSection>
 
       <SettingsSection
         colors={colors}
@@ -531,6 +721,99 @@ function makeStyles(colors: ThemeColors) {
     linksSectionLabel: { marginTop: 28 },
     accountSectionFirst: { marginTop: 4 },
     accountApiMissing: { marginBottom: 8 },
+    diagnosticsCard: {
+      gap: 12,
+    },
+    diagnosticsHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    diagnosticsTitleRow: {
+      flex: 1,
+      minWidth: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    diagnosticsTitleText: {
+      flex: 1,
+      minWidth: 0,
+    },
+    diagnosticsTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "900",
+      letterSpacing: 0.2,
+    },
+    diagnosticsSub: {
+      color: colors.muted,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    diagnosticsRefresh: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: colors.accentSurface,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    diagnosticsRefreshTxt: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    diagnosticsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    diagnosticsPill: {
+      flexGrow: 1,
+      flexBasis: "47%",
+      minWidth: 130,
+      borderRadius: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      backgroundColor: colors.bg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    diagnosticsPillLabel: {
+      color: colors.muted,
+      fontSize: 11,
+      fontWeight: "700",
+      marginBottom: 4,
+    },
+    diagnosticsPillValue: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    diagnosticsDetails: {
+      gap: 5,
+      paddingTop: 2,
+    },
+    diagnosticsDetailText: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "600",
+    },
+    diagnosticsWarn: {
+      color: colors.error,
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "700",
+    },
+    diagnosticsBase: {
+      color: colors.muted,
+      opacity: 0.86,
+      fontSize: 11,
+      marginTop: 2,
+    },
     rowGap: { marginTop: 8 },
     rowLead: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1, minWidth: 0 },
     rowEmoji: { fontSize: 20 },

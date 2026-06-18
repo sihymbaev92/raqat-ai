@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
+import { modalSafeAreaInsets } from "../theme/modalSafeArea";
 
 type Props = {
   visible: boolean;
@@ -36,6 +37,7 @@ export function HalalBarcodeCameraModal({
   onBarcode,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const modalInsets = modalSafeAreaInsets(insets);
   const [permission, requestPermission] = useCameraPermissions();
   const lastScanRef = useRef(0);
   const [ready, setReady] = useState(false);
@@ -73,7 +75,16 @@ export function HalalBarcodeCameraModal({
   if (Platform.OS === "web") {
     return (
       <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-        <View style={[styles.webRoot, { paddingTop: insets.top + 12, backgroundColor: "rgba(0,0,0,0.55)" }]}>
+        <View
+          style={[
+            styles.webRoot,
+            {
+              paddingTop: modalInsets.top + 12,
+              paddingBottom: modalInsets.bottom + 12,
+              backgroundColor: "rgba(0,0,0,0.55)",
+            },
+          ]}
+        >
           <View style={[styles.webCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.webTitle, { color: colors.text }]}>{title}</Text>
             <Text style={[styles.webHint, { color: colors.muted }]}>{webUnavailable}</Text>
@@ -88,7 +99,12 @@ export function HalalBarcodeCameraModal({
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <View style={[styles.root, { paddingTop: insets.top, backgroundColor: "#000" }]}>
+      <View
+        style={[
+          styles.root,
+          { paddingTop: modalInsets.top, paddingBottom: modalInsets.bottom, backgroundColor: "#000" },
+        ]}
+      >
         <View style={styles.topBar}>
           <Pressable
             onPress={onClose}

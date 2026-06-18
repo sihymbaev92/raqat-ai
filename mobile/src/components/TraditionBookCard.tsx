@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { TraditionBookEntry } from "../content/traditionBooksCatalog";
@@ -12,8 +12,8 @@ type Props = {
   tr?: (text: string) => string;
 };
 
-export function TraditionBookCard({ palette, book, onOpen, tr }: Props) {
-  const styles = makeStyles(palette);
+export const TraditionBookCard = memo(function TraditionBookCard({ palette, book, onOpen, tr }: Props) {
+  const styles = useMemo(() => makeStyles(palette), [palette]);
   const t = tr ?? ((s: string) => s);
 
   return (
@@ -42,7 +42,7 @@ export function TraditionBookCard({ palette, book, onOpen, tr }: Props) {
       ) : null}
     </Pressable>
   );
-}
+});
 
 function makeStyles(p: TraditionKazakhPalette) {
   return StyleSheet.create({

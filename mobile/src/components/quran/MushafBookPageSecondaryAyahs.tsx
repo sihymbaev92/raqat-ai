@@ -8,6 +8,7 @@ import { quranAyahMeaningForLocale } from "../../storage/quranSurahCache";
 import type { MushafBookPageStyles } from "../../quran/mushafBookPageStyles";
 import type { MushafAyahRef, MushafBookAyah } from "../../quran/mushafBookTypes";
 import { surahDisplayTitle } from "../../constants/surahTitleKk";
+import { resolveMushafBookAyah } from "../../quran/buildMushafPagesGlobal";
 
 type Props = {
   ayahs: MushafBookAyah[];
@@ -41,6 +42,7 @@ export function MushafBookPageSecondaryAyahs({
   return (
     <>
       {ayahs.map((a) => {
+        const resolved = resolveMushafBookAyah(a);
         const isLoad = loadingAyahAudio?.surah === a.surahNumber && loadingAyahAudio.ayah === a.numberInSurah;
         const hasLoaded = playingRef?.surah === a.surahNumber && playingRef.ayah === a.numberInSurah;
         const isPlayingNow = hasLoaded && ayahAudioIsPlaying;
@@ -51,16 +53,16 @@ export function MushafBookPageSecondaryAyahs({
             <Text style={st.mushafSecondaryAyahRibbon}>
               {surahDisplayTitle(a.surahNumber, "")} · {a.numberInSurah}
             </Text>
-            {showReaderTranslit && a.translit ? (
-              <Text style={st.mushafAyahKiril}>{a.translit}</Text>
+            {showReaderTranslit && resolved.translit ? (
+              <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
             ) : null}
-            {showReaderMeaning && quranAyahMeaningForLocale(a, getCurrentLocale()) ? (
-              <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(a, getCurrentLocale())}</Text>
+            {showReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
+              <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
             ) : null}
             {isAudioFocus ? (
               <Pressable
                 oyuBackdrop={false}
-                onPress={() => onToggleAudio({ surah: a.surahNumber, ayah: a.numberInSurah }, a)}
+                onPress={() => onToggleAudio({ surah: a.surahNumber, ayah: a.numberInSurah }, resolved)}
                 disabled={isLoad}
                 accessibilityRole="button"
                 accessibilityState={{ busy: isLoad }}

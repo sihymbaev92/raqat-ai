@@ -7,7 +7,7 @@ type Props = {
   palette: TraditionKazakhPalette;
 };
 
-/** «Дін мен дәстүр» — экранның жүйeli оқу реті (①→④). */
+/** «Дін мен дәстүр» — экранның жүйелі оқу реті (①→④). */
 export function TraditionScreenMap({ palette }: Props) {
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const tg = kk.features.traditionGuide;

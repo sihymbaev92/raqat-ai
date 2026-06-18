@@ -4,6 +4,7 @@ import { kk } from "./kk";
 import {
   ensureOfflineAutoTranslationsLoaded,
   getOfflineAutoTranslation,
+  releaseOfflineAutoTranslationsMemory,
   type OfflineAutoTranslateTarget,
 } from "../services/offlineAutoTranslations";
 
@@ -61,7 +62,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       step1:
         "В приложении есть время намаза, Коран, хатм, дуа, кибла, хадисы и религиозные учебники. Для корректной работы киблы и времени намаза может потребоваться доступ к местоположению. Город, уведомления и другие настройки можно изменить позже в разделе «Настройки».",
       start: "Понятно",
-      languageTitle: "Тіл · Язык · Language",
+      languageTitle: "Язык приложения",
       languageHint: "Выберите язык приложения. Изменить можно позже в настройках.",
     },
     tabs: {
@@ -87,10 +88,10 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       pressBackAgainToExit: "Нажмите «Назад» еще раз для выхода",
       contentHubTitle: "Меню",
       contentHubSub:
-        "Разделы приложения: намаз, кибла, Коран, дуа, таджвид, традиции, сира, хадж и халал.",
-      contentHubSectionWorship: "Поклонение и направление",
-      contentHubSectionKnowledge: "Коран и обучение",
-      contentHubSectionCommunity: "Сообщество, традиции и сервисы",
+        "Главный экран держит ежедневное ядро: намаз, Коран и халал. Здесь собраны дополнительные знания и инструменты.",
+      contentHubSectionWorship: "Поклонение",
+      contentHubSectionKnowledge: "Знания и источники",
+      contentHubSectionCommunity: "Дополнительные инструменты",
       siriShortcutHelpTitle: "Siri и команды",
       siriShortcutHubTile: "Siri и команды",
     },
@@ -145,6 +146,79 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       maghribShort: "Магриб",
       ishaShort: "Иша",
       notifications: "Уведомления",
+      azanScreenKicker: "Время намаза наступило",
+      azanScreenDefaultLabel: "Намаз",
+      azanScreenBody:
+        "Азан будет прочитан полностью. При необходимости остановите его кнопкой ниже.",
+      azanTextPanelTitle: "Текст азана",
+      azanScreenStop: "Остановить азан",
+      azanScreenStopped: "Азан остановлен",
+      azanTextBlocks: [
+        {
+          id: "takbir-open",
+          arabic: "اللَّهُ أَكْبَرُ",
+          translit: "Аллаху акбар",
+          meaning: "Аллах Велик.",
+          repeat: "4 раза",
+        },
+        {
+          id: "shahada-tawhid",
+          arabic: "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ",
+          translit: "Ашхаду алля иляха илля-Ллах",
+          meaning: "Свидетельствую, что нет божества, достойного поклонения, кроме Аллаха.",
+          repeat: "2 раза",
+        },
+        {
+          id: "shahada-risala",
+          arabic: "أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللَّهِ",
+          translit: "Ашхаду анна Мухаммадан расулю-Ллах",
+          meaning: "Свидетельствую, что Мухаммад — Посланник Аллаха.",
+          repeat: "2 раза",
+        },
+        {
+          id: "hayya-salah",
+          arabic: "حَيَّ عَلَى الصَّلَاةِ",
+          translit: "Хайя 'аля-с-салях",
+          meaning: "Спешите на намаз.",
+          repeat: "2 раза",
+        },
+        {
+          id: "hayya-falah",
+          arabic: "حَيَّ عَلَى الْفَلَاحِ",
+          translit: "Хайя 'аля-ль-фалях",
+          meaning: "Спешите к спасению и успеху.",
+          repeat: "2 раза",
+        },
+        {
+          id: "takbir-close",
+          arabic: "اللَّهُ أَكْبَرُ",
+          translit: "Аллаху акбар",
+          meaning: "Аллах Велик.",
+          repeat: "2 раза",
+        },
+        {
+          id: "tahlil",
+          arabic: "لَا إِلٰهَ إِلَّا اللَّهُ",
+          translit: "Ля иляха илля-Ллах",
+          meaning: "Нет божества, достойного поклонения, кроме Аллаха.",
+        },
+      ],
+      fajrAzanTextBlock: {
+        id: "fajr-extra",
+        arabic: "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
+        translit: "Ас-саляту хайрум-минан-наум",
+        meaning: "Намаз лучше сна.",
+        repeat: "2 раза",
+      },
+      azanDuaTextBlock: {
+        id: "azan-dua",
+        arabic:
+          "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+        translit:
+          "Аллахумма рабба хазихи-д-да'вати-т-таммати ва-с-саляти-ль-ка'имати, ати Мухаммадан аль-василата ва-ль-фадилата, ваб'асху макамам-махмуданил-лязи ва'адтах, иннака ля тухлифу-ль-ми'ад.",
+        meaning:
+          "О Аллах, Господь этого совершенного призыва и совершаемой молитвы! Даруй Мухаммаду василя и достоинство, и возведи его на достохвальное место, которое Ты обещал. Воистину, Ты не нарушаешь обещания.",
+      },
     },
     aiChat: {
       kbShelfSourceLabel: "Источник",
@@ -152,7 +226,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kbShelfExcerptLabel: "Фрагмент",
       sourceFallbackLabel: "Источник",
       apiMissingDetail:
-        "API-адрес отсутствует — проверьте EXPO_PUBLIC_IMAM_AI_API_BASE (или EXPO_PUBLIC_RAQAT_API_BASE) в настройках.",
+        "Сервис временно недоступен. Проверьте интернет и попробуйте позже.",
     },
     kmdbHub: {
       officialSitesLead:
@@ -200,8 +274,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       hajjTitle: "Хадж",
       halalTitle: "ХАЛАЛ ДАМУ",
       traditionTitle: "Религия и традиции",
-      genealogyTitle: "Шежире",
-      familyTreeTitle: "Семейное дерево",
       kurbanAitTitle: "Курбан айт",
       raqatAiTitle: "КМДБ · Вопрос-ответ",
       halalHeroTagRegistry: "Официальный реестр",
@@ -284,7 +356,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       step1:
         "The app includes prayer times, the Quran, khatm, duas, qibla, hadiths and religious guides. Location access may be needed for the qibla and prayer times to work correctly. You can change city, notifications and other options later in Settings.",
       start: "Got it",
-      languageTitle: "Тіл · Язык · Language",
+      languageTitle: "App language",
       languageHint: "Choose the app language. You can change it later in Settings.",
     },
     tabs: {
@@ -310,10 +382,10 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       pressBackAgainToExit: "Press Back again to exit",
       contentHubTitle: "Menu",
       contentHubSub:
-        "App sections: prayer times, qibla, Quran, duas, tajweed, traditions, seerah, hajj and halal.",
-      contentHubSectionWorship: "Worship and direction",
-      contentHubSectionKnowledge: "Quran and learning",
-      contentHubSectionCommunity: "Community, traditions and tools",
+        "The home screen keeps the daily core: prayer, Quran and halal. Extra knowledge and tools live here.",
+      contentHubSectionWorship: "Worship",
+      contentHubSectionKnowledge: "Knowledge and sources",
+      contentHubSectionCommunity: "Additional tools",
       siriShortcutHelpTitle: "Siri and Shortcuts",
       siriShortcutHubTile: "Siri and Shortcuts",
     },
@@ -368,6 +440,79 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       maghribShort: "Maghrib",
       ishaShort: "Isha",
       notifications: "Notifications",
+      azanScreenKicker: "Prayer time has begun",
+      azanScreenDefaultLabel: "Prayer",
+      azanScreenBody:
+        "The adhan will be recited in full. If needed, stop it with the button below.",
+      azanTextPanelTitle: "Adhan Text",
+      azanScreenStop: "Stop Adhan",
+      azanScreenStopped: "Adhan stopped",
+      azanTextBlocks: [
+        {
+          id: "takbir-open",
+          arabic: "اللَّهُ أَكْبَرُ",
+          translit: "Allahu akbar",
+          meaning: "Allah is the Greatest.",
+          repeat: "4 times",
+        },
+        {
+          id: "shahada-tawhid",
+          arabic: "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ",
+          translit: "Ashhadu alla ilaha illa Allah",
+          meaning: "I bear witness that there is no deity worthy of worship except Allah.",
+          repeat: "2 times",
+        },
+        {
+          id: "shahada-risala",
+          arabic: "أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللَّهِ",
+          translit: "Ashhadu anna Muhammadan rasul Allah",
+          meaning: "I bear witness that Muhammad is the Messenger of Allah.",
+          repeat: "2 times",
+        },
+        {
+          id: "hayya-salah",
+          arabic: "حَيَّ عَلَى الصَّلَاةِ",
+          translit: "Hayya 'ala-s-salah",
+          meaning: "Come to prayer.",
+          repeat: "2 times",
+        },
+        {
+          id: "hayya-falah",
+          arabic: "حَيَّ عَلَى الْفَلَاحِ",
+          translit: "Hayya 'ala-l-falah",
+          meaning: "Come to success and salvation.",
+          repeat: "2 times",
+        },
+        {
+          id: "takbir-close",
+          arabic: "اللَّهُ أَكْبَرُ",
+          translit: "Allahu akbar",
+          meaning: "Allah is the Greatest.",
+          repeat: "2 times",
+        },
+        {
+          id: "tahlil",
+          arabic: "لَا إِلٰهَ إِلَّا اللَّهُ",
+          translit: "La ilaha illa Allah",
+          meaning: "There is no deity worthy of worship except Allah.",
+        },
+      ],
+      fajrAzanTextBlock: {
+        id: "fajr-extra",
+        arabic: "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
+        translit: "As-salatu khayrum minan-nawm",
+        meaning: "Prayer is better than sleep.",
+        repeat: "2 times",
+      },
+      azanDuaTextBlock: {
+        id: "azan-dua",
+        arabic:
+          "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+        translit:
+          "Allahumma rabba hadhihi-d-da'watit-tammati was-salatil-qa'imah, ati Muhammadan al-wasilata wal-fadilah, wab'athhu maqamam mahmudan alladhi wa'adtah, innaka la tukhliful-mi'ad.",
+        meaning:
+          "O Allah, Lord of this perfect call and established prayer, grant Muhammad al-Wasilah and virtue, and raise him to the praised station You promised him. Indeed, You do not break Your promise.",
+      },
     },
     aiChat: {
       kbShelfSourceLabel: "Source",
@@ -375,7 +520,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kbShelfExcerptLabel: "Excerpt",
       sourceFallbackLabel: "Source",
       apiMissingDetail:
-        "API address is missing — check EXPO_PUBLIC_IMAM_AI_API_BASE (or EXPO_PUBLIC_RAQAT_API_BASE) in Settings.",
+        "The service is temporarily unavailable. Check your internet connection and try again later.",
     },
     kmdbHub: {
       officialSitesLead:
@@ -423,8 +568,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       hajjTitle: "Hajj",
       halalTitle: "HALAL DAMU",
       traditionTitle: "Faith and tradition",
-      genealogyTitle: "Genealogy",
-      familyTreeTitle: "Family Tree",
       kurbanAitTitle: "Eid al-Adha",
       raqatAiTitle: "QMDB · Q&A",
       halalHeroTagRegistry: "Official registry",
@@ -497,7 +640,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "RAHAT OMIR'ге кош келиңиз",
       step1:
         "Колдонмодо намаз убактысы, Куран, хатым, дуба, кыбыла, хадистер жана диний окуу китептери бар. Кыбыла менен намаз убактысы туура иштеши үчүн жайгашуу уруксаты керек болушу мүмкүн. Шаар, билдирүүлөр жана башка жөндөөлөрдү кийин «Жөндөөлөр» бөлүмүнөн өзгөртө аласыз.",
-      start: "Түшүндүм", languageTitle: "Тіл · Тил · Language",
+      start: "Түшүндүм", languageTitle: "Колдонмо тили",
       languageHint: "Колдонмо тилин тандаңыз. Кийин жөндөөлөрдөн өзгөртсө болот.",
     },
     tabs: {
@@ -506,17 +649,17 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     },
     navigation: {
       duasTitle: "Дубалар", surahTitle: "Сүрө", telegramTitle: "Telegram", tabHome: "Башкы",
-      tabArticles: "Макалалар", tabPrayerTimes: "Намаз", tabSaved: "Сакталгандар", tabProfile: "Профиль",
+      tabArticles: "Макалалар", tabPrayerTimes: "Намаз", tabSaved: "Сакталгандар", tabProfile: "Жеке бет",
       openDashboard: "Башкы", pressBackAgainToExit: "Чыгуу үчүн «Артка» баскычын дагы бир жолу басыңыз",
       contentHubTitle: "Меню",
-      contentHubSub: "Колдонмо бөлүмдөрү: намаз, кыбыла, Куран, дуба, тажвид, салттар, сира, ажылык жана халал.",
-      contentHubSectionWorship: "Ибадат жана багыт", contentHubSectionKnowledge: "Куран жана окуу",
-      contentHubSectionCommunity: "Коом, салт жана куралдар", siriShortcutHelpTitle: "Siri жана буйруктар",
+      contentHubSub: "Башкы бет күнүмдүк өзөктү кармайт: намаз, Куран жана халал. Кошумча билим жана куралдар ушул жерде.",
+      contentHubSectionWorship: "Ибадат", contentHubSectionKnowledge: "Билим жана булактар",
+      contentHubSectionCommunity: "Кошумча куралдар", siriShortcutHelpTitle: "Siri жана буйруктар",
       siriShortcutHubTile: "Siri жана буйруктар",
     },
     dashboard: {
       greeting: "Ассалаому алейкум", heroTagline: "Намаз убактысы, Куран, дуба жана билим — бир колдонмодо",
-      today: "бүгүн", nextPrayer: "Кийинки намаз", scheduleTable: "Бүгүнкү расписание",
+      today: "бүгүн", nextPrayer: "Кийинки намаз", scheduleTable: "Бүгүнкү жадыбал",
       qiblaStrip: "Кыбыла багыты", morePrayerLink: "Толугураак", morePrayerLinkTarget: "намаз убактысы",
       servicesHeading: "Бөлүмдөр", articlesSeeAll: "Баарын көрүү", articleBadge: "Макала",
       heroQuranTitle: "Куран", heroHadithTitle: "Сахих хадистер", heroDuaTitle: "Коом дубасы",
@@ -538,7 +681,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kbShelfExcerptLabel: "Үзүндү",
       sourceFallbackLabel: "Булак",
       apiMissingDetail:
-        "API дареги жок — Жөндөөлөрдөн EXPO_PUBLIC_IMAM_AI_API_BASE (же EXPO_PUBLIC_RAQAT_API_BASE) текшериңиз.",
+        "Кызмат убактылуу жеткиликсиз. Интернетти текшерип, кийинчерээк кайра аракет кылыңыз.",
     },
     kmdbHub: {
       officialSitesLead:
@@ -568,8 +711,8 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     },
     features: {
       hatimTitle: "Хатым", hajjTitle: "Ажылык", halalTitle: "ХАЛАЛ ДАМУ", traditionTitle: "Дин жана салт",
-      genealogyTitle: "Санжыра", familyTreeTitle: "Үй-бүлө дарагы", kurbanAitTitle: "Курман айт",
-      raqatAiTitle: "КМДБ · Суроо-жооп", halalHeroTagRegistry: "Расмий реестр",
+      kurbanAitTitle: "Курман айт",
+      raqatAiTitle: "КМДБ · Суроо-жооп", halalHeroTagRegistry: "Расмий тизмек",
       halalHeroTagVerify: "Өнүм текшерүү",
     },
     communityDua: { screenTitle: "Коом дубасы" },
@@ -623,9 +766,9 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       tabArticles: "Maqolalar", tabPrayerTimes: "Namoz", tabSaved: "Saqlanganlar", tabProfile: "Profil",
       openDashboard: "Bosh", pressBackAgainToExit: "Chiqish uchun «Orqaga» tugmasini yana bosing",
       contentHubTitle: "Menyu",
-      contentHubSub: "Ilova bo'limlari: namoz, qibla, Qur'on, duolar, tajvid, urf-odatlar, siyra, haj va halol.",
-      contentHubSectionWorship: "Ibodat va yo'nalish", contentHubSectionKnowledge: "Qur'on va ta'lim",
-      contentHubSectionCommunity: "Jamoa, urf-odat va vositalar", siriShortcutHelpTitle: "Siri va buyruqlar",
+      contentHubSub: "Bosh ekran kundalik asosni saqlaydi: namoz, Qur'on va halol. Qo'shimcha bilim va vositalar shu yerda.",
+      contentHubSectionWorship: "Ibodat", contentHubSectionKnowledge: "Bilim va manbalar",
+      contentHubSectionCommunity: "Qo'shimcha vositalar", siriShortcutHelpTitle: "Siri va buyruqlar",
       siriShortcutHubTile: "Siri va buyruqlar",
     },
     dashboard: {
@@ -660,7 +803,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     },
     features: {
       hatimTitle: "Xatm", hajjTitle: "Haj", halalTitle: "HALAL DAMU", traditionTitle: "Din va urf-odat",
-      genealogyTitle: "Shajara", familyTreeTitle: "Oila daraxti", kurbanAitTitle: "Qurbon hayit",
+      kurbanAitTitle: "Qurbon hayit",
       raqatAiTitle: "QMDB · Savol-javob",
     },
     communityDua: { screenTitle: "Jamoa duosi" },
@@ -714,9 +857,9 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       tabArticles: "Makaleler", tabPrayerTimes: "Namaz", tabSaved: "Kaydedilenler", tabProfile: "Profil",
       openDashboard: "Ana sayfa", pressBackAgainToExit: "Çıkmak için «Geri»ye tekrar basın",
       contentHubTitle: "Menü",
-      contentHubSub: "Uygulama bölümleri: namaz, kıble, Kur'an, dualar, tecvid, gelenekler, siyer, hac ve helal.",
-      contentHubSectionWorship: "İbadet ve yön", contentHubSectionKnowledge: "Kur'an ve öğrenim",
-      contentHubSectionCommunity: "Topluluk, gelenek ve araçlar", siriShortcutHelpTitle: "Siri ve Kısayollar",
+      contentHubSub: "Ana ekran günlük çekirdeği tutar: namaz, Kur'an ve helal. Ek bilgi ve araçlar burada.",
+      contentHubSectionWorship: "İbadet", contentHubSectionKnowledge: "Bilgi ve kaynaklar",
+      contentHubSectionCommunity: "Ek araçlar", siriShortcutHelpTitle: "Siri ve Kısayollar",
       siriShortcutHubTile: "Siri ve Kısayollar",
     },
     dashboard: {
@@ -751,7 +894,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     },
     features: {
       hatimTitle: "Hatim", hajjTitle: "Hac", halalTitle: "HALAL DAMU", traditionTitle: "Din ve gelenek",
-      genealogyTitle: "Soy ağacı", familyTreeTitle: "Aile ağacı", kurbanAitTitle: "Kurban Bayramı",
+      kurbanAitTitle: "Kurban Bayramı",
       raqatAiTitle: "KMDB · Soru-cevap",
     },
     communityDua: { screenTitle: "Topluluk duası" },
@@ -805,9 +948,9 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       tabArticles: "المقالات", tabPrayerTimes: "الصلاة", tabSaved: "المحفوظات", tabProfile: "الملف",
       openDashboard: "الرئيسية", pressBackAgainToExit: "اضغط «رجوع» مرة أخرى للخروج",
       contentHubTitle: "القائمة",
-      contentHubSub: "أقسام التطبيق: الصلاة، القبلة، القرآن، الأدعية، التجويد، التقاليد، السيرة، الحج والحلال.",
-      contentHubSectionWorship: "العبادة والاتجاه", contentHubSectionKnowledge: "القرآن والتعلم",
-      contentHubSectionCommunity: "المجتمع والتقاليد والأدوات", siriShortcutHelpTitle: "Siri والاختصارات",
+      contentHubSub: "تبقى الشاشة الرئيسية للجوهر اليومي: الصلاة والقرآن والحلال. المعرفة والأدوات الإضافية هنا.",
+      contentHubSectionWorship: "العبادة", contentHubSectionKnowledge: "المعرفة والمصادر",
+      contentHubSectionCommunity: "أدوات إضافية", siriShortcutHelpTitle: "Siri والاختصارات",
       siriShortcutHubTile: "Siri والاختصارات",
     },
     dashboard: {
@@ -842,7 +985,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     },
     features: {
       hatimTitle: "ختمة", hajjTitle: "الحج", halalTitle: "HALAL DAMU", traditionTitle: "الدين والتقاليد",
-      genealogyTitle: "النسب", familyTreeTitle: "شجرة العائلة", kurbanAitTitle: "عيد الأضحى",
+      kurbanAitTitle: "عيد الأضحى",
       raqatAiTitle: "QMDB · سؤال وجواب",
     },
     communityDua: { screenTitle: "دعاء الجماعة" },
@@ -926,10 +1069,13 @@ function buildOfflineLocaleTree(obj: unknown, target: OfflineAutoTranslateTarget
 }
 
 function getOfflineLocalePatch(target: Exclude<AppLocale, "kk">): Record<string, unknown> {
-  offlineLocaleTreeCache[target] ??= buildOfflineLocaleTree(
-    KK_BASELINE,
-    target as OfflineAutoTranslateTarget
-  );
+  if (!offlineLocaleTreeCache[target]) {
+    offlineLocaleTreeCache[target] = buildOfflineLocaleTree(
+      KK_BASELINE,
+      target as OfflineAutoTranslateTarget
+    );
+    releaseOfflineAutoTranslationsMemory();
+  }
   return offlineLocaleTreeCache[target] as Record<string, unknown>;
 }
 

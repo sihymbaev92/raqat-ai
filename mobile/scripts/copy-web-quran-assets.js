@@ -25,6 +25,11 @@ function copyRecursive(src, dest) {
     const s = path.join(src, name);
     const d = path.join(dest, name);
     const st = fs.statSync(s);
+    const rel = path.relative(srcDir, s).replace(/\\/g, "/");
+    if (st.isDirectory() && rel === "qcf4/fonts") {
+      console.log("copy-web-quran-assets: skip qcf4/fonts (.ttf native fonts; web uses fonts-woff2)");
+      continue;
+    }
     if (st.isDirectory()) {
       count += copyRecursive(s, d);
     } else {

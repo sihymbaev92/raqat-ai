@@ -3,6 +3,7 @@ import {
   isHajjMuftyatTextDisplayable,
   sanitizeHajjMuftyatPageText,
 } from "../hajjMuftyatTextSanitize";
+import hajjMuftyatPageText from "../hajjMuftyatPageText.json";
 
 const SAMPLE = `مناسك الحج
 Пайғамбар мешітіне кіргенде:
@@ -35,5 +36,13 @@ describe("hajjMuftyatTextSanitize", () => {
   it("allows display when cleaned KK content is sufficient", () => {
     expect(isHajjMuftyatTextDisplayable(SAMPLE, true)).toBe(true);
     expect(isHajjMuftyatTextDisplayable("ËǶ Êȏ only", true)).toBe(false);
+  });
+
+  it("does not keep common mixed Latin/Cyrillic OCR words in visible page text", () => {
+    const allText = hajjMuftyatPageText.map((row) => row.text).join("\n");
+
+    expect(allText).not.toMatch(
+      /\b(?:бip|бipi|eкі|eкi|Бeciн|Paмадан|eтеккірі|Tік|cүpeciн|түcipe|гөp|Eкінші|pәкәты|Haмaздыгepдiң|Иeci|Teңдесі|түpi)\b/
+    );
   });
 });

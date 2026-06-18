@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="center_vertical"
+    android:layout_height="32dp"
     android:minHeight="32dp"
     android:paddingBottom="1dp">
 
   <LinearLayout
       android:id="@+id/widget_home_weather_row"
-      android:layout_width="0dp"
+      android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_weight="1"
+      android:layout_gravity="start|center_vertical"
       android:orientation="horizontal"
       android:gravity="center_vertical|start"
       android:minWidth="46dp">
@@ -40,6 +38,7 @@
       android:id="@+id/widget_home_qibla_wrap"
       android:layout_width="32dp"
       android:layout_height="32dp"
+      android:layout_gravity="center"
       android:background="@drawable/widget_qibla_chip_bg"
       android:padding="2dp"
       android:clickable="true"
@@ -55,9 +54,9 @@
 
   <LinearLayout
       android:id="@+id/widget_home_city_row"
-      android:layout_width="0dp"
+      android:layout_width="104dp"
       android:layout_height="wrap_content"
-      android:layout_weight="1"
+      android:layout_gravity="end|center_vertical"
       android:orientation="horizontal"
       android:gravity="center_vertical|end"
       android:minWidth="46dp">
@@ -73,15 +72,15 @@
 
     <TextView
         android:id="@+id/widget_home_city"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_weight="1"
         android:fontFamily="sans-serif-medium"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="12sp"
+        android:textSize="11sp"
         android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false"
-        android:maxWidth="120dp" />
+        android:includeFontPadding="true" />
   </LinearLayout>
-</LinearLayout>
+</FrameLayout>

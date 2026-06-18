@@ -150,7 +150,7 @@
     },
     {
       "gtin": "4607025392176",
-      "title": "Көмеk 0.5 л",
+      "title": "Көмек 0.5 л",
       "brand": "Coca-Cola",
       "ingredients": "су, қант, көмірқышқыл газы",
       "companyId": null,
@@ -468,9 +468,9 @@
       "title": "Сосиски молочные 400 г",
       "brand": "Ет",
       "ingredients": "шошқа/сиыр еті, тұз",
-      "companyId": 22500,
-      "certificateStatus": "active",
-      "note": "ет өнімі — құрамды тексеру"
+      "companyId": null,
+      "certificateStatus": "review_required",
+      "note": "ет өнімі — құрамында шошқа көрсетілген, ресми сертификатпен қолмен тексеру керек"
     },
     {
       "gtin": "4607025392538",

@@ -3,6 +3,7 @@ import { StyleSheet, type TextStyle } from "react-native";
 import { MushafSurahHeader, type MushafSurahHeaderStyles } from "../MushafSurahHeader";
 import { QURAN_BASMALA_READER_AR } from "../../../constants/quranUthmani";
 import type { ThemeColors } from "../../../theme/colors";
+import { surahArabicBannerTitle } from "../../../data/surahArabicTitles";
 
 const styles: MushafSurahHeaderStyles = {
   mushafSurahTitleBlock: {},
@@ -26,14 +27,42 @@ function textContent(node: unknown): string {
     .join("");
 }
 
-function findHeaderStyle(node: unknown): TextStyle | null {
+type HeaderProps = {
+  accessibilityRole?: string;
+  adjustsFontSizeToFit?: boolean;
+  allowFontScaling?: boolean;
+  minimumFontScale?: number;
+  style?: unknown;
+  children?: React.ReactNode;
+};
+
+function findHeaderProps(node: unknown): HeaderProps | null {
   if (!React.isValidElement(node)) return null;
-  const props = node.props as { accessibilityRole?: string; style?: unknown; children?: React.ReactNode };
+  const props = node.props as HeaderProps;
   if (props.accessibilityRole === "header") {
-    return StyleSheet.flatten(props.style) as TextStyle;
+    return props;
   }
   for (const child of React.Children.toArray(props.children)) {
-    const found = findHeaderStyle(child);
+    const found = findHeaderProps(child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findHeaderStyle(node: unknown): TextStyle | null {
+  const props = findHeaderProps(node);
+  return props ? (StyleSheet.flatten(props.style) as TextStyle) : null;
+}
+
+function findFrameStyle(node: unknown): Record<string, unknown> | null {
+  if (!React.isValidElement(node)) return null;
+  const props = node.props as { style?: unknown; children?: React.ReactNode };
+  const style = StyleSheet.flatten(props.style) as Record<string, unknown> | undefined;
+  if (style?.height === 44 && style?.maxWidth === 340) {
+    return style;
+  }
+  for (const child of React.Children.toArray(props.children)) {
+    const found = findFrameStyle(child);
     if (found) return found;
   }
   return null;
@@ -70,5 +99,33 @@ describe("MushafSurahHeader", () => {
     expect(style?.fontSize).toBe(20);
     expect(style?.lineHeight).toBe(29);
     expect(style?.fontWeight).toBe("600");
+  });
+
+  it("keeps all 114 surah names in the exact same Ikhlas-style header typography", () => {
+    for (let surah = 1; surah <= 114; surah += 1) {
+      const tree = MushafSurahHeader({
+        colors,
+        mushafLayout: true,
+        qcomBookLayout: true,
+        qcf4LineSlotLayout: true,
+        surahArabicTitleLine: surahArabicBannerTitle(surah),
+        showMushafBismillahBanner: false,
+        styles,
+      });
+
+      const props = findHeaderProps(tree);
+      const style = props ? (StyleSheet.flatten(props.style) as TextStyle) : null;
+      const frameStyle = findFrameStyle(tree);
+      expect(textContent(tree)).toContain(surahArabicBannerTitle(surah));
+      expect(frameStyle?.width).toBe("86%");
+      expect(frameStyle?.maxWidth).toBe(340);
+      expect(frameStyle?.height).toBe(44);
+      expect(style?.fontSize).toBe(20);
+      expect(style?.lineHeight).toBe(29);
+      expect(style?.fontWeight).toBe("600");
+      expect(props?.adjustsFontSizeToFit).toBe(false);
+      expect(props?.minimumFontScale).toBe(1);
+      expect(props?.allowFontScaling).toBe(false);
+    }
   });
 });

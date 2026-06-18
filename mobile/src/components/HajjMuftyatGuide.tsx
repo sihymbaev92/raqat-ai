@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Linking, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Linking, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -293,7 +293,8 @@ function HajjJourneyRoadmap({
 export function HajjMuftyatGuide() {
   const { colors } = useAppTheme();
   const { width: winW } = useWindowDimensions();
-  const contentWidth = Math.max(280, winW - 28);
+  const contentWidth = Math.max(280, Math.round((winW - 16) * 0.92));
+  const talbiyahWidth = Platform.OS === "web" ? Math.min(contentWidth, 580) : contentWidth;
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const sections = useMemo(() => hajjSectionsInBookOrder(), []);
   const [open, setOpen] = useState<Record<string, boolean>>({});
@@ -312,8 +313,8 @@ export function HajjMuftyatGuide() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.heroFrame}>
-        <TalbiyahHeroBanner width={contentWidth} />
+      <View style={[styles.heroFrame, { width: talbiyahWidth }]}>
+        <TalbiyahHeroBanner width={talbiyahWidth} />
       </View>
 
       <Pressable
@@ -424,8 +425,6 @@ export function HajjMuftyatGuide() {
         soundOnLabel={tr("Дауысты қосу")}
         soundOffLabel={tr("Дауысты өшіру")}
         closeLabel={tr("Жабу")}
-        reloadLabel={tr("Қайта жүктеу")}
-        backupLabel={tr("Резерв эфир")}
       />
     </ScrollView>
   );
@@ -436,10 +435,10 @@ function makeStyles(colors: ThemeColors) {
     root: { flex: 1, backgroundColor: colors.bg },
     content: { padding: 8, paddingBottom: 24 },
     heroFrame: {
-      width: "100%",
+      alignSelf: "center",
       borderRadius: 16,
       overflow: "hidden",
-      backgroundColor: "#090806",
+      backgroundColor: "#0B76C8",
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 8,

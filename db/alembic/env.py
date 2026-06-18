@@ -1,4 +1,4 @@
-"""Alembic migrations — PostgreSQL genealogy graph engine."""
+"""Alembic migrations — PostgreSQL (platform tables via SQL bootstrap)."""
 from __future__ import annotations
 
 import os
@@ -14,7 +14,6 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from db.models.base import Base
-from db.models import genealogy  # noqa: F401 — register models
 
 config = context.config
 if config.config_file_name is not None:

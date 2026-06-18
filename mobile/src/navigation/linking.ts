@@ -17,6 +17,48 @@ import {
   parseQuranSurahDeepPath,
 } from "./quranSurahDeepLink";
 
+type PrayerAzanParams = NonNullable<RootStackParamList["PrayerAzan"]>;
+
+function prayerAzanParamValue(value: string): string {
+  return value.trim().replace(/^['"]|['"]$/g, "").trim();
+}
+
+export function parsePrayerAzanQueryParams(rawPath: string): PrayerAzanParams | undefined {
+  const q = rawPath.indexOf("?");
+  if (q === -1) return undefined;
+  const queryEnd = rawPath.indexOf("#", q + 1);
+  const query = rawPath.slice(q + 1, queryEnd === -1 ? undefined : queryEnd);
+  const sp = new URLSearchParams(query);
+  const params: PrayerAzanParams = {};
+  (["label", "enteredTitle", "time", "soundId", "salatKey", "nativeAudio"] as const).forEach((key) => {
+    const value = sp.get(key);
+    if (value != null && value.trim()) {
+      params[key] = prayerAzanParamValue(value);
+    }
+  });
+  return Object.keys(params).length ? params : undefined;
+}
+
+function applyPrayerAzanParams<S extends NavigationState | PartialState<NavigationState>>(
+  state: S | undefined,
+  params: PrayerAzanParams | undefined
+): S | undefined {
+  if (!state || !params || !state.routes?.length) return state;
+  return {
+    ...state,
+    routes: state.routes.map((route) => {
+      const r = route as { name: string; state?: NavigationState | PartialState<NavigationState>; params?: unknown };
+      if (r.name === "PrayerAzan") {
+        return { ...r, params: { ...(typeof r.params === "object" && r.params ? r.params : {}), ...params } };
+      }
+      if (r.state) {
+        return { ...r, state: applyPrayerAzanParams(r.state, params) };
+      }
+      return route;
+    }),
+  } as S;
+}
+
 function webPrefixes(): string[] {
   if (Platform.OS !== "web") return [];
   if (typeof window === "undefined" || !window.location?.origin) return [];
@@ -63,7 +105,17 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
       },
       AsmaAlHusna: "asma",
       PrayerTimes: "prayer-times",
-      PrayerAzan: "azan",
+      PrayerAzan: {
+        path: "azan",
+        parse: {
+          label: prayerAzanParamValue,
+          enteredTitle: prayerAzanParamValue,
+          time: prayerAzanParamValue,
+          soundId: prayerAzanParamValue,
+          salatKey: prayerAzanParamValue,
+          nativeAudio: prayerAzanParamValue,
+        },
+      },
       Qibla: "qibla",
       MoreStack: {
         path: "more",
@@ -114,8 +166,6 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           HadithDetail: "hadith/detail/:hadithId",
           ScrapedHadithMuftyatList: "hadith/muftyat",
           ScrapedHadithMuftyatDetail: "hadith/muftyat/:id",
-          GenealogyClans: "genealogy",
-          FamilyTree: "genealogy/my",
           ImamAI: "ai",
           OfficialKnowledgePortal: "knowledge",
           IslamicKbSearch: "knowledge/search",
@@ -148,6 +198,13 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
     }
     const query = parseMushafBookQueryParams(path);
     const built = RNGetStateFromPath(normalized, options);
+    const prayerAzanParams = parsePrayerAzanQueryParams(path);
+    if (prayerAzanParams) {
+      return applyPrayerAzanParams(
+        built as NavigationState | PartialState<NavigationState> | undefined,
+        prayerAzanParams
+      ) as typeof built;
+    }
     if (built && (query.focusSurah || query.focusAyah || query.initialPage)) {
       return applyQuranMushafBookParamsFromDeepLink(
         built as NavigationState | PartialState<NavigationState>,
@@ -158,6 +215,14 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
   },
   getPathFromState(state, options) {
     const mushafBook = getFocusedMushafBookParams(state as NavigationState | PartialState<NavigationState>);
+    if (mushafBook?.continuousMushaf) {
+      const page = mushafBook.initialPage != null ? `/${mushafBook.initialPage}` : "";
+      const q = new URLSearchParams();
+      if (mushafBook.focusSurah != null) q.set("focusSurah", String(mushafBook.focusSurah));
+      if (mushafBook.focusAyah != null) q.set("focusAyah", String(mushafBook.focusAyah));
+      q.set("continuousMushaf", "1");
+      return `more/mushaf-book${page}?${q.toString()}`;
+    }
     if (mushafBook?.focusSurah != null) {
       const s = mushafBook.focusSurah;
       const a = mushafBook.focusAyah;

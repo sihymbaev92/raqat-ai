@@ -96,16 +96,6 @@ export const TRADITION_RELIGIOUS_EVIDENCE: Record<string, TraditionEvidenceBlock
       ],
     },
   ],
-  "jeti-ata": [
-    {
-      id: "kinship",
-      titleKk: "Туыстық байланыс",
-      refs: [
-        q(4, 1, "Құран 4:1", "Адамзат бір адамнан жаралған — туыстықты сақтау."),
-        q(33, 6, "Құран 33:6", "Туыстардың бір-біріне қатысы жақын."),
-      ],
-    },
-  ],
   "asar": [
     {
       id: "coop",

@@ -1,0 +1,691 @@
+import React, {
+
+  forwardRef,
+
+  useCallback,
+
+  useEffect,
+
+  useImperativeHandle,
+
+  useMemo,
+
+  useRef,
+
+  useState,
+
+} from "react";
+
+import { useFocusEffect } from "@react-navigation/native";
+
+import { Linking, Platform, StyleSheet, Text, View } from "react-native";
+
+import { WebView } from "react-native-webview";
+
+import type { WebView as WebViewType, WebViewNavigation } from "react-native-webview";
+
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+import { Pressable } from "@/ui/Pressable";
+
+import type { ThemeColors } from "../theme/colors";
+
+import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
+
+import { kk } from "../i18n/kk";
+
+import { withEmbeddedSiteCacheBust } from "./officialSiteWebViewReload";
+
+import {
+
+  OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT,
+
+  OFFICIAL_SITE_SPA_HISTORY_INJECT,
+
+  openEmbeddedSiteUrlExternally,
+
+  shouldStayInOfficialSiteWebView,
+
+} from "./embeddedOfficialSiteNavigation";
+
+import {
+
+  OFFICIAL_SITE_NO_CACHE_HEADERS,
+
+  OFFICIAL_SITE_SW_CACHE_PURGE_INJECT,
+
+  clearOfficialSiteWebCache,
+
+} from "./officialSiteWebViewReload";
+
+
+
+const MOBILE_CHROME_BASE =
+
+  "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+
+
+
+const OFFICIAL_SITE_BEFORE_LOAD_INJECT = `${OFFICIAL_SITE_SW_CACHE_PURGE_INJECT}\n${OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
+
+const OFFICIAL_SITE_AFTER_LOAD_INJECT = `${OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
+
+
+
+function buildMobileUserAgent(tag: string): string {
+
+  return `${MOBILE_CHROME_BASE} ${tag}`;
+
+}
+
+
+
+export type OfficialSiteFullWebViewHandle = {
+
+  reload: () => void;
+
+  canGoBack: () => boolean;
+
+  goBack: () => void;
+
+};
+
+
+
+type Props = {
+
+  url: string;
+
+  colors: ThemeColors;
+
+  title?: string;
+
+  /** Осы домендер WebView ішінде қалады; қалған http(s) — сыртқы браузер. */
+
+  allowedHosts: readonly string[];
+
+  userAgentTag?: string;
+
+  injectMobileViewport?: boolean;
+
+  /** Экранға қайта оралғанда сайтты қайта жүктеу (жаңалықтар үшін). */
+
+  refreshOnFocus?: boolean;
+
+};
+
+
+
+/**
+
+ * Ресми толық сайт WebView — мобильді UA, кэшсіз, сілтеме сүзгісі, history back.
+
+ */
+
+export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle, Props>(
+
+  function OfficialSiteFullWebView(
+
+    {
+
+      url,
+
+      colors,
+
+      title,
+
+      allowedHosts,
+
+      userAgentTag = "RaqatOfficialSite/1",
+
+      injectMobileViewport = true,
+
+      refreshOnFocus = true,
+
+    },
+
+    ref
+
+  ) {
+
+    const webRef = useRef<WebViewType>(null);
+
+    const focusBootRef = useRef(true);
+
+    const reloadGenRef = useRef(0);
+
+    const [cacheReady, setCacheReady] = useState(Platform.OS !== "android");
+
+    const [sessionToken, setSessionToken] = useState(0);
+
+    const [webLoading, setWebLoading] = useState(true);
+
+    const [webError, setWebError] = useState<string | null>(null);
+
+    const [pullRefreshing, setPullRefreshing] = useState(false);
+
+    const [historyCanGoBack, setHistoryCanGoBack] = useState(false);
+
+    const [spaCanGoBack, setSpaCanGoBack] = useState(false);
+
+    const resolvedUrl = useMemo(
+
+      () => withEmbeddedSiteCacheBust(url, sessionToken),
+
+      [url, sessionToken]
+
+    );
+
+    const webSource = useMemo(
+
+      () => ({ uri: resolvedUrl, headers: OFFICIAL_SITE_NO_CACHE_HEADERS }),
+
+      [resolvedUrl]
+
+    );
+
+    const webMountKey = sessionToken > 0 ? `session-${sessionToken}` : "boot";
+
+    const userAgent = useMemo(() => buildMobileUserAgent(userAgentTag), [userAgentTag]);
+
+    const isWeb = Platform.OS === "web";
+
+
+
+    const styles = useMemo(
+
+      () =>
+
+        StyleSheet.create({
+
+          root: { flex: 1, backgroundColor: colors.bg },
+
+          web: { flex: 1, backgroundColor: colors.bg },
+
+          loadingWrap: {
+
+            ...StyleSheet.absoluteFillObject,
+
+            alignItems: "center",
+
+            justifyContent: "center",
+
+            backgroundColor: colors.bg,
+
+          },
+
+          errorWrap: {
+
+            flex: 1,
+
+            alignItems: "center",
+
+            justifyContent: "center",
+
+            gap: 14,
+
+            paddingHorizontal: 24,
+
+          },
+
+          errorText: {
+
+            color: colors.text,
+
+            fontSize: 15,
+
+            lineHeight: 22,
+
+            textAlign: "center",
+
+            fontWeight: "700",
+
+          },
+
+          errorBtn: {
+
+            minHeight: 42,
+
+            borderRadius: 999,
+
+            paddingHorizontal: 16,
+
+            flexDirection: "row",
+
+            alignItems: "center",
+
+            gap: 6,
+
+            backgroundColor: colors.accent,
+
+          },
+
+          errorBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "900" },
+
+        }),
+
+      [colors]
+
+    );
+
+
+
+    const bumpSession = useCallback(() => {
+
+      reloadGenRef.current += 1;
+
+      setSessionToken(Date.now() + reloadGenRef.current);
+
+    }, []);
+
+
+
+    const hardReloadHome = useCallback(() => {
+
+      setWebError(null);
+
+      setWebLoading(true);
+
+      setPullRefreshing(true);
+
+      setHistoryCanGoBack(false);
+
+      setSpaCanGoBack(false);
+
+      void clearOfficialSiteWebCache().finally(() => {
+
+        bumpSession();
+
+      });
+
+    }, [bumpSession]);
+
+
+
+    const softReloadPage = useCallback(() => {
+
+      hardReloadHome();
+
+    }, [hardReloadHome]);
+
+
+
+    useEffect(() => {
+
+      let alive = true;
+
+      void clearOfficialSiteWebCache().finally(() => {
+
+        if (!alive) return;
+
+        bumpSession();
+
+        setCacheReady(true);
+
+      });
+
+      return () => {
+
+        alive = false;
+
+      };
+
+    }, [bumpSession]);
+
+
+
+    useFocusEffect(
+
+      useCallback(() => {
+
+        if (!refreshOnFocus || isWeb || !cacheReady) return;
+
+        if (focusBootRef.current) {
+
+          focusBootRef.current = false;
+
+          return;
+
+        }
+
+        hardReloadHome();
+
+      }, [refreshOnFocus, isWeb, cacheReady, hardReloadHome])
+
+    );
+
+
+
+    const goBackInWebView = useCallback(() => {
+
+      if (spaCanGoBack) {
+
+        webRef.current?.injectJavaScript(`(function(){try{history.back();}catch(e){}})();true;`);
+
+        return;
+
+      }
+
+      webRef.current?.goBack();
+
+    }, [spaCanGoBack]);
+
+
+
+    const canGoBackInWebView = useCallback(() => {
+
+      try {
+
+        if (webRef.current?.canGoBack()) return true;
+
+      } catch {
+
+        /* web ref әлі дайын емес */
+
+      }
+
+      return historyCanGoBack || spaCanGoBack;
+
+    }, [historyCanGoBack, spaCanGoBack]);
+
+
+
+    useImperativeHandle(
+
+      ref,
+
+      () => ({
+
+        reload: hardReloadHome,
+
+        canGoBack: canGoBackInWebView,
+
+        goBack: goBackInWebView,
+
+      }),
+
+      [hardReloadHome, canGoBackInWebView, goBackInWebView]
+
+    );
+
+
+
+    const finishLoad = useCallback(() => {
+
+      setWebLoading(false);
+
+      setPullRefreshing(false);
+
+    }, []);
+
+
+
+    const markError = useCallback(() => {
+
+      setWebLoading(false);
+
+      setPullRefreshing(false);
+
+      setWebError(kk.common.embeddedSiteError);
+
+    }, []);
+
+
+
+    const onNavigationStateChange = useCallback((nav: WebViewNavigation) => {
+
+      setHistoryCanGoBack(Boolean(nav.canGoBack));
+
+    }, []);
+
+
+
+    const onWebMessage = useCallback((event: { nativeEvent: { data: string } }) => {
+
+      try {
+
+        const payload = JSON.parse(event.nativeEvent.data) as {
+
+          type?: string;
+
+          canGoBack?: boolean;
+
+        };
+
+        if (payload.type === "raqat-spa-nav") {
+
+          setSpaCanGoBack(Boolean(payload.canGoBack));
+
+        }
+
+      } catch {
+
+        /* басқа postMessage */
+
+      }
+
+    }, []);
+
+
+
+    const shouldStartLoad = useCallback(
+
+      (ev: WebViewNavigation) => {
+
+        const nextUrl = ev.url || "";
+
+        if (shouldStayInOfficialSiteWebView(nextUrl, allowedHosts)) return true;
+
+        openEmbeddedSiteUrlExternally(nextUrl);
+
+        return false;
+
+      },
+
+      [allowedHosts]
+
+    );
+
+
+
+    const applyViewportInject = useCallback(() => {
+
+      if (injectMobileViewport) {
+
+        webRef.current?.injectJavaScript(OFFICIAL_SITE_AFTER_LOAD_INJECT);
+
+      }
+
+    }, [injectMobileViewport]);
+
+
+
+    if (!cacheReady || sessionToken <= 0 || !resolvedUrl) {
+
+      return (
+
+        <View style={styles.loadingWrap}>
+
+          <RaqatOrnamentSpinner size={48} />
+
+        </View>
+
+      );
+
+    }
+
+
+
+    return (
+
+      <View style={styles.root}>
+
+        {webError ? (
+
+          <View style={styles.errorWrap}>
+
+            <MaterialIcons name="public-off" size={38} color={colors.muted} />
+
+            <Text style={styles.errorText}>{webError}</Text>
+
+            <Pressable
+
+              onPress={hardReloadHome}
+
+              style={({ pressed }) => [styles.errorBtn, pressed && { opacity: 0.85 }]}
+
+              accessibilityRole="button"
+
+              accessibilityLabel={kk.common.retry}
+
+            >
+
+              <MaterialIcons name="refresh" size={19} color="#FFFFFF" />
+
+              <Text style={styles.errorBtnText}>{kk.common.retry}</Text>
+
+            </Pressable>
+
+          </View>
+
+        ) : isWeb ? (
+
+          React.createElement("iframe", {
+
+            key: webMountKey,
+
+            src: resolvedUrl,
+
+            title: title ?? resolvedUrl,
+
+            onLoad: finishLoad,
+
+            style: { width: "100%", height: "100%", border: 0, flex: 1 },
+
+          })
+
+        ) : (
+
+          <WebView
+
+            ref={webRef}
+
+            key={webMountKey}
+
+            source={webSource}
+
+            style={styles.web}
+
+            userAgent={userAgent}
+
+            javaScriptEnabled
+
+            domStorageEnabled
+
+            sharedCookiesEnabled
+
+            thirdPartyCookiesEnabled={Platform.OS === "android"}
+
+            cacheEnabled={false}
+
+            cacheMode="LOAD_NO_CACHE"
+
+            mixedContentMode="always"
+
+            allowsInlineMediaPlayback
+
+            mediaPlaybackRequiresUserAction={false}
+
+            allowsFullscreenVideo
+
+            setSupportMultipleWindows={false}
+
+            nestedScrollEnabled
+
+            androidLayerType="hardware"
+
+            pullToRefreshEnabled
+
+            refreshing={pullRefreshing}
+
+            onRefresh={softReloadPage}
+
+            onShouldStartLoadWithRequest={shouldStartLoad}
+
+            onNavigationStateChange={onNavigationStateChange}
+
+            onMessage={onWebMessage}
+
+            injectedJavaScriptBeforeContentLoaded={
+
+              injectMobileViewport ? OFFICIAL_SITE_BEFORE_LOAD_INJECT : OFFICIAL_SITE_SW_CACHE_PURGE_INJECT
+
+            }
+
+            injectedJavaScript={injectMobileViewport ? OFFICIAL_SITE_AFTER_LOAD_INJECT : undefined}
+
+            onLoadEnd={() => {
+
+              applyViewportInject();
+
+              finishLoad();
+
+            }}
+
+            onError={markError}
+
+            onHttpError={markError}
+
+            onRenderProcessGone={() => {
+
+              markError();
+
+              return true;
+
+            }}
+
+            onContentProcessDidTerminate={markError}
+
+            startInLoadingState
+
+            renderLoading={() => (
+
+              <View style={styles.loadingWrap}>
+
+                <RaqatOrnamentSpinner size={48} />
+
+              </View>
+
+            )}
+
+          />
+
+        )}
+
+        {webLoading && !webError ? (
+
+          <View style={styles.loadingWrap} pointerEvents="none">
+
+            <RaqatOrnamentSpinner size={48} />
+
+          </View>
+
+        ) : null}
+
+      </View>
+
+    );
+
+  }
+
+);
+
+
+
+/** @deprecated OfficialSiteFullWebView қолданыңыз */
+
+export const HalalDamuFullSiteWebView = OfficialSiteFullWebView;
+
+export type HalalDamuFullSiteWebViewHandle = OfficialSiteFullWebViewHandle;
+
+

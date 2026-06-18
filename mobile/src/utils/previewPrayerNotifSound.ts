@@ -4,9 +4,9 @@ import type { PrayerNotifSoundId } from "../storage/prefs";
 let active: Audio.Sound | null = null;
 let activeFadeTimer: ReturnType<typeof setInterval> | null = null;
 
-const FADE_IN_DURATION_MS = 12_000;
-const FADE_IN_STEPS = 24;
-const FADE_IN_START_VOLUME = 0.15;
+const FADE_IN_DURATION_MS = 4_000;
+const FADE_IN_STEPS = 16;
+const FADE_IN_START_VOLUME = 0.55;
 
 const BUNDLED: Record<Exclude<PrayerNotifSoundId, "off">, number> = {
   adhan_haramain: require("../../assets/sounds/prayer_azan_user_01.mp3"),
@@ -56,7 +56,7 @@ export async function previewPrayerNotifSound(id: PrayerNotifSoundId): Promise<v
       interruptionModeIOS: InterruptionModeIOS.DoNotMix,
       interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       shouldDuckAndroid: true,
-      staysActiveInBackground: false,
+      staysActiveInBackground: true,
       playThroughEarpieceAndroid: false,
     });
   } catch {

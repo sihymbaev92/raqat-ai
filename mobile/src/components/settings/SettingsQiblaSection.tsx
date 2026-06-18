@@ -5,13 +5,11 @@ import { SettingsSection, SettingsCard, SettingsRow, makeSettingsStyles } from "
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import { getQiblaMotionMode, setQiblaMotionMode, type QiblaMotionMode } from "../../storage/prefs";
-import { useQiblaMotion } from "../../context/QiblaSensorContext";
 
 type Props = { colors: ThemeColors; onOpenQibla: () => void };
 
 export function SettingsQiblaSection({ colors, onOpenQibla }: Props) {
   const styles = makeSettingsStyles(colors);
-  const { setMotionMode } = useQiblaMotion();
   const [mode, setMode] = useState<QiblaMotionMode>("balanced");
 
   const load = useCallback(async () => {
@@ -24,7 +22,6 @@ export function SettingsQiblaSection({ colors, onOpenQibla }: Props) {
 
   const pick = (m: QiblaMotionMode) => {
     setMode(m);
-    setMotionMode(m);
     void setQiblaMotionMode(m);
   };
 
@@ -42,18 +39,6 @@ export function SettingsQiblaSection({ colors, onOpenQibla }: Props) {
           >
             <Text style={[styles.chipTxt, mode === "balanced" && styles.chipTxtActive]}>
               {kk.settings.qiblaMotionBalanced}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.chip,
-              mode === "fast" && styles.chipActive,
-              pressed && { opacity: 0.9 },
-            ]}
-            onPress={() => pick("fast")}
-          >
-            <Text style={[styles.chipTxt, mode === "fast" && styles.chipTxtActive]}>
-              {kk.settings.qiblaMotionFast}
             </Text>
           </Pressable>
         </View>

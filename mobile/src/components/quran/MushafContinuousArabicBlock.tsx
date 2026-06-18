@@ -34,7 +34,7 @@ const MUSHAF_INTER_AYAH_GAP_QCOM = 18;
 type TajweedFlowWordPart = { text: string; rule?: TajweedRuleKey };
 type TajweedFlowWord = { text: string; parts: TajweedFlowWordPart[] };
 
-function tajweedFlowWords(taggedText: string | null | undefined): TajweedFlowWord[] {
+function tajweedFlowWords(taggedText: string | null | undefined, plainText?: string): TajweedFlowWord[] {
   const raw = (taggedText ?? "").trim();
   if (!raw.includes("[")) return [];
 
@@ -66,7 +66,39 @@ function tajweedFlowWords(taggedText: string | null | undefined): TajweedFlowWor
   }
   flush();
 
-  return out;
+  const plainWords = (plainText ?? "").trim().split(/\s+/u).filter(Boolean);
+  if (!plainWords.length) return out;
+
+  return plainWords.map((plainWord, idx) => {
+    const taggedWord = out[idx];
+    if (!taggedWord?.parts.length) return { text: plainWord, parts: [{ text: plainWord }] };
+    if (taggedWord.text === plainWord) return taggedWord;
+
+    const chars = Array.from(plainWord);
+    let cursor = 0;
+    const mappedParts: TajweedFlowWordPart[] = [];
+    for (const part of taggedWord.parts) {
+      if (cursor >= chars.length) break;
+      const take = Math.max(1, Array.from(part.text).length);
+      const textPart = chars.slice(cursor, cursor + take).join("");
+      cursor += take;
+      if (textPart) mappedParts.push(part.rule ? { text: textPart, rule: part.rule } : { text: textPart });
+    }
+    if (cursor < chars.length) {
+      mappedParts.push({ text: chars.slice(cursor).join("") });
+    }
+    return { text: plainWord, parts: mappedParts.length ? mappedParts : [{ text: plainWord }] };
+  });
+}
+
+function plainFlowWords(plainText: string): string[] {
+  return plainText.split(/\s+/u).filter(Boolean);
+}
+
+function tajweedOrPlainFlowWords(taggedText: string | null | undefined, plainText: string): Array<string | TajweedFlowWord> {
+  const coloredWords = tajweedFlowWords(taggedText, plainText);
+  if (coloredWords.length) return coloredWords;
+  return plainFlowWords(plainText);
 }
 
 export type MushafContinuousArabicHandle = {
@@ -130,7 +162,7 @@ function segmentArabicStyle(
   });
 }
 
-/** Мұсаф скролл: барлық аят арабы бір үздіксін RTL мәтінде (кітап ағыны). */
+/** Мұсаф скролл: барлық аят арабы бір үздіксіз RTL мәтінде (кітап ағыны). */
 export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHandle, Props>(
   function MushafContinuousArabicBlock(
     {
@@ -302,9 +334,10 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
         : MUSHAF_INTER_AYAH_GAP_QCOM
       : MUSHAF_INTER_AYAH_GAP_DEFAULT;
     const centerFlowInset = centerFlow ? (compactFlow ? 2 : Math.max(6, Math.round(fs * 0.2))) : 0;
-    // Tajweed coloring already splits text into nested colored spans; splitting
-    // again by word makes Hatim pages look scattered. Keep each ayah together.
+    // Tajweed tags must stay inside one ayah text run; word-flow splits the
+    // ayah into many pressables and makes the Hatim page look scattered.
     const useWordFlow = centerFlow && !showTajweedColors;
+    const useTajweedAyahFlow = centerFlow && showTajweedColors;
     const markerH = Math.round(
       compactFlow
         ? Math.min(22, Math.max(16, lh * 0.46))
@@ -347,10 +380,9 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
           lineHeight: safeWordLineHeight,
         };
         const ayahNumberColor = arabicStyle.color ?? effectiveMushafAyahTxt.color ?? markerInk;
-        const coloredWords = showTajweedColors ? tajweedFlowWords(item.textTajweed) : [];
-        const words: Array<string | TajweedFlowWord> = coloredWords.length
-          ? coloredWords
-          : plain.split(/\s+/).filter(Boolean);
+        const words = showTajweedColors
+          ? tajweedOrPlainFlowWords(item.textTajweed, plain)
+          : plainFlowWords(plain);
         for (let wi = 0; wi < words.length; wi++) {
           const word = words[wi]!;
           flowItems.push(
@@ -368,19 +400,26 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
               }}
             >
               <Text style={wordStyle} suppressHighlighting>
-                {typeof word === "string"
-                  ? word
-                  : word.parts.map((part, pi) => (
-                      <Text
-                        key={`tj-${surahNumber}:${ayahN}:${wi}:${pi}`}
-                        style={[
-                          wordStyle,
-                          part.rule ? { color: tajweedColorForRule(part.rule, isDark) } : null,
-                        ]}
-                      >
-                        {part.text}
-                      </Text>
-                    ))}
+                {typeof word === "string" ? (
+                  word
+                ) : (
+                  <Text
+                    style={[
+                      wordStyle,
+                      (() => {
+                        const visibleRule = word.parts.find(
+                          (part) =>
+                            part.rule && part.rule !== "h" && part.rule !== "l" && part.rule !== "s"
+                        )?.rule;
+                        return visibleRule
+                          ? { color: tajweedColorForRule(visibleRule, isDark) }
+                          : null;
+                      })(),
+                    ]}
+                  >
+                    {word.text}
+                  </Text>
+                )}
               </Text>
             </Pressable>
           );
@@ -454,6 +493,14 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
         isPlay,
         isLoad
       );
+      const displayArabicStyle: TextStyle = useTajweedAyahFlow
+        ? {
+            ...arabicStyle,
+            textAlign: "right",
+            writingDirection: "rtl",
+            letterSpacing: 0,
+          }
+        : arabicStyle;
       const ayahNumberColor = arabicStyle.color ?? effectiveMushafAyahTxt.color ?? markerInk;
 
       segments.push(
@@ -470,10 +517,12 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
             maxWidth: "100%",
             width: centerFlow ? "100%" : undefined,
             alignSelf: centerFlow ? "stretch" : undefined,
-            flexShrink: centerFlow ? 0 : 0,
+            flexShrink: 0,
             flexGrow: 0,
             marginBottom: centerFlow
-              ? Math.max(7, Math.round(interAyahGap * 0.6))
+              ? useTajweedAyahFlow
+                ? Math.max(2, Math.round(interAyahGap * 0.22))
+                : Math.max(7, Math.round(interAyahGap * 0.6))
               : Math.max(4, Math.round(interAyahGap * 0.5)),
           }}
         >
@@ -487,7 +536,7 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
             style={{
               flexDirection: "row",
               direction: "rtl",
-              flexWrap: centerFlow ? "wrap" : "nowrap",
+              flexWrap: useTajweedAyahFlow ? "nowrap" : centerFlow ? "wrap" : "nowrap",
               alignItems: centerFlow ? "stretch" : "flex-start",
               justifyContent: "flex-start",
               width: centerFlow ? "100%" : undefined,
@@ -498,14 +547,20 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
           >
             <Text
               style={[
-                arabicStyle,
+                displayArabicStyle,
                 {
-                  flexShrink: 0,
+                  flexShrink: useTajweedAyahFlow ? 1 : 0,
                   width: centerFlow ? "100%" : undefined,
                   minWidth: 0,
                   maxWidth: "100%",
-                  textAlign: centerFlow ? "justify" : arabicStyle.textAlign,
-                  ...(centerFlow ? ({ textAlignLast: "justify" } as TextStyle) : null),
+                  textAlign: useTajweedAyahFlow
+                    ? "right"
+                    : centerFlow
+                      ? "justify"
+                      : arabicStyle.textAlign,
+                  ...(centerFlow && !useTajweedAyahFlow
+                    ? ({ textAlignLast: "justify" } as TextStyle)
+                    : null),
                 },
               ]}
               suppressHighlighting
@@ -515,22 +570,30 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
                 taggedText={showTajweedColors ? item.textTajweed : undefined}
                 showTajweedColors={showTajweedColors}
                 isDark={isDark}
-                baseStyle={arabicStyle}
+                baseStyle={displayArabicStyle}
+                nestedInText={useTajweedAyahFlow}
                 audioFocus={playingAyahInSurah === ayahN}
                 audioLoading={loadingAyahAudio === ayahN}
               />
+              {useTajweedAyahFlow ? (
+                <Text style={[displayArabicStyle, { color: ayahNumberColor, fontSize: Math.max(16, fs * 0.62) }]}>
+                  {` ﴿${toEasternArabicIndic(ayahN)}﴾`}
+                </Text>
+              ) : null}
               {isLoad ? (
                 <Text style={{ ...effectiveMushafAyahTxt, fontSize: Math.max(10, fs * 0.55), opacity: 0.75 }}> …</Text>
               ) : null}
             </Text>
-            <MushafAyahSvgMarker
-              label={toEasternArabicIndic(ayahN)}
-              stroke={markerStroke}
-              fill={markerFill}
-              textColor={ayahNumberColor}
-              height={markerH}
-              variant={centerFlow ? "qcom" : "default"}
-            />
+            {!useTajweedAyahFlow ? (
+              <MushafAyahSvgMarker
+                label={toEasternArabicIndic(ayahN)}
+                stroke={markerStroke}
+                fill={markerFill}
+                textColor={ayahNumberColor}
+                height={markerH}
+                variant={centerFlow ? "qcom" : "default"}
+              />
+            ) : null}
             {bookmarkHex ? (
               <Text
                 style={{

@@ -17,7 +17,7 @@
   <string name="widget_prayer_morning_label">Таң · Күн · Бесін</string>
   <string name="widget_prayer_morning_description">Таң, күн шығуы, бесін</string>
 
-  <string name="widget_prayer_evening_label">Аср · Шам · Құптан</string>
+  <string name="widget_prayer_evening_label">Екінті · Ақшам · Құптан</string>
   <string name="widget_prayer_evening_description">Екінті, ақшам, құптан</string>
 
   <string name="widget_prayer_twocol_label">Екі баған</string>
@@ -26,7 +26,7 @@
   <string name="widget_prayer_five_dual_label">5 парыз намаз</string>
   <string name="widget_prayer_five_dual_description">Бес парыз намаз — екі баған</string>
 
-  <string name="widget_prayer_home_strip_label">Басты бет намаз</string>
+  <string name="widget_prayer_home_strip_label">Намаз</string>
   <string name="widget_prayer_home_strip_description">Басты экрандағы сияқты: 5 намаз, келесі намаз санағы, құбыла</string>
 
   <string name="widget_qibla_a11y">Құбыла</string>

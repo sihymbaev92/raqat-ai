@@ -53,6 +53,8 @@ import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { fetchPlatformQuranSurah } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
+import { releaseBundledQuranReaderMemory } from "../services/bundledQuranReader";
+import { releaseBundledQuranTranslationsMemory } from "../services/quranOfflineTranslations";
 import { enrichAyahsFromBundledQuranDb } from "../services/quranKkBundledLookup";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
 import { juzForSurahAyah, QURAN_JUZ_STARTS, type QuranJuzStart } from "../data/quranJuzBoundaries";
@@ -129,6 +131,8 @@ import {
   getQuranArabicScriptEdition,
   getQuranReadingTheme,
   getQuranReaderShowArabic,
+  getQuranReaderShowMeaning,
+  getQuranReaderShowTranslit,
   QURAN_TAJWEED_COLORS_KEY,
   QURAN_READER_RECITER_KEY,
   QURAN_READER_ARABIC_FONT_KEY,
@@ -139,6 +143,8 @@ import {
   setQuranReaderNavMode,
   setQuranArabicScriptEdition,
   setQuranReaderShowArabic,
+  setQuranReaderShowMeaning,
+  setQuranReaderShowTranslit,
   setQuranReadingTheme,
   type AyahMarkerStyleId,
   type QuranReaderNavMode,
@@ -484,11 +490,15 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     let alive = true;
     (async () => {
       try {
-        const showArabic = await getQuranReaderShowArabic();
+        const [showArabic, showTranslit, showMeaning] = await Promise.all([
+          getQuranReaderShowArabic(),
+          getQuranReaderShowTranslit(),
+          getQuranReaderShowMeaning(),
+        ]);
         if (!alive) return;
         setShowReaderArabic(showArabic);
-        setShowReaderTranslit(true);
-        setShowReaderMeaning(true);
+        setShowReaderTranslit(showTranslit);
+        setShowReaderMeaning(showMeaning);
       } catch {
         /* ignore */
       }
@@ -601,6 +611,10 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         setAyahMarkerStyleIdState(m);
         setMushafDensityState(d);
       });
+      return () => {
+        releaseBundledQuranReaderMemory({ keepSurahList: true });
+        releaseBundledQuranTranslationsMemory();
+      };
     }, [])
   );
 
@@ -1005,9 +1019,11 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         setShowReaderArabic(value);
         void setQuranReaderShowArabic(value);
       } else if (layer === "translit") {
-        setShowReaderTranslit(true);
+        setShowReaderTranslit(value);
+        void setQuranReaderShowTranslit(value);
       } else {
-        setShowReaderMeaning(true);
+        setShowReaderMeaning(value);
+        void setQuranReaderShowMeaning(value);
       }
     },
     [showReaderArabic, showReaderMeaning, showReaderTranslit]
@@ -1587,6 +1603,11 @@ export function QuranSurahScreen({ route, navigation }: Props) {
             data={mushafPages}
             keyExtractor={(p) => p.key}
             {...mushafBookPagerListProps}
+            initialNumToRender={1}
+            maxToRenderPerBatch={1}
+            windowSize={3}
+            updateCellsBatchingPeriod={80}
+            removeClippedSubviews={Platform.OS === "android"}
             getItemLayout={(_, index) => ({
               length: mushafPageWidth,
               offset: mushafPageWidth * index,
@@ -1877,8 +1898,9 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         onPlayRepeat={handlePlayRepeat}
         reciterEdition={reciterEdition}
         onPickReciter={(edition) => {
-          setReciterEdition(edition);
-          void AsyncStorage.setItem(QURAN_READER_RECITER_KEY, edition);
+          const next = normalizeReciterEdition(edition);
+          setReciterEdition(next);
+          void AsyncStorage.setItem(QURAN_READER_RECITER_KEY, next);
         }}
         onCopy={(item) => void copyAyahItem(item)}
         onShare={(item) => void shareAyahItem(item)}

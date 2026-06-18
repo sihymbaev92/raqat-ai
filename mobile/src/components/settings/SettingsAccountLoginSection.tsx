@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { AppleSignInButton, GoogleSignInBlock } from "../AccountLoginModal";
+import { AppleSignInButton, GoogleSignInBlock, isGoogleSignInConfigured } from "../AccountLoginModal";
 import { PhoneAuthBlock } from "../PhoneAuthBlock";
 import { SettingsCard } from "./settingsUi";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
@@ -55,6 +55,9 @@ export function SettingsAccountLoginSection({
 }: Props) {
   const styles = makeStyles(colors);
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const showGoogle = isGoogleSignInConfigured();
+  const showApple = Platform.OS === "ios";
+  const showPasswordLogin = __DEV__;
 
   const clearMessages = () => {
     onOAuthMessage(null);
@@ -93,27 +96,87 @@ export function SettingsAccountLoginSection({
 
       <Text style={styles.compactHint}>{kk.settings.accountLoginCompactHint}</Text>
 
-      <View style={styles.oauthRow}>
-        <View style={styles.oauthCell}>
-          <GoogleSignInBlock
-            busy={loginBusy}
-            compact
-            onError={handleOAuthError}
-            onSuccess={handleOAuthSuccess}
-          />
+      {showGoogle || showApple ? (
+        <View style={styles.oauthRow}>
+          {showGoogle ? (
+            <View style={styles.oauthCell}>
+              <GoogleSignInBlock
+                busy={loginBusy}
+                compact
+                onError={handleOAuthError}
+                onSuccess={handleOAuthSuccess}
+              />
+            </View>
+          ) : null}
+          {showApple ? (
+            <View style={styles.oauthCell}>
+              <AppleSignInButton
+                busy={loginBusy}
+                compact
+                onError={handleOAuthError}
+                onSuccess={handleOAuthSuccess}
+              />
+            </View>
+          ) : null}
         </View>
-        {Platform.OS === "ios" ? (
-          <View style={styles.oauthCell}>
-            <AppleSignInButton
-              busy={loginBusy}
-              compact
-              onError={handleOAuthError}
-              onSuccess={handleOAuthSuccess}
+      ) : null}
+
+      {showPasswordLogin ? (
+        <>
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerTxt}>{kk.settings.accountPasswordShort}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={[styles.input, styles.inputHalf]}
+              placeholder={kk.settings.accountUsername}
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={loginUser}
+              onChangeText={onLoginUserChange}
+              editable={!loginBusy}
+            />
+            <TextInput
+              style={[styles.input, styles.inputHalf]}
+              placeholder={kk.settings.accountPassword}
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={loginPass}
+              onChangeText={onLoginPassChange}
+              editable={!loginBusy}
             />
           </View>
-        ) : null}
-      </View>
 
+          {!platformPid ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && { opacity: 0.88 },
+                (loginBusy || !loginUser.trim() || !loginPass) && { opacity: 0.55 },
+              ]}
+              onPress={onPasswordLogin}
+              disabled={loginBusy || !loginUser.trim() || !loginPass}
+              accessibilityRole="button"
+              accessibilityLabel={kk.settings.accountLogin}
+            >
+              {loginBusy ? (
+                <RaqatOrnamentSpinner size={24} />
+              ) : (
+                <Text style={styles.primaryBtnTxt}>{kk.settings.accountLogin}</Text>
+              )}
+            </Pressable>
+          ) : null}
+        </>
+      ) : null}
+
+      {/*
+        Телефон кіру public UI-да қалады; құпиясөз/әкімші жолы dev-only.
+        Бұл release-та жартылай бапталған admin форманы көрсетпейді.
+      */}
       <Pressable
         onPress={() => setPhoneOpen((o) => !o)}
         style={({ pressed }) => [styles.expandRow, pressed && { opacity: 0.92 }]}
@@ -137,54 +200,6 @@ export function SettingsAccountLoginSection({
           onSuccess={handleOAuthSuccess}
           onError={handleOAuthError}
         />
-      ) : null}
-
-      <View style={styles.divider}>
-        <View style={styles.dividerLine} />
-        <Text style={styles.dividerTxt}>{kk.settings.accountPasswordShort}</Text>
-        <View style={styles.dividerLine} />
-      </View>
-
-      <View style={styles.passwordRow}>
-        <TextInput
-          style={[styles.input, styles.inputHalf]}
-          placeholder={kk.settings.accountUsername}
-          placeholderTextColor={colors.muted}
-          autoCapitalize="none"
-          autoCorrect={false}
-          value={loginUser}
-          onChangeText={onLoginUserChange}
-          editable={!loginBusy}
-        />
-        <TextInput
-          style={[styles.input, styles.inputHalf]}
-          placeholder={kk.settings.accountPassword}
-          placeholderTextColor={colors.muted}
-          secureTextEntry
-          value={loginPass}
-          onChangeText={onLoginPassChange}
-          editable={!loginBusy}
-        />
-      </View>
-
-      {!platformPid ? (
-        <Pressable
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            pressed && { opacity: 0.88 },
-            (loginBusy || !loginUser.trim() || !loginPass) && { opacity: 0.55 },
-          ]}
-          onPress={onPasswordLogin}
-          disabled={loginBusy || !loginUser.trim() || !loginPass}
-          accessibilityRole="button"
-          accessibilityLabel={kk.settings.accountLogin}
-        >
-          {loginBusy ? (
-            <RaqatOrnamentSpinner size={24} />
-          ) : (
-            <Text style={styles.primaryBtnTxt}>{kk.settings.accountLogin}</Text>
-          )}
-        </Pressable>
       ) : null}
 
       {oauthMsg ? <Text style={styles.warn}>{oauthMsg}</Text> : null}

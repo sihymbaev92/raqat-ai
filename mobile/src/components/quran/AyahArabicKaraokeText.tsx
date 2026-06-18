@@ -10,6 +10,8 @@ type Props = {
   showTajweedColors: boolean;
   isDark: boolean;
   baseStyle: TextStyle;
+  /** Ата-ана `<Text>` ішінде — тәжуид үшін қосарланған Text қабығын қоймау. */
+  nestedInText?: boolean;
   /** Осы аят үшін дыбыс жүктелген (ойнап тұрған немесе тынытылған) */
   audioFocus: boolean;
   /** Жүктелу — караоке режимін көрсетпейміз */
@@ -26,6 +28,7 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
   showTajweedColors,
   isDark,
   baseStyle,
+  nestedInText = false,
   audioFocus,
   audioLoading,
 }: Props) {
@@ -44,7 +47,15 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
 
   if (!useKaraoke) {
     if (showTajweedColors && (taggedText ?? "").includes("[")) {
-      return <TajweedColoredArabicText taggedText={taggedText!} baseStyle={baseStyle} isDark={isDark} />;
+      return (
+        <TajweedColoredArabicText
+          taggedText={taggedText!}
+          plainText={plainText}
+          baseStyle={baseStyle}
+          isDark={isDark}
+          nestedInText={nestedInText}
+        />
+      );
     }
     return <Text style={baseStyle}>{plainText}</Text>;
   }

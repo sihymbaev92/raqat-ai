@@ -97,8 +97,8 @@ export function MushafSurahHeader({
                   ]}
                   accessibilityRole="header"
                   numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.55}
+                  adjustsFontSizeToFit={false}
+                  minimumFontScale={1}
                   allowFontScaling={false}
                 >
                   {surahArabicTitleLine}
@@ -122,8 +122,8 @@ export function MushafSurahHeader({
                     ]}
                     accessibilityRole="header"
                     numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.55}
+                    adjustsFontSizeToFit={false}
+                    minimumFontScale={1}
                     allowFontScaling={false}
                   >
                     {surahArabicTitleLine}

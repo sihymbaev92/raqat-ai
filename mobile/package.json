@@ -1,6 +1,6 @@
 {
   "name": "raqat-mobile",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -29,11 +29,13 @@
     "halal:seed:build": "python ../scripts/build_halal_products_seed_json.py",
     "build:apk": "node scripts/build-apk-node.cjs release",
     "qa:android:release": "powershell -ExecutionPolicy Bypass -File scripts/android-release-smoke.ps1",
+    "qa:azan:locked": "powershell -ExecutionPolicy Bypass -File scripts/azan-locked-screen-qa.ps1 -GrantExactAlarm -WhitelistBattery",
     "build:ios": "powershell -ExecutionPolicy Bypass -File scripts/build-ios-eas.ps1",
     "build:aab": "node scripts/build-apk-node.cjs aab",
     "build:apk:debug": "node scripts/build-apk-node.cjs debug",
     "release:play:check": "powershell -ExecutionPolicy Bypass -File scripts/validate-play-release.ps1",
-    "size:assets": "python scripts/print-asset-size-report.py",
+    "size:assets": "node scripts/print-asset-size-report.cjs",
+    "size:assets:budget": "node scripts/print-asset-size-report.cjs --max-total-mb 400",
     "eas:apk": "npx --yes eas-cli build --platform android --profile preview --non-interactive",
     "eas:ios": "npx --yes eas-cli build --platform ios --profile preview",
     "eas:ios:ipa": "npx --yes eas-cli build --platform ios --profile ios-device",
@@ -51,7 +53,7 @@
     "export:scraped-hadith-muftyat": "cd .. && python scripts/export_scraped_hadith_mobile.py",
     "extract:hadith-quotes": "cd .. && python scripts/extract_muftyat_hadith_quotes_mobile.py",
     "fill:hadith-en-ru": "cd .. && bash scripts/run_hadith_fawaz_en_ru.sh",
-    "hadith:quality": "cd .. && .\\.venv\\Scripts\\python.exe scripts\\hadith_quality_gate.py",
+    "hadith:quality": "cd .. && python scripts\\hadith_quality_gate.py",
     "hadith:normalize": "cd .. && .\\.venv\\Scripts\\python.exe scripts\\normalize_hadith_kk_terms.py",
     "e2e:build:emu": "detox build -c android.emu.debug",
     "e2e:test:emu": "detox test -c android.emu.debug",
@@ -76,7 +78,7 @@
     "expo-asset": "~12.0.13",
     "expo-auth-session": "~7.0.11",
     "expo-av": "~16.0.8",
-    "expo-background-fetch": "~14.0.9",
+    "expo-background-task": "~1.0.10",
     "expo-blur": "~15.0.8",
     "expo-build-properties": "~1.0.10",
     "expo-camera": "~17.0.10",
@@ -89,8 +91,10 @@
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
     "expo-location": "~19.0.8",
+    "expo-network": "~8.0.8",
     "expo-notifications": "~0.32.17",
     "expo-screen-orientation": "~9.0.9",
+    "expo-secure-store": "~15.0.8",
     "expo-sensors": "~15.0.8",
     "expo-speech": "14.0.8",
     "expo-status-bar": "~3.0.9",
@@ -122,7 +126,9 @@
   },
   "expo": {
     "install": {
-      "exclude": ["react-native-worklets"]
+      "exclude": [
+        "react-native-worklets"
+      ]
     }
   }
 }

@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { FlatList, Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RasterImage } from "@/ui/RasterImage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -18,14 +18,8 @@ import {
   getTraditionTopicById,
   traditionCategoryLabel,
   traditionHeroImage,
+  type TraditionTopic,
 } from "../content/traditionTopicsCatalog";
-import {
-  getTraditionPracticeLanes,
-  getTraditionUnderstandingSteps,
-  traditionLaneCategoryLabel,
-  type TraditionUnderstandingStep,
-  type TraditionPracticeLane,
-} from "../content/traditionSystemGuide";
 import { TraditionOrnamentDivider } from "../components/tradition/TraditionRedesignCards";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { kk } from "../i18n/kk";
@@ -33,60 +27,8 @@ import { traditionTopOrnament } from "../theme/ornamentAssets";
 
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
 type Route = RouteProp<MoreStackParamList, "KazakhTradition">;
-type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
-type HubCard = {
-  id: string;
-  title: string;
-  subtitle: string;
-  icon: IconName;
-  accent: string;
-  read: (nav: Nav) => void;
-};
-
-const LANE_ICONS: Record<TraditionPracticeLane["id"], IconName> = {
-  family: "family-restroom",
-  ceremony: "celebration",
-  social: "groups",
-  faith: "mosque",
-};
-
-const HUB_CARDS: HubCard[] = [
-  {
-    id: "traditions",
-    title: "Салт-Дәстүрлер",
-    subtitle: "Ата-баба мұрасы, тәрбие",
-    icon: "diversity-3",
-    accent: "#218652",
-    read: (nav) => nav.navigate("KazakhTradition", { showTopics: true }),
-  },
-  {
-    id: "books",
-    title: "Кітаптар",
-    subtitle: "Дін оқулықтары, дәстүр",
-    icon: "auto-stories",
-    accent: "#C39A32",
-    read: (nav) => nav.navigate("KazakhTraditionBooks", { scope: "catalog", shelf: "all" }),
-  },
-  {
-    id: "genealogy",
-    title: "Шежіре",
-    subtitle: "Жеті ата, ру ағашы",
-    icon: "account-tree",
-    accent: "#6B7A2A",
-    read: (nav) => nav.navigate("GenealogyClans"),
-  },
-  {
-    id: "great-words",
-    title: "Асыл сөздер",
-    subtitle: "Абай, нақыл, өсиет",
-    icon: "format-quote",
-    accent: "#8B5E2E",
-    read: (nav) => nav.navigate("KazakhGreatWords"),
-  },
-];
-
-const FEATURED_TOPIC_IDS = ["bata-beru", "qonaq-kutu", "jeti-ata", "asar", "tusaukeser", "besikke-salu"];
+const FEATURED_TOPIC_IDS = ["bata-beru", "qonaq-kutu", "asar", "tusaukeser", "besikke-salu"];
 
 export function KazakhTraditionScreen() {
   const { isDark } = useAppTheme();
@@ -97,11 +39,10 @@ export function KazakhTraditionScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const topics = useMemo(() => getTraditionTopics(), []);
-  const practiceLanes = useMemo(() => getTraditionPracticeLanes(topics), [topics]);
-  const understandingSteps = useMemo(() => getTraditionUnderstandingSteps(), []);
   const [activeCategory, setActiveCategory] = useState<TraditionTopicCategory | "all">("all");
   const [showTopicList, setShowTopicList] = useState(false);
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
     const category = route.params?.scrollToCategory;
@@ -131,10 +72,10 @@ export function KazakhTraditionScreen() {
   );
 
   const featuredTopics = useMemo(
-    () => FEATURED_TOPIC_IDS.map((topicId) => getTraditionTopicById(topicId)).filter(Boolean).slice(0, 6),
+    () => FEATURED_TOPIC_IDS.map((topicId) => getTraditionTopicById(topicId)).filter(Boolean).slice(0, 4),
     []
   );
-  const queryNorm = query.trim().toLocaleLowerCase("kk-KZ");
+  const queryNorm = deferredQuery.trim().toLocaleLowerCase("kk-KZ");
   const filteredTopics = useMemo(() => {
     const base =
       activeCategory === "all" || showTopicList
@@ -154,11 +95,7 @@ export function KazakhTraditionScreen() {
     });
   }, [activeCategory, queryNorm, showTopicList, topics]);
 
-  const openTopic = (topicId: string) => nav.navigate("KazakhTraditionTopicDetail", { topicId });
-  const openLane = (lane: TraditionPracticeLane) => {
-    setActiveCategory(lane.category);
-    setShowTopicList(false);
-  };
+  const openTopic = useCallback((topicId: string) => nav.navigate("KazakhTraditionTopicDetail", { topicId }), [nav]);
   const visibleTopics = filteredTopics;
   const queryActive = showTopicList || activeCategory !== "all" || Boolean(queryNorm);
   const topicListTitle = queryNorm ? "Іздеу нәтижелері" : showTopicList ? "Салт-дәстүрлер" : "Іздеу нәтижелері";
@@ -175,356 +112,181 @@ export function KazakhTraditionScreen() {
       </View>
     ) : null;
 
-  return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={[styles.content, { paddingTop: Math.max(insets.top, 10) }]}
-      keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator
-    >
-      <View style={styles.heroSection}>
-        <View style={styles.heroOrnamentTop} pointerEvents="none">
-          <RasterImage
-            source={traditionTopOrnament}
-            style={styles.heroOrnament}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-            accessibilityLabel={tr(kk.features.traditionTitle)}
-          />
-        </View>
-        <View style={styles.heroCard}>
-          <View style={styles.heroMedia}>
-            <RasterImage source={traditionHeroImage} style={styles.heroImage} resizeMode="cover" />
-            <View style={styles.heroOverlay} />
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.searchCard}>
-        <View style={styles.searchIcon}>
-          <MaterialIcons name="search" size={18} color={palette.goldMuted} />
-        </View>
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={tr("Дәстүр, әдеп, бата іздеу")}
-          placeholderTextColor={palette.muted}
-          style={styles.searchInput}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-        />
-        {query ? (
-          <Pressable oyuBackdrop={false} onPress={() => setQuery("")} hitSlop={8}>
-            <MaterialIcons name="close" size={18} color={palette.muted} />
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statPill}>
-          <Text style={styles.statNo}>{topics.length}</Text>
-          <Text style={styles.statLabel}>{tr("тақырып")}</Text>
-        </View>
-        <View style={styles.statPill}>
-          <Text style={styles.statNo}>{practiceLanes.length}</Text>
-          <Text style={styles.statLabel}>{tr("бағыт")}</Text>
-        </View>
-        <Pressable
-          oyuBackdrop={false}
-          onPress={() => {
-            setActiveCategory("all");
-            setShowTopicList(true);
-          }}
-          style={({ pressed }) => [styles.allTopicsPill, pressed && { opacity: 0.9 }]}
-          accessibilityRole="button"
-          accessibilityLabel={tr("Барлық салт-дәстүрлер")}
-        >
-          <Text style={styles.allTopicsText}>{tr("Барлығын ашу")}</Text>
-          <MaterialIcons name="arrow-forward" size={15} color={palette.buttonGoldText} />
-        </Pressable>
-      </View>
-
-      {queryActive ? (
-        <View style={styles.filterPill}>
-          <Text style={styles.filterPillText}>{tr(activeCategoryLabel)}</Text>
-          <Pressable
-            oyuBackdrop={false}
-            onPress={() => {
-              setActiveCategory("all");
-              setShowTopicList(false);
-              setQuery("");
-            }}
-            hitSlop={8}
-          >
-            <MaterialIcons name="close" size={16} color={palette.goldMuted} />
-            </Pressable>
-          </View>
-      ) : null}
-
-      {!queryActive ? (
-        <>
-          <TraditionUnderstandingPathCard
-            steps={understandingSteps}
-            lanes={practiceLanes}
-            hubCards={HUB_CARDS}
-            palette={palette}
-            tr={tr}
-            onOpenLane={openLane}
-            onOpenTopic={openTopic}
-            nav={nav}
-          />
-          <View style={styles.featuredBlock}>
-            <Text style={styles.resultsTitle}>{tr("Бастауға ұсынылған")}</Text>
-            <Text style={styles.featuredHint}>
-              {tr("Алдымен көп қолданылатын, дінмен шегі анық тақырыптарды қарап шығыңыз.")}
-            </Text>
-            <View style={styles.featuredGrid}>
-              {featuredTopics.map((topic) =>
-                topic ? (
-                  <Pressable
-                    key={topic.id}
-                    oyuBackdrop={false}
-                    onPress={() => openTopic(topic.id)}
-                    style={({ pressed }) => [styles.featuredTopicCard, pressed && { opacity: 0.92 }]}
-                    accessibilityRole="button"
-                    accessibilityLabel={tr(topic.title)}
-                  >
-                    <Text style={styles.featuredTopicTitle} numberOfLines={1}>{tr(topic.title)}</Text>
-                    <Text style={styles.featuredTopicSub} numberOfLines={2}>{tr(topic.subtitle)}</Text>
-                    <View style={styles.featuredTopicFoot}>
-                      <Text style={styles.featuredTopicMeta} numberOfLines={1}>
-                        {topic.categories.map((c) => tr(traditionCategoryLabel(c))).join(" · ")}
-                      </Text>
-                      <MaterialIcons name="chevron-right" size={17} color={palette.goldMuted} />
-                    </View>
-                  </Pressable>
-                ) : null
-              )}
-            </View>
-          </View>
-        </>
-      ) : (
-        <>
-          <Text style={styles.resultsTitle}>{tr(topicListTitle)}</Text>
-          {visibleTopics.map((topic) => (
-          <Pressable
-              key={topic.id}
-            oyuBackdrop={false}
-              onPress={() => openTopic(topic.id)}
-              style={({ pressed }) => [styles.resultRow, pressed && { opacity: 0.92 }]}
-            >
-              <View style={styles.resultText}>
-                <Text style={styles.resultTitle}>{tr(topic.title)}</Text>
-                <Text style={styles.resultSub} numberOfLines={2}>{tr(topic.subtitle)}</Text>
-      </View>
-              <MaterialIcons name="chevron-right" size={20} color={palette.muted} />
-        </Pressable>
-          ))}
-          {!visibleTopics.length ? <Text style={styles.empty}>{tr("Ештеңе табылмады")}</Text> : null}
-        </>
-      )}
-
-      <TraditionOrnamentDivider palette={palette} />
-      <View style={styles.thoughtCard}>
-        <View style={styles.thoughtHead}>
-          <View style={styles.thoughtLine} />
-          <Text style={styles.thoughtTitle}>{tr("Бүгінгі Ой")}</Text>
-          <View style={styles.thoughtLine} />
-      </View>
-        <Text style={styles.thoughtText}>
-          {tr("“Мейірімділік - дінің де, дәстүрің де өзегі”")}
-        </Text>
-        <Text style={styles.thoughtAuthor}>Шәкәрім Құдайбердіұлы</Text>
-      </View>
-      {renderAutoTranslateBanner()}
-      </ScrollView>
-  );
-}
-
-function TraditionUnderstandingPathCard({
-  steps,
-  lanes,
-  hubCards,
-  palette,
-  tr,
-  onOpenLane,
-  onOpenTopic,
-  nav,
-}: {
-  steps: TraditionUnderstandingStep[];
-  lanes: TraditionPracticeLane[];
-  hubCards: HubCard[];
-  palette: TraditionKazakhPalette;
-  tr: (text: string) => string;
-  onOpenLane: (lane: TraditionPracticeLane) => void;
-  onOpenTopic: (topicId: string) => void;
-  nav: Nav;
-}) {
-  const styles = useMemo(() => makeStyles(palette), [palette]);
-  return (
-    <View style={styles.systemCard}>
-      <View style={styles.systemHead}>
-        <View style={styles.systemIcon}>
-          <MaterialIcons name="route" size={20} color={palette.goldMuted} />
-        </View>
-        <View style={styles.systemHeadText}>
-          <Text style={styles.systemEyebrow}>{tr("Салт-дәстүр ішіндегі оқу бағыты")}</Text>
-          <Text style={styles.systemTitle}>{tr(kk.features.traditionGuide.systemPracticeTitle)}</Text>
-          <Text style={styles.systemSub}>{tr(kk.features.traditionGuide.systemPracticeSub)}</Text>
-        </View>
-      </View>
-      <View style={styles.systemFormula}>
-        <Text style={styles.systemFormulaText}>
-          {tr("Ниет")} <Text style={styles.systemFormulaArrow}>→</Text> {tr("дінмен өлшеу")}{" "}
-          <Text style={styles.systemFormulaArrow}>→</Text> {tr("шегін сақтау")}{" "}
-          <Text style={styles.systemFormulaArrow}>→</Text> {tr("отбасына бейімдеу")}
-        </Text>
-      </View>
-
-      <View style={styles.systemBlock}>
-        <Text style={styles.systemBlockTitle}>{tr("Түсіну қадамдары")}</Text>
-        <View style={styles.stepGrid}>
-          {steps.map((step, index) => (
-            <View key={step.id} style={styles.stepCard}>
-              <View style={styles.stepHead}>
-                <View style={styles.checkNo}>
-                  <Text style={styles.checkNoText}>{index + 1}</Text>
-                </View>
-                <Text style={styles.stepTitle}>{tr(step.title)}</Text>
-              </View>
-              <Text style={styles.stepBody}>{tr(step.body)}</Text>
-              <Text style={styles.stepAction}>{tr(step.action)}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.systemBlock}>
-        <Text style={styles.systemBlockTitle}>{tr("Төрт бағыт")}</Text>
-        <Text style={styles.systemBlockSub}>
-          {tr("Әр бағытта алдымен мәнін оқыңыз, кейін шариғи шегін қарап, ең соңында отбасыға қауіпсіз қолдану жолын таңдаңыз.")}
-        </Text>
-        <View style={styles.unifiedLaneList}>
-          {lanes.map((lane) => (
-            <TraditionPracticeLaneRow
-              key={lane.id}
-              lane={lane}
-              palette={palette}
-              tr={tr}
-              onPress={() => onOpenLane(lane)}
-              onOpenTopic={onOpenTopic}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.systemBlock}>
-        <Text style={styles.systemBlockTitle}>{tr("Жалғастыру")}</Text>
-        <Text style={styles.systemBlockSub}>
-          {tr("Дәстүрді оқыңыз, кітаппен нақтылаңыз, шежіремен байланыстырыңыз, асыл сөзбен бекітіңіз.")}
-        </Text>
-        <View style={styles.pathShortcutGrid}>
-          {hubCards.map((card) => (
-            <HubFeatureCard key={card.id} card={card} palette={palette} nav={nav} tr={tr} />
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function HubFeatureCard({
-  card,
-  palette,
-  nav,
-  tr,
-}: {
-  card: HubCard;
-  palette: TraditionKazakhPalette;
-  nav: Nav;
-  tr: (text: string) => string;
-}) {
-  const styles = useMemo(() => makeStyles(palette), [palette]);
-  return (
-              <Pressable
-                oyuBackdrop={false}
-      onPress={() => card.read(nav)}
-                accessibilityRole="button"
-      accessibilityLabel={tr(card.title)}
-      style={({ pressed }) => [styles.featureCard, pressed && { opacity: 0.9 }]}
-              >
-      <View style={[styles.featureIconWrap, { borderColor: card.accent }]}>
-        <MaterialIcons name={card.icon} size={22} color={card.accent} />
-        <View style={[styles.featureIconDot, { backgroundColor: card.accent }]} />
-      </View>
-      <View style={styles.featureBody}>
-        <Text style={styles.featureTitle} numberOfLines={2}>{tr(card.title)}</Text>
-        <Text style={styles.featureSub} numberOfLines={2}>{tr(card.subtitle)}</Text>
-        <View style={[styles.featureArrow, { backgroundColor: card.accent }]}>
-          <MaterialIcons name="chevron-right" size={16} color="#FFFFFF" />
-        </View>
-      </View>
-          </Pressable>
-  );
-}
-
-function TraditionPracticeLaneRow({
-  lane,
-  palette,
-  tr,
-  onPress,
-  onOpenTopic,
-}: {
-  lane: TraditionPracticeLane;
-  palette: TraditionKazakhPalette;
-  tr: (text: string) => string;
-  onPress: () => void;
-  onOpenTopic: (topicId: string) => void;
-}) {
-  const styles = useMemo(() => makeStyles(palette), [palette]);
-  const topics = lane.topicIds
-    .map((topicId) => getTraditionTopicById(topicId))
-    .filter(Boolean)
-    .slice(0, 3);
-  return (
-    <View style={styles.laneRowCard}>
+  const renderTopicResult = useCallback(
+    ({ item: topic }: { item: TraditionTopic }) => (
       <Pressable
         oyuBackdrop={false}
-        onPress={onPress}
+        onPress={() => openTopic(topic.id)}
+        style={({ pressed }) => [styles.resultRow, pressed && { opacity: 0.92 }]}
         accessibilityRole="button"
-        accessibilityLabel={tr(lane.title)}
-        style={({ pressed }) => [styles.lanePressHead, pressed && { opacity: 0.9 }]}
+        accessibilityLabel={tr(topic.title)}
       >
-        <View style={styles.laneIcon}>
-          <MaterialIcons name={LANE_ICONS[lane.id]} size={20} color={palette.goldMuted} />
-        </View>
-        <View style={styles.laneHeadText}>
-          <Text style={styles.laneTitle}>{tr(lane.title)}</Text>
-          <Text style={styles.laneMeta}>
-            {tr(traditionLaneCategoryLabel(lane))} · {lane.topicCount} {tr("тақырып")}
-          </Text>
+        <View style={styles.resultText}>
+          <Text style={styles.resultTitle}>{tr(topic.title)}</Text>
+          <Text style={styles.resultSub} numberOfLines={2}>{tr(topic.subtitle)}</Text>
         </View>
         <MaterialIcons name="chevron-right" size={20} color={palette.muted} />
       </Pressable>
-      <View style={styles.laneMergedBody}>
-        <Text style={styles.laneSub}>{tr(lane.subtitle)}</Text>
-        <Text style={styles.laneMethodText}>{tr(lane.method)}</Text>
-      </View>
-      <View style={styles.laneTopicChips}>
-        {topics.map((topic) => topic ? (
-          <Pressable
-            key={topic.id}
-            oyuBackdrop={false}
-            onPress={() => onOpenTopic(topic.id)}
-            style={({ pressed }) => [styles.laneTopicChip, pressed && { opacity: 0.88 }]}
-            accessibilityRole="button"
-            accessibilityLabel={tr(topic.title)}
-          >
-            <Text style={styles.laneTopicText} numberOfLines={1}>{tr(topic.title)}</Text>
-          </Pressable>
-        ) : null)}
-      </View>
-    </View>
+    ),
+    [openTopic, palette.muted, styles, tr]
+  );
+
+  return (
+    <FlatList
+      style={styles.root}
+      data={queryActive ? visibleTopics : []}
+      keyExtractor={(topic) => topic.id}
+      renderItem={renderTopicResult}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingTop: Math.max(insets.top, 10),
+          paddingBottom: 32 + Math.max(insets.bottom, 8),
+        },
+      ]}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      removeClippedSubviews={Platform.OS === "android"}
+      ListHeaderComponent={
+        <View>
+          <View style={styles.heroSection}>
+            <View style={styles.heroOrnamentTop} pointerEvents="none">
+              <RasterImage
+                source={traditionTopOrnament}
+                style={styles.heroOrnament}
+                resizeMode="contain"
+                accessibilityIgnoresInvertColors
+                accessibilityLabel={tr(kk.features.traditionTitle)}
+              />
+            </View>
+            <View style={styles.heroCard}>
+              <View style={styles.heroMedia}>
+                <RasterImage source={traditionHeroImage} style={styles.heroImage} resizeMode="cover" />
+                <View style={styles.heroOverlay} />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.elderStartCard}>
+            <View style={styles.elderStartHead}>
+              <View style={styles.elderStartIcon}>
+                <MaterialIcons name="touch-app" size={22} color={palette.goldMuted} />
+              </View>
+              <View style={styles.elderStartHeadText}>
+                <Text style={styles.elderStartEyebrow}>{tr("Үлкендерге ыңғайлы")}</Text>
+                <Text style={styles.elderStartTitle}>{tr("Қайдан бастаймын?")}</Text>
+              </View>
+            </View>
+            <Text style={styles.elderStartBody}>
+              {tr("Бір негізгі батырма арқылы барлық салт-дәстүр тақырыбын ашыңыз. Қысқа, түсінікті, артық жолсыз.")}
+            </Text>
+            <Pressable
+              oyuBackdrop={false}
+              onPress={() => {
+                setActiveCategory("all");
+                setShowTopicList(true);
+              }}
+              style={({ pressed }) => [styles.elderPrimaryBtn, pressed && { opacity: 0.92 }]}
+              accessibilityRole="button"
+              accessibilityLabel={tr("Салт-дәстүрді оқу")}
+            >
+              <View style={styles.elderBtnIcon}>
+                <MaterialIcons name="groups" size={22} color={palette.buttonGoldText} />
+              </View>
+              <View style={styles.elderBtnText}>
+                <Text style={styles.elderBtnTitle}>{tr("Салт-дәстүрді оқу")}</Text>
+                <Text style={styles.elderBtnSub}>{tr("Бата, қонақ күту, жеті ата, асар")}</Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={24} color={palette.buttonGoldText} />
+            </Pressable>
+          </View>
+
+          <View style={styles.searchCard}>
+            <View style={styles.searchIcon}>
+              <MaterialIcons name="search" size={18} color={palette.goldMuted} />
+            </View>
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder={tr("Атын жазып іздеу: бата, жеті ата...")}
+              placeholderTextColor={palette.muted}
+              style={styles.searchInput}
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+            {query ? (
+              <Pressable oyuBackdrop={false} onPress={() => setQuery("")} hitSlop={8}>
+                <MaterialIcons name="close" size={18} color={palette.muted} />
+              </Pressable>
+            ) : null}
+          </View>
+
+          {queryActive ? (
+            <View style={styles.filterPill}>
+              <Text style={styles.filterPillText}>{tr(activeCategoryLabel)}</Text>
+              <Pressable
+                oyuBackdrop={false}
+                onPress={() => {
+                  setActiveCategory("all");
+                  setShowTopicList(false);
+                  setQuery("");
+                }}
+                hitSlop={8}
+              >
+                <MaterialIcons name="close" size={16} color={palette.goldMuted} />
+              </Pressable>
+            </View>
+          ) : null}
+
+          {!queryActive ? (
+            <View style={styles.featuredBlock}>
+              <Text style={styles.resultsTitle}>{tr("Ең керек тақырыптар")}</Text>
+              <View style={styles.featuredGrid}>
+                {featuredTopics.map((topic) =>
+                  topic ? (
+                    <Pressable
+                      key={topic.id}
+                      oyuBackdrop={false}
+                      onPress={() => openTopic(topic.id)}
+                      style={({ pressed }) => [styles.featuredTopicCard, pressed && { opacity: 0.92 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={tr(topic.title)}
+                    >
+                      <Text style={styles.featuredTopicTitle} numberOfLines={1}>{tr(topic.title)}</Text>
+                      <Text style={styles.featuredTopicSub} numberOfLines={1}>{tr(topic.subtitle)}</Text>
+                      <MaterialIcons name="chevron-right" size={18} color={palette.goldMuted} />
+                    </Pressable>
+                  ) : null
+                )}
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.resultsTitle}>{tr(topicListTitle)}</Text>
+          )}
+        </View>
+      }
+      ListEmptyComponent={queryActive ? <Text style={styles.empty}>{tr("Ештеңе табылмады")}</Text> : null}
+      ListFooterComponent={
+        <View>
+          <TraditionOrnamentDivider palette={palette} />
+          <View style={styles.thoughtCard}>
+            <View style={styles.thoughtHead}>
+              <View style={styles.thoughtLine} />
+              <Text style={styles.thoughtTitle}>{tr("Бүгінгі Ой")}</Text>
+              <View style={styles.thoughtLine} />
+            </View>
+            <Text style={styles.thoughtText}>
+              {tr("“Мейірімділік - дінің де, дәстүрің де өзегі”")}
+            </Text>
+            <Text style={styles.thoughtAuthor}>Шәкәрім Құдайбердіұлы</Text>
+          </View>
+          {renderAutoTranslateBanner()}
+        </View>
+      }
+    />
   );
 }
 
@@ -576,6 +338,113 @@ function makeStyles(p: TraditionKazakhPalette) {
     heroOverlay: {
       ...StyleSheet.absoluteFillObject,
       backgroundColor: "rgba(245,237,224,0.06)",
+    },
+    elderStartCard: {
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: p.border,
+      backgroundColor: p.cardBg,
+      padding: 14,
+      marginBottom: 12,
+      gap: 11,
+      shadowColor: "#4B3218",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.08,
+      shadowRadius: 12,
+      elevation: 2,
+    },
+    elderStartHead: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    elderStartIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: p.goldSurface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.goldMuted,
+    },
+    elderStartHeadText: { flex: 1, minWidth: 0 },
+    elderStartEyebrow: {
+      color: p.goldMuted,
+      fontSize: 11,
+      lineHeight: 15,
+      fontWeight: "900",
+      letterSpacing: 0.35,
+      textTransform: "uppercase",
+    },
+    elderStartTitle: {
+      color: p.text,
+      fontSize: 20,
+      lineHeight: 25,
+      fontWeight: "900",
+      marginTop: 1,
+    },
+    elderStartBody: {
+      color: p.text,
+      fontSize: 14.5,
+      lineHeight: 22,
+      fontWeight: "700",
+    },
+    elderPrimaryBtn: {
+      minHeight: 72,
+      borderRadius: 18,
+      paddingHorizontal: 12,
+      paddingVertical: 11,
+      backgroundColor: p.buttonGoldBg,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    elderBtnIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(255,255,255,0.2)",
+    },
+    elderBtnText: { flex: 1, minWidth: 0 },
+    elderBtnTitle: {
+      color: p.buttonGoldText,
+      fontSize: 17,
+      lineHeight: 22,
+      fontWeight: "900",
+    },
+    elderBtnSub: {
+      color: p.buttonGoldText,
+      opacity: 0.86,
+      fontSize: 12.5,
+      lineHeight: 17,
+      fontWeight: "700",
+      marginTop: 1,
+    },
+    elderSecondaryGrid: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    elderSecondaryBtn: {
+      flex: 1,
+      minHeight: 64,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+      backgroundColor: p.cardElevated,
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 8,
+      gap: 5,
+    },
+    elderSecondaryTitle: {
+      color: p.text,
+      fontSize: 12.5,
+      lineHeight: 16,
+      fontWeight: "900",
+      textAlign: "center",
     },
     searchCard: {
       flexDirection: "row",
@@ -636,6 +505,29 @@ function makeStyles(p: TraditionKazakhPalette) {
       gap: 6,
     },
     allTopicsText: { color: p.buttonGoldText, fontSize: 12, lineHeight: 16, fontWeight: "900" },
+    favoritesCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+      backgroundColor: p.cardBg,
+      padding: 11,
+      marginTop: -4,
+      marginBottom: 12,
+    },
+    favoritesIcon: {
+      width: 34,
+      height: 34,
+      borderRadius: 14,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: p.goldSurface,
+    },
+    favoritesTextCol: { flex: 1, minWidth: 0 },
+    favoritesTitle: { color: p.text, fontSize: 13, lineHeight: 17, fontWeight: "900" },
+    favoritesSub: { color: p.muted, fontSize: 11.5, lineHeight: 16, marginTop: 2, fontWeight: "700" },
     filterPill: {
       alignSelf: "flex-start",
       flexDirection: "row",
@@ -878,14 +770,18 @@ function makeStyles(p: TraditionKazakhPalette) {
       gap: 8,
     },
     featuredTopicCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: p.border,
       backgroundColor: p.cardBg,
-      padding: 11,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
     },
-    featuredTopicTitle: { color: p.text, fontSize: 14, lineHeight: 18, fontWeight: "900" },
-    featuredTopicSub: { color: p.muted, fontSize: 12, lineHeight: 17, marginTop: 3, fontWeight: "700" },
+    featuredTopicTitle: { flex: 0.9, color: p.text, fontSize: 14, lineHeight: 18, fontWeight: "900" },
+    featuredTopicSub: { flex: 1.1, color: p.muted, fontSize: 12, lineHeight: 17, fontWeight: "700" },
     featuredTopicFoot: {
       marginTop: 8,
       flexDirection: "row",

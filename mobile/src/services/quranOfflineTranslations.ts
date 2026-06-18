@@ -1,5 +1,5 @@
-import bundleJson from "../../assets/bundled/quran-translations-offline.json";
 import type { QuranTranslationLocale } from "./quranTranslationEditions";
+import { loadBundledJson, releaseBundledJsonMemory } from "../utils/loadBundledJson";
 
 type QuranOfflineAyah = {
   numberInSurah: number;
@@ -44,17 +44,38 @@ const FIELD_BY_LOCALE: Record<QuranTranslationLocale, keyof QuranOfflineAyah> = 
 
 const OFFLINE_TRANSLATION_LOCALES = Object.keys(FIELD_BY_LOCALE);
 
-const bundle = bundleJson as QuranOfflineBundle;
+let bundle: QuranOfflineBundle = {};
 let mapsBySurah: Map<number, QuranOfflineAyah[]> | null = null;
+let loadPromise: Promise<void> | null = null;
+
+function loadBundleFromAsset(): QuranOfflineBundle {
+  if (!bundle.surahs) {
+    if (process.env.NODE_ENV !== "test") return bundle;
+    const testRequire = eval("require") as (path: string) => unknown;
+    bundle = testRequire("../../assets/bundled/quran-translations-offline.json") as QuranOfflineBundle;
+  }
+  return bundle;
+}
 
 export async function ensureBundledQuranTranslationsLoaded(): Promise<void> {
-  return Promise.resolve();
+  if (bundle.surahs) return;
+  if (!loadPromise) {
+    loadPromise = loadBundledJson<QuranOfflineBundle>("quran-translations-offline.json")
+      .then((loaded) => {
+        bundle = loaded;
+        mapsBySurah = null;
+      })
+      .finally(() => {
+        loadPromise = null;
+      });
+  }
+  return loadPromise;
 }
 
 function getSurahRows(surah: number): QuranOfflineAyah[] {
   if (!mapsBySurah) {
     mapsBySurah = new Map();
-    for (const row of bundle.surahs ?? []) {
+    for (const row of loadBundleFromAsset().surahs ?? []) {
       if (typeof row.number === "number" && Array.isArray(row.ayahs)) {
         mapsBySurah.set(row.number, row.ayahs);
       }
@@ -94,4 +115,12 @@ export function getBundledQuranAyahTranslation(
   const field = FIELD_BY_LOCALE[locale];
   const row = getSurahRows(surah).find((item) => item.numberInSurah === ayah);
   return String(row?.[field] ?? "").trim();
+}
+
+/** Құран оқу экранынан шыққанда көптілді offline translation bundle-ын RAM-нан босату. */
+export function releaseBundledQuranTranslationsMemory(): void {
+  bundle = {};
+  mapsBySurah = null;
+  loadPromise = null;
+  releaseBundledJsonMemory("quran-translations-offline.json");
 }

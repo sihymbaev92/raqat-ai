@@ -24,6 +24,8 @@ import {
 const STORAGE_KEY_LEGACY = "raqat_theme_mode";
 const STORAGE_KEY_SCHEME = "raqat_theme_scheme";
 const STORAGE_KEY_PALETTE = "raqat_color_palette";
+const DEFAULT_THEME_SCHEME: ThemeSchemeId = "light";
+const DEFAULT_COLOR_PALETTE: ColorPaletteId = "violet";
 
 type Ctx = {
   colors: ThemeColors;
@@ -37,8 +39,8 @@ type Ctx = {
 const ThemeContext = createContext<Ctx | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>("light");
-  const [colorPalette, setColorPaletteState] = useState<ColorPaletteId>("default");
+  const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>(DEFAULT_THEME_SCHEME);
+  const [colorPalette, setColorPaletteState] = useState<ColorPaletteId>(DEFAULT_COLOR_PALETTE);
 
   useEffect(() => {
     (async () => {
@@ -48,11 +50,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       } else {
         const legacy = await AsyncStorage.getItem(STORAGE_KEY_LEGACY);
         const systemDark = Appearance.getColorScheme() === "dark";
-        setThemeSchemeState(migrateLegacyThemeMode(legacy, systemDark));
+        const nextScheme = migrateLegacyThemeMode(legacy, systemDark);
+        setThemeSchemeState(nextScheme);
+        await AsyncStorage.setItem(STORAGE_KEY_SCHEME, nextScheme);
       }
       const pal = await AsyncStorage.getItem(STORAGE_KEY_PALETTE);
       if (isColorPaletteId(pal)) {
         setColorPaletteState(pal);
+      } else {
+        await AsyncStorage.setItem(STORAGE_KEY_PALETTE, DEFAULT_COLOR_PALETTE);
       }
     })();
   }, []);

@@ -13,7 +13,12 @@ if (!fs.existsSync(path.join(mobileRoot, "dist", "index.html"))) {
 }
 
 fs.mkdirSync(outDir, { recursive: true });
-const skipFiles = new Set(["offline-auto-translations.json"]);
+const skipFiles = new Set([
+  "offline-auto-translations.json",
+  // Web startup/list uses hadith-from-db-seed.json; the full corpus is too large
+  // for the static web release payload and should be published through a separate CDN path if needed.
+  "hadith-from-db.json",
+]);
 const files = fs.readdirSync(srcDir).filter((f) => f.endsWith(".json") && !skipFiles.has(f));
 for (const f of files) {
   fs.copyFileSync(path.join(srcDir, f), path.join(outDir, f));

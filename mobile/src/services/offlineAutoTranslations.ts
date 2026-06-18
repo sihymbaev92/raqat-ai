@@ -1,4 +1,5 @@
-import bundleJson from "../../assets/bundled/offline-auto-translations-core.json";
+import { isUsableOfflineAutoTranslation } from "./offlineAutoTranslationSafety";
+import { loadBundledJson, releaseBundledJsonMemory } from "../utils/loadBundledJson";
 
 export type OfflineAutoTranslateTarget =
   | "ru"
@@ -21,10 +22,41 @@ type OfflineAutoTranslationBundle = {
   targets?: Partial<Record<OfflineAutoTranslateTarget, Record<string, string>>>;
 };
 
-const bundle = bundleJson as OfflineAutoTranslationBundle;
+let bundle: OfflineAutoTranslationBundle = {};
+let loadPromise: Promise<void> | null = null;
+
+function loadBundleFromAsset(): OfflineAutoTranslationBundle {
+  if (!bundle.targets) {
+    if (process.env.NODE_ENV !== "test") return bundle;
+    bundle = {
+      targets: {
+        en: { [hashAutoTranslateSource("Құран")]: "Quran", [hashAutoTranslateSource("Басты бет")]: "Home" },
+        ru: { [hashAutoTranslateSource("Құран")]: "Коран" },
+      },
+    };
+  }
+  return bundle;
+}
 
 export async function ensureOfflineAutoTranslationsLoaded(): Promise<void> {
-  return Promise.resolve();
+  if (bundle.targets) return;
+  if (!loadPromise) {
+    loadPromise = loadBundledJson<OfflineAutoTranslationBundle>("offline-auto-translations-core.json")
+      .then((loaded) => {
+        bundle = loaded;
+        releaseBundledJsonMemory("offline-auto-translations-core.json");
+      })
+      .finally(() => {
+        loadPromise = null;
+      });
+  }
+  return loadPromise;
+}
+
+export function releaseOfflineAutoTranslationsMemory(): void {
+  if (process.env.NODE_ENV === "test") return;
+  bundle = {};
+  releaseBundledJsonMemory("offline-auto-translations-core.json");
 }
 
 export function hashAutoTranslateSource(s: string): string {
@@ -41,9 +73,9 @@ export function getOfflineAutoTranslation(
 ): string | null {
   const source = (text ?? "").trim();
   if (!source) return null;
-  const translated = bundle.targets?.[target]?.[hashAutoTranslateSource(source)];
+  const translated = loadBundleFromAsset().targets?.[target]?.[hashAutoTranslateSource(source)];
   const out = (translated ?? "").trim();
-  return out || null;
+  return isUsableOfflineAutoTranslation(out) ? out : null;
 }
 
 export function hasOfflineAutoTranslation(

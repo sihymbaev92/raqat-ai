@@ -30,7 +30,7 @@ function voiceBlob(v: VoiceRow): string {
 /** Жүйелік әйел дауыстары — әріп TTS-те қолданылмайды. */
 export function isLikelyFemaleArabicVoice(v: VoiceRow): boolean {
   const b = voiceBlob(v);
-  return /female|woman|salma|layla|laila|leila|amira|zuzana|zira|hala|mouna|noura|zeina|zeinab|ayesha|aisha|fatima|mariam|maryam|meera|zahra|lina|lamia|hoda|rana|samira|yasmin|yasmine|nada|sara|safiya|-afb-|wavenet-a|wavenet-c|wavenet-e|wavenet-f/.test(
+  return /female|woman|salma|layla|laila|leila|amira|zuzana|zira|hala|mouna|noura|nora|zeina|zeinab|ayesha|aisha|fatima|mariam|maryam|meera|zahra|lina|lamia|hoda|rana|samira|yasmin|yasmine|nada|sara|sarah|safiya|-afb-|wavenet-a|wavenet-c|wavenet-e|wavenet-f|chirp3-hd-achird|chirp3-hd-aoede|chirp3-hd-kore|chirp3-hd-laomedeia|chirp3-hd-leda|chirp3-hd-sulafat/.test(
     b
   );
 }
@@ -38,7 +38,7 @@ export function isLikelyFemaleArabicVoice(v: VoiceRow): boolean {
 /** iOS Maged, Android ar-xa-x-arz-local және т.б. */
 export function isLikelyMaleArabicVoice(v: VoiceRow): boolean {
   const b = voiceBlob(v);
-  return /male|man\b|maged|majed|majid|tarik|tariq|khalid|khaled|ahmed|omar|hamid|hussein|ziad|youssef|yusuf|hazem|murad|najm|bahri|moaz|saad|fahd|ramy|-arb-|-arz-local|ar-xa-x-arz|wavenet-b|wavenet-d|wavenet-i|wavenet-j/.test(
+  return /male|man\b|maged|majed|majid|tarik|tariq|khalid|khaled|ahmed|omar|hamid|hussein|ziad|youssef|yusuf|hazem|murad|najm|bahri|moaz|saad|fahd|ramy|-arb-|-ar[bcdij]-|ar-xa-x-ar[bcdij]|-arz-local|ar-xa-x-arz|wavenet-b|wavenet-d|wavenet-i|wavenet-j|chirp3-hd-charon|chirp3-hd-fenrir|chirp3-hd-enceladus|chirp3-hd-orus|chirp3-hd-puck/.test(
     b
   );
 }
@@ -56,7 +56,7 @@ function scoreArabicVoice(v: VoiceRow, preferMale: boolean): number {
   } else if (l === "ar" || l.startsWith("ar-")) {
     s += 88;
   }
-  if (/arab|saudi|mecca|qf|tarik|khalid|maged|bahri|oae|arz-local|arb-local/.test(blob)) {
+  if (/arab|saudi|mecca|qf|tarik|khalid|maged|bahri|oae|ar[bcdij]|arz-local|arb-local|chirp3-hd/.test(blob)) {
     s += 18;
   }
   if (isLikelyMaleArabicVoice(v)) {

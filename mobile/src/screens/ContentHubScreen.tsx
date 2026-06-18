@@ -16,7 +16,7 @@ import { kk } from "../i18n/kk";
 import { useAppLocale } from "../i18n/runtime";
 import type { MoreStackParamList } from "../navigation/types";
 import { navigateToAppSettings } from "../navigation/navigateToSettings";
-import { navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
+import { navigateToMainTabScreen, navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
 import { AppIconBadge } from "../components/AppIconBadge";
 import { HUB_MENU_TILE_BOX_PX } from "../config/dashboardLauncherTileImage";
 import { KazakhOrnamentTitleBanner } from "../components/KazakhOrnamentTitleBanner";
@@ -35,7 +35,8 @@ type HubMoreNav = Exclude<
   | "KazakhGreatWordsEntry"
 >;
 
-type HubRootNav = "PrayerTimes" | "Qibla";
+type HubRootNav = "PrayerTimes" | "Qibla" | "AsmaAlHusna";
+type HubMainNav = "Tasbih";
 
 type HubTileMore = {
   kind: "more";
@@ -55,55 +56,23 @@ type HubTileRoot = {
   icon?: MciName;
 };
 
-type HubTile = HubTileMore | HubTileRoot;
+type HubTileMain = {
+  kind: "main";
+  key: string;
+  label: string;
+  main: HubMainNav;
+  image?: ImageSourcePropType;
+  icon?: MciName;
+};
+
+type HubTile = HubTileMore | HubTileRoot | HubTileMain;
 
 type HubSectionDef = { title: string; tiles: HubTile[] };
 
 function hubSections(): HubSectionDef[] {
-  const worship: HubSectionDef = {
-    title: kk.navigation.contentHubSectionWorship,
-    tiles: [
-      {
-        kind: "root",
-        key: "praytimes",
-        label: kk.prayer.title,
-        root: "PrayerTimes",
-        image: menuIconAssets.tileDaily,
-      },
-      {
-        kind: "root",
-        key: "qibla",
-        label: kk.tabs.qibla,
-        root: "Qibla",
-        image: menuIconAssets.headerQibla,
-      },
-      {
-        kind: "more",
-        key: "namaz",
-        label: kk.namazGuide.shortTitle,
-        screen: "NamazGuide",
-        image: menuIconAssets.tileNamaz,
-      },
-    ],
-  };
-
   const knowledge: HubSectionDef = {
     title: kk.navigation.contentHubSectionKnowledge,
     tiles: [
-      {
-        kind: "more",
-        key: "kmdb-hub",
-        label: kk.kmdbHub.title,
-        screen: "KmdbHub",
-        image: menuIconAssets.promoAi,
-      },
-      {
-        kind: "more",
-        key: "quran",
-        label: kk.dashboard.quranShort,
-        screen: "QuranList",
-        image: menuIconAssets.heroQuran,
-      },
       {
         kind: "more",
         key: "hadith",
@@ -113,16 +82,16 @@ function hubSections(): HubSectionDef[] {
       },
       {
         kind: "more",
-        key: "duas",
-        label: kk.navigation.duasTitle,
-        screen: "Duas",
-        image: menuIconAssets.tabDuas,
-      },
-      {
-        kind: "more",
         key: "knowledge-portal",
         label: kk.knowledgePortal.screenTitle,
         screen: "OfficialKnowledgePortal",
+        image: menuIconAssets.promoAi,
+      },
+      {
+        kind: "more",
+        key: "ai",
+        label: kk.features.raqatAiTitle,
+        screen: "ImamAI",
         image: menuIconAssets.promoAi,
       },
       {
@@ -134,15 +103,29 @@ function hubSections(): HubSectionDef[] {
       },
       {
         kind: "more",
-        key: "hatim",
-        label: kk.features.hatimTitle,
-        screen: "Hatim",
-        image: menuIconAssets.heroQuran,
+        key: "duas",
+        label: kk.navigation.duasTitle,
+        screen: "Duas",
+        image: menuIconAssets.tabDuas,
+      },
+      {
+        kind: "root",
+        key: "asma",
+        label: kk.tabs.asma,
+        root: "AsmaAlHusna",
+        image: menuIconAssets.tabAsma,
+      },
+      {
+        kind: "more",
+        key: "seerah",
+        label: kk.seerah.title,
+        screen: "Seerah",
+        image: menuIconAssets.tileSeerah,
       },
     ],
   };
 
-  const communityTiles: HubTile[] = [
+  const additionalTiles: HubTile[] = [
     {
       kind: "more",
       key: "tradition",
@@ -152,38 +135,17 @@ function hubSections(): HubSectionDef[] {
     },
     {
       kind: "more",
-      key: "seerah",
-      label: kk.seerah.title,
-      screen: "Seerah",
-      image: menuIconAssets.tileSeerah,
-    },
-    {
-      kind: "more",
       key: "hajj",
       label: kk.features.hajjTitle,
       screen: "Hajj",
       image: menuIconAssets.tileHajj,
     },
     {
-      kind: "more",
-      key: "halal",
-      label: kk.features.halalTitle,
-      screen: "Halal",
-      image: menuIconAssets.tileHalal,
-    },
-    {
-      kind: "more",
-      key: "ai",
-      label: kk.features.raqatAiTitle,
-      screen: "ImamAI",
-      image: menuIconAssets.promoAi,
-    },
-    {
-      kind: "more",
-      key: "eco",
-      label: kk.ecosystem.cardTitle,
-      screen: "Ecosystem",
-      icon: hubIcons.eco,
+      kind: "main",
+      key: "tasbih",
+      label: kk.tabs.tasbih,
+      main: "Tasbih",
+      image: menuIconAssets.tabTasbih,
     },
     {
       kind: "more",
@@ -195,7 +157,7 @@ function hubSections(): HubSectionDef[] {
   ];
 
   if (Platform.OS === "ios") {
-    communityTiles.splice(6, 0, {
+    additionalTiles.splice(3, 0, {
       kind: "more",
       key: "siri",
       label: kk.navigation.siriShortcutHubTile,
@@ -205,11 +167,10 @@ function hubSections(): HubSectionDef[] {
   }
 
   return [
-    worship,
     knowledge,
     {
       title: kk.navigation.contentHubSectionCommunity,
-      tiles: communityTiles,
+      tiles: additionalTiles,
     },
   ];
 }
@@ -228,6 +189,10 @@ export function ContentHubScreen({ navigation }: Props) {
   const onTilePress = (tile: HubTile) => {
     if (tile.kind === "root") {
       navigateToRootStackScreen(tile.root, undefined, navigation);
+      return;
+    }
+    if (tile.kind === "main") {
+      navigateToMainTabScreen(tile.main, undefined, navigation);
       return;
     }
     navigateToMoreStackScreen(tile.screen, undefined, navigation);

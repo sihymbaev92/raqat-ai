@@ -4,12 +4,14 @@ export const QCF4_RENDER_LINE_COUNT = 15;
 export const QCF4_QCOM_LINE_GAP = 5;
 export const QCF4_EXTERNAL_SURAH_FRAME_RESERVE = 56;
 export const QCF4_PHONE_WEB_SAFE_INSET = 10;
-export const QCF4_PHONE_NATIVE_SAFE_INSET = 0;
-export const QCF4_PHONE_LINE_PADDING = 14;
-export const QCF4_PHONE_LINE_SCALE_X = 0.84;
-export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.64;
-export const QCF4_PHONE_GLYPH_MAX_QCOM = 32;
-export const QCF4_PHONE_VERTICAL_STRETCH_FACTOR = 1.34;
+export const QCF4_PHONE_NATIVE_SAFE_INSET = 14;
+export const QCF4_PHONE_LINE_PADDING = 18;
+export const QCF4_PHONE_LINE_SCALE_X = 0.78;
+export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.6;
+export const QCF4_PHONE_GLYPH_MAX_QCOM = 30;
+export const QCF4_PHONE_VERTICAL_STRETCH_FACTOR = 1.44;
+/** Телефонда QCF4 glyph ascender/descender line box-тан шығып, бірінші/соңғы жол кесілмесін. */
+export const QCF4_PHONE_VERTICAL_SAFE_PADDING = 14;
 export const QCF4_SPARSE_PAGE_RENDER_LINE_THRESHOLD = 10;
 
 export type Qcf4RenderableLine = {
@@ -110,7 +112,12 @@ export function qcf4SafeGlyphSizeForLine(args: {
   lineHeight: number;
   maxGlyphSize: number;
   lineHeightScale: number;
+  visualScaleY?: number;
+  lineInnerPadding?: number;
 }): number {
-  const safeByLineHeight = Math.max(1, Math.floor(args.lineHeight / args.lineHeightScale));
+  const visualScaleY = Math.max(1, args.visualScaleY ?? 1);
+  const lineInnerPadding = Math.max(0, args.lineInnerPadding ?? 0);
+  const safeLineHeight = Math.max(1, args.lineHeight - lineInnerPadding);
+  const safeByLineHeight = Math.max(1, Math.floor(safeLineHeight / (args.lineHeightScale * visualScaleY)));
   return Math.max(1, Math.min(args.rawGlyphSize, args.maxGlyphSize, safeByLineHeight));
 }

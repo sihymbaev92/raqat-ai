@@ -6,10 +6,10 @@ export function mushafArabicLineHeightForAyah(baseLineHeight: number, arabicPlai
   if (!Number.isFinite(baseLineHeight) || baseLineHeight <= 0) return baseLineHeight;
   const len = (arabicPlain ?? "").replace(/\s/g, "").length;
   let mult = 1;
-  if (len > 48) mult = 1.03;
-  if (len > 90) mult = 1.06;
-  if (len > 150) mult = 1.1;
-  if (len > 220) mult = 1.14;
-  if (len > 320) mult = 1.18;
+  if (len > 48) mult = 1.06;
+  if (len > 90) mult = 1.1;
+  if (len > 150) mult = 1.16;
+  if (len > 220) mult = 1.22;
+  if (len > 320) mult = 1.28;
   return Math.round(baseLineHeight * mult);
 }

@@ -1,4 +1,4 @@
-import { pickRicherOfficialNewsFeed } from "../officialSitesBootstrap";
+import { pickRicherOfficialNewsFeed, shouldFetchDirectOfficialHomeFeeds } from "../officialSitesBootstrap";
 import type { DashboardNewsItem } from "../../content/dashboardNewsItems";
 
 const sample = (id: string, imageUrl?: string): DashboardNewsItem => ({
@@ -28,5 +28,16 @@ describe("pickRicherOfficialNewsFeed", () => {
     const api = [sample("a1")];
     const picked = pickRicherOfficialNewsFeed({ ok: true, results: [] }, api, []);
     expect(picked).toEqual(api);
+  });
+});
+
+describe("shouldFetchDirectOfficialHomeFeeds", () => {
+  it("does not fetch official sites directly on web to avoid CORS warnings", () => {
+    expect(shouldFetchDirectOfficialHomeFeeds("web")).toBe(false);
+  });
+
+  it("keeps direct official-site fallback on native", () => {
+    expect(shouldFetchDirectOfficialHomeFeeds("ios")).toBe(true);
+    expect(shouldFetchDirectOfficialHomeFeeds("android")).toBe(true);
   });
 });

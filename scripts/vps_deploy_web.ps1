@@ -77,7 +77,7 @@ function Invoke-WithRetry {
 }
 
 Invoke-WithRetry -Label "ssh mkdir" -Action {
-  ssh -i $Key @SshOpts $SshTarget "mkdir -p '$WebRoot'; chown -R www-data:www-data /var/www/raqat-web 2>/dev/null; true"
+  ssh -i $Key @SshOpts $SshTarget "mkdir -p '$WebRoot'"
 }
 
 $Stamp = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
@@ -101,7 +101,7 @@ if ($rsync) {
 }
 
 Invoke-WithRetry -Label "remote extract" -Action {
-  ssh -i $Key @SshOpts $SshTarget "set -e; mkdir -p '$WebRoot'; tar -xzf '$RemoteArchive' -C '$WebRoot'; rm -f '$RemoteArchive'; chown -R www-data:www-data /var/www/raqat-web 2>/dev/null || true"
+  ssh -i $Key @SshOpts $SshTarget "set -e; mkdir -p '$WebRoot'; tar -xzf '$RemoteArchive' -C '$WebRoot'; rm -f '$RemoteArchive'"
 }
 Remove-Item -Force $Archive -ErrorAction SilentlyContinue
 

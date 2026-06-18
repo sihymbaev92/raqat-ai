@@ -5,7 +5,7 @@ import type { CachedAyah } from "../storage/quranSurahCache";
 import type { CachedSurah } from "../storage/quranListCache";
 import { parseSurahsFromApiJson } from "../storage/quranListCache";
 import { hasCyrillicScript } from "../utils/quranTranslitDisplay";
-import { loadBundledJson } from "../utils/loadBundledJson";
+import { loadBundledJson, releaseBundledJsonMemory } from "../utils/loadBundledJson";
 
 type SurahBundle = {
   number: number;
@@ -90,6 +90,9 @@ async function loadBundlesAsync(): Promise<void> {
     translitBundle as { data?: { surahs?: SurahBundle[] } },
     kkFromDbBundle as { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
   );
+  releaseBundledJsonMemory("quran-uthmani-full.json");
+  releaseBundledJsonMemory("quran-en-transliteration-full.json");
+  releaseBundledJsonMemory("quran-kk-from-db.json");
 }
 
 async function loadSurahListOnlyAsync(): Promise<void> {
@@ -152,4 +155,24 @@ export function getBundledBookTranslitForAyah(
 ): string | undefined {
   const tr = bookTranslitBySurah?.get(surahNumber)?.get(ayahNumber)?.trim();
   return tr && hasCyrillicScript(tr) ? tr : undefined;
+}
+
+/**
+ * Reader экрандарынан шыққанда толық аят map-тарын RAM-нан түсіреміз.
+ * Сүре тізімін қалдыру nav/list ашылуын жылдам сақтайды, ал ең ауыр map-тар қайта қажет кезде құрылады.
+ */
+export function releaseBundledQuranReaderMemory(opts?: { keepSurahList?: boolean }): void {
+  const keepSurahList = opts?.keepSurahList ?? true;
+  if (!keepSurahList) {
+    listCache = null;
+    surahListPromise = null;
+    releaseBundledJsonMemory("surah-list-api.json");
+  }
+  ayahsBySurah = null;
+  kkBySurah = null;
+  bookTranslitBySurah = null;
+  loadPromise = null;
+  releaseBundledJsonMemory("quran-uthmani-full.json");
+  releaseBundledJsonMemory("quran-en-transliteration-full.json");
+  releaseBundledJsonMemory("quran-kk-from-db.json");
 }

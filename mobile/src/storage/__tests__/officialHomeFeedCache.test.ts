@@ -1,6 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { DashboardNewsItem } from "../../content/dashboardNewsItems";
-import { readOfficialHomeFeedCache, writeOfficialHomeFeedCache } from "../officialHomeFeedCache";
+import {
+  readOfficialHomeFeedCache,
+  readOfficialHomeFeedCacheSnapshot,
+  writeOfficialHomeFeedCache,
+} from "../officialHomeFeedCache";
 
 const sampleItem: DashboardNewsItem = {
   id: "fatua-1",
@@ -35,6 +39,9 @@ describe("officialHomeFeedCache", () => {
     };
     await AsyncStorage.setItem("raqat_official_home_feed_v1", JSON.stringify(stale));
     expect(await readOfficialHomeFeedCache()).toBeNull();
+    const snapshot = await readOfficialHomeFeedCacheSnapshot();
+    expect(snapshot?.items).toHaveLength(1);
+    expect(snapshot?.fresh).toBe(false);
   });
 
   it("skips write for empty list", async () => {

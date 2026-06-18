@@ -21,7 +21,7 @@ type Props = {
   isDark: boolean;
   /** Жоғарғы жол (мыс. halaldamu.kz) */
   eyebrow?: string;
-  /** eyebrow үшін uppercase (AI: «Сұрақ жауап» қалыпты регистр) */
+  /** eyebrow үшін uppercase (AI: «Сұрақ-жауап» қалыпты регистр) */
   eyebrowUppercase?: boolean;
   /** Қысқа белгілер */
   tags?: string[];
@@ -55,6 +55,8 @@ export function HubScreenHero({
             source={image}
             style={styles.logo}
             resizeMode={variant === "ai" ? "cover" : "contain"}
+            resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+            resizeMultiplier={Platform.OS === "android" ? 0.7 : undefined}
             accessibilityIgnoresInvertColors
           />
         </View>

@@ -1,4 +1,10 @@
-import { buildFullScreenAzanSlots, shouldRoutePrayerSoundToFullScreenAzan } from "../prayerFullScreenAzan";
+import {
+  buildFullScreenAzanSlots,
+  prayerEnteredTitleForSlot,
+  scheduleFullScreenAzanAlarmsForResult,
+  scheduleTestAzanAlarmForQa,
+  shouldRoutePrayerSoundToFullScreenAzan,
+} from "../prayerFullScreenAzan";
 import type { PrayerScheduleSlot } from "../prayerNotificationSchedule";
 
 function slot(partial: Partial<PrayerScheduleSlot>): PrayerScheduleSlot {
@@ -13,6 +19,11 @@ function slot(partial: Partial<PrayerScheduleSlot>): PrayerScheduleSlot {
 }
 
 describe("prayerFullScreenAzan", () => {
+  it("uses the Kazakh Екінті wording for asr entered title", () => {
+    expect(prayerEnteredTitleForSlot("Екінті", "asr")).toBe("Екінті намазы кірді");
+    expect(prayerEnteredTitleForSlot("Аср", "asr")).toBe("Екінті намазы кірді");
+  });
+
   it("builds payload only for salat slots with enabled adhan sound", () => {
     const slots = [
       slot({ identifier: "fajr", salatKey: "fajr", label: "Таң" }),
@@ -29,6 +40,7 @@ describe("prayerFullScreenAzan", () => {
         identifier: "fajr",
         atMillis: new Date("2026-06-09T01:00:00.000Z").getTime(),
         label: "Таң",
+        enteredTitle: "Таң намазы кірді",
         timeShort: "06:00",
         salatKey: "fajr",
         soundId: "adhan_haramain",
@@ -41,5 +53,42 @@ describe("prayerFullScreenAzan", () => {
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "sun" }), "adhan_haramain", "android")).toBe(false);
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "off", "android")).toBe(false);
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "adhan_haramain", "ios")).toBe(false);
+  });
+
+  it("accepts native scheduling only when the bridge confirms scheduled alarms", () => {
+    const payload = buildFullScreenAzanSlots([slot({ identifier: "fajr" })], () => "adhan_haramain");
+
+    expect(scheduleFullScreenAzanAlarmsForResult(payload, { scheduledCount: 0, identifiers: [] }).accepted).toBe(false);
+    expect(scheduleFullScreenAzanAlarmsForResult(payload, undefined).accepted).toBe(false);
+    expect(
+      scheduleFullScreenAzanAlarmsForResult(payload, { scheduledCount: 1, identifiers: ["fajr"] }).identifiers.has(
+        "fajr"
+      )
+    ).toBe(true);
+  });
+
+  it("still accepts native scheduling when full-screen permission is missing but alarms were scheduled", () => {
+    const payload = buildFullScreenAzanSlots([slot({ identifier: "fajr" })], () => "adhan_haramain");
+
+    expect(
+      scheduleFullScreenAzanAlarmsForResult(payload, {
+        scheduledCount: 1,
+        identifiers: ["fajr"],
+        fullScreenIntentPermissionGranted: false,
+      }).accepted
+    ).toBe(true);
+    expect(
+      scheduleFullScreenAzanAlarmsForResult(payload, {
+        scheduledCount: 0,
+        identifiers: [],
+        exactAlarmPermissionGranted: false,
+      }).accepted
+    ).toBe(false);
+  });
+
+  it("scheduleTestAzanAlarmForQa is android-only", async () => {
+    const result = await scheduleTestAzanAlarmForQa(90);
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe("android_only");
   });
 });

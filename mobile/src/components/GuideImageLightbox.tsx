@@ -21,6 +21,7 @@ import { guideLightboxFitSize, guideThumbFitContain, resolveGuideImageThumbImage
 import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetAspect";
 import { ZoomableImageContent } from "./zoom/ZoomableImageContent";
 import { kk } from "../i18n/kk";
+import { modalSafeAreaInsets } from "../theme/modalSafeArea";
 
 type Props = {
   source: ImageSourcePropType;
@@ -45,6 +46,8 @@ type Props = {
   thumbHorizontalInset?: number;
   /** fitThumbToScreen: max биіктік — экран биіктігінің үлесі. */
   maxThumbHeightRatio?: number;
+  /** Android thumbnail decode size. Full-screen zoom keeps original quality when opened. */
+  thumbResizeMultiplier?: number;
 };
 
 /**
@@ -63,9 +66,11 @@ export function GuideImageLightbox({
   fitThumbToScreen = false,
   thumbHorizontalInset = 56,
   maxThumbHeightRatio = 0.48,
+  thumbResizeMultiplier,
 }: Props) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
+  const modalInsets = modalSafeAreaInsets(insets);
   const { width, height } = useWindowDimensions();
   const pixelRatio = PixelRatio.get();
   const effectiveAspect = useMemo(() => {
@@ -157,6 +162,7 @@ export function GuideImageLightbox({
               source={source}
               style={thumbImageStyle}
               resizeMode="contain"
+              resizeMultiplier={thumbResizeMultiplier}
               accessibilityIgnoresInvertColors
             />
             {softenThumbOverlay ? <View style={styles.thumbLightenOverlay} pointerEvents="none" /> : null}
@@ -181,8 +187,8 @@ export function GuideImageLightbox({
         presentationStyle="overFullScreen"
         onRequestClose={() => setOpen(false)}
       >
-        <View style={styles.modalRoot}>
-          <View style={[styles.modalTopBar, { paddingTop: 8 + insets.top }]}>
+        <View style={[styles.modalRoot, { paddingBottom: modalInsets.bottom }]}>
+          <View style={[styles.modalTopBar, { paddingTop: 8 + modalInsets.top }]}>
             <Pressable
               oyuBackdrop={false}
               style={styles.closeBtn}
@@ -194,7 +200,7 @@ export function GuideImageLightbox({
               <Text style={styles.closeTxt}>{closeLabel}</Text>
             </Pressable>
           </View>
-          <Text style={[styles.pinchHint, { top: 12 + insets.top }]} pointerEvents="none">
+          <Text style={[styles.pinchHint, { top: 12 + modalInsets.top }]} pointerEvents="none">
             {kk.common.imagePinchZoomHint}
           </Text>
           <View style={styles.modalImageArea}>

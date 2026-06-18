@@ -3,7 +3,7 @@ import { filterHatimSurahRows } from "../HatimSurahSearchSheet";
 const rows = [
   { number: 1, name: "Әл-Фатиха", ayahCount: 7 },
   { number: 2, name: "Әл-Бақара", ayahCount: 286 },
-  { number: 36, name: "Йасин", ayahCount: 83 },
+  { number: 36, name: "Ясин", ayahCount: 83 },
 ];
 
 describe("filterHatimSurahRows", () => {
@@ -19,6 +19,6 @@ describe("filterHatimSurahRows", () => {
 
   it("filters by Kazakh title substring", () => {
     expect(filterHatimSurahRows(rows, "фатих").map((r) => r.number)).toEqual([1]);
-    expect(filterHatimSurahRows(rows, "йасин").map((r) => r.number)).toEqual([36]);
+    expect(filterHatimSurahRows(rows, "ясин").map((r) => r.number)).toEqual([36]);
   });
 });

@@ -124,29 +124,6 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     articleIds: ["bata-meaning"],
   },
   {
-    id: "jeti-ata",
-    title: "Жеті ата",
-    subtitle: "Туыстық байланыс және жауапкершілік",
-    categories: ["family", "social"],
-    summary:
-      "Жеті ата - туыстықты тану, некелік әдепті сақтау және ұрпақтың тегін білу мәдениеті.",
-    origin:
-      "Бұл жүйе қазақ қоғамында туыстық тәртіпті, руаралық татулықты және отбасылық жауапкершілікті сақтауға көмектескен.",
-    religionLink:
-      "Ұштасуы: туыстық байланысты сақтау, некелік жауапкершілік және ата-текті білу исламдағы сила-рахим әдебімен үндеседі. Шегі: рушылдық, нәсілдік мақтан, әділетсіз жақтау және өзгені кемсітуге жол бермеу керек.",
-    howTo: [
-      "Отбасы ішінде ата-тек тізбегін жазып шығу.",
-      "Балаларға ру емес, жауапкершілік пен туыстық әдебін түсіндіру.",
-      "Туыспен қатынасты үзбеуге нақты жоспар жасау.",
-      "Шежірені мақтан емес, байланыс құралы ету.",
-    ],
-    blessing: "Тегіңді таны, еліңді сыйла, туысыңа мейірімді, жұртыңа әділ бол.",
-    quote: "Текті білу - жауапкершілікті ұмытпау.",
-    image: traditionTileImage,
-    audioIds: ["ata-batasi"],
-    articleIds: ["family-roots"],
-  },
-  {
     id: "asar",
     title: "Асар",
     subtitle: "Көп болып көмектесу",
@@ -304,7 +281,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Тазалығың сақталып, денің сау, мінезің көркем, иманың берік болсын.",
     quote: "Тазалық - тәрбиенің де, діннің де белгісі.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["birlik-batasi"],
     articleIds: ["tradition-values", "child-care-adab"],
   },
   {
@@ -350,7 +327,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Барған жерің берекелі, шаңырағың шуақты, абыройың асқақ болсын.",
     quote: "Қыз ұзату - аманатты құрметпен тапсыру.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["birlik-batasi"],
     articleIds: ["tradition-values"],
   },
   {
@@ -396,7 +373,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Ізетің қабыл, сыйластығың берік, отбасың тату болсын.",
     quote: "Құрмет екі жақтан болғанда ғана береке болады.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["birlik-batasi"],
     articleIds: ["tradition-values"],
   },
   {
@@ -557,7 +534,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Алла өткендерге рақым, тірілерге ғибрат және тура жол берсін.",
     quote: "Зиярат - тілек орны емес, ғибрат мектебі.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["zhol-batasi"],
     articleIds: ["tradition-values"],
   },
   {
@@ -649,7 +626,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Киімің жарасымды, мінезің көркем, жүрегің таза болсын.",
     quote: "Киімнің көркі - әдеппен толық.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["zhol-batasi"],
     articleIds: ["tradition-values"],
   },
   {
@@ -810,7 +787,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Өнеріңіз өнегелі, сөзіңіз салмақты, жүрегіңіз иманды болсын.",
     quote: "Өнер әдеппен жүрсе, тәрбиеге айналады.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["birlik-batasi"],
     articleIds: ["tradition-values"],
   },
   {
@@ -833,7 +810,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Кеңесіңіз әділ, сөзіңіз берекелі, елдігіңіз мықты болсын.",
     quote: "Ақыл әділдікпен қосылса ғана елге пайдалы.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["birlik-batasi"],
     articleIds: ["tradition-values", "community-adab"],
   },
   {
@@ -856,7 +833,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     blessing: "Ата-анаң разы, жүрегің жұмсақ, өмірің берекелі болсын.",
     quote: "Үлкенге қызмет - жүректің тәрбиесі.",
     image: traditionTileImage,
-    audioIds: ["ata-batasi"],
+    audioIds: ["zhol-batasi"],
     articleIds: ["tradition-values", "daily-adab"],
   },
   {
@@ -947,14 +924,6 @@ export const TRADITION_AUDIO_BLESSINGS: TraditionAudioBlessing[] = [
     text: "Бірлігің бекем, тірлігің көркем болсын. Ел аман, жұрт тыныш, ниет қабыл болсын.",
     sourceLabel: "Қауым батасы",
   },
-  {
-    id: "ata-batasi",
-    topicId: "jeti-ata",
-    title: "Ата жолы батасы",
-    duration: "01:52",
-    text: "Тегіңді таны, еліңді сыйла, үлкенді құрметтеп, кішіге мейірімді бол.",
-    sourceLabel: "Шежіре батасы",
-  },
 ];
 
 export const TRADITION_ARTICLES: TraditionArticle[] = [
@@ -980,14 +949,6 @@ export const TRADITION_ARTICLES: TraditionArticle[] = [
     source: "Мақала",
     tag: "Бата",
     excerpt: "Батаның дұғамен байланысы, мағынасы және отбасылық тәрбиеге әсері.",
-  },
-  {
-    id: "family-roots",
-    topicId: "jeti-ata",
-    title: "Жеті ата және туыстық жауапкершілік",
-    source: "Шежіре",
-    tag: "Тек",
-    excerpt: "Жеті атаны білу рушылдық емес, туыстықты сақтау және жауапкершілікті түсіну құралы.",
   },
   {
     id: "community-adab",

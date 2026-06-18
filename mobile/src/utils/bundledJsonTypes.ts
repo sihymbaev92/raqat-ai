@@ -4,6 +4,8 @@ export type BundledJsonName =
   | "quran-uthmani-full.json"
   | "quran-en-transliteration-full.json"
   | "quran-kk-from-db.json"
+  | "quran-translations-offline.json"
+  | "offline-auto-translations-core.json"
   | "great-words-catalog.json"
   | "abai-kara-soz-full.json";
 
@@ -13,4 +15,6 @@ export const RUNTIME_BUNDLED_JSON: readonly BundledJsonName[] = [
   "quran-uthmani-full.json",
   "quran-en-transliteration-full.json",
   "quran-kk-from-db.json",
+  "quran-translations-offline.json",
+  "offline-auto-translations-core.json",
 ] as const;

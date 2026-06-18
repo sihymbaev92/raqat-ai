@@ -130,6 +130,12 @@ def main() -> int:
         help="Skip /api/v1/quran/surahs count gate (prod PG quran table may be empty; mobile uses bundle)",
     )
     p.add_argument(
+        "--min-surahs",
+        type=int,
+        default=114,
+        help="Minimum /api/v1/quran/surahs count required unless --skip-surahs is set.",
+    )
+    p.add_argument(
         "--auth-login",
         action="store_true",
         help="POST /api/v1/auth/login + GET /api/v1/users/me (RAQAT_SMOKE_AUTH_PASSWORD немесе --auth-password)",
@@ -178,8 +184,14 @@ def main() -> int:
     st, b = _http(f"{base}/api/v1/quran/surahs", headers=headers)
     d = _unwrap(b)
     surahs = d.get("surahs")
-    ok_surahs = st == 200 and isinstance(surahs, list) and len(surahs) > 0
-    out["checks"]["/api/v1/quran/surahs"] = {"status": st, "ok": ok_surahs, "count": len(surahs) if isinstance(surahs, list) else 0}
+    surah_count = len(surahs) if isinstance(surahs, list) else 0
+    ok_surahs = st == 200 and isinstance(surahs, list) and surah_count >= args.min_surahs
+    out["checks"]["/api/v1/quran/surahs"] = {
+        "status": st,
+        "ok": ok_surahs,
+        "count": surah_count,
+        "min_required": args.min_surahs,
+    }
     if not ok_surahs and not args.skip_surahs:
         if st in (401, 403) and not sec:
             out["checks"]["/api/v1/quran/surahs"]["hint"] = "try --content-secret if API enforces X-Raqat-Content-Secret"

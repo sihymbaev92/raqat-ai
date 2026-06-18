@@ -8,14 +8,13 @@ import {
   setPrayerNotifSoundId,
   type PrayerNotifSoundId,
 } from "../storage/prefs";
-import { loadPrayerCache } from "../storage/prayerCache";
 import {
-  requestNotificationPermissions,
-  reschedulePrayerNotifications,
+  reschedulePrayerNotificationsFromCache,
   getScheduledPrayerNotificationCount,
   getPrayerNotificationDiagnostics,
   type PrayerNotificationDiagnostics,
 } from "../services/prayerNotifications";
+import { ensurePrayerAzanPermissions } from "../services/prayerAzanPermissions";
 import type { PrayerNotifWarn } from "../components/settings/SettingsPrayerNotificationsSection";
 
 export function usePrayerSettingsSchedule() {
@@ -48,24 +47,15 @@ export function usePrayerSettingsSchedule() {
   }, [refreshDiagnostics]);
 
   const rescheduleFromCache = useCallback(async () => {
-    const cached = await loadPrayerCache();
-    if (!cached || cached.error) {
-      await refreshDiagnostics();
-      return;
-    }
-    const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
-    await reschedulePrayerNotifications(cached, {
-      enabled: en,
-      iftarExtra: ift,
-    });
+    await reschedulePrayerNotificationsFromCache();
     await refreshDiagnostics();
   }, [refreshDiagnostics]);
 
   const onNotifToggle = useCallback(
     async (v: boolean) => {
       if (v) {
-        const ok = await requestNotificationPermissions();
-        if (!ok) {
+        const perm = await ensurePrayerAzanPermissions({ openAndroidSystemScreens: true });
+        if (!perm.notificationsGranted) {
           setNotifWarn("permission");
           return;
         }

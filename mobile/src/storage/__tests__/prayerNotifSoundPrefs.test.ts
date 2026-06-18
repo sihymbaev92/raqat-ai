@@ -1,8 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  getSelectedCity,
   getPrayerNotifMutedSalatKeys,
   getPrayerNotifSoundId,
   PRAYER_NOTIF_SOUND_UI_ORDER,
+  setSelectedCity,
   setPrayerNotifMutedSalatKeys,
   setPrayerNotifSoundId,
 } from "../prefs";
@@ -13,6 +15,10 @@ jest.mock("@react-native-async-storage/async-storage", () => {
     getItem: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
     setItem: jest.fn((key: string, value: string) => {
       store.set(key, value);
+      return Promise.resolve();
+    }),
+    multiSet: jest.fn((pairs: Array<[string, string]>) => {
+      pairs.forEach(([key, value]) => store.set(key, value));
       return Promise.resolve();
     }),
     clear: jest.fn(() => {
@@ -55,5 +61,10 @@ describe("prayer notification sound prefs", () => {
   it("stores individually muted prayer adhan keys in stable order", async () => {
     await setPrayerNotifMutedSalatKeys(["isha", "asr", "asr"]);
     expect(await getPrayerNotifMutedSalatKeys()).toEqual(["asr", "isha"]);
+  });
+
+  it("falls back to a valid city when selected city storage is blank", async () => {
+    await setSelectedCity("", "");
+    expect(await getSelectedCity()).toEqual({ city: "Shymkent", country: "Kazakhstan" });
   });
 });

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  AppState,
   Platform,
   StyleSheet,
   Text,
@@ -7,6 +8,7 @@ import {
   type ImageSourcePropType,
   type LayoutChangeEvent,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect } from "@react-navigation/native";
 import { FlatList as GestureHandlerFlatList } from "react-native-gesture-handler";
@@ -15,21 +17,24 @@ import { RasterImage } from "@/ui/RasterImage";
 import {
   fetchHalalDamuProductsBrowse,
   fetchHalalDamuRecentCompanies,
+  halalDamuRemoteImageThumbnailUrl,
   type HalalDamuCompanyListRow,
   type HalalDamuProductItem,
 } from "../../api/halalDamuWp";
 import { kk } from "../../i18n/kk";
+import { getRaqatApiBase } from "../../config/raqatApiBase";
 import { menuIconAssets } from "../../theme/menuIconAssets";
 import type { ThemeColors } from "../../theme/colors";
 import { halalCertBadgeColors, halalCertTone } from "../../utils/halalCertDisplay";
 import { runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
 
-const ROTATOR_LIMIT = 50;
-const RECENT_COMPANY_IMAGE_SCAN_LIMIT = 90;
+const ROTATOR_LIMIT = 3;
+const RECENT_COMPANY_IMAGE_SCAN_LIMIT = 6;
+const SNAPSHOT_KEY = "raqat_dashboard_halal_rotator_v3";
+const SNAPSHOT_TTL_MS = 6 * 60 * 60 * 1000;
 const PRODUCT_CARD_GAP = 8;
-const VISIBLE_PRODUCT_CARDS = 4.5;
-const MARQUEE_TICK_MS = 80;
-const MARQUEE_STEP_PX = 2.1;
+const VISIBLE_PRODUCT_CARDS = 3.15;
+const AUTO_ADVANCE_MS = 5200;
 
 type Props = {
   colors: ThemeColors;
@@ -44,6 +49,8 @@ type ProductSlideProps = {
   styles: ReturnType<typeof makeStyles>;
 };
 
+type ProductImageMode = "proxy" | "thumbnail" | "original";
+
 function productSubtitle(item: HalalDamuProductItem): string {
   const brand = (item.seedBrand ?? "").trim();
   const barcode = (item.barcode ?? "").trim();
@@ -51,9 +58,24 @@ function productSubtitle(item: HalalDamuProductItem): string {
   return brand || barcode || kk.features.halalProductStatusHalal;
 }
 
-function productImageSource(item: HalalDamuProductItem): ImageSourcePropType {
+function productOriginalImageUrl(item: HalalDamuProductItem): string {
   const url = (item.imageUrl ?? "").trim();
-  return url ? { uri: url } : menuIconAssets.tileHalal;
+  return url;
+}
+
+function proxiedDashboardHalalImageUrl(url: string, width = 300): string {
+  const apiBase = getRaqatApiBase();
+  if (!apiBase) return halalDamuRemoteImageThumbnailUrl(url, width);
+  return `${apiBase}/api/v1/image-proxy?url=${encodeURIComponent(url)}&w=${width}`;
+}
+
+function productImageSource(item: HalalDamuProductItem, imageMode: ProductImageMode): ImageSourcePropType {
+  const url = productOriginalImageUrl(item);
+  if (!url) return menuIconAssets.tileHalal;
+  const proxyUrl = proxiedDashboardHalalImageUrl(url, 300);
+  const fallbackUrl = halalDamuRemoteImageThumbnailUrl(url, 300);
+  const uri = imageMode === "proxy" ? proxyUrl : imageMode === "thumbnail" ? fallbackUrl : url;
+  return { uri, cache: "force-cache" };
 }
 
 function recentCompanyRowToProduct(row: HalalDamuCompanyListRow): HalalDamuProductItem | null {
@@ -84,6 +106,40 @@ function dedupeImageProducts(items: HalalDamuProductItem[]): HalalDamuProductIte
   return out;
 }
 
+type HalalRotatorSnapshot = {
+  items: HalalDamuProductItem[];
+  fresh: boolean;
+};
+
+async function readHalalRotatorSnapshot(): Promise<HalalRotatorSnapshot | null> {
+  try {
+    const raw = await AsyncStorage.getItem(SNAPSHOT_KEY);
+    if (!raw) return null;
+    const payload = JSON.parse(raw) as { savedAt?: string; items?: HalalDamuProductItem[] };
+    if (!payload.savedAt || !payload.items?.length) return null;
+    const age = Date.now() - new Date(payload.savedAt).getTime();
+    if (!Number.isFinite(age)) return null;
+    return {
+      items: payload.items.slice(0, ROTATOR_LIMIT),
+      fresh: age <= SNAPSHOT_TTL_MS,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function writeHalalRotatorSnapshot(items: HalalDamuProductItem[]): Promise<void> {
+  if (!items.length) return;
+  try {
+    await AsyncStorage.setItem(
+      SNAPSHOT_KEY,
+      JSON.stringify({ savedAt: new Date().toISOString(), items: items.slice(0, ROTATOR_LIMIT) })
+    );
+  } catch {
+    /* snapshot is a best-effort dashboard speed-up */
+  }
+}
+
 async function fetchDashboardHalalImageProducts(): Promise<HalalDamuProductItem[]> {
   const [products, recent] = await Promise.all([
     fetchHalalDamuProductsBrowse({ perPage: RECENT_COMPANY_IMAGE_SCAN_LIMIT, page: 1, status: "halal" }),
@@ -96,11 +152,18 @@ async function fetchDashboardHalalImageProducts(): Promise<HalalDamuProductItem[
   return dedupeImageProducts([...productItems, ...recentItems]).slice(0, ROTATOR_LIMIT);
 }
 
-function ProductSlide({ item, slideWidth, isDark, styles }: ProductSlideProps) {
+const ProductSlide = memo(function ProductSlide({ item, slideWidth, isDark, styles }: ProductSlideProps) {
   const tone = halalCertTone(item.certificateStatus);
   const badge = halalCertBadgeColors(tone, isDark);
   const subtitle = productSubtitle(item);
-  const imageSource = productImageSource(item);
+  const originalImageUrl = productOriginalImageUrl(item);
+  const proxyUrl = originalImageUrl ? proxiedDashboardHalalImageUrl(originalImageUrl, 300) : "";
+  const [imageMode, setImageMode] = useState<ProductImageMode>("proxy");
+  const imageSource = productImageSource(item, imageMode);
+
+  useEffect(() => {
+    setImageMode("proxy");
+  }, [proxyUrl]);
 
   return (
     <View style={[styles.slide, slideWidth > 0 ? { width: slideWidth } : null]}>
@@ -110,10 +173,15 @@ function ProductSlide({ item, slideWidth, isDark, styles }: ProductSlideProps) {
           style={styles.productImage}
           resizeMode="cover"
           resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+          resizeMultiplier={Platform.OS === "android" ? 0.7 : undefined}
+          fadeDuration={0}
+          onError={() => {
+            setImageMode((prev) => (prev === "proxy" ? "thumbnail" : prev === "thumbnail" ? "original" : prev));
+          }}
           accessibilityIgnoresInvertColors
         />
         <View style={[styles.verifiedBadge, { backgroundColor: badge.bg, borderColor: badge.border }]}>
-          <MaterialIcons name="verified" size={15} color={badge.dot} />
+          <MaterialIcons name="verified" size={13} color={badge.dot} />
         </View>
       </View>
       <View style={styles.productBody}>
@@ -129,7 +197,7 @@ function ProductSlide({ item, slideWidth, isDark, styles }: ProductSlideProps) {
       </View>
     </View>
   );
-}
+});
 
 export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }: Props) {
   const [items, setItems] = useState<HalalDamuProductItem[]>([]);
@@ -137,6 +205,7 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
   const [slideWidth, setSlideWidth] = useState(0);
   const scrollOffsetRef = useRef(0);
   const focusedRef = useRef(true);
+  const appActiveRef = useRef(true);
   const listRef = useRef<React.ComponentRef<typeof GestureHandlerFlatList<HalalDamuProductItem>> | null>(
     null
   );
@@ -145,7 +214,7 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
   const total = items.length;
   const productCardWidth =
     slideWidth > 0
-      ? Math.max(68, Math.floor((slideWidth - PRODUCT_CARD_GAP * 4 - 24) / VISIBLE_PRODUCT_CARDS))
+      ? Math.max(58, Math.floor((slideWidth - PRODUCT_CARD_GAP * 3 - 20) / VISIBLE_PRODUCT_CARDS))
       : 76;
   const slideStep = productCardWidth + PRODUCT_CARD_GAP;
   const loopItems = useMemo(() => (items.length > 1 ? [...items, ...items] : items), [items]);
@@ -155,12 +224,20 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
     let alive = true;
     setLoadState("loading");
     void (async () => {
+      const snapshot = await readHalalRotatorSnapshot();
+      if (!alive) return null;
+      if (snapshot?.items.length) {
+        setItems(snapshot.items);
+        setLoadState("ready");
+        if (snapshot.fresh) return snapshot.items;
+      }
       await runWhenHeavyWorkAllowed();
       const nextItems = await fetchDashboardHalalImageProducts();
+      await writeHalalRotatorSnapshot(nextItems);
       return nextItems;
     })()
       .then((nextItems) => {
-        if (!alive) return;
+        if (!alive || !nextItems) return;
         setItems(nextItems);
         setLoadState(nextItems.length ? "ready" : "empty");
         scrollOffsetRef.current = 0;
@@ -191,17 +268,24 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
   );
 
   useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      appActiveRef.current = state === "active";
+    });
+    return () => sub.remove();
+  }, []);
+
+  useEffect(() => {
     if (slideStep <= 0 || total <= 1) return;
     const loopWidth = total * slideStep;
     const id = setInterval(() => {
-      if (!focusedRef.current || slideStep <= 0) return;
-      let nextOffset = scrollOffsetRef.current + MARQUEE_STEP_PX;
+      if (!focusedRef.current || !appActiveRef.current || slideStep <= 0) return;
+      let nextOffset = scrollOffsetRef.current + slideStep;
       if (nextOffset >= loopWidth) {
         nextOffset -= loopWidth;
       }
       scrollOffsetRef.current = nextOffset;
-      listRef.current?.scrollToOffset({ offset: nextOffset, animated: false });
-    }, MARQUEE_TICK_MS);
+      listRef.current?.scrollToOffset({ offset: nextOffset, animated: true });
+    }, AUTO_ADVANCE_MS);
     return () => clearInterval(id);
   }, [slideStep, total]);
 
@@ -231,12 +315,12 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
       loadState === "loading"
         ? kk.common.loading
         : loadState === "error"
-          ? "Халал өнімдер уақытша жүктелмеді"
+          ? "Халал тексеру каталогы"
           : "Халал каталог дайын";
     const fallbackBody =
       loadState === "loading"
         ? "Сертификатталған өнімдер витринасы ашылып жатыр."
-        : "Каталогты ашып, өнім, компания немесе штрихкод бойынша тексеріңіз.";
+        : "Өнім атауын, штрихкодты немесе өндірушіні енгізіп, сертификат мәліметін тексеріңіз.";
     return (
       <Pressable
         oyuBackdrop={false}
@@ -282,9 +366,11 @@ export function DashboardHalalProductsRotator({ colors, isDark, onOpenCatalog }:
         scrollEventThrottle={64}
         style={styles.list}
         contentContainerStyle={styles.listContent}
-        initialNumToRender={8}
-        maxToRenderPerBatch={8}
-        windowSize={3}
+        initialNumToRender={2}
+        maxToRenderPerBatch={1}
+        updateCellsBatchingPeriod={120}
+        windowSize={1}
+        removeClippedSubviews={Platform.OS !== "web"}
       />
       <Pressable
         oyuBackdrop={false}
@@ -350,15 +436,15 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       flexGrow: 0,
     },
     listContent: {
-      paddingHorizontal: 12,
-      paddingTop: 12,
-      paddingBottom: 12,
+      paddingHorizontal: 10,
+      paddingTop: 9,
+      paddingBottom: 9,
     },
     slide: {
       alignItems: "stretch",
-      gap: 5,
-      padding: 5,
-      borderRadius: 14,
+      gap: 4,
+      padding: 4,
+      borderRadius: 12,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.accentSurface,
@@ -366,7 +452,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     productImageFrame: {
       width: "100%",
       aspectRatio: 1,
-      borderRadius: 12,
+      borderRadius: 10,
       borderWidth: 1,
       overflow: "hidden",
       backgroundColor: colors.card,
@@ -377,11 +463,11 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     verifiedBadge: {
       position: "absolute",
-      right: 5,
-      bottom: 5,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      right: 4,
+      bottom: 4,
+      width: 20,
+      height: 20,
+      borderRadius: 10,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,

@@ -30,6 +30,14 @@ type InternalState = {
   resume: HatimResume | null;
 };
 
+let hatimMutationQueue: Promise<unknown> = Promise.resolve();
+
+function enqueueHatimMutation<T>(task: () => Promise<T>): Promise<T> {
+  const run = hatimMutationQueue.then(task, task);
+  hatimMutationQueue = run.catch(() => undefined);
+  return run;
+}
+
 async function persist(state: InternalState): Promise<void> {
   const payload: HatimProgressV2 = {
     v: 2,
@@ -86,17 +94,21 @@ export async function loadHatimResume(): Promise<HatimResume | null> {
 }
 
 export async function saveHatimProgress(read: Set<number>): Promise<void> {
-  const cur = await loadInternal();
-  await persist({ readSurahs: read, resume: cur.resume });
+  await enqueueHatimMutation(async () => {
+    const cur = await loadInternal();
+    await persist({ readSurahs: read, resume: cur.resume });
+  });
 }
 
 export async function saveHatimResume(surah: number, ayah: number): Promise<void> {
-  const cur = await loadInternal();
-  const resume: HatimResume = {
-    surah: Math.max(1, Math.min(114, surah)),
-    ayah: Math.max(1, ayah),
-  };
-  await persist({ readSurahs: cur.readSurahs, resume });
+  await enqueueHatimMutation(async () => {
+    const cur = await loadInternal();
+    const resume: HatimResume = {
+      surah: Math.max(1, Math.min(114, surah)),
+      ayah: Math.max(1, ayah),
+    };
+    await persist({ readSurahs: cur.readSurahs, resume });
+  });
 }
 
 /**
@@ -107,21 +119,23 @@ export async function recordHatimAyahTapped(
   ayah: number,
   ayahCountInSurah: number
 ): Promise<{ completedSurah: boolean }> {
-  const s = await loadInternal();
-  const resume: HatimResume = {
-    surah: Math.max(1, Math.min(114, surah)),
-    ayah: Math.max(1, ayah),
-  };
-  let readSurahs = new Set(s.readSurahs);
-  let completedSurah = false;
-  const total = Math.max(0, ayahCountInSurah);
-  if (total > 0 && ayah >= total) {
-    readSurahs.add(resume.surah);
-    completedSurah = true;
-  }
-  await persist({ readSurahs, resume });
-  await pushHatimToServerIfLoggedIn(readSurahs);
-  return { completedSurah };
+  return enqueueHatimMutation(async () => {
+    const s = await loadInternal();
+    const resume: HatimResume = {
+      surah: Math.max(1, Math.min(114, surah)),
+      ayah: Math.max(1, ayah),
+    };
+    let readSurahs = new Set(s.readSurahs);
+    let completedSurah = false;
+    const total = Math.max(0, ayahCountInSurah);
+    if (total > 0 && ayah >= total) {
+      readSurahs.add(resume.surah);
+      completedSurah = true;
+    }
+    await persist({ readSurahs, resume });
+    await pushHatimToServerIfLoggedInNow(readSurahs);
+    return { completedSurah };
+  });
 }
 
 export async function syncHatimWithServerBidirectional(): Promise<void> {
@@ -129,25 +143,31 @@ export async function syncHatimWithServerBidirectional(): Promise<void> {
   if (!base) return;
   const access = await getValidAccessToken();
   if (!access) return;
-  const local = await loadInternal();
   const r = await fetchMeHatim(base, access);
   if (!r.ok || r.status === 401) return;
-  const remoteArr = Array.isArray(r.read_surahs) ? r.read_surahs : [];
-  const remote = new Set(sortUnique(remoteArr.map((x) => parseInt(String(x), 10))));
-  if (remote.size === 0 && local.readSurahs.size > 0) {
-    await putMeHatim(base, access, sortUnique([...local.readSurahs]));
-    return;
-  }
-  const merged = new Set([...remote, ...local.readSurahs]);
-  const remoteSorted = sortUnique([...remote]);
-  const mergedSorted = sortUnique([...merged]);
-  await persist({ readSurahs: new Set(mergedSorted), resume: local.resume });
-  if (!sameSortedNumbers(remoteSorted, mergedSorted)) {
-    await putMeHatim(base, access, mergedSorted);
-  }
+  await enqueueHatimMutation(async () => {
+    const local = await loadInternal();
+    const remoteArr = Array.isArray(r.read_surahs) ? r.read_surahs : [];
+    const remote = new Set(sortUnique(remoteArr.map((x) => parseInt(String(x), 10))));
+    if (remote.size === 0 && local.readSurahs.size > 0) {
+      await putMeHatim(base, access, sortUnique([...local.readSurahs]));
+      return;
+    }
+    const merged = new Set([...remote, ...local.readSurahs]);
+    const remoteSorted = sortUnique([...remote]);
+    const mergedSorted = sortUnique([...merged]);
+    await persist({ readSurahs: new Set(mergedSorted), resume: local.resume });
+    if (!sameSortedNumbers(remoteSorted, mergedSorted)) {
+      await putMeHatim(base, access, mergedSorted);
+    }
+  });
 }
 
 export async function pushHatimToServerIfLoggedIn(read: Set<number>): Promise<void> {
+  await enqueueHatimMutation(() => pushHatimToServerIfLoggedInNow(read));
+}
+
+async function pushHatimToServerIfLoggedInNow(read: Set<number>): Promise<void> {
   const base = getRaqatApiBase();
   if (!base) return;
   const access = await getValidAccessToken();
@@ -156,13 +176,15 @@ export async function pushHatimToServerIfLoggedIn(read: Set<number>): Promise<vo
 }
 
 export async function toggleHatimSurah(n: number): Promise<Set<number>> {
-  const cur = await loadInternal();
-  const read = new Set(cur.readSurahs);
-  if (read.has(n)) read.delete(n);
-  else read.add(n);
-  await persist({ readSurahs: read, resume: cur.resume });
-  await pushHatimToServerIfLoggedIn(read);
-  return read;
+  return enqueueHatimMutation(async () => {
+    const cur = await loadInternal();
+    const read = new Set(cur.readSurahs);
+    if (read.has(n)) read.delete(n);
+    else read.add(n);
+    await persist({ readSurahs: read, resume: cur.resume });
+    await pushHatimToServerIfLoggedInNow(read);
+    return read;
+  });
 }
 
 export function hatimProgressFraction(read: Set<number>): { read: number; total: number; pct: number } {
@@ -172,6 +194,9 @@ export function hatimProgressFraction(read: Set<number>): { read: number; total:
 }
 
 export async function clearHatimProgress(): Promise<void> {
-  await persist({ readSurahs: new Set(), resume: null });
-  await pushHatimToServerIfLoggedIn(new Set());
+  await enqueueHatimMutation(async () => {
+    const read = new Set<number>();
+    await persist({ readSurahs: read, resume: null });
+    await pushHatimToServerIfLoggedInNow(read);
+  });
 }

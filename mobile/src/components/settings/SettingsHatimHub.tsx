@@ -29,6 +29,10 @@ import {
   makeSettingsStyles,
 } from "./settingsUi";
 import { SettingsBoolRow, SettingsChoiceRow } from "./settingsFormUi";
+import {
+  getQuranTajweedColorsEnabled,
+  setQuranTajweedColorsEnabled,
+} from "../../storage/quranReaderPrefs";
 
 type Props = { colors: ThemeColors };
 
@@ -55,17 +59,20 @@ export function SettingsHatimHub({ colors }: Props) {
   const [reminderHour, setReminderHour] = useState(20);
   const [reminderMinute, setReminderMinute] = useState(0);
   const [reminderErr, setReminderErr] = useState<string | null>(null);
+  const [tajweedColorsEnabled, setTajweedColorsEnabled] = useState(false);
 
   const reload = useCallback(async () => {
-    const [scope, en, clock] = await Promise.all([
+    const [scope, en, clock, tajweedOn] = await Promise.all([
       getHatimAudioPlayUntil(),
       getHatimReminderEnabled(),
       getHatimReminderClock(),
+      getQuranTajweedColorsEnabled(),
     ]);
     setPlayUntil(scope);
     setReminderEnabled(en);
     setReminderHour(clock.hour);
     setReminderMinute(clock.minute);
+    setTajweedColorsEnabled(tajweedOn);
   }, []);
 
   useFocusEffect(
@@ -84,6 +91,11 @@ export function SettingsHatimHub({ colors }: Props) {
     setPlayUntil(scope);
     void setHatimAudioPlayUntil(scope);
     setPlayUntilOpen(false);
+  };
+
+  const onTajweedColorsToggle = (v: boolean) => {
+    setTajweedColorsEnabled(v);
+    void setQuranTajweedColorsEnabled(v);
   };
 
   const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -176,6 +188,18 @@ export function SettingsHatimHub({ colors }: Props) {
             ))}
           </View>
         ) : null}
+      </SettingsIconCard>
+
+      <SettingsIconCard colors={colors}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14 }}>
+          <SettingsBoolRow
+            colors={colors}
+            label={kk.quran.tajweedModeLabel}
+            hint={kk.quran.tajweedModeHint}
+            value={tajweedColorsEnabled}
+            onChange={onTajweedColorsToggle}
+          />
+        </View>
       </SettingsIconCard>
 
       <SettingsIconCard colors={colors}>

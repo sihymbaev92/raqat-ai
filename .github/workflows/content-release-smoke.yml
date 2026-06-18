@@ -53,7 +53,11 @@ from db.migrations import run_schema_migrations
 db = os.environ["RAQAT_DB_PATH"]
 run_schema_migrations(db)
 con = sqlite3.connect(db)
-con.execute("INSERT OR REPLACE INTO quran (id,surah,ayah,surah_name,text_ar,text_kk,text_ru,text_en,translit,updated_at) VALUES (1,1,1,'Al-Fatiha','بِسْمِ اللَّهِ','Бисмиллаһ','Во имя Аллаха','In the name of Allah','Bismillah',datetime('now'))")
+for surah in range(1, 115):
+    con.execute(
+        "INSERT OR REPLACE INTO quran (id,surah,ayah,surah_name,text_ar,text_kk,text_ru,text_en,translit,updated_at) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))",
+        (surah, surah, 1, f"Surah {surah}", "بِسْمِ اللَّهِ", "Бисмиллаһ", "Во имя Аллаха", "In the name of Allah", "Bismillah"),
+    )
 con.execute("INSERT OR REPLACE INTO hadith (id,source,text_ar,text_kk,text_ru,text_en,grade,updated_at) VALUES (1,'smoke','نص','Тест хадис','Тест хадис','Test hadith','sahih',datetime('now'))")
 con.commit()
 con.close()
@@ -61,56 +65,17 @@ PY
           else
             python - <<'PY'
 import os, psycopg
+from db.postgresql_schema import ensure_postgresql_app_tables
 dsn = os.environ["DATABASE_URL"]
 with psycopg.connect(dsn) as con:
+    ensure_postgresql_app_tables(con)
     with con.cursor() as cur:
-        cur.execute("""
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-CREATE TABLE IF NOT EXISTS platform_identities (
-  platform_user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  telegram_user_id BIGINT UNIQUE,
-  apple_sub TEXT UNIQUE,
-  google_sub TEXT UNIQUE,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE IF NOT EXISTS platform_ai_chat_messages (
-  id BIGSERIAL PRIMARY KEY,
-  platform_user_id UUID NOT NULL REFERENCES platform_identities(platform_user_id) ON DELETE CASCADE,
-  role TEXT NOT NULL,
-  body TEXT NOT NULL,
-  source TEXT NOT NULL DEFAULT 'unknown',
-  client_id TEXT,
-  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE IF NOT EXISTS quran (
-  id BIGINT PRIMARY KEY,
-  surah INTEGER NOT NULL,
-  ayah INTEGER NOT NULL,
-  surah_name TEXT,
-  text_ar TEXT,
-  text_kk TEXT,
-  text_ru TEXT,
-  text_en TEXT,
-  translit TEXT,
-  updated_at TEXT
-);
-CREATE TABLE IF NOT EXISTS hadith (
-  id BIGINT PRIMARY KEY,
-  source TEXT,
-  text_ar TEXT,
-  text_kk TEXT,
-  text_ru TEXT,
-  text_en TEXT,
-  grade TEXT,
-  updated_at TEXT
-);
-""")
-        cur.execute("""
+        for surah in range(1, 115):
+            cur.execute("""
 INSERT INTO quran (id,surah,ayah,surah_name,text_ar,text_kk,text_ru,text_en,translit,updated_at)
-VALUES (1,1,1,'Al-Fatiha','بِسْمِ اللَّهِ','Бисмиллаһ','Во имя Аллаха','In the name of Allah','Bismillah',CURRENT_TIMESTAMP)
+VALUES (%s,%s,1,%s,'بِسْمِ اللَّهِ','Бисмиллаһ','Во имя Аллаха','In the name of Allah','Bismillah',CURRENT_TIMESTAMP)
 ON CONFLICT (id) DO UPDATE SET updated_at=EXCLUDED.updated_at
-""")
+""", (surah, surah, f"Surah {surah}"))
         cur.execute("""
 INSERT INTO hadith (id,source,text_ar,text_kk,text_ru,text_en,grade,updated_at)
 VALUES (1,'smoke','نص','Тест хадис','Тест хадис','Test hadith','sahih',CURRENT_TIMESTAMP)
@@ -124,15 +89,17 @@ PY
           RAQAT_DB_PATH: ${{ github.workspace }}/global_clean.db
           RAQAT_PLATFORM_API_BASE: http://127.0.0.1:8787
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/raqat_test
+          RAQAT_REDIS_REQUIRED: "0"
         run: |
           if [ "${{ matrix.backend }}" = "sqlite" ]; then
             unset DATABASE_URL
           fi
           nohup python -m uvicorn platform_api.main:app --host 127.0.0.1 --port 8787 >/tmp/raqat_api.log 2>&1 &
           for i in $(seq 1 20); do
-            curl -fsS http://127.0.0.1:8787/health >/dev/null && break
+            curl -fsS http://127.0.0.1:8787/ready >/dev/null && break
             sleep 1
           done
+          curl -fsS http://127.0.0.1:8787/ready
           python scripts/validate_content_release.py --api-base "$RAQAT_PLATFORM_API_BASE"
 
       - name: Upload API log artifact

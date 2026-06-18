@@ -21,9 +21,15 @@ describe("kzCities", () => {
     expect(c).toEqual(oral);
   });
 
+  it("қазақша қала және ел атауларын да координатқа түсіреді", () => {
+    expect(getKzPresetCoords("Шымкент", "Қазақстан")).toEqual(getKzPresetCoords("Shymkent", "Kazakhstan"));
+    expect(getKzPresetCoords("Алматы", "Казахстан")).toEqual(getKzPresetCoords("Almaty", "Kazakhstan"));
+  });
+
   it("cityLabelKkForApiName қазақша атауды қайтарады", () => {
     expect(cityLabelKkForApiName("Shymkent")).toBe("Шымкент");
     expect(cityLabelKkForApiName("Nur-Sultan")).toBe("Астана");
     expect(cityLabelKkForApiName("Uralsk")).toBe("Орал");
+    expect(cityLabelKkForApiName("Шымкент")).toBe("Шымкент");
   });
 });

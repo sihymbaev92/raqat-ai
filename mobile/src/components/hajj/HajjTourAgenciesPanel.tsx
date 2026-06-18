@@ -141,8 +141,19 @@ export function HajjTourAgenciesPanel({ colors, tr }: Props) {
         </View>
       ) : expanded ? (
         <View style={styles.empty}>
-          <MaterialIcons name="info-outline" size={18} color={colors.muted} />
-          <Text style={styles.emptyTxt}>{tr(kk.features.hajjTourAgenciesEmpty)}</Text>
+          <MaterialIcons name="verified-user" size={20} color={colors.accent} />
+          <View style={styles.emptyTextCol}>
+            <Text style={styles.emptyTitle}>{tr(kk.features.hajjTourAgenciesEmptyTitle)}</Text>
+            <Text style={styles.emptyTxt}>{tr(kk.features.hajjTourAgenciesEmpty)}</Text>
+            <View style={styles.checklist}>
+              {kk.features.hajjTourAgenciesChecklist.map((item) => (
+                <View key={item} style={styles.checkRow}>
+                  <MaterialIcons name="check-circle" size={15} color={colors.accent} />
+                  <Text style={styles.checkTxt}>{tr(item)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </View>
       ) : null}
 
@@ -188,7 +199,12 @@ function makePanelStyles(colors: ThemeColors) {
       paddingHorizontal: 12,
       paddingVertical: 12,
     },
+    emptyTextCol: { flex: 1, minWidth: 0 },
+    emptyTitle: { color: colors.text, fontSize: 13, fontWeight: "900", marginBottom: 4 },
     emptyTxt: { flex: 1, color: colors.muted, fontSize: 12, lineHeight: 17 },
+    checklist: { gap: 6, marginTop: 10 },
+    checkRow: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
+    checkTxt: { flex: 1, color: colors.text, fontSize: 12, lineHeight: 17, fontWeight: "700" },
     disclaimer: {
       paddingHorizontal: 12,
       paddingBottom: 10,

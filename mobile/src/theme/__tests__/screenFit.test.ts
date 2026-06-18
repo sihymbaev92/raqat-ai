@@ -1,5 +1,6 @@
 import {
   resolveScreenFitMetrics,
+  screenFitExplicitEdgeStyle,
   screenFitScrollContentStyle,
 } from "../screenFit";
 
@@ -27,6 +28,12 @@ describe("screenFit", () => {
     expect(style.maxWidth).toBe(720);
     expect(style.alignSelf).toBe("center");
     expect(style.paddingHorizontal).toBe(24);
+  });
+
+  it("builds explicit edge overrides for screen-fit scroll views", () => {
+    expect(screenFitExplicitEdgeStyle({ bottom: 32 })).toEqual({ paddingBottom: 32 });
+    expect(screenFitExplicitEdgeStyle({ top: 10, bottom: 28 })).toEqual({ paddingTop: 10, paddingBottom: 28 });
+    expect(screenFitExplicitEdgeStyle()).toBeNull();
   });
 });
 

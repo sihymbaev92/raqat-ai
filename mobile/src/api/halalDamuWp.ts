@@ -11,7 +11,6 @@
  * - GET /company — соңғы мекемелер тізімі (_embed)
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
 import { getHalalDamuUrl } from "../config/halalDamuUrl";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { parseLatLngFromMapServiceUrl } from "../lib/halalDamuMapLinkGeo";
@@ -111,7 +110,8 @@ function isRaqatPlatformApiBase(api: string): boolean {
 
 /**
  * Platform API прокси: жергілікті dev, api.rahatomir.com, немесе EXPO_PUBLIC_HALAL_DAMU_USE_PROXY=1.
- * Web: тікелей halaldamu.kz (CORS). DIRECT=1 — проксиді міндетті түрде өшіреді.
+ * Web-та да production proxy керек: браузер halaldamu.kz direct fetch-ін CORS-пен тоқтатады.
+ * DIRECT=1 — проксиді міндетті түрде өшіреді.
  */
 export function shouldUseHalalDamuPlatformProxy(): boolean {
   if (truthyEnv(typeof process !== "undefined" ? process.env?.EXPO_PUBLIC_HALAL_DAMU_DIRECT : undefined)) {
@@ -123,7 +123,6 @@ export function shouldUseHalalDamuPlatformProxy(): boolean {
   }
   const api = getRaqatApiBase();
   if (!api) return false;
-  if (Platform.OS === "web") return false;
   return isLikelyLocalDevApiBase(api) || isRaqatPlatformApiBase(api);
 }
 
@@ -178,6 +177,36 @@ export type HalalDamuCompanyListRow = {
   /** `wp/v2/company` + `_embed` — featured media, болмаса null */
   thumbnailUrl: string | null;
 };
+
+const HALAL_DAMU_WP_UPLOAD_SIZE_SUFFIX_RE = /-\d+x\d+$/;
+const HALAL_DAMU_THUMBNAIL_IMAGE_EXT_RE = /\.(jpe?g|png|webp)$/i;
+
+/**
+ * WordPress upload image үшін dashboard thumbnail candidate.
+ * Серверде variant жоқ болса caller original URL-ға fallback жасауы керек.
+ */
+export function halalDamuRemoteImageThumbnailUrl(
+  url: string,
+  size: number = 300
+): string {
+  const raw = url.trim();
+  if (!raw) return raw;
+  try {
+    const u = new URL(raw);
+    const path = u.pathname;
+    if (!path.includes("/wp-content/uploads/")) return raw;
+    if (!HALAL_DAMU_THUMBNAIL_IMAGE_EXT_RE.test(path)) return raw;
+    const dot = path.lastIndexOf(".");
+    if (dot <= 0) return raw;
+    const stem = path.slice(0, dot);
+    if (HALAL_DAMU_WP_UPLOAD_SIZE_SUFFIX_RE.test(stem)) return raw;
+    const ext = path.slice(dot);
+    u.pathname = `${stem}-${size}x${size}${ext}`;
+    return u.toString();
+  } catch {
+    return raw;
+  }
+}
 
 /** WP CPT жауабындағы `_embedded['wp:featuredmedia']` → кіші сурет URL */
 function halalDamuFeaturedThumbFromWpCompany(o: Record<string, unknown>): string | null {
@@ -864,7 +893,7 @@ async function halalWriteCompaniesBulkDisk(_serverKey: string, _items: HalalDamu
   /** ~4 МБ JSON AsyncStorage лимитін (Android ~6 МБ) асады — тек жадта сақтаймыз. */
 }
 
-/** Еski ~4 МБ bulk кэш — AsyncStorage лимитін асады; бір рет тазалау. */
+/** Ескі ~4 МБ bulk кэш — AsyncStorage лимитін асады; бір рет тазалау. */
 export async function purgeHalalDamuOversizedDiskCaches(): Promise<void> {
   try {
     const raw = await AsyncStorage.getItem(COMPANIES_BULK_DISK_KEY);

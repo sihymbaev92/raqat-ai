@@ -55,6 +55,7 @@ import {
 import { mushafPageForSurahAyah } from "../quran/mushafPageForSurahAyah";
 import {
   isMushafBookRasterBackend,
+  mushafBookEffectiveRenderBackend,
   mushafBookPageRenderBackend,
 } from "../quran/mushafPageRenderBackend";
 import { loadMushafAyahMap, type MushafAyahMapFile } from "../quran/mushafAyahMap";
@@ -66,8 +67,10 @@ import { surahArabicListTitle } from "../data/surahArabicTitles";
 import {
   quranAyahMp3Url,
   quranReciterHasAudioForGlobalAyah,
+  quranReciterSupportsArabicKaraoke,
   quranReciterUsesAyahAudio,
 } from "../services/quranSudaisAudio";
+import { resolveCachedOrRemoteQuranAudioUri } from "../services/quranAudioCache";
 import { ayahNumbersForAudioPlayUntil } from "../quran/quranAyahPlayQueue";
 import {
   getHatimAudioPlayUntil,
@@ -335,8 +338,11 @@ function HatimPageTurnOverlay({
 }
 
 export function QuranMushafBookScreen({ route, navigation }: Props) {
-  const { initialPage, focusSurah, focusAyah } = route.params ?? {};
-  const surahScope = focusSurah != null && focusSurah >= 1 && focusSurah <= 114 ? focusSurah : null;
+  const { initialPage, focusSurah, focusAyah, continuousMushaf } = route.params ?? {};
+  const surahScope =
+    !continuousMushaf && focusSurah != null && focusSurah >= 1 && focusSurah <= 114
+      ? focusSurah
+      : null;
   const routeStartPageIndex =
     focusSurah != null && focusAyah != null
       ? mushafBookPageIndex(mushafPageForSurahAyah(focusSurah, focusAyah))
@@ -346,20 +352,15 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const bookPageWidth = useMemo(
-    () =>
-      Platform.OS === "web"
-        ? mushafBookContentWidth(windowWidth)
-        : mushafBookNativeContentWidth(windowWidth),
-    [windowWidth]
-  );
   const [pages, setPages] = useState<MushafBookPageSlice[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(routeStartPageIndex);
   const [pageTurn, setPageTurn] = useState<HatimPageTurnState>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [pagerViewWidth, setPagerViewWidth] = useState(0);
   const [pagerViewHeight, setPagerViewHeight] = useState(0);
+  const pagerWidthStableRef = useRef(0);
   const pagerHeightStableRef = useRef(0);
   const pageIndexFromViewabilityRef = useRef(false);
   const pageTurnAnim = useRef(new Animated.Value(0)).current;
@@ -410,6 +411,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const translationInFlightRef = useRef<Set<string>>(new Set());
   const tajweedInFlightRef = useRef<Set<number>>(new Set());
   const turkishPrintInFlightRef = useRef<Set<number>>(new Set());
+  const mountedRef = useRef(true);
   const audioPlanRef = useRef<{ mode: "single" | "juz" | "repeat"; queue: number[] }>({
     mode: "single",
     queue: [],
@@ -426,19 +428,36 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     readingThemeId,
   });
   const readingTheme = useMemo(() => resolveQuranReadingTheme(readingThemeId), [readingThemeId]);
-  const pagerPages = useMemo(() => [...pages].reverse(), [pages]);
-  const useQcf4PageRanges = useMemo(
-    () => mushafBookPageRenderBackend(readingThemeId) === "qcf4",
-    [readingThemeId]
+  const pagerLayoutWidth = Platform.OS === "web" ? windowWidth : pagerViewWidth > 0 ? pagerViewWidth : windowWidth;
+  const bookPageWidth = useMemo(
+    () =>
+      Platform.OS === "web"
+        ? mushafBookContentWidth(pagerLayoutWidth)
+        : mushafBookNativeContentWidth(pagerLayoutWidth),
+    [pagerLayoutWidth]
   );
+  const pagerPages = useMemo(() => [...pages].reverse(), [pages]);
+  const effectiveShowTajweedColors = showTajweedColors && arabicScriptEdition === "madinah";
+  const useQcf4PageRanges = useMemo(
+    () =>
+      mushafBookEffectiveRenderBackend(readingThemeId, {
+        showTajweedColors: effectiveShowTajweedColors,
+        arabicScriptEdition,
+      }) === "qcf4",
+    [arabicScriptEdition, effectiveShowTajweedColors, readingThemeId]
+  );
+  const effectiveShowReaderTranslit = effectiveShowTajweedColors ? false : showReaderTranslit;
+  const effectiveShowReaderMeaning = effectiveShowTajweedColors ? false : showReaderMeaning;
   /** Quran.com хатымда бет телефон экранының төрт бұрышына дейін жайылады. */
   const topInset = readingTheme.minimalPageChrome || Platform.OS === "web" ? 0 : insets.top;
+  /** Кей Android-та gesture/navigation bar safe-area 0 болып келеді — төменгі аят кесілмеуі үшін аз резерв. */
+  const bottomInset = readingTheme.minimalPageChrome && Platform.OS !== "web" ? Math.max(insets.bottom, 8) : 0;
   /** Хатым беті нақты pager өлшемімен салынады; native-та 0 биіктікпен ерте render жасамаймыз. */
   const mushafViewportHeight = useMemo(() => {
     if (pagerViewHeight > 0) return pagerViewHeight;
-    return Math.max(320, Math.floor(windowHeight - topInset - (readingTheme.minimalPageChrome ? 0 : 96)));
-  }, [pagerViewHeight, readingTheme.minimalPageChrome, topInset, windowHeight]);
-  const hatimAutoFitReady = pagerViewHeight > 0 || Platform.OS === "web";
+    return Math.max(320, Math.floor(windowHeight - topInset - bottomInset - (readingTheme.minimalPageChrome ? 0 : 96)));
+  }, [pagerViewHeight, readingTheme.minimalPageChrome, topInset, bottomInset, windowHeight]);
+  const hatimAutoFitReady = Platform.OS === "web" || (pagerViewWidth > 0 && pagerViewHeight > 0);
   const styles = useMemo(
     () => makeMushafBookPageStyles(colors, isDark, metrics, readingThemeId),
     [colors, isDark, metrics, readingThemeId]
@@ -447,6 +466,12 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const startPageIndex = useMemo(() => {
     return routeStartPageIndex;
   }, [routeStartPageIndex]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!pages.length || loading) {
@@ -526,11 +551,12 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       void loadQuranBookFonts().catch(() => {});
       void (async () => {
         try {
+          await runWhenHeavyWorkAllowed();
           await ensureBundledQuranReaderLoaded();
           await runWhenHeavyWorkAllowed();
           if (!alive) return;
-          const full = useQcf4PageRanges ? buildQcf4MushafPagesGlobal() : buildMushafPagesGlobal();
-          if (full.length) applyPages(full);
+          // Web renders one visible page and resolves text lazily from the loaded Quran cache.
+          // Replacing all 604 pages with full objects causes visible freezes on Hatim/Quran.
           setQuranTextRev((v) => v + 1);
         } catch (e) {
           if (__DEV__) console.warn("[QuranMushafBook] bundled quran load failed", e);
@@ -544,6 +570,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     void (async () => {
       try {
         void loadQuranBookFonts().catch(() => {});
+        await runWhenHeavyWorkAllowed();
         await ensureBundledQuranReaderLoaded();
         await runWhenHeavyWorkAllowed();
         if (!alive) return;
@@ -556,7 +583,16 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     return () => {
       alive = false;
     };
-  }, [focusSurah, focusAyah, startPageIndex, loadKey, surahScope, initialPage, useQcf4PageRanges]);
+  }, [
+    focusSurah,
+    focusAyah,
+    startPageIndex,
+    loadKey,
+    surahScope,
+    initialPage,
+    continuousMushaf,
+    useQcf4PageRanges,
+  ]);
 
   const resolveHatimSelection = useCallback((selection: HatimAyahSelection): HatimAyahSelection => {
     const resolved = resolveMushafBookAyah({
@@ -623,16 +659,16 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       return;
     }
     listRef.current?.scrollToOffset({
-      offset: mushafBookPageOffsetForIndex(pageIndex, windowWidth, pages.length),
+      offset: mushafBookPageOffsetForIndex(pageIndex, pagerLayoutWidth, pages.length),
       animated: false,
     });
-  }, [pages.length, loading, pageIndex, windowWidth]);
+  }, [pages.length, loading, pageIndex, pagerLayoutWidth]);
 
   const { scrollToAyahPage } = useMushafBookAudioScroll({
     pages,
     playingRef,
     ayahAudioIsPlaying,
-    windowWidth,
+    windowWidth: pagerLayoutWidth,
     listRef,
     setPageIndex,
   });
@@ -744,19 +780,22 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
           setToast(kk.quran.ayahAudioError);
           return;
         }
-        const uri = quranAyahMp3Url(globalN, reciterEdition);
+        const remoteUri = quranAyahMp3Url(globalN, reciterEdition);
+        const uri = await resolveCachedOrRemoteQuranAudioUri(remoteUri);
         const ayahRow = ayahForRef(ref);
-        const plainForKaraoke = isAyahTimedAudio && ayahRow ? displayCachedAyahArabic(ayahRow, arabicScriptEdition) : "";
+        const useArabicKaraoke = isAyahTimedAudio && quranReciterSupportsArabicKaraoke(reciterEdition);
+        const plainForKaraoke = useArabicKaraoke && ayahRow ? displayCachedAyahArabic(ayahRow, arabicScriptEdition) : "";
         karaokePlainTextRef.current = plainForKaraoke;
         karaokeWordCountRef.current = splitAyahArabicWords(plainForKaraoke).length;
         karaokeSegmentsRef.current = null;
         karaokeSegmentRefDurRef.current = 0;
-        if (isAyahTimedAudio && plainForKaraoke) {
-          const meta = await fetchQuranComAyahAudioSegments(ref.surah, ref.ayah, reciterEdition);
-          if (meta) {
+        if (useArabicKaraoke && plainForKaraoke) {
+          void fetchQuranComAyahAudioSegments(ref.surah, ref.ayah, reciterEdition).then((meta) => {
+            if (audioRequestSeqRef.current !== requestSeq || !meta) return;
             karaokeSegmentsRef.current = meta.segments;
             karaokeSegmentRefDurRef.current = meta.referenceDurationMs;
-          }
+            flushKaraokeProgress();
+          });
         }
         lastKaraokeWordIdxRef.current = -1;
         lastAudioPositionMsRef.current = 0;
@@ -799,6 +838,10 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
           if (st.didJustFinish) {
             const p = audioPlanRef.current;
             const cur = playingRefState.current;
+            if (p.mode === "repeat" && cur) {
+              void playAyah(cur, { mode: "repeat", queue: [] });
+              return;
+            }
             if (p.mode === "juz" && p.queue.length > 0 && cur) {
               const [nextAyah, ...rest] = p.queue;
               audioPlanRef.current = { mode: "juz", queue: rest };
@@ -1033,22 +1076,17 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     );
     if (!missing.length) return;
 
-    let alive = true;
     for (const surah of missing) {
       if (tajweedInFlightRef.current.has(surah)) continue;
       tajweedInFlightRef.current.add(surah);
       void (async () => {
         const map = await fetchHatimTajweedMap(surah);
-        if (alive && map) {
+        if (mountedRef.current && map) {
           setPages((prev) => mergeTajweedIntoMushafPages(prev, surah, map));
         }
         tajweedInFlightRef.current.delete(surah);
       })();
     }
-
-    return () => {
-      alive = false;
-    };
   }, [arabicScriptEdition, currentPage, pages, showTajweedColors]);
 
   useEffect(() => {
@@ -1167,9 +1205,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       mushafTextScale,
       mushafDensity,
       showReaderArabic,
-      showReaderTranslit,
-      showReaderMeaning,
-      showTajweedColors,
+      effectiveShowReaderTranslit,
+      effectiveShowReaderMeaning,
+      effectiveShowTajweedColors,
       arabicScriptEdition,
       ayahMarkers,
       playingRef,
@@ -1185,9 +1223,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       mushafTextScale,
       mushafDensity,
       showReaderArabic,
-      showReaderTranslit,
-      showReaderMeaning,
-      showTajweedColors,
+      effectiveShowReaderTranslit,
+      effectiveShowReaderMeaning,
+      effectiveShowTajweedColors,
       arabicScriptEdition,
       ayahMarkers,
       playingRef,
@@ -1219,11 +1257,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       pageIndexFromViewabilityRef.current = true;
       setPageIndex(target);
       listRef.current?.scrollToOffset({
-        offset: mushafBookPageOffsetForIndex(target, windowWidth, pages.length),
+        offset: mushafBookPageOffsetForIndex(target, pagerLayoutWidth, pages.length),
         animated,
       });
     },
-    [pages.length, windowWidth]
+    [pages.length, pagerLayoutWidth]
   );
 
   const hatimPagerPanResponder = useMemo(
@@ -1241,7 +1279,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             pages.length,
             gesture.dx,
             gesture.vx,
-            windowWidth
+            pagerLayoutWidth
           );
           scrollToHatimPageIndex(next, true);
         },
@@ -1251,33 +1289,33 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             pages.length,
             gesture.dx,
             gesture.vx,
-            windowWidth
+            pagerLayoutWidth
           );
           scrollToHatimPageIndex(next, true);
         },
       }),
-    [pageIndex, pages.length, scrollToHatimPageIndex, windowWidth]
+    [pageIndex, pages.length, scrollToHatimPageIndex, pagerLayoutWidth]
   );
 
   const getPagerItemLayout = useCallback(
     (_: ArrayLike<MushafBookPageSlice> | null | undefined, index: number) => ({
-      length: windowWidth,
-      offset: mushafBookOffsetForVisualIndex(index, windowWidth),
+      length: pagerLayoutWidth,
+      offset: mushafBookOffsetForVisualIndex(index, pagerLayoutWidth),
       index,
     }),
-    [windowWidth]
+    [pagerLayoutWidth]
   );
 
   const onPagerScrollToIndexFailed = useCallback(
     ({ index }: { index: number }) => {
       setTimeout(() => {
         listRef.current?.scrollToOffset({
-          offset: mushafBookOffsetForVisualIndex(index, windowWidth),
+          offset: mushafBookOffsetForVisualIndex(index, pagerLayoutWidth),
           animated: false,
         });
       }, 200);
     },
-    [windowWidth]
+    [pagerLayoutWidth]
   );
 
   useEffect(() => {
@@ -1331,7 +1369,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   }
 
   return (
-    <View style={[styles.root, { paddingTop: topInset }]}>
+    <View style={[styles.root, { paddingTop: topInset, paddingBottom: bottomInset }]}>
       {!readingTheme.minimalPageChrome ? (
         <View style={styles.topBar}>
           <Text style={styles.topBarTitle} numberOfLines={1}>
@@ -1353,9 +1391,14 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         style={[styles.pagerHost, { position: "relative" }]}
         {...hatimPagerPanResponder.panHandlers}
         onLayout={(e) => {
+          const w = Math.round(e.nativeEvent.layout.width);
           const h = Math.round(e.nativeEvent.layout.height);
+          if (w > 0 && Math.abs(w - pagerWidthStableRef.current) >= 2) {
+            pagerWidthStableRef.current = w;
+            setPagerViewWidth(w);
+          }
           if (h <= 0) return;
-          if (Math.abs(h - pagerHeightStableRef.current) < 12) return;
+          if (Math.abs(h - pagerHeightStableRef.current) < 2) return;
           pagerHeightStableRef.current = h;
           setPagerViewHeight(h);
         }}
@@ -1366,7 +1409,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             <Text style={styles.muted}>{kk.common.loading}</Text>
           </View>
         ) : shouldRenderSingleMushafBookPageOnWeb(Platform.OS) && currentPage ? (
-          <View style={[styles.pageShell, { width: windowWidth, alignItems: "center" }]}>
+          <View style={[styles.pageShell, { width: pagerLayoutWidth, alignItems: "center" }]}>
             <IlluminatedManuscriptFrame
               isDark={isDark}
               readingThemeId={readingThemeId}
@@ -1383,9 +1426,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
                 styles={styles}
                 isActive
                 showReaderArabic={showReaderArabic}
-                showReaderTranslit={showReaderTranslit}
-                showReaderMeaning={showReaderMeaning}
-                showTajweedColors={showTajweedColors && arabicScriptEdition === "madinah"}
+                showReaderTranslit={effectiveShowReaderTranslit}
+                showReaderMeaning={effectiveShowReaderMeaning}
+                showTajweedColors={effectiveShowTajweedColors}
                 arabicScriptEdition={arabicScriptEdition}
                 mushafTextScale={mushafTextScale}
                 playingRef={playingRef}
@@ -1415,7 +1458,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             updateCellsBatchingPeriod={50}
             scrollEnabled={MUSHAF_BOOK_PAGER_NATIVE_SCROLL_ENABLED}
             initialScrollIndex={mushafBookVisualIndexForPageIndex(pageIndex, pages.length)}
-            removeClippedSubviews={Platform.OS !== "web"}
+            removeClippedSubviews={Platform.OS === "android"}
             extraData={pagerExtraData}
             getItemLayout={getPagerItemLayout}
             onScrollToIndexFailed={onPagerScrollToIndexFailed}
@@ -1424,7 +1467,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             renderItem={({ item: page, index }) => {
               const logicalIndex = mushafBookVisualIndexForPageIndex(index, pages.length);
               return (
-                <View style={[styles.pageShell, { width: windowWidth, alignItems: "center" }]}>
+                <View style={[styles.pageShell, { width: pagerLayoutWidth, alignItems: "center" }]}>
                   <IlluminatedManuscriptFrame
                     isDark={isDark}
                     readingThemeId={readingThemeId}
@@ -1441,9 +1484,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
                       styles={styles}
                       isActive={isMushafBookRenderPageActive(logicalIndex, pageIndex)}
                       showReaderArabic={showReaderArabic}
-                      showReaderTranslit={showReaderTranslit}
-                      showReaderMeaning={showReaderMeaning}
-                      showTajweedColors={showTajweedColors && arabicScriptEdition === "madinah"}
+                      showReaderTranslit={effectiveShowReaderTranslit}
+                      showReaderMeaning={effectiveShowReaderMeaning}
+                      showTajweedColors={effectiveShowTajweedColors}
                       arabicScriptEdition={arabicScriptEdition}
                       mushafTextScale={mushafTextScale}
                       playingRef={playingRef}

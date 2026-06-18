@@ -23,7 +23,7 @@ export const menuIconAssets = {
   tileTajweed: require("../../assets/menu-icons/tile-tajweed-custom.png"),
   /** Басты бет / мазмұн хабы: «Дәстүр мен дін» (KazakhTradition) */
   tileDinTradition: require("../../assets/menu-icons/tile-din-tradition.png"),
-  /** Дәстүр хабы: отбасы / шежіре */
+  /** Дәстүр хабы: отбасы әдебі */
   heroDinTraditionFamily: require("../../assets/menu-icons/hero-din-tradition-family.png"),
   /** Дәстүр хабы: салт-дәстүр оюы */
   traditionOrnament: require("../../assets/tradition/tradition-ornament.png"),

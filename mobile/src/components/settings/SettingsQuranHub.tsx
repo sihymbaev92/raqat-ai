@@ -45,6 +45,15 @@ import {
   clearQuranLastReadPositions,
   setQuranLastReadEnabled,
 } from "../../storage/quranLastRead";
+import {
+  loadQuranAudioDownloadDashboard,
+  pauseQuranAudioDownloads,
+  resetQuranAudioDownloadsAndCache,
+  resumeQuranAudioDownloadsFromSettings,
+  setQuranAudioAllowMobileData,
+  setQuranAudioAutoDownloadEnabled,
+} from "../../services/quranAudioDownloadManager";
+import type { QuranAudioDownloadStatus } from "../../storage/quranAudioDownloadPrefs";
 import { SettingsSection, SettingsCard, SettingsRow, makeSettingsStyles } from "./settingsUi";
 import {
   SettingsAccordion,
@@ -55,20 +64,63 @@ import {
 } from "./settingsFormUi";
 
 type Props = { colors: ThemeColors };
+type QuranAudioDashboard = Awaited<ReturnType<typeof loadQuranAudioDownloadDashboard>>;
+
+function mb(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1);
+}
+
+function quranAudioStatusLabel(status: QuranAudioDownloadStatus): string {
+  switch (status) {
+    case "running":
+      return kk.settings.quranAudioStatusRunning;
+    case "paused":
+      return kk.settings.quranAudioStatusPaused;
+    case "blocked":
+      return kk.settings.quranAudioStatusBlocked;
+    case "complete":
+      return kk.settings.quranAudioStatusComplete;
+    case "error":
+      return kk.settings.quranAudioStatusError;
+    default:
+      return kk.settings.quranAudioStatusIdle;
+  }
+}
 
 export function SettingsQuranHub({ colors }: Props) {
   const styles = makeSettingsStyles(colors);
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [prefs, setPrefs] = useState<QuranReaderPrefsSnapshot | null>(null);
+  const [audioDash, setAudioDash] = useState<QuranAudioDashboard | null>(null);
 
   const reload = useCallback(async () => {
     setPrefs(await loadQuranReaderPrefs());
+  }, []);
+
+  const reloadAudio = useCallback(async () => {
+    setAudioDash(await loadQuranAudioDownloadDashboard());
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       void reload();
     }, [reload])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      const run = async () => {
+        const next = await loadQuranAudioDownloadDashboard();
+        if (alive) setAudioDash(next);
+      };
+      void run();
+      const timer = setInterval(() => void run(), 2500);
+      return () => {
+        alive = false;
+        clearInterval(timer);
+      };
+    }, [])
   );
 
   if (!prefs) return null;
@@ -78,6 +130,11 @@ export function SettingsQuranHub({ colors }: Props) {
   };
 
   const mushafPct = Math.round(prefs.mushafTextScale * 100);
+  const audioState = audioDash?.state;
+  const audioPrefs = audioDash?.prefs;
+  const audioDone = audioState?.cursorIndex ?? 0;
+  const audioTotal = audioState?.total ?? 0;
+  const audioStatus = audioState ? quranAudioStatusLabel(audioState.status) : kk.settings.quranAudioStatusIdle;
 
   return (
     <>
@@ -258,6 +315,86 @@ export function SettingsQuranHub({ colors }: Props) {
             );
           })}
         </SettingsAccordion>
+        <SettingsCard colors={colors} panel>
+          <Text style={styles.label}>{kk.settings.quranAudioOfflineTitle}</Text>
+          <Text style={[styles.hint, { marginTop: 4 }]}>{kk.settings.quranAudioOfflineSub}</Text>
+          <SettingsBoolRow
+            colors={colors}
+            label={kk.settings.quranAudioAutoDownload}
+            hint={kk.settings.quranAudioAutoDownloadHint}
+            value={audioPrefs?.enabled ?? true}
+            onChange={(v) => {
+              void setQuranAudioAutoDownloadEnabled(v).then((snap) => {
+                setAudioDash((prev) => ({
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...snap,
+                  cacheFiles: prev?.cacheFiles ?? 0,
+                  cacheBytes: prev?.cacheBytes ?? 0,
+                }));
+                void reloadAudio();
+              });
+            }}
+          />
+          <SettingsBoolRow
+            colors={colors}
+            label={kk.settings.quranAudioAllowMobileData}
+            hint={kk.settings.quranAudioAllowMobileDataHint}
+            value={audioPrefs?.allowMobileData ?? false}
+            disabled={!(audioPrefs?.enabled ?? true)}
+            onChange={(v) => {
+              void setQuranAudioAllowMobileData(v).then((snap) => {
+                setAudioDash((prev) => ({
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...snap,
+                  cacheFiles: prev?.cacheFiles ?? 0,
+                  cacheBytes: prev?.cacheBytes ?? 0,
+                }));
+                void reloadAudio();
+              });
+            }}
+          />
+          <SettingsRow
+            colors={colors}
+            label={kk.settings.quranAudioStatus}
+            value={`${audioStatus} · ${kk.settings.quranAudioProgress(audioDone, audioTotal, mb(audioDash?.cacheBytes ?? audioState?.bytes ?? 0))}`}
+          />
+          <Text style={styles.hint}>
+            {kk.settings.quranAudioCacheStats(audioDash?.cacheFiles ?? 0, mb(audioDash?.cacheBytes ?? 0))}
+          </Text>
+          {audioState?.currentLabel ? (
+            <Text style={styles.hint}>{kk.settings.quranAudioCurrent(audioState.currentLabel)}</Text>
+          ) : null}
+          {audioState?.lastError ? <Text style={styles.hint}>{audioState.lastError}</Text> : null}
+          <SettingsRow
+            colors={colors}
+            label={audioPrefs?.paused || audioState?.status !== "running" ? kk.settings.quranAudioResume : kk.settings.quranAudioPause}
+            onPress={() => {
+              const action =
+                audioPrefs?.paused || audioState?.status !== "running"
+                  ? resumeQuranAudioDownloadsFromSettings()
+                  : pauseQuranAudioDownloads();
+              void action.then((snap) => {
+                setAudioDash((prev) => ({
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...snap,
+                  cacheFiles: prev?.cacheFiles ?? 0,
+                  cacheBytes: prev?.cacheBytes ?? 0,
+                }));
+                void reloadAudio();
+              });
+            }}
+          />
+          <SettingsRow
+            colors={colors}
+            label={kk.settings.quranAudioClear}
+            onPress={() => {
+              void resetQuranAudioDownloadsAndCache().then((snap) => {
+                setAudioDash({ ...snap, cacheFiles: 0, cacheBytes: 0 });
+                void reloadAudio();
+              });
+            }}
+          />
+        </SettingsCard>
       </SettingsSection>
 
       <SettingsSection colors={colors} title={kk.settings.quranSectionTajweed} subtitle={kk.settings.quranSectionTajweedSub}>

@@ -73,6 +73,9 @@ mobile/*.tar.gz
 .tmp/
 mobile/.tmp/
 
+# Local Android SDK/tooling (never commit)
+.tools/
+
 # OS
 .DS_Store
 Thumbs.db
@@ -85,6 +88,15 @@ mobile/assets/quran/svg/
 mobile/assets/quran/pages/
 mobile/assets/quran/qcf4/
 mobile/assets/quran/ayah_map.json
+
+# Device QA / manual screenshots (жергілікті ғана; git hygiene)
+mobile/qa-*.png
+mobile/qa-*.xml
+mobile/manual-*.png
+mobile/qa-*/
+mobile/qa-sweep-*/
+mobile/qa-halal-kmdb-*/
+mobile/test-results/
 
 # Superseded offline translation generator output; app uses *-core.json.
 mobile/assets/bundled/offline-auto-translations.json

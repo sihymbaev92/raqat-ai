@@ -2,6 +2,7 @@ import type { HalalDamuCompanyCard } from "../halalDamuWp";
 import {
   enrichHalalCompanyCardsFromBulkCache,
   halalCompanyDisplayImageUrl,
+  halalDamuRemoteImageThumbnailUrl,
 } from "../halalDamuWp";
 
 function card(partial: Partial<HalalDamuCompanyCard> & Pick<HalalDamuCompanyCard, "id" | "title">): HalalDamuCompanyCard {
@@ -58,5 +59,22 @@ describe("enrichHalalCompanyCardsFromBulkCache", () => {
   it("returns items unchanged when bulk cache empty", () => {
     const items = [card({ id: 3, title: "C" })];
     expect(enrichHalalCompanyCardsFromBulkCache(items)).toEqual(items);
+  });
+});
+
+describe("halalDamuRemoteImageThumbnailUrl", () => {
+  it("uses WordPress 300x300 upload candidate for full images", () => {
+    expect(
+      halalDamuRemoteImageThumbnailUrl("https://halaldamu.kz/wp-content/uploads/2026/06/product.png")
+    ).toBe("https://halaldamu.kz/wp-content/uploads/2026/06/product-300x300.png");
+  });
+
+  it("keeps already-sized and non-upload URLs unchanged", () => {
+    expect(
+      halalDamuRemoteImageThumbnailUrl("https://halaldamu.kz/wp-content/uploads/2026/06/product-150x150.jpg")
+    ).toBe("https://halaldamu.kz/wp-content/uploads/2026/06/product-150x150.jpg");
+    expect(halalDamuRemoteImageThumbnailUrl("https://example.com/image.jpg")).toBe(
+      "https://example.com/image.jpg"
+    );
   });
 });

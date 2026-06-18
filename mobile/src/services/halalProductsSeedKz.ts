@@ -3,7 +3,6 @@
  * Дерек: data/halal_products_seed_kz.csv → assets/bundled/halal-products-seed-kz.json
  */
 import type { HalalDamuProductItem } from "../api/halalDamuWp";
-import seedBundle from "../../assets/bundled/halal-products-seed-kz.json";
 
 export type HalalProductSeedEntry = {
   gtin: string;
@@ -21,9 +20,19 @@ type HalalProductsSeedBundle = {
 };
 
 let byBarcode: Map<string, HalalProductSeedEntry> | null = null;
+let seedBundleCache: HalalProductsSeedBundle | null = null;
 let titleSearchList: HalalProductSeedEntry[] | null = null;
 let titleSearchRows: { entry: HalalProductSeedEntry; haystack: string; idx: number }[] | null = null;
 let browseList: HalalProductSeedEntry[] | null = null;
+
+function getSeedBundle(): HalalProductsSeedBundle {
+  if (!seedBundleCache) {
+    // Keep the large products JSON off the Halal screen's initial render path.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    seedBundleCache = require("../../assets/bundled/halal-products-seed-kz.json") as HalalProductsSeedBundle;
+  }
+  return seedBundleCache;
+}
 
 function normalizeBarcodeDigits(raw: string): string {
   return (raw || "").replace(/\D/g, "");
@@ -41,7 +50,7 @@ function barcodeLookupKeys(digits: string): string[] {
 
 function ensureIndex(): void {
   if (byBarcode) return;
-  const bundle = seedBundle as HalalProductsSeedBundle;
+  const bundle = getSeedBundle();
   const map = new Map<string, HalalProductSeedEntry>();
   for (const item of bundle.items ?? []) {
     const gtin = normalizeBarcodeDigits(item.gtin);
@@ -133,8 +142,7 @@ export function searchHalalProductsSeed(query: string, limit = 20): HalalDamuPro
 }
 
 export function getHalalProductsSeedCount(): number {
-  ensureIndex();
-  return titleSearchList?.length ?? 0;
+  return getSeedBundle().items?.length ?? 0;
 }
 
 /** Тізім беті — алфавит бойынша алғашқы N seed. */
@@ -144,6 +152,15 @@ export function listHalalProductsSeedBrowse(limit = 20): HalalDamuProductItem[] 
     browseList = [...(titleSearchList ?? [])].sort((a, b) => a.title.localeCompare(b.title, "kk"));
   }
   return browseList.slice(0, limit).map((entry, idx) => seedEntryToProduct(entry, idx));
+}
+
+/** Halal экранынан шыққанда barcode/search index-терін RAM-нан босату. */
+export function releaseHalalProductsSeedMemory(): void {
+  byBarcode = null;
+  seedBundleCache = null;
+  titleSearchList = null;
+  titleSearchRows = null;
+  browseList = null;
 }
 
 /** API + seed нәтижелерін біріктіру (API алдымен). */

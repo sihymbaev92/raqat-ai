@@ -54,9 +54,9 @@ describe("shouldUseHalalDamuPlatformProxy", () => {
     rn.Platform.OS = "web";
   });
 
-  it("is false on web even when production api base is set", () => {
+  it("uses proxy on web when production api base is set", () => {
     getRaqatApiBase.mockReturnValue("https://api.rahatomir.com");
-    expect(shouldUseHalalDamuPlatformProxy()).toBe(false);
+    expect(shouldUseHalalDamuPlatformProxy()).toBe(true);
   });
 
   it("uses proxy on native with api.rahatomir.com", () => {

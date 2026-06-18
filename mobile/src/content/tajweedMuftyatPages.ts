@@ -7,7 +7,7 @@ export type TajweedMuftyatPage = {
 };
 
 export const TAJWEED_MUFTYAT_SOURCE = {
-  title: "Құран оқып - үйренейік!",
+  title: "Құран оқып-үйренейік!",
   org: "Қазақстан мұсылмандары Діни басқармасы",
   url: "https://www.muftyat.kz/kk/book/28695/",
   pdfUrl: "https://www.muftyat.kz/media/muftyat/231950_1387364184.pdf",

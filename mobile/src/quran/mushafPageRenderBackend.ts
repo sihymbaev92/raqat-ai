@@ -42,6 +42,14 @@ export function mushafBookPageRenderBackend(
   return "text-hafs";
 }
 
+export function mushafBookEffectiveRenderBackend(
+  readingThemeId?: QuranReadingThemeId | null,
+  opts?: { showTajweedColors?: boolean; arabicScriptEdition?: string | null }
+): MushafPageRenderBackend {
+  /** Тәжуид: Sajda сияқты QCF4 мұсаф (сөз glyph) — Unicode Text span емес. */
+  return mushafBookPageRenderBackend(readingThemeId);
+}
+
 export function isMushafWebpBackend(): boolean {
   return mushafPageRenderBackend() === "webp";
 }

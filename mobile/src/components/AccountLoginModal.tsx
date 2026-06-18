@@ -59,10 +59,16 @@ function normalizePhoneInput(raw: string): string {
 function apiErrorMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
   const detail = (body as { detail?: unknown }).detail;
-  if (typeof detail === "string") return detail;
+  const clean = (m: string): string | null => {
+    const t = m.trim();
+    if (!t) return null;
+    if (/(twilio|server|api|env|config|raqat_|expo_|platform|token|jwt|http|port)/i.test(t)) return null;
+    return t;
+  };
+  if (typeof detail === "string") return clean(detail);
   if (detail && typeof detail === "object" && "message" in detail) {
     const m = (detail as { message?: unknown }).message;
-    if (typeof m === "string") return m;
+    if (typeof m === "string") return clean(m);
   }
   return null;
 }
@@ -79,22 +85,13 @@ async function applyAuthSuccess(r: AuthLoginResponse): Promise<boolean> {
   return true;
 }
 
-function GoogleSignInUnconfigured({ compact }: { compact?: boolean }) {
-  const { colors } = useAppTheme();
-  const styles = makeStyles(colors);
-  return (
-    <Pressable
-      style={[styles.oauthBtn, styles.oauthGoogle, compact && styles.oauthBtnCompact, { opacity: 0.45 }]}
-      disabled
-    >
-      <Text style={[styles.oauthBtnTxt, compact && styles.oauthBtnTxtCompact]} numberOfLines={1}>
-        {compact ? "Gmail" : kk.account.signInGoogle}
-      </Text>
-      {!compact ? (
-        <Text style={styles.oauthHint}>{kk.account.oauthGoogleNotConfigured}</Text>
-      ) : null}
-    </Pressable>
-  );
+export function isGoogleSignInConfigured(): boolean {
+  const extra = getExpoExtra();
+  const web = typeof extra?.googleWebClientId === "string" ? extra.googleWebClientId.trim() : "";
+  const ios = typeof extra?.googleIosClientId === "string" ? extra.googleIosClientId.trim() : "";
+  const android =
+    typeof extra?.googleAndroidClientId === "string" ? extra.googleAndroidClientId.trim() : "";
+  return Boolean(web || ios || android);
 }
 
 function GoogleSignInWithRequest({
@@ -192,7 +189,7 @@ export function GoogleSignInBlock({
 
   const configured = Boolean(web || ios || android);
   if (!configured) {
-    return <GoogleSignInUnconfigured compact={compact} />;
+    return null;
   }
 
   return (
@@ -323,8 +320,7 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
     try {
       const r = await postAuthPhoneStart(base, p);
       if (r.status === 503) {
-        const m = apiErrorMessage(r);
-        setMsg(m ?? kk.account.phoneSmsUnavailable);
+        setMsg(kk.account.phoneSmsUnavailable);
         setChallengeId(null);
         return;
       }
@@ -442,6 +438,9 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
     onClose();
     navigateToAppSettings(navigation);
   };
+  const showGoogle = isGoogleSignInConfigured();
+  const showApple = Platform.OS === "ios";
+  const showPasswordLogin = __DEV__;
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
@@ -501,19 +500,25 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
               )}
             </Pressable>
 
-            <Text style={styles.divider}>— {kk.common.or} —</Text>
+            {showGoogle || showApple ? (
+              <>
+                <Text style={styles.divider}>— {kk.common.or} —</Text>
 
-            <GoogleSignInBlock
-              busy={busy}
-              onError={setMsg}
-              onSuccess={() => void afterLoginOk()}
-            />
+                {showGoogle ? (
+                  <GoogleSignInBlock
+                    busy={busy}
+                    onError={setMsg}
+                    onSuccess={() => void afterLoginOk()}
+                  />
+                ) : null}
 
-            <AppleSignInButton
-              busy={busy}
-              onError={setMsg}
-              onSuccess={() => void afterLoginOk()}
-            />
+                <AppleSignInButton
+                  busy={busy}
+                  onError={setMsg}
+                  onSuccess={() => void afterLoginOk()}
+                />
+              </>
+            ) : null}
 
             {pid ? (
               <>
@@ -552,13 +557,15 @@ export function AccountLoginModal({ visible, onClose, navigation }: Props) {
 
             {msg ? <Text style={styles.msg}>{msg}</Text> : null}
 
-            <Pressable style={styles.expand} onPress={() => setShowAdmin((v) => !v)}>
-              <Text style={styles.expandTxt}>
-                {showAdmin ? kk.account.collapseAdminLogin : kk.account.expandAdminLogin}
-              </Text>
-            </Pressable>
+            {showPasswordLogin ? (
+              <Pressable style={styles.expand} onPress={() => setShowAdmin((v) => !v)}>
+                <Text style={styles.expandTxt}>
+                  {showAdmin ? kk.account.collapseAdminLogin : kk.account.expandAdminLogin}
+                </Text>
+              </Pressable>
+            ) : null}
 
-            {showAdmin ? (
+            {showPasswordLogin && showAdmin ? (
               <>
                 <Text style={styles.label}>{kk.account.username}</Text>
                 <TextInput

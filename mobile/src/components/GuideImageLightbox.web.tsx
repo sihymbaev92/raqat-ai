@@ -41,6 +41,7 @@ type Props = {
   fitThumbToScreen?: boolean;
   thumbHorizontalInset?: number;
   maxThumbHeightRatio?: number;
+  thumbResizeMultiplier?: number;
 };
 
 /**
@@ -59,6 +60,7 @@ export function GuideImageLightbox({
   fitThumbToScreen = false,
   thumbHorizontalInset = 56,
   maxThumbHeightRatio = 0.48,
+  thumbResizeMultiplier,
 }: Props) {
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
@@ -204,6 +206,7 @@ export function GuideImageLightbox({
               source={source}
               style={thumbImageStyle}
               resizeMode="contain"
+              resizeMultiplier={thumbResizeMultiplier}
               accessibilityIgnoresInvertColors
             />
             {softenThumbOverlay ? <View style={styles.thumbLightenOverlay} pointerEvents="none" /> : null}

@@ -2,6 +2,8 @@
 from unittest.mock import MagicMock, patch
 
 from services.prayer_times_service import (
+    PRAYER_ASR_SCHOOL_HANAFI,
+    PRAYER_CALCULATION_METHOD,
     _normalize_time,
     clear_prayer_times_cache,
     fetch_prayer_times_by_city,
@@ -73,8 +75,8 @@ def test_fetch_sends_hanafi_school_to_aladhan():
         fetch_prayer_times_by_city("Oskemen", "Kazakhstan")
     assert get_mock.call_count == 1
     _args, call_kw = get_mock.call_args
-    assert call_kw["params"]["school"] == 1
-    assert call_kw["params"]["method"] == 3
+    assert call_kw["params"]["school"] == PRAYER_ASR_SCHOOL_HANAFI
+    assert call_kw["params"]["method"] == PRAYER_CALCULATION_METHOD
 
 
 def test_fetch_empty_city_returns_none():

@@ -26,12 +26,12 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false" />
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_strip_cell_fajr_time"
         android:layout_width="match_parent"
@@ -66,12 +66,12 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false" />
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_strip_cell_dhuhr_time"
         android:layout_width="match_parent"
@@ -106,12 +106,12 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false" />
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_strip_cell_asr_time"
         android:layout_width="match_parent"
@@ -146,12 +146,12 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false" />
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_strip_cell_maghrib_time"
         android:layout_width="match_parent"
@@ -186,12 +186,12 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
         android:ellipsize="end"
-        android:includeFontPadding="false" />
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_strip_cell_isha_time"
         android:layout_width="match_parent"

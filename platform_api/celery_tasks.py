@@ -56,6 +56,52 @@ def task_ai_chat(self, payload: dict) -> dict:
         from prometheus_metrics import observe_ai_chat
 
         from ai_reply_guards import GEMINI_BUSY_REPLY_KK, is_degraded_ai_reply
+        from ai_safety_moderation import moderate_ai_prompt, enforce_ai_reply_safety
+
+        safety = moderate_ai_prompt(prompt)
+        db_path = str(resolve_db_path())
+        pid = payload.get("platform_user_id")
+        pid_s = str(pid).strip() if pid else None
+        tid = payload.get("telegram_user_id")
+        try:
+            tid_i = int(tid) if tid is not None else None
+        except (TypeError, ValueError):
+            tid_i = None
+        src_auth = (payload.get("source_auth") or "jwt").strip()[:32] or "jwt"
+        if not safety.allowed:
+            append_usage_event(
+                db_path,
+                event_type="ai",
+                route="POST /api/v1/ai/chat (async blocked)",
+                source_auth=src_auth,
+                platform_user_id=pid_s,
+                telegram_user_id=tid_i,
+                units=1,
+                prompt_chars=len(prompt),
+                response_chars=0,
+            )
+            append_audit_event(
+                db_path,
+                action="ai.chat.blocked",
+                route="celery:raqat.ai.chat",
+                actor_type=src_auth,
+                platform_user_id=pid_s,
+                telegram_user_id=tid_i,
+                summary=(
+                    f"risk_level={safety.risk_level};categories={','.join(safety.categories)};"
+                    f"prompt_chars={len(prompt)}"
+                ),
+            )
+            return {
+                "ok": False,
+                "error": "safety_blocked",
+                "text": "",
+                "detail": {
+                    "message_kk": safety.message_kk,
+                    "risk_level": safety.risk_level,
+                    "categories": list(safety.categories),
+                },
+            }
 
         cached = cache_get_reply(cache_prompt)
         if cached and is_degraded_ai_reply(cached):
@@ -92,19 +138,34 @@ def task_ai_chat(self, payload: dict) -> dict:
                 "detail": {"message_kk": GEMINI_BUSY_REPLY_KK, "retry_after_s": 90},
             }
 
-        db_path = str(resolve_db_path())
-        pid = payload.get("platform_user_id")
-        pid_s = str(pid).strip() if pid else None
-        tid = payload.get("telegram_user_id")
-        try:
-            tid_i = int(tid) if tid is not None else None
-        except (TypeError, ValueError):
-            tid_i = None
+        text, reply_safety = enforce_ai_reply_safety(text)
+        if not reply_safety.allowed:
+            append_audit_event(
+                db_path,
+                action="ai.chat.reply_blocked",
+                route="celery:raqat.ai.chat",
+                actor_type=src_auth,
+                platform_user_id=pid_s,
+                telegram_user_id=tid_i,
+                summary=(
+                    f"risk_level={reply_safety.risk_level};categories={','.join(reply_safety.categories)};"
+                    f"prompt_chars={len(prompt)}"
+                ),
+            )
+            return {
+                "ok": False,
+                "error": "safety_blocked_reply",
+                "text": text,
+                "detail": {
+                    "message_kk": reply_safety.message_kk,
+                    "risk_level": reply_safety.risk_level,
+                    "categories": list(reply_safety.categories),
+                },
+            }
 
         if pid_s and not quick:
             append_ai_exchange(db_path, pid_s, prompt, text, source="api")
 
-        src_auth = (payload.get("source_auth") or "jwt").strip()[:32] or "jwt"
         append_usage_event(
             db_path,
             event_type="ai",

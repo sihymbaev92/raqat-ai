@@ -8,11 +8,13 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import { surahListMetaSubtitle, surahListNumberedTitle, mushafStartPageForSurah } from "../../data/surahListMeta";
+import { modalSheetBottomPadding } from "../../utils/modalSheetInsets";
 
 export type HatimSurahSearchRow = {
   number: number;
@@ -53,6 +55,8 @@ export function HatimSurahSearchSheet({
   onClose,
   onPick,
 }: Props) {
+  const insets = useSafeAreaInsets();
+  const sheetBottomPad = modalSheetBottomPadding(insets);
   const [query, setQuery] = useState("");
   const palette = useMemo(() => quranSurahListPalette(colors, isDark), [colors, isDark]);
   const styles = useMemo(() => makeStyles(colors, isDark, palette.screenBg), [colors, isDark, palette.screenBg]);
@@ -74,7 +78,7 @@ export function HatimSurahSearchSheet({
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.root}>
         <Pressable style={styles.backdrop} onPress={onClose} accessibilityRole="button" />
-        <View style={styles.card}>
+        <View style={[styles.card, { paddingBottom: sheetBottomPad }]}>
           <View style={styles.handle} />
           <View style={styles.titleRow}>
             <Text style={styles.title}>{kk.hatim.searchTitle}</Text>
@@ -118,7 +122,11 @@ export function HatimSurahSearchSheet({
             keyExtractor={(item) => String(item.number)}
             keyboardShouldPersistTaps="handled"
             style={styles.list}
-            contentContainerStyle={filtered.length === 0 ? styles.listEmptyPad : styles.listPad}
+            contentContainerStyle={
+              filtered.length === 0
+                ? [styles.listEmptyPad, { paddingBottom: sheetBottomPad }]
+                : [styles.listPad, { paddingBottom: sheetBottomPad }]
+            }
             ListEmptyComponent={
               <Text style={styles.emptyTxt}>{kk.hatim.searchEmpty}</Text>
             }
@@ -165,7 +173,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       backgroundColor: screenBg,
       borderTopLeftRadius: 18,
       borderTopRightRadius: 18,
-      paddingBottom: Platform.OS === "ios" ? 24 : 16,
+      paddingBottom: 0,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },

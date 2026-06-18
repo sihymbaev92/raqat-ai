@@ -30,10 +30,11 @@ describe("explainEmptyAiResponse", () => {
     ).toBe(true);
   });
 
-  it("maps hollow server text to user-facing gemini busy message", () => {
+  it("maps hollow server text to user-facing AI busy message", () => {
     const busy = "AI сервері қазір бос емес. 1-2 минуттан кейін қайта сұрап көріңіз.";
     expect(normalizeAiServerReplyText(busy, { ok: true })).toBe(explainHollowAiServerReply());
-    expect(explainHollowAiServerReply()).toContain("Gemini");
+    expect(explainHollowAiServerReply()).toContain("AI қызметі");
+    expect(explainHollowAiServerReply()).not.toContain("Gemini");
   });
 
   it("clears text when server reports gemini_busy", () => {

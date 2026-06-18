@@ -10,6 +10,7 @@ import {
 import {
   QCF4_PHONE_NATIVE_SAFE_INSET,
   QCF4_PHONE_VERTICAL_STRETCH_FACTOR,
+  QCF4_PHONE_VERTICAL_SAFE_PADDING,
   qcf4EffectiveLineWidth,
 } from "../mushafQcf4Layout";
 
@@ -96,7 +97,7 @@ describe("computeMushafBookPageBox", () => {
       true,
       { horizontalSafeInset: QCF4_PHONE_NATIVE_SAFE_INSET }
     );
-    expect(pageWidth).toBe(nativePagerWidth);
+    expect(pageWidth).toBe(nativePagerWidth - QCF4_PHONE_NATIVE_SAFE_INSET * 2);
     expect(pageWidth / pageHeight).toBeCloseTo(382.68 / 547.09, 2);
   });
 
@@ -112,13 +113,19 @@ describe("computeMushafBookPageBox", () => {
     });
 
     expect(stretched.pageWidth).toBe(plain.pageWidth);
+    expect(stretched.pageWidth).toBe(nativePagerWidth - QCF4_PHONE_NATIVE_SAFE_INSET * 2);
     expect(stretched.pageHeight).toBeGreaterThanOrEqual(700);
     expect(stretched.pageHeight).toBeLessThanOrEqual(780 - MUSHAF_BOOK_PAGE_EDGE_INSET);
   });
 
   it("keeps QCF4 phone line width readable while leaving edge clipping room", () => {
-    const pageWidth = mushafBookNativeContentWidth(390);
-    expect(qcf4EffectiveLineWidth(pageWidth)).toBeGreaterThan(pageWidth * 0.74);
-    expect(qcf4EffectiveLineWidth(pageWidth)).toBeLessThan(pageWidth * 0.8);
+    const pageWidth = mushafBookNativeContentWidth(390) - QCF4_PHONE_NATIVE_SAFE_INSET * 2;
+    expect(qcf4EffectiveLineWidth(pageWidth)).toBeGreaterThan(pageWidth * 0.68);
+    expect(qcf4EffectiveLineWidth(pageWidth)).toBeLessThan(pageWidth * 0.75);
+  });
+
+  it("keeps QCF4 phone vertical safe padding for first and last lines", () => {
+    expect(QCF4_PHONE_VERTICAL_SAFE_PADDING).toBeGreaterThanOrEqual(12);
+    expect(QCF4_PHONE_VERTICAL_SAFE_PADDING).toBeLessThanOrEqual(18);
   });
 });

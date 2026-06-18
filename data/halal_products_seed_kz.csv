@@ -15,7 +15,7 @@ gtin,title_kk,brand,ingredients,company_id,certificate_status,notes,off_query
 4607025392149,Сары май 82.5% 180 г,FoodMaster,сүт майы,,reference,,
 4607025392158,Ірімшік «Голландия» 45% 180 г,FoodMaster,"сүт, тұз, ашытқы",,reference,,
 4607025392167,Ірімшік плавленый 400 г,FoodMaster,"сүт, май, тұз",,reference,,
-4607025392176,Көмеk 0.5 л,Coca-Cola,"су, қант, көмірқышқыл газы",,reference,сусын,coca cola kazakhstan
+4607025392176,Көмек 0.5 л,Coca-Cola,"су, қант, көмірқышқыл газы",,reference,сусын,coca cola kazakhstan
 4607025392185,Coca-Cola 0.5 л,Coca-Cola,"су, қант, краситель",,reference,халықаралық GTIN,coca cola kazakhstan
 4607025392194,Coca-Cola 1 л,Coca-Cola,"су, қант",,reference,,coca cola kazakhstan
 4607025392200,Sprite 0.5 л,Coca-Cola,"су, қант, лимон қышқылы",,reference,,coca cola kazakhstan
@@ -50,7 +50,7 @@ gtin,title_kk,brand,ingredients,company_id,certificate_status,notes,off_query
 4607025392495,Бұршақ консерві 400 г,Консерві,"бұршақ, су, тұз",,reference,,
 4607025392501,Нокат арахис 50 г,Кәмпит,"арахис, қант",,reference,,
 4607025392510,Йогурт питьевой клубника 290 мл,FoodMaster,"сүт, қант, ашытқы",,reference,,
-4607025392529,Сосиски молочные 400 г,Ет,"шошқа/сиыр еті, тұз",22500,active,ет өнімі — құрамды тексеру,
+4607025392529,Сосиски молочные 400 г,Ет,"шошқа/сиыр еті, тұз",,review_required,ет өнімі — құрамында шошқа көрсетілген, ресми сертификатпен қолмен тексеру керек,
 4607025392538,Колбаса вареная 500 г,Ет,"ет, тұз, специя",22500,active,,
 4607025392547,Филе куриное охлажденное 1 кг,Ет,тауық еті,22500,active,,
 4607025392556,Рыба мороженая 1 кг,Балық,балық,,reference,,

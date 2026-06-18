@@ -47,7 +47,9 @@ class MainApplication : Application(), ReactApplication {
     loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
     try {
+      PrayerLegacyNotificationCleaner.clearRepeatedly(this)
       PrayerWidgetAlarmScheduler.scheduleNext(this)
+      PrayerAzanAlarmScheduler.restore(this)
       QiblaWidgetSensorService.ensureRunning(this)
     } catch (_: Throwable) {
       /* виджет alarm — іске қосуды блоктамау */

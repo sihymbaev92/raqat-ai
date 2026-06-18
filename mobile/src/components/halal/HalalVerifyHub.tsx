@@ -159,6 +159,7 @@ export function HalalVerifyHub({
           <Text style={styles.visionBody} selectable>
             {photoAnalysisText}
           </Text>
+          <Text style={styles.visionDisclaimer}>{kk.features.halalPhotoVisionDisclaimer}</Text>
         </View>
       ) : null}
     </View>
@@ -323,6 +324,12 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontSize: 13,
       lineHeight: 19,
       color: colors.text,
+    },
+    visionDisclaimer: {
+      marginTop: 8,
+      fontSize: 11,
+      lineHeight: 16,
+      color: colors.muted,
     },
   });
 }

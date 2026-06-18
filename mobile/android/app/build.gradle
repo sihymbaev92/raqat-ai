@@ -108,8 +108,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // app.config.js android.versionCode + expo.version (синхрон ұстаңыз)
-        versionCode 9
-        versionName "1.0.9"
+        versionCode 10
+        versionName "1.1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
@@ -188,6 +188,16 @@ tasks.register("copyPrayerAzanRawResources", Copy) {
 
 tasks.named("preBuild").configure {
     dependsOn("copyPrayerAzanRawResources")
+}
+
+// Metro/Expo can leave stale copied sound assets under createBundle.../raw even after
+// Android switches to native res/raw playback. Drop that duplicate set before resource merge.
+tasks.matching { it.name == "createBundleReleaseJsAndAssets" }.configureEach {
+    doLast {
+        delete fileTree("$buildDir/generated/res/createBundleReleaseJsAndAssets/raw") {
+            include "assets_sounds_prayer_azan_user_*.mp3"
+        }
+    }
 }
 
 // Apply static values from `gradle.properties` to the `android.packagingOptions`

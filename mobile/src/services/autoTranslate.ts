@@ -11,6 +11,7 @@ import {
   hashAutoTranslateSource,
   type OfflineAutoTranslateTarget,
 } from "./offlineAutoTranslations";
+import { isUsableOfflineAutoTranslation } from "./offlineAutoTranslationSafety";
 
 export type AutoTranslateTarget = OfflineAutoTranslateTarget;
 
@@ -61,7 +62,7 @@ export async function autoTranslateText(
   if (bundled) return bundled;
 
   const cached = await loadCached(target, trimmed);
-  if (cached) return cached;
+  if (cached && isUsableOfflineAutoTranslation(cached)) return cached;
   return null;
 }
 

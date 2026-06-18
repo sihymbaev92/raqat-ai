@@ -82,6 +82,33 @@ describe("buildMushafPagesGlobal", () => {
     expect(enriched.translit?.trim().length).toBeGreaterThan(8);
   });
 
+  it("resolveMushafBookAyah keeps Hatim meaning and transcription beyond mid-Baqarah", () => {
+    for (const [surahNumber, numberInSurah] of [
+      [2, 150],
+      [2, 286],
+      [18, 75],
+      [114, 6],
+    ] as const) {
+      const enriched = resolveMushafBookAyah({
+        surahNumber,
+        numberInSurah,
+        text: "",
+      });
+
+      expect(enriched.textKk?.trim().length).toBeGreaterThan(8);
+      expect(enriched.translit?.trim().length).toBeGreaterThan(8);
+    }
+  });
+
+  it("full Hatim pages include meaning and transcription for every ayah", () => {
+    const pages = buildMushafPagesGlobal();
+    const ayahs = pages.flatMap((page) => page.ayahs);
+
+    expect(ayahs).toHaveLength(6236);
+    expect(ayahs.filter((a) => !(a.textKk ?? "").trim())).toHaveLength(0);
+    expect(ayahs.filter((a) => !(a.translit ?? "").trim())).toHaveLength(0);
+  });
+
   it("filterMushafBookPagesForSurah — Al-Baqarah 286 ayahs on pages 2–49", () => {
     const pages = buildMushafPagesGlobal();
     const scoped = filterMushafBookPagesForSurah(pages, 2);

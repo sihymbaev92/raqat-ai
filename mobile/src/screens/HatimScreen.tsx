@@ -59,7 +59,7 @@ import {
   toggleHatimSurah,
   type HatimResume,
 } from "../storage/hatimProgress";
-import { QURAN_BOOK_FONT_FACE, loadQuranBookFonts } from "../fonts/quranBookFonts";
+import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "Hatim">;
@@ -221,6 +221,7 @@ export function HatimScreen({ navigation }: Props) {
           ...(opts?.initialPage != null ? { initialPage: opts.initialPage } : {}),
           ...(opts?.focusSurah != null ? { focusSurah: opts.focusSurah } : {}),
           ...(opts?.focusAyah != null ? { focusAyah: opts.focusAyah } : {}),
+          continuousMushaf: true,
         },
         navigation
       );
@@ -319,6 +320,7 @@ export function HatimScreen({ navigation }: Props) {
         isDark={isDark}
         columns="juz-page"
         initial={navPickerInitial}
+        autoApplyOnChange={Platform.OS === "web"}
         onClose={closeNavSheet}
         onApply={onNavApply}
       />
@@ -408,7 +410,7 @@ export function HatimScreen({ navigation }: Props) {
                   ]}
                 >
                   <MaterialIcons name="search" size={19} color={colors.accent} />
-                  <Text style={styles.hatimQuickActionText}>Сүре іздеу</Text>
+                  <Text style={styles.hatimQuickActionText}>{kk.hatim.searchQuickAction}</Text>
                 </Pressable>
                 <Pressable
                   onPress={openNavSheet}
@@ -424,7 +426,21 @@ export function HatimScreen({ navigation }: Props) {
                   <View style={styles.hatimJuzIconBadge}>
                     <MaterialIcons name="auto-stories" size={17} color={colors.accent} />
                   </View>
-                  <Text style={styles.hatimQuickActionText}>Джуз</Text>
+                  <Text style={styles.hatimQuickActionText}>{kk.hatim.juzQuickAction}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={openHatimSettings}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={kk.hatim.settingsBtnA11y}
+                  style={({ pressed }) => [
+                    styles.hatimQuickAction,
+                    styles.hatimQuickActionSettings,
+                    pressed && styles.hatimQuickActionPressed,
+                  ]}
+                >
+                  <MaterialIcons name="settings" size={18} color={colors.text} />
+                  <Text style={styles.hatimQuickActionSettingsText}>{kk.hatim.settingsTitle}</Text>
                 </Pressable>
               </View>
             </View>
@@ -480,7 +496,7 @@ export function HatimScreen({ navigation }: Props) {
           initialNumToRender={14}
           maxToRenderPerBatch={12}
           windowSize={7}
-          removeClippedSubviews={Platform.OS === "android"}
+          removeClippedSubviews={false}
         />
       </View>
     </View>
@@ -510,62 +526,60 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
     headerBlock: { marginBottom: 0 },
     progressCard: {
       backgroundColor: surface,
-      borderRadius: 12,
+      borderRadius: 11,
       borderWidth: 1,
       borderColor: surfaceBorder,
-      padding: 14,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
       marginBottom: 0,
     },
     progressCardSolo: {
-      alignSelf: "stretch",
+      alignSelf: "center",
+      width: Platform.OS === "web" ? "92%" : "84%",
+      maxWidth: Platform.OS === "web" ? 560 : 340,
+      minWidth: Platform.OS === "web" ? 360 : 248,
     },
     progressCardActive: {
       borderColor: colors.accent,
       borderWidth: 1.5,
     },
     progressTitle: {
-      fontSize: 15,
+      fontSize: 13,
       fontWeight: "800",
       color: inkStrong,
-      marginBottom: 10,
+      marginBottom: 7,
     },
     barBg: {
-      height: 10,
-      borderRadius: 6,
+      height: 6,
+      borderRadius: 4,
       backgroundColor: isDark ? "rgba(255,255,255,0.08)" : colors.border,
       overflow: "hidden",
     },
     barFill: {
       height: "100%",
-      borderRadius: 6,
+      borderRadius: 4,
       backgroundColor: colors.accent,
     },
     progressSub: {
-      marginTop: 8,
-      fontSize: 13,
+      marginTop: 6,
+      fontSize: 12,
+      lineHeight: 16,
       color: inkMuted,
-      ...Platform.select({
-        web: {},
-        default: { fontFamily: QURAN_BOOK_FONT_FACE.amiri },
-      }),
     },
     resumeLine: {
-      marginTop: 10,
-      fontSize: 13,
+      marginTop: 8,
+      fontSize: 12,
+      lineHeight: 16,
       color: ink,
       fontWeight: "600",
-      ...Platform.select({
-        web: {},
-        default: { fontFamily: QURAN_BOOK_FONT_FACE.amiri },
-      }),
     },
     continueCta: {
-      marginTop: 6,
-      fontSize: 14,
+      marginTop: 5,
+      fontSize: 13,
       fontWeight: "800",
       color: colors.accent,
     },
-    tapHint: { marginTop: 10, fontSize: 12, lineHeight: 17, color: inkMuted },
+    tapHint: { marginTop: 8, fontSize: 11, lineHeight: 15, color: inkMuted },
     hatimProgressSolo: {
       alignSelf: "stretch",
       marginBottom: 0,
@@ -575,8 +589,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       justifyContent: "flex-end",
       alignItems: "center",
       gap: 8,
-      marginTop: -2,
-      marginBottom: -2,
+      marginTop: 12,
+      marginBottom: 8,
       paddingRight: 2,
     },
     hatimQuickAction: {
@@ -595,6 +609,10 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       borderColor: colors.accent,
       backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.08)",
     },
+    hatimQuickActionSettings: {
+      borderColor: colors.border,
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : colors.card,
+    },
     hatimJuzIconBadge: {
       width: 22,
       height: 22,
@@ -609,6 +627,12 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
     },
     hatimQuickActionText: {
       color: colors.accent,
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: "900",
+    },
+    hatimQuickActionSettingsText: {
+      color: colors.text,
       fontSize: 12,
       lineHeight: 16,
       fontWeight: "900",

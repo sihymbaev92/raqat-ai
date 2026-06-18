@@ -46,9 +46,11 @@ export async function fetchQuranComAyahAudioSegments(
   const key = cacheKey(surah, ayah, reciterId);
   if (cache.has(key)) return cache.get(key) ?? null;
 
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 5000);
   try {
     const url = `https://api.quran.com/api/v4/verses/by_key/${surah}:${ayah}?audio=${reciterId}`;
-    const r = await fetch(url, { headers: { Accept: "application/json" } });
+    const r = await fetch(url, { headers: { Accept: "application/json" }, signal: ctrl.signal });
     if (!r.ok) {
       cache.set(key, null);
       return null;
@@ -66,7 +68,9 @@ export async function fetchQuranComAyahAudioSegments(
     cache.set(key, meta);
     return meta;
   } catch {
-    cache.set(key, null);
+    // Желілік timeout уақытша болуы мүмкін; келесі ойнатуда қайта сынауға мүмкіндік қалдырамыз.
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }

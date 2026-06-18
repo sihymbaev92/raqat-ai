@@ -19,8 +19,8 @@ User=www-data
 Group=www-data
 WorkingDirectory=/opt/raqat/platform_api
 Environment=PYTHONUNBUFFERED=1
-# Leading "-" = do not fail if file is missing (remove "-" in production when .env exists)
-EnvironmentFile=-/opt/raqat/.env
+# Production must fail fast if the environment file is missing.
+EnvironmentFile=/opt/raqat/.env
 # Nginx TLS алдында (әдетті өндіріс): --host 127.0.0.1 — сыртқа :8787 тіке ашпайды.
 # Тек nginx жоқ LAN тест үшін: --host 0.0.0.0
 ExecStart=/opt/raqat/platform_api/.venv/bin/uvicorn main:app --host 127.0.0.1 --port 8787

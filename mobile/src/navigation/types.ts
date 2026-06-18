@@ -35,6 +35,8 @@ export type MoreStackParamList = {
         initialPage?: number;
         focusSurah?: number;
         focusAyah?: number;
+        /** Hatim/book mode: keep the full 604-page mushaf so Al-Fatiha continues to Al-Baqarah. */
+        continuousMushaf?: boolean;
       }
     | undefined;
   Hajj: undefined;
@@ -63,10 +65,6 @@ export type MoreStackParamList = {
   KazakhTraditionTopicDetail: { topicId: string };
   KazakhTraditionArticles: { articleId?: string } | undefined;
   KazakhTraditionFavorites: undefined;
-  /** Қазақ шежіресі — ру ағашы (FlatList accordion) */
-  GenealogyClans: undefined;
-  /** Жеке отбасылық шежіре (JWT) */
-  FamilyTree: undefined;
   /** Құрбан айт — жеке нұсқаулық (дәстүр экранынан бөлек) */
   KurbanAit: { focusSectionId?: string } | undefined;
   /** Дін мен дәстүр: бабалар сөзі, нақылдар жинағы */
@@ -121,9 +119,11 @@ export type RootStackParamList = {
   PrayerAzan:
     | {
         label?: string;
+        enteredTitle?: string;
         time?: string;
         soundId?: string;
         salatKey?: string;
+        nativeAudio?: string;
       }
     | undefined;
   Qibla: { mode?: "compass" | "camera" } | undefined;

@@ -9,6 +9,7 @@ SQLite `?` плейсхолдерлерін PostgreSQL `%s` / named params кө�
 Мысал:
   python scripts/audit_sql_placeholders.py
   python scripts/audit_sql_placeholders.py --roots db platform_api handlers services
+  python scripts/audit_sql_placeholders.py --fail-on-findings
 """
 from __future__ import annotations
 
@@ -62,6 +63,11 @@ def main() -> int:
         default=["db", "platform_api", "handlers", "services"],
         help="Қалталар (репо түбінен)",
     )
+    p.add_argument(
+        "--fail-on-findings",
+        action="store_true",
+        help="Күдікті SQL+? табылса non-zero exit қайтарады (CI/release gate үшін).",
+    )
     args = p.parse_args()
     roots = [ROOT / r for r in args.roots]
     total_files = 0
@@ -82,6 +88,8 @@ def main() -> int:
             for line, snip in findings:
                 print(f"  L{line}: {snip}")
     print(f"\nSummary: {hits} files with SQL+? hints (scanned {total_files} .py under roots).", file=sys.stderr)
+    if args.fail_on_findings and hits:
+        return 1
     return 0
 
 

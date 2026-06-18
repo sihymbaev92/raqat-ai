@@ -6,6 +6,7 @@ import type { WebViewMessageEvent } from "react-native-webview/lib/WebViewTypes"
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../theme/colors";
+import { modalSafeAreaInsets } from "../theme/modalSafeArea";
 import {
   fetchHalalDamuCompanyMapMarkers,
   type HalalDamuMapMarker,
@@ -28,6 +29,8 @@ type Props = {
   strings: HalalCompaniesMapModalStrings;
   colors: ThemeColors;
 };
+
+const MAX_MAP_MARKERS = 600;
 
 function buildLeafletHtml(points: HalalDamuMapMarker[], openDetailLabel: string): string {
   const payload = JSON.stringify(
@@ -90,8 +93,13 @@ function buildLeafletHtml(points: HalalDamuMapMarker[], openDetailLabel: string)
           attribution: "&copy; OpenStreetMap",
           maxZoom: 19,
         }).addTo(map);
-        var group = L.markerClusterGroup({ chunkedLoading: false, maxClusterRadius: 56 });
-        pts.forEach(function (p) {
+        var group = L.markerClusterGroup({
+          chunkedLoading: true,
+          chunkInterval: 80,
+          chunkDelay: 35,
+          maxClusterRadius: 56
+        });
+        pts.slice(0, ${MAX_MAP_MARKERS}).forEach(function (p) {
           var m = L.marker([p.lat, p.lng]);
           var addr = p.address
             ? '<div style="opacity:.88;font-size:12px;margin-top:6px;line-height:1.35">' +
@@ -157,6 +165,7 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
   const [markers, setMarkers] = useState<HalalDamuMapMarker[]>([]);
   const [html, setHtml] = useState<string | null>(null);
   const isWeb = Platform.OS === "web";
+  const modalInsets = modalSafeAreaInsets(insets);
 
   const showLoading = visible && phase !== "ready" && phase !== "err";
 
@@ -178,12 +187,13 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
         setPhase("err");
         return;
       }
-      setMarkers(m);
+      const cappedMarkers = m.slice(0, MAX_MAP_MARKERS);
+      setMarkers(cappedMarkers);
       if (withCoords === 0) {
         setPhase("ready");
         return;
       }
-      setHtml(buildLeafletHtml(m, strings.openDetail));
+      setHtml(buildLeafletHtml(cappedMarkers, strings.openDetail));
       setPhase("ready");
     })();
     return () => {
@@ -233,12 +243,12 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
     return () => window.removeEventListener("message", onWin);
   }, [isWeb, visible, phase, html, handleBridgeMessage]);
 
-  const headerPad = Platform.OS === "ios" ? Math.max(insets.top, 10) : 8 + insets.top;
+  const headerPad = Platform.OS === "ios" ? Math.max(modalInsets.top, 10) : modalInsets.top + 8;
 
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        root: { flex: 1, backgroundColor: colors.bg },
+        root: { flex: 1, backgroundColor: colors.bg, paddingBottom: modalInsets.bottom },
         header: {
           flexDirection: "row",
           alignItems: "center",
@@ -263,7 +273,7 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
         },
         footTxt: { fontSize: 11, lineHeight: 16, color: colors.muted },
       }),
-    [colors.bg, colors.border, colors.card, colors.muted, colors.text, headerPad]
+    [colors.bg, colors.border, colors.card, colors.muted, colors.text, headerPad, modalInsets.bottom]
   );
 
   if (!visible) return null;

@@ -6,6 +6,7 @@
 export const SEERAH_LESSON_COUNT = 38;
 
 const WATCH = (id: string) => `https://www.youtube.com/watch?v=${id}`;
+const EMBED = (id: string) => `https://www.youtube.com/embed/${id}?playsinline=1&rel=0`;
 
 /**
  * Индекс 0 = 1-сабақ, …, 37 = 38-сабақ.
@@ -62,4 +63,10 @@ export function urlForSeerahLesson(lesson: number): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(
     `Нұрсұлтан ұстаз сира ${lesson} сабақ`
   )}`;
+}
+
+export function embedUrlForSeerahLesson(lesson: number): string {
+  const watchUrl = urlForSeerahLesson(lesson);
+  const videoId = watchUrl.match(/[?&]v=([^&]+)/)?.[1];
+  return videoId ? EMBED(videoId) : watchUrl;
 }

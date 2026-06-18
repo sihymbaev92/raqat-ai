@@ -66,6 +66,181 @@ export function parseAlquranTajweedTaggedText(input: string): TajweedSegment[] {
   return out;
 }
 
+type TajweedWordPart = { text: string; rule?: TajweedRuleKey };
+
+/**
+ * QCF4 glyph мәтінінде бір glyph көбіне тұтас сөз болып келеді.
+ * Сондықтан тыныш/қосымша тегтерді тұтас сөзге жақпай, айқын ережені ғана көрсетеміз.
+ */
+/** Тақырыпшаларды алып тастап, оқылатын араб мәтінін қайтарады. */
+export function stripTajweedTags(taggedText: string): string {
+  return parseAlquranTajweedTaggedText(taggedText)
+    .map((seg) => seg.text)
+    .join("");
+}
+
+export type TajweedWordSpan = { text: string; rule?: TajweedRuleKey };
+export type TajweedColoredRun = { text: string; rule?: TajweedRuleKey };
+
+const HELPER_TAJWEED_RULES = new Set<TajweedRuleKey>(["h", "l", "s"]);
+
+function pickVisibleTajweedRule(rules: TajweedRuleKey[]): TajweedRuleKey | undefined {
+  return rules.find((rule) => !HELPER_TAJWEED_RULES.has(rule));
+}
+
+/**
+ * Тәжуид тегтерін тек бос орын бойынша ғана бөледі — [h:1[ٱ]лلَّهِ сияқты
+ * бір сөз ішіндегі сегменттер бір Text ішінде қалады (араб байланысы үзілмейді).
+ */
+export function tajweedColoredRuns(taggedText: string): TajweedColoredRun[] {
+  const raw = (taggedText ?? "").trim();
+  if (!raw.includes("[")) return [];
+
+  const runs: TajweedColoredRun[] = [];
+  let buf = "";
+  let rulesInBuf: TajweedRuleKey[] = [];
+
+  const flushBuf = () => {
+    if (!buf) return;
+    runs.push({ text: buf, rule: pickVisibleTajweedRule(rulesInBuf) });
+    buf = "";
+    rulesInBuf = [];
+  };
+
+  for (const segment of parseAlquranTajweedTaggedText(raw)) {
+    const text = segment.text;
+    let i = 0;
+    while (i < text.length) {
+      const ws = text.slice(i).match(/^\s+/u);
+      if (ws) {
+        flushBuf();
+        runs.push({ text: ws[0] });
+        i += ws[0].length;
+        continue;
+      }
+      let j = i;
+      while (j < text.length && !/\s/u.test(text[j]!)) j += 1;
+      const chunk = text.slice(i, j);
+      if (segment.rule) rulesInBuf.push(segment.rule);
+      buf += chunk;
+      i = j;
+    }
+  }
+  flushBuf();
+
+  const merged: TajweedColoredRun[] = [];
+  for (const run of runs) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.rule === run.rule && !/^\s+$/u.test(run.text)) {
+      prev.text += run.text;
+      continue;
+    }
+    merged.push({ ...run });
+  }
+  return merged;
+}
+
+/**
+ * Тәжуид түсін сөз деңгейінде қолдану — әр тег/сегментке жеке Text қоймау
+ * (React Native араб байланысын үзіп, әріптерді «жеке-жеке» көрсетеді).
+ */
+export function tajweedWordColorSpans(
+  taggedText: string,
+  plainText?: string
+): TajweedWordSpan[] {
+  const raw = (taggedText ?? "").trim();
+  if (!raw.includes("[")) return [];
+
+  const plain = (plainText ?? stripTajweedTags(raw)).trim();
+  const words = plain.split(/\s+/u).filter(Boolean);
+  if (!words.length) return [];
+
+  const rules = tajweedWholeWordRules(raw);
+  return words.map((text, i) => ({
+    text,
+    rule: rules[i],
+  }));
+}
+
+export function tajweedWholeWordRules(taggedText: string | null | undefined): Array<TajweedRuleKey | undefined> {
+  const raw = (taggedText ?? "").trim();
+  if (!raw.includes("[")) return [];
+
+  const out: Array<TajweedRuleKey | undefined> = [];
+  let parts: TajweedWordPart[] = [];
+
+  const flush = () => {
+    const meaningful = parts.filter((part) => part.text.trim().length > 0);
+    if (!meaningful.length) {
+      parts = [];
+      return;
+    }
+    const visibleRule = meaningful.find(
+      (part) => part.rule && part.rule !== "h" && part.rule !== "l" && part.rule !== "s"
+    )?.rule;
+    out.push(visibleRule);
+    parts = [];
+  };
+
+  for (const segment of parseAlquranTajweedTaggedText(raw)) {
+    for (const chunk of segment.text.split(/(\s+)/u)) {
+      if (!chunk) continue;
+      if (/^\s+$/u.test(chunk)) {
+        flush();
+        continue;
+      }
+      parts.push(segment.rule ? { text: chunk, rule: segment.rule } : { text: chunk });
+    }
+  }
+  flush();
+  return out;
+}
+
+/**
+ * Әр сөз ішіндегі әріп/глиф бойынша тәжуид ережесі (QCF4 glyph түсі үшін).
+ * Sajda COLR-ге толық тең емес, бірақ сөз ішіндегі әртүрлі ережелерді көрсетеді.
+ */
+export function tajweedRulesPerWordChar(
+  taggedText: string | null | undefined
+): Array<Array<TajweedRuleKey | undefined>> {
+  const raw = (taggedText ?? "").trim();
+  if (!raw.includes("[")) return [];
+
+  const words: Array<Array<TajweedRuleKey | undefined>> = [];
+  let currentWord: Array<TajweedRuleKey | undefined> = [];
+
+  const pushWord = () => {
+    if (currentWord.length) words.push(currentWord);
+    currentWord = [];
+  };
+
+  for (const segment of parseAlquranTajweedTaggedText(raw)) {
+    for (const ch of segment.text) {
+      if (/\s/u.test(ch)) {
+        pushWord();
+        continue;
+      }
+      const visible =
+        segment.rule && !HELPER_TAJWEED_RULES.has(segment.rule) ? segment.rule : undefined;
+      const prev = currentWord[currentWord.length - 1];
+      currentWord.push(visible ?? prev);
+    }
+  }
+  pushWord();
+  return words;
+}
+
+export function tajweedRuleForWordGlyph(
+  taggedText: string | null | undefined,
+  wordIndex: number,
+  glyphIndexInWord = 0
+): TajweedRuleKey | undefined {
+  const perWord = tajweedRulesPerWordChar(taggedText);
+  const chars = perWord[wordIndex];
+  if (!chars?.length) return tajweedWholeWordRules(taggedText ?? "")[wordIndex];
+  return chars[glyphIndexInWord] ?? chars[chars.length - 1];
+}
+
 /** Түсті топтар: легенда үшін (Sajda-style топтау) */
 export type TajweedColorGroup = "madd" | "qalqalah" | "ghunnahIkhfa" | "silent" | "hamzaWasl" | "lamShamsi" | "other";
 

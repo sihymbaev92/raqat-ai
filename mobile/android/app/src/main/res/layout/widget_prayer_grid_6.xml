@@ -24,7 +24,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_fajr_time"
         android:layout_width="match_parent"
@@ -58,7 +59,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_sun_time"
         android:layout_width="match_parent"
@@ -92,7 +94,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_dhuhr_time"
         android:layout_width="match_parent"
@@ -126,7 +129,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_asr_time"
         android:layout_width="match_parent"
@@ -160,7 +164,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_maghrib_time"
         android:layout_width="match_parent"
@@ -194,7 +199,8 @@
         android:textStyle="bold"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:ellipsize="end" />
+        android:ellipsize="end"
+        android:includeFontPadding="true" />
     <TextView
         android:id="@+id/widget_cell_isha_time"
         android:layout_width="match_parent"

@@ -155,6 +155,18 @@ def log_event(
             """,
             (user_id, event_type, event_name, detail),
         )
+    try:
+        from services.client_usage_service import record_client_usage_event
+
+        record_client_usage_event(
+            source="telegram",
+            event_name=event_name,
+            telegram_user_id=int(user_id) if user_id is not None else None,
+            detail=detail,
+        )
+    except Exception:
+        # Usage counter must never break bot flows.
+        pass
 
 
 def save_feedback(

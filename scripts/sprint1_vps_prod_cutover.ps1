@@ -113,12 +113,13 @@ systemctl is-active raqat-bot 2>/dev/null || echo 'bot:unknown'
 # [3] Prod smoke (auth + hatim + quran-last-read)
 Write-Host "[3/5] Prod API smoke (auth + hatim + quran-last-read)" -ForegroundColor Cyan
 if (-not $env:RAQAT_SMOKE_AUTH_PASSWORD) {
-    Write-Host "SKIP smoke auth — RAQAT_SMOKE_AUTH_PASSWORD not in .env.deploy" -ForegroundColor Yellow
+    Write-Host "FAIL smoke auth — RAQAT_SMOKE_AUTH_PASSWORD not in .env.deploy" -ForegroundColor Red
     Write-Host "  Run: powershell -File scripts/provision_prod_smoke_auth.ps1" -ForegroundColor Yellow
     "smoke_auth=skip" | Add-Content -Path $log
+    throw "prod smoke auth credentials missing"
 }
 else {
-    python scripts/smoke_platform_api.py --api-base $ApiBase --auth-login --hatim --quran-last-read --skip-surahs 2>&1 | Tee-Object -FilePath $log -Append
+    python scripts/smoke_platform_api.py --api-base $ApiBase --auth-login --hatim --quran-last-read 2>&1 | Tee-Object -FilePath $log -Append
     if ($LASTEXITCODE -ne 0) { throw "prod smoke failed exit $LASTEXITCODE" }
     "smoke_auth=pass" | Add-Content -Path $log
 }

@@ -1,17 +1,37 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { NativeModules, Platform } from "react-native";
-import { APP_PRAYER_CALCULATION_METHOD, type PrayerTimesResult } from "../api/prayerTimes";
+import {
+  APP_PRAYER_ASR_SCHOOL,
+  APP_PRAYER_CALCULATION_METHOD,
+  type PrayerTimesResult,
+} from "../api/prayerTimes";
 import { getCityApproxCoords, getKzPresetCoords } from "../constants/kzCities";
 import { fetchOpenMeteoCurrent } from "../services/openMeteoCurrent";
 
 const KEY = "raqat_prayer_cache_v1";
 
-export type CachedPrayer = PrayerTimesResult & { savedAt: string; calculationMethod?: number };
+export type CachedPrayer = PrayerTimesResult & {
+  savedAt: string;
+  calculationMethod?: number;
+  calculationSchool?: number;
+};
+
+function isKazakhstanPrayerCountry(country: string): boolean {
+  const t = (country ?? "").trim().toLowerCase();
+  if (!t) return true;
+  return t === "kazakhstan" || t === "қазақстан" || t === "казахстан" || t === "kz";
+}
+
+function cachedPrayerCoords(payload: PrayerTimesResult): { lat: number; lon: number } | null {
+  if (Number.isFinite(payload.latitude) && Number.isFinite(payload.longitude)) {
+    return { lat: payload.latitude as number, lon: payload.longitude as number };
+  }
+  return getKzPresetCoords(payload.city, payload.country) ?? getCityApproxCoords(payload.city);
+}
 
 async function buildAndroidWidgetPayload(payload: CachedPrayer): Promise<Record<string, unknown>> {
   const base: Record<string, unknown> = { ...payload };
-  const coords =
-    getKzPresetCoords(payload.city, payload.country) ?? getCityApproxCoords(payload.city);
+  const coords = cachedPrayerCoords(payload);
   if (coords) {
     base.latitude = coords.lat;
     base.longitude = coords.lon;
@@ -63,6 +83,8 @@ export async function loadPrayerCache(): Promise<CachedPrayer | null> {
     const j = JSON.parse(raw) as CachedPrayer;
     if (!j?.city || !j?.savedAt) return null;
     if (j.calculationMethod !== APP_PRAYER_CALCULATION_METHOD) return null;
+    if (j.calculationSchool !== APP_PRAYER_ASR_SCHOOL) return null;
+    if (isKazakhstanPrayerCountry(j.country) && j.source !== "muftyat") return null;
     return j;
   } catch {
     return null;
@@ -73,6 +95,7 @@ export async function savePrayerCache(data: PrayerTimesResult): Promise<void> {
   const payload: CachedPrayer = {
     ...data,
     calculationMethod: APP_PRAYER_CALCULATION_METHOD,
+    calculationSchool: APP_PRAYER_ASR_SCHOOL,
     savedAt: new Date().toISOString(),
   };
   await AsyncStorage.setItem(KEY, JSON.stringify(payload));

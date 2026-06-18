@@ -4,12 +4,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Linking,
   Alert,
+  Linking,
   Platform,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
-import { RasterImage } from "@/ui/RasterImage";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -48,17 +47,8 @@ export function SeerahScreen(_props: Props) {
   }, []);
 
   const openLesson = useCallback(async (lesson: number) => {
-    const url = urlForSeerahLesson(lesson);
     try {
-      // Android 11+ / iOS: canOpenURL https жиі қате false қайтарады; http(s) — тіке openURL.
-      const isWeb = /^https?:\/\//i.test(url);
-      if (!isWeb) {
-        const supported = await Linking.canOpenURL(url);
-        if (!supported) {
-          Alert.alert(kk.common.error, kk.seerah.openError);
-          return;
-        }
-      }
+      const url = urlForSeerahLesson(lesson);
       await Linking.openURL(url);
       const next = await saveSeerahLessonViewed(lesson);
       setViewedLessons(next.viewedLessons);
@@ -70,14 +60,6 @@ export function SeerahScreen(_props: Props) {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <RasterImage
-        source={require("../../assets/seerah/seerah-life-banner.png")}
-        style={styles.hero}
-        resizeMode="cover"
-        accessibilityIgnoresInvertColors
-        accessibilityRole="image"
-        accessibilityLabel={kk.seerah.title}
-      />
       <Text style={styles.h1}>{tr(kk.seerah.title)}</Text>
       <Text style={styles.intro}>{tr(kk.seerah.intro)}</Text>
       {lastLesson ? (
@@ -116,13 +98,6 @@ function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     content: { padding: 18, paddingBottom: 40 },
-    hero: {
-      width: "100%",
-      height: 200,
-      borderRadius: 16,
-      marginBottom: 16,
-      backgroundColor: colors.card,
-    },
     h1: {
       color: colors.text,
       fontSize: 22,

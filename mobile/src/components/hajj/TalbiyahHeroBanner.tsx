@@ -3,254 +3,241 @@ import { ImageBackground, Platform, StyleSheet, Text, View } from "react-native"
 import { useAppLocale } from "../../i18n/runtime";
 import { getTalbiyahHeroCopy } from "../../content/talbiyahHeroContent";
 import { kk } from "../../i18n/kk";
-import { TALBIYAH_HERO_ASPECT, TALBIYAH_HERO_BG } from "../../config/hajjTalbiyahHero";
+import { TALBIYAH_HERO_BG } from "../../config/hajjTalbiyahHero";
+import { talbiyahArabicTextStyle } from "../../theme/talbiyahArabicTextStyle";
 
 type Props = {
   width: number;
 };
 
-function TextChip({
+function textScale(width: number): number {
+  if (width < 350) return 0.86;
+  if (width < 430) return 0.94;
+  if (Platform.OS === "web") return 1.04;
+  return 1;
+}
+
+function TitlePill({ children, compact }: { children: React.ReactNode; compact: boolean }) {
+  return (
+    <View style={[styles.titlePill, compact ? styles.titlePillCompact : null]}>
+      <Text style={[compact ? styles.titleTextCompact : styles.titleText]} numberOfLines={1} adjustsFontSizeToFit>
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+function CreamPanel({
   children,
-  align = "start",
   compact,
+  arabic,
 }: {
   children: React.ReactNode;
-  align?: "start" | "end" | "center";
-  compact?: boolean;
+  compact: boolean;
+  arabic?: boolean;
 }) {
   return (
-    <View
-      style={[
-        styles.textChip,
-        compact && styles.textChipCompact,
-        align === "end" && styles.textChipEnd,
-        align === "center" && styles.textChipCenter,
-      ]}
-    >
+    <View style={[styles.panel, compact ? styles.panelCompact : null, arabic ? styles.arabicPanel : null]}>
       {children}
     </View>
   );
 }
 
-function bannerHeight(width: number): number {
-  const aspectH = width / TALBIYAH_HERO_ASPECT;
-  return Math.max(230, Math.min(320, aspectH * 1.12));
-}
-
 export function TalbiyahHeroBanner({ width }: Props) {
   const locale = useAppLocale();
   const copy = useMemo(() => getTalbiyahHeroCopy(locale), [locale]);
-  const compact = width < 520;
-  const height = bannerHeight(width);
-
-  const titleStyle = compact ? styles.titleCompact : styles.title;
-  const labelStyle = compact ? styles.colLabelCompact : styles.colLabel;
-  const oqylyStyle = compact ? styles.oqylyBodyCompact : styles.oqylyBody;
-  const arabicStyle = compact ? styles.arabicCompact : styles.arabic;
-  const meaningStyle = compact ? styles.meaningBodyCompact : styles.meaningBody;
+  const compact = width < 390;
+  const scale = textScale(width);
 
   return (
     <ImageBackground
       source={TALBIYAH_HERO_BG}
-      style={[styles.frame, { width, height }]}
+      style={[styles.frame, { width }]}
       imageStyle={styles.bgImage}
       resizeMode="cover"
       accessibilityRole="image"
       accessibilityLabel={kk.features.hajjTalbiyahPosterA11y}
     >
-      <View style={styles.lightOverlay} pointerEvents="none" />
-      <View style={styles.content}>
-        <View style={styles.topCenter} pointerEvents="box-none">
-          <TextChip align="center" compact={compact}>
-            <Text style={titleStyle} accessibilityRole="header">
-              {copy.title}
-            </Text>
-          </TextChip>
-          {copy.arabic ? (
-            <TextChip align="center" compact={compact}>
-              <Text style={arabicStyle} selectable>
-                {copy.arabic}
-              </Text>
-            </TextChip>
-          ) : null}
-        </View>
+      <View pointerEvents="none" style={styles.scrim} />
+      <View style={[styles.content, compact ? styles.contentCompact : null]}>
+        <TitlePill compact={compact}>{copy.title}</TitlePill>
+        <CreamPanel compact={compact} arabic>
+          <Text
+            style={[
+              talbiyahArabicTextStyle(compact),
+              styles.arabicText,
+              {
+                fontSize: Math.round((compact ? 22 : 30) * scale),
+                lineHeight: Math.round((compact ? 34 : 45) * scale),
+              },
+            ]}
+            selectable
+          >
+            {copy.arabic}
+          </Text>
+        </CreamPanel>
 
-        <View style={styles.centerColumn}>
-          <TextChip align="center" compact={compact}>
-            <Text style={labelStyle}>{copy.oqylyLabel}</Text>
-            <Text style={oqylyStyle} selectable>
-              {copy.oqyly}
-            </Text>
-          </TextChip>
-          <TextChip align="center" compact={compact}>
-            <Text style={labelStyle}>{copy.magynasyLabel}</Text>
-            <Text style={meaningStyle} selectable>
-              {copy.magynasy}
-            </Text>
-          </TextChip>
-        </View>
+        <TitlePill compact={compact}>{copy.oqylyLabel}</TitlePill>
+        <CreamPanel compact={compact}>
+          <Text
+            style={[
+              compact ? styles.translitTextCompact : styles.translitText,
+              {
+                fontSize: Math.round((compact ? 13 : 15) * scale),
+                lineHeight: Math.round((compact ? 17 : 20) * scale),
+              },
+            ]}
+            selectable
+          >
+            {copy.oqyly}
+          </Text>
+        </CreamPanel>
+
+        <TitlePill compact={compact}>{copy.magynasyLabel}</TitlePill>
+        <CreamPanel compact={compact}>
+          <Text
+            style={[
+              compact ? styles.meaningTextCompact : styles.meaningText,
+              {
+                fontSize: Math.round((compact ? 11 : 13) * scale),
+                lineHeight: Math.round((compact ? 15 : 18) * scale),
+              },
+            ]}
+            selectable
+          >
+            {copy.magynasy}
+          </Text>
+        </CreamPanel>
       </View>
     </ImageBackground>
   );
 }
 
-const textShadow = Platform.select({
-  ios: {
-    textShadowColor: "rgba(0,0,0,0.9)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  android: {
-    textShadowColor: "rgba(0,0,0,0.9)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  default: {},
-});
-
 const styles = StyleSheet.create({
   frame: {
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: "#090806",
+    backgroundColor: "#0D4C4C",
+    borderWidth: 1,
+    borderColor: "rgba(212, 175, 55, 0.42)",
   },
   bgImage: {
-    borderRadius: 16,
+    borderRadius: 18,
   },
-  lightOverlay: {
+  scrim: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255,244,220,0.22)",
+    backgroundColor: "rgba(5, 22, 18, 0.38)",
   },
   content: {
-    flex: 1,
-    paddingHorizontal: 8,
-    paddingTop: 7,
-    paddingBottom: 8,
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 22,
+    gap: 8,
   },
-  centerColumn: {
-    maxWidth: "92%",
-    alignItems: "center",
+  contentCompact: {
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 16,
+    gap: 7,
+  },
+  titlePill: {
     alignSelf: "center",
-    gap: 2,
-  },
-  topCenter: {
-    alignSelf: "stretch",
+    minWidth: "48%",
+    maxWidth: "74%",
+    minHeight: 34,
+    borderRadius: 999,
     alignItems: "center",
-    width: "100%",
-    gap: 2,
-    marginTop: -3,
-    marginBottom: 3,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    backgroundColor: "#075235",
+    borderWidth: 1,
+    borderColor: "rgba(245, 212, 137, 0.7)",
+    shadowColor: "#000",
+    shadowOpacity: 0.24,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
-  textChip: {
-    alignSelf: "flex-start",
-    backgroundColor: "rgba(0,0,0,0.44)",
-    borderRadius: 10,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.1)",
-    maxWidth: "100%",
+  titlePillCompact: {
+    minHeight: 28,
+    paddingHorizontal: 14,
   },
-  textChipCompact: {
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 8,
-  },
-  textChipEnd: {
-    alignSelf: "flex-end",
-  },
-  textChipCenter: {
-    alignSelf: "center",
-    maxWidth: "96%",
-  },
-  title: {
-    color: "#fff",
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.24,
-    lineHeight: 17,
-    textAlign: "center",
-    textTransform: "uppercase",
-    ...textShadow,
-  },
-  titleCompact: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 0.18,
-    lineHeight: 15,
-    textAlign: "center",
-    textTransform: "uppercase",
-    ...textShadow,
-  },
-  colLabel: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 11,
-    fontWeight: "800",
-    marginBottom: 2,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-    ...textShadow,
-  },
-  colLabelCompact: {
-    color: "rgba(255,255,255,0.9)",
-    fontSize: 10,
-    fontWeight: "800",
-    marginBottom: 2,
-    textAlign: "center",
-    textTransform: "uppercase",
-    letterSpacing: 0.35,
-    ...textShadow,
-  },
-  oqylyBody: {
-    color: "#fff",
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: "800",
-    textAlign: "center",
-    ...textShadow,
-  },
-  oqylyBodyCompact: {
-    color: "#fff",
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "800",
-    textAlign: "center",
-    ...textShadow,
-  },
-  arabic: {
-    color: "#fff",
-    fontSize: 14,
+  titleText: {
+    color: "#FFF3C4",
+    fontSize: 16,
     lineHeight: 20,
+    fontWeight: "900",
+    letterSpacing: 0.35,
     textAlign: "center",
-    writingDirection: "rtl",
-    fontWeight: "600",
-    ...textShadow,
+    textShadowColor: "rgba(0,0,0,0.65)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  arabicCompact: {
-    color: "#fff",
-    fontSize: 12,
-    lineHeight: 17,
-    textAlign: "center",
-    writingDirection: "rtl",
-    fontWeight: "600",
-    ...textShadow,
-  },
-  meaningBody: {
-    color: "#fff",
+  titleTextCompact: {
+    color: "#FFF3C4",
     fontSize: 13,
     lineHeight: 16,
-    fontWeight: "700",
+    fontWeight: "900",
+    letterSpacing: 0.2,
     textAlign: "center",
-    ...textShadow,
+    textShadowColor: "rgba(0,0,0,0.65)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  meaningBodyCompact: {
-    color: "#fff",
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "700",
+  panel: {
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "#D8B276",
+    backgroundColor: "rgba(255, 247, 226, 0.95)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  panelCompact: {
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+  },
+  arabicPanel: {
+    paddingVertical: 16,
+  },
+  arabicText: {
+    color: "#1C1711",
     textAlign: "center",
-    ...textShadow,
+    writingDirection: "rtl",
+  },
+  translitText: {
+    color: "#2F2415",
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  translitTextCompact: {
+    color: "#2F2415",
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  meaningText: {
+    color: "#3A2A18",
+    fontSize: 13.7,
+    lineHeight: 17.4,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  meaningTextCompact: {
+    color: "#3A2A18",
+    fontSize: 11.2,
+    lineHeight: 13.8,
+    fontWeight: "900",
+    textAlign: "center",
   },
 });

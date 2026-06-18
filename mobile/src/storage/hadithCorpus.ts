@@ -241,6 +241,13 @@ export function invalidateHadithCorpusMemoryCache(): void {
   memoryCorpus = null;
 }
 
+/** Экраннан шыққанда толық corpus reference-тарын түсіру; келесі ашылуда seed/storage қайта оқылады. */
+export function releaseHadithCorpusMemoryCache(): void {
+  memoryCorpus = null;
+  bundledFullCorpusCache = undefined;
+  bundledLoadPromise = null;
+}
+
 export async function saveHadithCorpus(c: HadithCorpus): Promise<void> {
   const { hadiths, version, provenance } = c;
   const chunks: SahihHadithEntry[][] = [];

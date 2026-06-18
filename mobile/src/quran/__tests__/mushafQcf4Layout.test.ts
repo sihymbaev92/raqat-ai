@@ -1,7 +1,11 @@
 import type { Qcf4PageJson, Qcf4Word, Qcf4WordType } from "../qcf4Types";
 import {
   QCF4_EXTERNAL_SURAH_FRAME_RESERVE,
+  QCF4_PHONE_GLYPH_MAX_QCOM,
+  QCF4_PHONE_GLYPH_SCALE_QCOM,
   QCF4_PHONE_NATIVE_SAFE_INSET,
+  QCF4_PHONE_VERTICAL_SAFE_PADDING,
+  QCF4_PHONE_VERTICAL_STRETCH_FACTOR,
   QCF4_PHONE_WEB_SAFE_INSET,
   QCF4_RENDER_LINE_COUNT,
   buildQcf4RenderableLines,
@@ -11,11 +15,17 @@ import {
   qcf4SafeGlyphSizeForLine,
   shouldRenderQcf4InlineSurahFrame,
 } from "../mushafQcf4Layout";
+import {
+  computeMushafBookPageBox,
+  mushafBookNativeContentWidth,
+} from "../mushafBookPageLayout";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const qcf4Page1 = require("../../../assets/quran/qcf4/pages/001.json") as Qcf4PageJson;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const qcf4Page2 = require("../../../assets/quran/qcf4/pages/002.json") as Qcf4PageJson;
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const qcf4Page50 = require("../../../assets/quran/qcf4/pages/050.json") as Qcf4PageJson;
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const qcf4Page604 = require("../../../assets/quran/qcf4/pages/604.json") as Qcf4PageJson;
 
@@ -184,10 +194,9 @@ describe("mushafQcf4Layout", () => {
   });
 
   it("keeps phone effective QCF4 line width readable after page safe insets", () => {
-    expect(QCF4_PHONE_NATIVE_SAFE_INSET).toBe(0);
-    expect(qcf4EffectiveLineWidth(354 - QCF4_PHONE_NATIVE_SAFE_INSET * 2)).toBeGreaterThanOrEqual(
-      240
-    );
+    expect(QCF4_PHONE_NATIVE_SAFE_INSET).toBeGreaterThanOrEqual(12);
+    expect(qcf4EffectiveLineWidth(354 - QCF4_PHONE_NATIVE_SAFE_INSET * 2)).toBeGreaterThanOrEqual(220);
+    expect(qcf4EffectiveLineWidth(354 - QCF4_PHONE_NATIVE_SAFE_INSET * 2)).toBeLessThanOrEqual(230);
     expect(qcf4EffectiveLineWidth(390 - QCF4_PHONE_WEB_SAFE_INSET * 2)).toBeGreaterThanOrEqual(245);
   });
 
@@ -196,11 +205,13 @@ describe("mushafQcf4Layout", () => {
     const glyphSize = qcf4SafeGlyphSizeForLine({
       rawGlyphSize: 32,
       lineHeight,
-      maxGlyphSize: 32,
+      maxGlyphSize: 30,
       lineHeightScale: 1.46,
+      visualScaleY: 1.04,
+      lineInnerPadding: 2,
     });
 
-    expect(Math.ceil(glyphSize * 1.46)).toBeLessThanOrEqual(lineHeight);
+    expect(Math.ceil(glyphSize * 1.46 * 1.04)).toBeLessThanOrEqual(lineHeight - 2);
   });
 
   it("keeps special QCF4 pages 1 and 2 visually compact without empty line nodes", () => {
@@ -244,6 +255,52 @@ describe("mushafQcf4Layout", () => {
       expect(bismillahLines.some((line) => line.words.some((word) => word.sura === topSura))).toBe(
         true
       );
+    }
+  });
+
+  it("release-gates critical phone pages against vertical glyph clipping", () => {
+    const pagerWidth = mushafBookNativeContentWidth(360);
+    const { pageHeight } = computeMushafBookPageBox(pagerWidth, 740, 0, true, {
+      allowVerticalOverflow: true,
+      horizontalSafeInset: QCF4_PHONE_NATIVE_SAFE_INSET,
+      maxVerticalStretchFactor: QCF4_PHONE_VERTICAL_STRETCH_FACTOR,
+    });
+
+    for (const page of [qcf4Page1, qcf4Page2, qcf4Page50, qcf4Page604]) {
+      const externalSurahFrameLine =
+        page.lines[0]?.words.some((word) => word.type === "surah_header") ? 1 : null;
+      const renderLines = buildQcf4RenderableLines(page, {
+        hideSurahHeaderGlyph: externalSurahFrameLine != null,
+        hideBismillahGlyph: false,
+        useExternalSurahFrame: externalSurahFrameLine != null,
+        externalSurahFrameLine,
+        omitQuarterGlyph: false,
+      });
+      const lineMetricsAreaH = Math.max(
+        80,
+        pageHeight -
+          28 -
+          (externalSurahFrameLine != null ? QCF4_EXTERNAL_SURAH_FRAME_RESERVE : 0) -
+          QCF4_PHONE_VERTICAL_SAFE_PADDING * 2
+      );
+      const { lineHeight } = computeQcf4LineMetrics({
+        linesAreaH: lineMetricsAreaH,
+        renderLineCount: qcf4MetricLineCount(renderLines.length),
+        fitOneScreen: true,
+        qcomPurePage: true,
+      });
+      const rawGlyphSize = Math.max(1, Math.round(lineHeight * QCF4_PHONE_GLYPH_SCALE_QCOM) - 1);
+      const glyphSize = qcf4SafeGlyphSizeForLine({
+        rawGlyphSize,
+        lineHeight,
+        maxGlyphSize: QCF4_PHONE_GLYPH_MAX_QCOM,
+        lineHeightScale: 1.46,
+        visualScaleY: 1.04,
+        lineInnerPadding: 2,
+      });
+
+      expect(renderLines.length).toBeGreaterThan(0);
+      expect(Math.ceil(glyphSize * 1.46 * 1.04)).toBeLessThanOrEqual(lineHeight - 2);
     }
   });
 });

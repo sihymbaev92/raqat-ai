@@ -1,4 +1,5 @@
 import { hadithTextForLocale, type SahihHadithEntry } from "../hadithCorpus";
+import seedJson from "../../../assets/bundled/hadith-sahih-seed.json";
 
 const sourceOnlyHadith: SahihHadithEntry = {
   id: "bukhari-1",
@@ -25,5 +26,15 @@ describe("hadithTextForLocale", () => {
 
   it("still allows Arabic for source-only hadith rows", () => {
     expect(hadithTextForLocale(sourceOnlyHadith, "ar")).toContain("الْأَعْمَالُ");
+  });
+
+  it("keeps bundled Sahih seed source-only when Kazakh text is not officially approved", () => {
+    const rows = (seedJson as { hadiths?: SahihHadithEntry[] }).hadiths ?? [];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.sourceOnly).toBe(true);
+      expect((row.textKk ?? "").trim()).toBe("");
+      expect((row.sourceCitationKk ?? "").trim()).toBeTruthy();
+    }
   });
 });

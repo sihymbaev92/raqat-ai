@@ -1,53 +1,59 @@
 ﻿{
-  "updated_at": "2026-05-24T12:04:59Z",
-  "device_serial": "R58R54KA0FE",
-  "mode": "full_device_qa",
-  "sections": {
-    "1": {
-      "1": "PASS",
-      "2": "SKIP",
-      "3": "SKIP",
-      "4": "SKIP",
-      "5": "PASS",
-      "6": "SKIP",
-      "7": "SKIP"
-    },
-    "2": {
-      "1": "PASS",
-      "2": "SKIP",
-      "3": "SKIP",
-      "4": "SKIP",
-      "5": "SKIP",
-      "6": "SKIP"
-    },
-    "3": {
-      "1": "PASS",
-      "2": "SKIP",
-      "3": "SKIP",
-      "4": "SKIP",
-      "5": "SKIP"
-    },
-    "4": {
-      "1": "PASS",
-      "2": "SKIP",
-      "3": "SKIP",
-      "4": "SKIP",
-      "5": "SKIP",
-      "6": "SKIP"
-    }
-  },
-  "perf": {
-    "Al-Baqara classic scroll": "PASS",
-    "Audio play → scroll + pulse": "SKIP",
-    "Mushaf page flip": "SKIP"
-  },
-  "widget": {
-    "pinned": false,
-    "boot_after_reboot": "SKIP",
-    "home_screen_times": "SKIP",
-    "note": "reboot done; USB disconnected before post-boot adb verify — unlock phone + re-plug USB, then widget_boot_regression_adb.ps1"
-  },
-  "widget_boot": {
-    "boot_broadcast": "SKIP"
-  }
+    "perf":  {
+                 "Al-Baqara classic scroll":  "PASS"
+             },
+    "updated_at":  "2026-06-17T09:26:41Z",
+    "device_serial":  "RFCXC0AYKVE",
+    "sections":  {
+                     "2":  {
+                               "3":  "SKIP",
+                               "2":  "SKIP",
+                               "1":  "PASS",
+                               "4":  "SKIP",
+                               "6":  "SKIP",
+                               "5":  "SKIP"
+                           },
+                     "4":  {
+                               "3":  "SKIP",
+                               "2":  "SKIP",
+                               "1":  "PASS",
+                               "4":  "SKIP",
+                               "6":  "SKIP",
+                               "5":  "SKIP"
+                           },
+                     "1":  {
+                               "7":  "SKIP",
+                               "3":  "SKIP",
+                               "2":  "SKIP",
+                               "1":  "PASS",
+                               "4":  "SKIP",
+                               "6":  "SKIP",
+                               "5":  "PASS"
+                           },
+                     "3":  {
+                               "2":  "SKIP",
+                               "4":  "SKIP",
+                               "5":  "SKIP",
+                               "1":  "SKIP",
+                               "3":  "SKIP"
+                           }
+                 },
+    "widget_boot":  {
+                        "boot_broadcast":  "PASS",
+                        "checks":  [
+                                       {
+                                           "Pass":  true,
+                                           "Name":  "boot_receiver_ran"
+                                       },
+                                       {
+                                           "Pass":  true,
+                                           "Name":  "widget_update",
+                                           "Optional":  true
+                                       },
+                                       {
+                                           "Pass":  true,
+                                           "Name":  "package_installed"
+                                       }
+                                   ]
+                    }
 }

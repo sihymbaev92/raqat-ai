@@ -1,16 +1,12 @@
 import "react-native-gesture-handler";
 import "react-native-reanimated";
 import "./src/theme/applyGlobalFontDefaults";
-import { ensurePrayerNotificationBackgroundFetch } from "./src/services/prayerNotificationBackgroundTask";
-import { refreshPrayerCacheIfCalendarStale } from "./src/services/prayerDaySelfHeal";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, AppState, type AppStateStatus, Platform, useColorScheme, View } from "react-native";
-import * as ScreenOrientation from "expo-screen-orientation";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { QiblaSensorProvider } from "./src/context/QiblaSensorContext";
 import { appDeepLinking } from "./src/navigation/linking";
 import { AndroidBackNavigationBridge } from "./src/navigation/AndroidBackNavigationBridge";
 import { RootNavigator } from "./src/navigation/RootNavigator";
@@ -20,26 +16,21 @@ import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
-import { initNotificationQuickActions } from "./src/services/notificationQuickActions";
-import { reschedulePrayerNotificationsFromCache } from "./src/services/prayerNotifications";
-import { syncAndroidPrayerWidgetFromStorage } from "./src/storage/prayerCache";
 import { hydrateLocale, useAppLocale } from "./src/i18n/runtime";
-import { requestAllCorePermissionsOnFirstLaunch } from "./src/services/firstLaunchPermissions";
-import {
-  getFirstLaunchPermissionsBurstDone,
-  setFirstLaunchPermissionsBurstDone,
-} from "./src/storage/prefs";
-import { seedBundledQuranCachesIfNeeded } from "./src/services/bundledQuranSeed";
-import { loadQuranBookFonts } from "./src/fonts/quranBookFonts";
-import { loadBrandFont } from "./src/fonts/brandFont";
-import { prefetchHalalDamuHub } from "./src/services/halalHubBootstrap";
-import { prefetchOfficialHomeNewsFeed } from "./src/services/officialSitesBootstrap";
 import { runAfterInteractions } from "./src/utils/uiDefer";
 import { trackNavigationPlausible } from "./src/navigation/navigationPlausible";
 import { isPlausibleEnabled, trackPlausiblePageview } from "./src/services/plausible";
+import { trackUsageEvent } from "./src/services/usageAnalytics";
 import { ScreenFitProvider, useScreenFitMetrics, webViewportClampStyle } from "./src/theme/screenFit";
 
 const APP_STATE_SYNC_COOLDOWN_MS = 60_000;
+const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 1_800;
+
+function reportBackgroundJobError(label: string, error: unknown): void {
+  if (__DEV__) {
+    console.warn(`[background:${label}]`, error);
+  }
+}
 
 /** Ақ фонда жүйелік сағат/батарея «жоғалып» қалмасын — auto орнына нақты контраст. */
 function ThemedStatusBar() {
@@ -91,46 +82,80 @@ export default function App() {
       try {
         await hydrateRaqatApiBaseOverride();
         await hydrateLocale();
-        await loadBrandFont().catch(() => {});
+        await import("./src/fonts/brandFont").then((m) => m.loadBrandFont()).catch(() => {});
       } catch (e) {
         console.error("boot hydrate failed", e);
       } finally {
         setBootReady(true);
+        void trackUsageEvent({
+          eventName: "app_launch",
+          screen: "App",
+          detail: Platform.OS,
+        });
       }
 
       runAfterInteractions(() => {
-        void loadQuranBookFonts().catch(() => {});
-        void initNotificationQuickActions();
+        void import("./src/services/notificationQuickActions")
+          .then((m) => m.initNotificationQuickActions())
+          .catch((e) => reportBackgroundJobError("notificationQuickActions", e));
 
         // Non-critical network warmups should not compete with first paint/navigation.
         setTimeout(() => {
-          void prefetchHalalDamuHub();
+          void import("./src/services/halalHubBootstrap")
+            .then((m) => m.prefetchHalalDamuHub())
+            .catch((e) => reportBackgroundJobError("halalHubBootstrap", e));
         }, 2500);
         setTimeout(() => {
-          void prefetchOfficialHomeNewsFeed();
+          void import("./src/services/officialSitesBootstrap")
+            .then((m) => m.prefetchOfficialHomeNewsFeed())
+            .catch((e) => reportBackgroundJobError("officialSitesBootstrap", e));
         }, 4000);
 
-        void (async () => {
-          await seedBundledQuranCachesIfNeeded().catch(() => {
-            /* QuranList қайта сидинг жасай алады */
-          });
+        setTimeout(() => {
+          void (async () => {
+            if (Platform.OS === "web") return;
 
-          if (Platform.OS === "web") return;
+            const { seedBundledQuranCachesIfNeeded } = await import("./src/services/bundledQuranSeed");
+            await seedBundledQuranCachesIfNeeded().catch(() => {
+              /* QuranList қайта сидинг жасай алады */
+            });
 
-          const burstDone = await getFirstLaunchPermissionsBurstDone();
-          if (!burstDone) {
-            try {
-              await requestAllCorePermissionsOnFirstLaunch();
-            } catch {
-              /* рұқсат терезесі немесе модуль қатесі */
+            const [
+              { getFirstLaunchPermissionsBurstDone, setFirstLaunchPermissionsBurstDone },
+              { requestAllCorePermissionsOnFirstLaunch },
+              { reschedulePrayerNotificationsFromCache },
+              { ensurePrayerNotificationBackgroundTask },
+              { ensureQuranAudioBackgroundTask },
+              { kickQuranAudioAutoDownloadLoop },
+              { syncAndroidPrayerWidgetFromStorage },
+            ] = await Promise.all([
+              import("./src/storage/prefs"),
+              import("./src/services/firstLaunchPermissions"),
+              import("./src/services/prayerNotifications"),
+              import("./src/services/prayerNotificationBackgroundTask"),
+              import("./src/services/quranAudioBackgroundTask"),
+              import("./src/services/quranAudioDownloadManager"),
+              import("./src/storage/prayerCache"),
+            ]);
+            const burstDone = await getFirstLaunchPermissionsBurstDone();
+            if (!burstDone) {
+              try {
+                await requestAllCorePermissionsOnFirstLaunch();
+              } catch {
+                /* рұқсат терезесі немесе модуль қатесі */
+              }
+              await setFirstLaunchPermissionsBurstDone();
             }
-            await setFirstLaunchPermissionsBurstDone();
-          }
 
-          await reschedulePrayerNotificationsFromCache();
-          await ensurePrayerNotificationBackgroundFetch();
-          await syncAndroidPrayerWidgetFromStorage();
-        })();
+            await Promise.allSettled([
+              reschedulePrayerNotificationsFromCache(),
+              ensurePrayerNotificationBackgroundTask(),
+              ensureQuranAudioBackgroundTask(),
+              syncAndroidPrayerWidgetFromStorage(),
+            ]);
+            void kickQuranAudioAutoDownloadLoop();
+          })().catch((e) => reportBackgroundJobError("postBootNativeWarmup", e));
+        }, POST_BOOT_NATIVE_WARMUP_DELAY_MS);
       });
     })();
   }, []);
@@ -152,12 +177,32 @@ export default function App() {
       }
       lastAppStateSyncAtRef.current = now;
       void (async () => {
+        const [
+          { refreshPrayerCacheIfCalendarStale },
+          { reschedulePrayerNotificationsFromCache },
+          { syncAndroidPrayerWidgetFromStorage },
+          { kickQuranAudioAutoDownloadLoop, resumeQuranAudioDownloadsInBackground },
+        ] = await Promise.all([
+          import("./src/services/prayerDaySelfHeal"),
+          import("./src/services/prayerNotifications"),
+          import("./src/storage/prayerCache"),
+          import("./src/services/quranAudioDownloadManager"),
+        ]);
         if (leavingForeground) {
           await refreshPrayerCacheIfCalendarStale();
+          await resumeQuranAudioDownloadsInBackground();
         }
-        await reschedulePrayerNotificationsFromCache();
-        await syncAndroidPrayerWidgetFromStorage();
-      })();
+        if (next === "active") {
+          void kickQuranAudioAutoDownloadLoop();
+          void import("./src/services/prayerAzanPermissions")
+            .then((m) => m.ensurePrayerAzanPermissionsOnAppActive())
+            .catch((e) => reportBackgroundJobError("prayerAzanPermissions", e));
+        }
+        await Promise.allSettled([
+          reschedulePrayerNotificationsFromCache(),
+          syncAndroidPrayerWidgetFromStorage(),
+        ]);
+      })().catch((e) => reportBackgroundJobError("appStateSync", e));
     });
     return () => sub.remove();
   }, [bootReady]);
@@ -165,7 +210,11 @@ export default function App() {
   /** Құраннан тыс экрандар портретте қалсын; ландшафт тек оқу баптамасында қосылғанда. */
   useEffect(() => {
     if (!bootReady || Platform.OS === "web") return;
-    void ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    void import("expo-screen-orientation")
+      .then((ScreenOrientation) =>
+        ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP)
+      )
+      .catch((e) => reportBackgroundJobError("screenOrientation", e));
   }, [bootReady]);
 
   useEffect(() => {
@@ -202,10 +251,8 @@ export default function App() {
           trackNavigationPlausible(state);
         }}
       >
-        <QiblaSensorProvider>
-          <AndroidBackNavigationBridge />
-          <RootNavigator />
-        </QiblaSensorProvider>
+        <AndroidBackNavigationBridge />
+        <RootNavigator />
       </NavigationContainer>
       <ThemedStatusBar />
     </>

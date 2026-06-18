@@ -14,6 +14,12 @@ def fmt(size: int) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Mobile asset size report")
     parser.add_argument("--limit", type=int, default=25)
+    parser.add_argument(
+        "--max-total-mb",
+        type=float,
+        default=None,
+        help="Fail when total assets exceed this many MiB.",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -28,6 +34,11 @@ def main() -> int:
     print(f"Top {args.limit} assets:")
     for size, path in sorted(files, reverse=True)[: args.limit]:
         print(f"- {fmt(size)}  {path.relative_to(root)}")
+    if args.max_total_mb is not None:
+        budget = int(args.max_total_mb * 1024 * 1024)
+        if total > budget:
+            print(f"ERROR: Mobile assets exceed budget {args.max_total_mb:.2f} MB.")
+            return 1
     return 0
 
 

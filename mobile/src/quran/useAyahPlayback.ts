@@ -7,8 +7,10 @@ import { fetchQuranComAyahAudioSegments } from "../services/quranComAudioSegment
 import {
   quranAyahMp3Url,
   quranReciterHasAudioForGlobalAyah,
+  quranReciterSupportsArabicKaraoke,
   quranReciterUsesAyahAudio,
 } from "../services/quranSudaisAudio";
+import { resolveCachedOrRemoteQuranAudioUri } from "../services/quranAudioCache";
 import { displayCachedAyahArabic, type CachedAyah } from "../storage/quranSurahCache";
 import {
   type AyahWordTimestampSegment,
@@ -48,6 +50,7 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
 
   const quranSoundRef = useRef<Audio.Sound | null>(null);
   const ayahPlayStartInFlightRef = useRef(false);
+  const ayahPlayRequestSeqRef = useRef(0);
   const ayahAudioProgressRef = useRef({ pos: 0, dur: 0 });
   const karaokeWordCountRef = useRef(0);
   const karaokePlainTextRef = useRef("");
@@ -95,6 +98,7 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
   }, []);
 
   const stopAyahAudio = useCallback(async () => {
+    ayahPlayRequestSeqRef.current += 1;
     ayahAudioProgressRef.current = { pos: 0, dur: 0 };
     karaokeWordCountRef.current = 0;
     karaokePlainTextRef.current = "";
@@ -165,7 +169,8 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
         await stopAyahAudio();
       }
 
-      if (ayahPlayStartInFlightRef.current) return;
+      const requestSeq = ayahPlayRequestSeqRef.current + 1;
+      ayahPlayRequestSeqRef.current = requestSeq;
       ayahPlayStartInFlightRef.current = true;
       setLoadingAyahAudio(ayahInSurah);
       try {
@@ -175,19 +180,23 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
           onAudioError?.();
           return;
         }
-        const uri = quranAyahMp3Url(globalN, reciterEdition);
+        const remoteUri = quranAyahMp3Url(globalN, reciterEdition);
+        const uri = await resolveCachedOrRemoteQuranAudioUri(remoteUri);
+        if (ayahPlayRequestSeqRef.current !== requestSeq) return;
         const row = ayahsRef.current.find((a) => a.numberInSurah === ayahInSurah);
-        const plainForKaraoke = isAyahTimedAudio && row ? displayCachedAyahArabic(row, arabicScriptEdition) : "";
+        const useArabicKaraoke = isAyahTimedAudio && quranReciterSupportsArabicKaraoke(reciterEdition);
+        const plainForKaraoke = useArabicKaraoke && row ? displayCachedAyahArabic(row, arabicScriptEdition) : "";
         karaokePlainTextRef.current = plainForKaraoke;
         karaokeWordCountRef.current = splitAyahArabicWords(plainForKaraoke).length;
         karaokeSegmentsRef.current = null;
         karaokeSegmentRefDurRef.current = 0;
-        if (isAyahTimedAudio && plainForKaraoke) {
-          const meta = await fetchQuranComAyahAudioSegments(surahNumber, ayahInSurah, reciterEdition);
-          if (meta) {
+        if (useArabicKaraoke && plainForKaraoke) {
+          void fetchQuranComAyahAudioSegments(surahNumber, ayahInSurah, reciterEdition).then((meta) => {
+            if (ayahPlayRequestSeqRef.current !== requestSeq || !meta) return;
             karaokeSegmentsRef.current = meta.segments;
             karaokeSegmentRefDurRef.current = meta.referenceDurationMs;
-          }
+            flushAyahAudioProgressFromRef();
+          });
         }
         lastKaraokeWordIdxRef.current = -1;
         lastAyahAudioPositionMsRef.current = 0;
@@ -209,6 +218,14 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
           { uri },
           { shouldPlay: false, progressUpdateIntervalMillis: 40 }
         );
+        if (ayahPlayRequestSeqRef.current !== requestSeq) {
+          try {
+            await sound.unloadAsync();
+          } catch {
+            /* */
+          }
+          return;
+        }
         quranSoundRef.current = sound;
         setPlayingAyahInSurah(ayahInSurah);
         try {
@@ -286,8 +303,10 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
       } catch {
         onAudioError?.();
       } finally {
-        setLoadingAyahAudio(null);
-        ayahPlayStartInFlightRef.current = false;
+        if (ayahPlayRequestSeqRef.current === requestSeq) {
+          setLoadingAyahAudio(null);
+          ayahPlayStartInFlightRef.current = false;
+        }
       }
     },
     [

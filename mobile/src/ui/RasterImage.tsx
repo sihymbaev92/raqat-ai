@@ -19,6 +19,8 @@ import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { kk } from "../i18n/kk";
 
 export type RasterImageProps = ImageProps & {
+  /** Android Image.resizeMethod="resize" кезінде decode target-ты кішірейтуге арналған RN runtime prop. */
+  resizeMultiplier?: number;
   /** Басып толық экранда pinch-zoom ашу */
   zoomable?: boolean;
   /** true: тек 🔍 белгісі зум ашады (сыртқы Pressable қақтығыспасын) */
@@ -50,6 +52,7 @@ function resolveModalImageSize(
  */
 export function RasterImage({
   resizeMethod,
+  resizeMultiplier,
   zoomable = false,
   zoomNested = false,
   hideZoomHint = false,
@@ -72,7 +75,11 @@ export function RasterImage({
     return resolveModalImageSize(source, width, height, insets.top);
   }, [zoomable, source, width, height, insets.top]);
 
-  const imageNode = <Image resizeMethod={method} source={source} style={style} {...rest} />;
+  const androidDecodeProps =
+    Platform.OS === "android" && resizeMultiplier != null
+      ? ({ resizeMultiplier } as unknown as Partial<ImageProps>)
+      : null;
+  const imageNode = <Image resizeMethod={method} source={source} style={style} {...androidDecodeProps} {...rest} />;
 
   if (!zoomable || source == null) {
     return imageNode;

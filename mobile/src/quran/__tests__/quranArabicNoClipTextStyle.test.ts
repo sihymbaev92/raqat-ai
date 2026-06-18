@@ -9,8 +9,9 @@ describe("quranArabicNoClipTextStyle", () => {
     });
 
     expect(style.includeFontPadding).toBe(true);
-    expect(style.lineHeight).toBeGreaterThanOrEqual(42);
-    expect(style.paddingBottom).toBeGreaterThanOrEqual(4);
+    expect(style.lineHeight).toBeGreaterThanOrEqual(49);
+    expect(style.paddingBottom).toBeGreaterThanOrEqual(6);
+    expect(style.textAlignVertical).toBe("center");
   });
 
   it("does not shrink already safe Arabic lineHeight", () => {

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RasterImage } from "@/ui/RasterImage";
@@ -44,6 +44,8 @@ export function OfficialFeedCard({
           source={{ uri: item.imageUrl }}
           style={styles.thumb}
           resizeMode="cover"
+          resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+          resizeMultiplier={Platform.OS === "android" ? 0.6 : undefined}
           accessibilityIgnoresInvertColors
         />
       ) : (

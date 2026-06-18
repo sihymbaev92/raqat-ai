@@ -114,7 +114,7 @@ def write_catalog(total_pages: int) -> None:
         )
 
     meta = {
-        "sourceTitle": "Құран оқып - үйренейік!",
+        "sourceTitle": "Құран оқып-үйренейік!",
         "sourceOrg": "Қазақстан мұсылмандары Діни басқармасы",
         "sourceUrl": "https://www.muftyat.kz/kk/book/28695/",
         "pdfUrl": PDF_URL,
