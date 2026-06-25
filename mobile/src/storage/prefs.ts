@@ -23,6 +23,8 @@ const K = {
   /** Әр зікір id үшін жеке санау (JSON: { "1": 5, "2": 0, ... }) */
   tasbihDhikrCountsMap: "raqat_tasbih_dhikr_counts_map",
   qiblaMotionMode: "raqat_qibla_motion_mode_v1",
+  /** GPS/Wi‑Fi арқылы қала, ауа райы, құбыла автоматты жаңарту */
+  prayerLocationAuto: "raqat_prayer_location_auto_v1",
 } as const;
 
 export type QiblaMotionMode = "balanced" | "fast";
@@ -62,6 +64,16 @@ export async function setSelectedCity(city: string, country: string): Promise<vo
     [K.city, safeCity],
     [K.country, safeCountry],
   ]);
+}
+
+/** Әдепкі: GPS/Wi‑Fi/желі арқылы қала мен координатты автоматты алу. */
+export async function getPrayerLocationAutoEnabled(): Promise<boolean> {
+  const v = await AsyncStorage.getItem(K.prayerLocationAuto);
+  return v !== "0";
+}
+
+export async function setPrayerLocationAutoEnabled(on: boolean): Promise<void> {
+  await AsyncStorage.setItem(K.prayerLocationAuto, on ? "1" : "0");
 }
 
 export async function getSavedCities(): Promise<SavedCity[]> {

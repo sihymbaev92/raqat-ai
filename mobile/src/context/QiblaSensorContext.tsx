@@ -15,7 +15,13 @@ import { headingFromLocationHeading, normHeadingDeg } from "../lib/qiblaLocation
 import { magneticDeclinationEastDeg } from "../lib/qiblaDeclinationApprox";
 import { magnetometerHeadingDeg, type Vec3 } from "../lib/qiblaHeadingFromSensors";
 import { getCityApproxCoords } from "../constants/kzCities";
-import { getQiblaMotionMode, getSelectedCity, setQiblaMotionMode } from "../storage/prefs";
+import { readDeviceCoords } from "../services/devicePrayerLocation";
+import {
+  getPrayerLocationAutoEnabled,
+  getQiblaMotionMode,
+  getSelectedCity,
+  setQiblaMotionMode,
+} from "../storage/prefs";
 import { pushAndroidWidgetQiblaHeading } from "../storage/prayerCache";
 import { getRootNavReady, getRootNavState, subscribeRootNavState } from "../voice/rootNavStateStore";
 import { shouldRunQiblaMotionSensors } from "../voice/deriveGlobalVoiceEntry";
@@ -197,7 +203,8 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
     };
 
     const hasApprox = await applyCityFallback();
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
+    const auto = await getPrayerLocationAutoEnabled();
+    if (!auto) {
       if (!hasApprox) {
         setPerm("services_disabled");
         setPositionFailed(true);
@@ -207,27 +214,21 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 12_000,
-          maximumAge: 5 * 60_000,
-        });
-      });
-      apply(pos.coords.latitude, pos.coords.longitude, "gps", pos.coords.accuracy);
-    } catch (err) {
-      if (hasApprox || bearingRef.current != null) {
-        setPerm("granted");
-        return;
-      }
-      /** Browser settings can't be opened reliably; keep the retry UI available on web. */
-      setPerm("granted");
-      setPositionFailed(true);
-      setBearing(null);
-      setLocationSource("none");
-      setLocationAccuracyM(null);
+    const device = await readDeviceCoords();
+    if (device) {
+      apply(device.lat, device.lon, "gps", device.accuracyM);
+      return;
     }
+
+    if (hasApprox || bearingRef.current != null) {
+      setPerm("granted");
+      return;
+    }
+    setPerm("granted");
+    setPositionFailed(true);
+    setBearing(null);
+    setLocationSource("none");
+    setLocationAccuracyM(null);
   }, []);
 
   const resumeHeadingSubscription = useCallback(() => {
@@ -419,6 +420,29 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
 
     /** Алдымен экранда бірден бағыт болсын, кейін GPS нақтылап жаңартады. */
     const hasApprox = await applyCityFallback();
+    const auto = await getPrayerLocationAutoEnabled();
+    if (!auto) {
+      if (!hasApprox) {
+        declRef.current = 0;
+        setPositionFailed(true);
+        setBearing(null);
+        setLocationSource("none");
+        setLocationAccuracyM(null);
+      }
+      return;
+    }
+
+    try {
+      const device = await readDeviceCoords();
+      if (device) {
+        apply(device.lat, device.lon, "gps", device.accuracyM);
+        if (device.accuracyM != null && device.accuracyM <= 80) {
+          return;
+        }
+      }
+    } catch {
+      /* next */
+    }
 
     try {
       const last = await Location.getLastKnownPositionAsync({

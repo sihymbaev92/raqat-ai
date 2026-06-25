@@ -1,4 +1,5 @@
 import { KZ_CITY_PRESETS_LIST, type KzCityPreset } from "./kzCityPresetsList";
+import { haversineDistanceM } from "../utils/halalGeoFilter";
 
 /** Сақталған атау / ескі жазбалар үшін тізімдегі `city` кілтіне түсіру. */
 const CITY_KEY_ALIASES: Record<string, string> = {
@@ -69,4 +70,27 @@ export function getKzPresetCoords(city: string, country: string): { lat: number;
 /** Құбыла үшін қала орталығының шамамен координаталары (GPS болмағанда). */
 export function getCityApproxCoords(city: string): { lat: number; lon: number } | null {
   return getKzPresetCoords(city, "Kazakhstan");
+}
+
+/** Қазақстан шамамен шекарасы (WGS84) — GPS автоматты қаланы таңдау үшін. */
+export function isInKazakhstanBBox(lat: number, lon: number): boolean {
+  return lat >= 40.2 && lat <= 55.6 && lon >= 46.2 && lon <= 87.5;
+}
+
+/** GPS координатынан ең жақын ҚР қала пресеті. */
+export function findNearestKzCityPreset(
+  lat: number,
+  lon: number
+): (KzCityPreset & { distanceM: number }) | null {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  let best: KzCityPreset | null = null;
+  let bestD = Number.POSITIVE_INFINITY;
+  for (const preset of KZ_CITY_PRESETS_LIST) {
+    const d = haversineDistanceM(lat, lon, preset.lat, preset.lon);
+    if (d < bestD) {
+      bestD = d;
+      best = preset;
+    }
+  }
+  return best ? { ...best, distanceM: bestD } : null;
 }

@@ -30,9 +30,9 @@ import {
   getOnboardingDone,
   getPrayerMosqueShiftMin,
   getPrayerSourceMode,
-  getSelectedCity,
   setOnboardingDone,
 } from "../storage/prefs";
+import { resolvePrayerScheduleLocation } from "../services/devicePrayerLocation";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
@@ -404,7 +404,7 @@ function DashboardScreenContent({
         if (!cancelled) setTomorrowRows(null);
         return;
       }
-      const { city, country } = await getSelectedCity();
+      const { city, country } = await resolvePrayerScheduleLocation();
       const tm = new Date();
       tm.setDate(tm.getDate() + 1);
       tm.setHours(12, 0, 0, 0);
@@ -428,11 +428,12 @@ function DashboardScreenContent({
     const notifEn = await getNotifEnabled();
     if (!isCurrent()) return;
     setPrayerNotifEnabled(notifEn);
-    const { city, country } = await getSelectedCity();
+    const loc = await resolvePrayerScheduleLocation();
     if (!isCurrent()) return;
+    const { city, country } = loc;
     setCityLabel(city);
     setCountryLabel(country);
-    setWeatherCoordOverride(null);
+    setWeatherCoordOverride({ lat: loc.lat, lon: loc.lon });
     const cached = await loadPrayerCache();
     if (!isCurrent()) return;
 
@@ -530,13 +531,13 @@ function DashboardScreenContent({
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { city, country } = await getSelectedCity();
+      const loc = await resolvePrayerScheduleLocation();
       const cached = await loadPrayerCache();
       if (cancelled) return;
-      setCityLabel(city);
-      setCountryLabel(country);
-      setWeatherCoordOverride(null);
-      if (cached && cached.city === city && cached.country === country && !cached.error) {
+      setCityLabel(loc.city);
+      setCountryLabel(loc.country);
+      setWeatherCoordOverride({ lat: loc.lat, lon: loc.lon });
+      if (cached && cached.city === loc.city && cached.country === loc.country && !cached.error) {
         if (isPrayerTimesResultForLocalToday(cached)) {
           setRows(rowsFromResult(cached));
           setCityLabel(cached.city);

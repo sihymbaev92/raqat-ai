@@ -21,6 +21,7 @@
     "lint": "tsc --noEmit",
     "test": "jest",
     "test:full": "npm run lint && jest --ci",
+    "test:auto-location": "jest src/services/__tests__/devicePrayerLocation.test.ts src/constants/__tests__/kzCities.test.ts --ci",
     "prebuild": "expo prebuild",
     "generate:icon": "python scripts/generate-app-icon.py",
     "fetch:azan": "python scripts/fetch_prayer_azan_assets.py",

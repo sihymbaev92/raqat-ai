@@ -15,11 +15,14 @@ import {
   addSavedCity,
   getPrayerMosqueShiftMin,
   getPrayerSourceMode,
+  getPrayerLocationAutoEnabled,
+  setPrayerLocationAutoEnabled,
   setPrayerMosqueShiftMin,
   setPrayerSourceMode,
   setSelectedCity,
   type PrayerSourceMode,
 } from "../../storage/prefs";
+import { disablePrayerLocationAutoFromManualPick } from "../../services/devicePrayerLocation";
 import { KZ_CITY_PRESETS_LIST } from "../../constants/kzCityPresetsList";
 
 type Props = {
@@ -43,10 +46,12 @@ export function SettingsPrayerLocationSection({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<PrayerSourceMode>("calc");
   const [mosqueShift, setMosqueShift] = useState(0);
+  const [locationAuto, setLocationAuto] = useState(true);
 
   const load = useCallback(async () => {
     setSourceMode(await getPrayerSourceMode());
     setMosqueShift(await getPrayerMosqueShiftMin());
+    setLocationAuto(await getPrayerLocationAutoEnabled());
   }, []);
 
   useEffect(() => {
@@ -54,6 +59,8 @@ export function SettingsPrayerLocationSection({
   }, [load]);
 
   const applyCity = async (c: string, co: string, label: string) => {
+    await disablePrayerLocationAutoFromManualPick();
+    setLocationAuto(false);
     await setSelectedCity(c, co);
     await addSavedCity(c, co);
     onCityChange(c, co, label);
@@ -80,6 +87,25 @@ export function SettingsPrayerLocationSection({
       subtitle={kk.settings.sectionLocationPrayerSub}
     >
       <SettingsCard colors={colors}>
+        <View style={styles.rowBetween}>
+          <View style={{ flex: 1, paddingRight: 10 }}>
+            <Text style={styles.label}>{kk.settings.prayerLocationAutoTitle}</Text>
+            <Text style={styles.hint}>{kk.settings.prayerLocationAutoSub}</Text>
+          </View>
+          <Switch
+            value={locationAuto}
+            onValueChange={(on) => {
+              setLocationAuto(on);
+              void (async () => {
+                await setPrayerLocationAutoEnabled(on);
+                await onPrayerScheduleChange();
+              })();
+            }}
+            trackColor={{ false: colors.border, true: colors.accent }}
+            thumbColor="#fff"
+            accessibilityLabel={kk.settings.prayerLocationAutoTitle}
+          />
+        </View>
         <SettingsRow
           colors={colors}
           label={kk.settings.cityTitle}

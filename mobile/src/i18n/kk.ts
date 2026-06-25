@@ -605,6 +605,10 @@ export const kk = {
     disclaimer:
       "Жауап ақпараттық көмек; фиқһтық үкім емес. Бағыт: Қазақстан заңдарына сай дәстүрлі Ханафи мәзһабы және Матуриди ақидасы. Нақты жағдайда Fatua.kz / Muftyat.kz толық мәтінін оқыңыз немесе білікті ұстазға жүгініңіз.",
     persistentSafetyNotice: "Фәтуа емес: жауапты ҚМДБ дереккөзі және Ханафи мәзһабы бойынша тексеріңіз.",
+  /** AI чат — тұрақты, ірі ескерту (фетва емес). */
+    heroDisclaimer:
+      "Бұл AI көмекші — фетва бермейді. Қателік болуы мүмкін. Ресми сұрақтар үшін Fatua.kz-ке жүгініңіз.",
+    heroDisclaimerFatuaLink: "Fatua.kz ашу",
     usageTips:
       "Мысал: «Ханафи бойынша зекет мөлшері», «Дәрет бұзылуы», «Ораза уақыты». Жауап тек индекстегі пәтуаға сүйенеді; табылмаса ресми сайтқа жібереміз.",
     settingsPanelTitle: "Сұрақ-жауап баптаулары",
@@ -2226,6 +2230,8 @@ export const kk = {
     quranReaderMarkerClassic: "Классикалық",
     quranReaderMushafPageHint:
       "Бет нөмірі бір ғана Хафс 604 картасымен есептеледі (Мадина King Fahd / KFGQPC және көптеген түрік 604 басылымдары осымен сәйкес келеді).",
+    prayerLocationAutoTitle: "Автоматты орын",
+    prayerLocationAutoSub: "GPS, Wi‑Fi және интернет арқылы қала, ауа райы мен құбыла жаңартылады.",
     cityTitle: "Негізгі қала",
     androidPrayerWidgetTitle: "Бастапқы экран виджеті (Android)",
     androidPrayerWidgetHint:
@@ -2248,9 +2254,19 @@ export const kk = {
       "1. Fresh install → хабарлама рұқсатын беріңіз.",
       "2. Бір намазды қосып/өшіріп, жоспарланған сан өзгергенін тексеріңіз.",
       "3. Android 12+ exact alarm және Android 14+ full-screen intent рұқсаттарын қосыңыз.",
-      "4. «Locked-screen QA (90 сек)» → экранды құлыптаңыз → азan экраны + дыбыс.",
-      "5. Телефонды қайта қосып, channel sound сақталғанын тексеріңіз.",
+      "4. «Батареяны үнемдеуден босату» — Samsung/Xiaomi-де RAQAT-ты шектеусіз қалдырыңыз.",
+      "5. «Locked-screen QA (90 сек)» → экранды құлыптаңыз → азan экраны + дыбыс.",
+      "6. Телефонды қайта қосып, channel sound сақталғанын тексеріңіз.",
     ],
+    prayerAzanBatteryTitle: "Азан кепілдігі — батарея",
+    prayerAzanBatteryHint:
+      "Samsung, Xiaomi және басқа Android телефондар азанды «Батареяны үнемдеу» режимінде кешіктіруі мүмкін. RAQAT үшін шектеусіз рұқсат беріңіз.",
+    prayerAzanBatterySamsungSteps:
+      "Samsung: Баптаулар → Қолданбалар → RAQAT → Батарея → «Шектеусіз» (Unrestricted).",
+    prayerAzanBatteryXiaomiSteps:
+      "Xiaomi / Redmi / POCO: Баптаулар → Қолданбалар → RAQAT → Батарея → «Шектеу жоқ»; қажет болса «Автозапуск» қосыңыз.",
+    prayerAzanOpenBatterySettings: "Батареяны үнемдеуден босату",
+    prayerAzanOpenBatterySettingsA11y: "Android батарея үнемдеу баптауын ашу",
     prayerAzanOpenFullScreenSettings: "Full-screen intent баптауын ашу",
     prayerAzanQaSchedule90s: "Locked-screen QA (90 сек)",
     prayerAzanQaScheduling: "Жоспарлануда…",

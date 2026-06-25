@@ -31,8 +31,8 @@ import {
   wmoCodeToWeatherIconName,
   type OpenMeteoCurrent,
 } from "../services/openMeteoCurrent";
+import { disablePrayerLocationAutoFromManualPick, resolvePrayerScheduleLocation } from "../services/devicePrayerLocation";
 import {
-  getSelectedCity,
   setSelectedCity,
   addSavedCity,
   getNotifEnabled,
@@ -410,21 +410,32 @@ export function PrayerTimesScreen() {
   );
 
   const fetchAndSave = useCallback(
-    async (c: string, co: string) => {
+    async (c?: string, co?: string) => {
       const { isCurrentRequest } = beginLatestRequest(fetchSeqRef);
       setLoading(true);
-      setCity(c);
-      setCountry(co);
+      let cityName: string;
+      let countryName: string;
+      if (c?.trim() && co?.trim()) {
+        await disablePrayerLocationAutoFromManualPick();
+        cityName = c.trim();
+        countryName = co.trim();
+      } else {
+        const loc = await resolvePrayerScheduleLocation();
+        cityName = loc.city;
+        countryName = loc.country;
+      }
+      setCity(cityName);
+      setCountry(countryName);
       try {
-        const data = await fetchPrayerTimesForLocation(c, co);
+        const data = await fetchPrayerTimesForLocation(cityName, countryName);
         const out = applyMosqueShift(data);
         if (!isCurrentRequest()) return;
         setResult(out);
         if (!out.error) {
           if (!isCurrentRequest()) return;
-          await setSelectedCity(c, co);
+          await setSelectedCity(cityName, countryName);
           if (!isCurrentRequest()) return;
-          await addSavedCity(c, co);
+          await addSavedCity(cityName, countryName);
           if (!isCurrentRequest()) return;
           await savePrayerCache(out);
           if (!isCurrentRequest()) return;
@@ -443,7 +454,7 @@ export function PrayerTimesScreen() {
       } catch (e) {
         if (!isCurrentRequest()) return;
         const message = e instanceof Error ? e.message : "Network error";
-        setResult(prayerTimesErrorResult(c, co, message));
+        setResult(prayerTimesErrorResult(cityName, countryName, message));
       } finally {
         if (isCurrentRequest()) setLoading(false);
       }
@@ -456,7 +467,6 @@ export function PrayerTimesScreen() {
       setHeaderDate(formatKkGregorianShort(new Date(), locale));
       let cancelled = false;
       (async () => {
-        const prefs = await getSelectedCity();
         const mode = await getPrayerSourceMode();
         const shift = await getPrayerMosqueShiftMin();
         const [ne, sid, mutedKeys] = await Promise.all([
@@ -465,14 +475,12 @@ export function PrayerTimesScreen() {
           getPrayerNotifMutedSalatKeys(),
         ]);
         if (cancelled) return;
-        setCity(prefs.city);
-        setCountry(prefs.country);
         setSourceMode(mode);
         setMosqueShiftMin(shift);
         setNotifEnabled(ne);
         setPrayerSoundId(sid);
         setMutedSalatKeys(mutedKeys);
-        await fetchAndSave(prefs.city, prefs.country);
+        await fetchAndSave();
       })();
       return () => {
         cancelled = true;
