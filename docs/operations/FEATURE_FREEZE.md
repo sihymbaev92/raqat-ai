@@ -19,7 +19,8 @@
 
 ## Рұқсат етілген өзгерістер
 
-- **Автоматты орын (locked):** GPS/Wi‑Fi → қала, ауа райы, құбыла — `checkpoint/auto-location-v1`, `docs/operations/CHECKPOINT_AUTO_LOCATION.md`
+- **Автоматты орын (locked):** GPS/Wi‑Fi → қала, ауа райы, құбыла — `checkpoint/auto-location-v1`
+- **Clean baseline (locked):** қолданылмайтын код + скрейп мәтін жойылды — `checkpoint/clean-baseline-v1`, `docs/operations/CLEAN_BASELINE.md`
 - Bug fix (азан, crash, WebView, prayer times)
 - Copy/disclaimer/permission guide (UI мәтін, баптау гиді)
 - Test, CI, deploy, docs

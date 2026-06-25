@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -7,7 +7,6 @@ import {
   FlatList,
   RefreshControl
 } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -43,8 +42,6 @@ import type { ThemeColors } from "../theme/colors";
 import { QuranContinueReadingCard } from "../components/quran/QuranContinueReadingCard";
 import { useQuranContinueReading } from "../quran/useQuranContinueReading";
 import { navigateToHatim } from "../navigation/navigateToMoreStack";
-import { navigateToQuranSettings } from "../navigation/navigateToSettings";
-import { DomainSettingsHeaderButton, domainSettingsHeaderRightContainerStyle } from "../components/settings/DomainSettingsHeaderButton";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
 
@@ -70,21 +67,6 @@ export function QuranListScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { tr } = useKkAutoTranslator();
   const [list, setList] = useState<CachedSurah[]>([]);
-  const openQuranSettings = useCallback(() => navigateToQuranSettings(navigation), [navigation]);
-
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={domainSettingsHeaderRightContainerStyle(insets)}>
-          <DomainSettingsHeaderButton
-            colors={colors}
-            onPress={openQuranSettings}
-            accessibilityLabel={kk.settings.headerQuranSettingsA11y}
-          />
-        </View>
-      ),
-    });
-  }, [navigation, colors, insets.right, openQuranSettings]);
   const [err, setErr] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [fromCache, setFromCache] = useState(false);
@@ -281,19 +263,6 @@ export function QuranListScreen({ navigation }: Props) {
       }
       ListHeaderComponent={
         <View style={styles.listHeader}>
-          <View style={styles.quranHeaderRow}>
-            <Text style={styles.quranHeaderTitle}>{tr(kk.quran.listTitle)}</Text>
-            <Pressable
-              oyuBackdrop={false}
-              onPress={openQuranSettings}
-              hitSlop={10}
-              style={({ pressed }) => [styles.quranSettingsButton, pressed && { opacity: 0.72 }]}
-              accessibilityRole="button"
-              accessibilityLabel={kk.settings.headerQuranSettingsA11y}
-            >
-              <MaterialIcons name="settings" size={21} color={colors.text} />
-            </Pressable>
-          </View>
           <View style={styles.modeWrap}>
             <Pressable
               style={({ pressed }) => [
@@ -414,28 +383,6 @@ function makeStyles(colors: ThemeColors, screenBg: string) {
     root: { flex: 1, backgroundColor: uiBg },
     pad: { paddingHorizontal: 12, paddingBottom: 40 },
     listHeader: { paddingHorizontal: 2, marginBottom: 6 },
-    quranHeaderRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 10,
-      paddingHorizontal: 2,
-    },
-    quranHeaderTitle: {
-      color: uiText,
-      fontSize: 22,
-      fontWeight: "800",
-    },
-    quranSettingsButton: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: uiCard,
-      borderWidth: 1,
-      borderColor: uiBorder,
-    },
     modeWrap: {
       flexDirection: "row",
       backgroundColor: uiCard,

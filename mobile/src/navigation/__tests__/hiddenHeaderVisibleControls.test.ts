@@ -6,20 +6,17 @@ function source(rel: string): string {
 }
 
 describe("hidden-header visible controls", () => {
-  it("keeps Quran settings reachable from the Quran list body", () => {
-    const src = source("src/screens/QuranListScreen.tsx");
+  it("keeps Quran settings reachable from the settings hub", () => {
+    const src = source("src/components/settings/SettingsHatimHub.tsx");
 
-    expect(src).toContain("styles.quranSettingsButton");
-    expect(src).toContain("openQuranSettings");
-    expect(src).toContain("kk.settings.headerQuranSettingsA11y");
+    expect(src).toContain('navigation.navigate("QuranSettings")');
   });
 
-  it("keeps Hatim settings reachable from visible quick actions", () => {
-    const src = source("src/screens/HatimScreen.tsx");
+  it("keeps Hatim settings reachable from the settings hub", () => {
+    const src = source("src/components/settings/SettingsHatimHub.tsx");
 
-    expect(src).toContain("styles.hatimQuickActionSettings");
-    expect(src).toContain("openHatimSettings");
-    expect(src).toContain("kk.hatim.settingsBtnA11y");
+    expect(src).toContain("kk.hatim.settingsClearProgress");
+    expect(src).toContain('navigation.navigate("QuranSettings")');
   });
 
   it("keeps Tajweed book back navigation visible without relying on headerLeft", () => {

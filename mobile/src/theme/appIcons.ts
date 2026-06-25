@@ -19,7 +19,6 @@ export const dashboardIcons = {
   promoAi: "sparkles" as MciName,
   tileNamaz: "mosque" as MciName,
   tileDaily: "white-balance-sunny" as MciName,
-  tileCommunity: "hands-pray" as MciName,
 } as const;
 
 /** Мазмұн орталығы тайлдары */

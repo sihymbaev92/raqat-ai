@@ -120,7 +120,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       telegramShort: "Telegram",
       quranShort: "Коран",
       tileSeerah: "Сира",
-      tileCommunityDua: "Дуа сообщества",
       tileHadith: "Хадисы",
       arabicLettersTile: "Таджвид",
       traditionTileShort: "Религия и традиции",
@@ -279,9 +278,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       halalHeroTagRegistry: "Официальный реестр",
       halalHeroTagVerify: "Проверка продукта",
     },
-    communityDua: {
-      screenTitle: "Дуа сообщества",
-    },
     seerah: {
       title: "Сира",
     },
@@ -414,7 +410,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       telegramShort: "Telegram",
       quranShort: "Quran",
       tileSeerah: "Seerah",
-      tileCommunityDua: "Community Dua",
       tileHadith: "Hadiths",
       arabicLettersTile: "Tajweed",
       traditionTileShort: "Faith and tradition",
@@ -573,9 +568,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       halalHeroTagRegistry: "Official registry",
       halalHeroTagVerify: "Product check",
     },
-    communityDua: {
-      screenTitle: "Community Dua",
-    },
     seerah: {
       title: "Seerah",
     },
@@ -665,8 +657,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Куран", heroHadithTitle: "Сахих хадистер", heroDuaTitle: "Коом дубасы",
       heroDuaSub: "Бөлүшүү · аамийн", heroAiStripTitle: "КМДБ", promoHalalHeadline: "ХАЛАЛ ДАМУ",
       promoHolidayKurbanTitle: "Курман айт", quickMenu: "Дагы", duasShort: "Дубалар", settingsShort: "Жөндөөлөр",
-      telegramShort: "Telegram", quranShort: "Куран", tileSeerah: "Сира", tileCommunityDua: "Коом дубасы",
-      tileHadith: "Хадистер", arabicLettersTile: "Тажвид", traditionTileShort: "Дин жана салт",
+      telegramShort: "Telegram", quranShort: "Куран", tileSeerah: "Сира", tileHadith: "Хадистер", arabicLettersTile: "Тажвид", traditionTileShort: "Дин жана салт",
       traditionDinHubLabel: "Дин жана салт", radialLauncherMenuA11y: "Негизги бөлүмдөр", radialLauncherFabLabel: "Меню",
     },
     prayer: {
@@ -715,7 +706,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       raqatAiTitle: "КМДБ · Суроо-жооп", halalHeroTagRegistry: "Расмий тизмек",
       halalHeroTagVerify: "Өнүм текшерүү",
     },
-    communityDua: { screenTitle: "Коом дубасы" },
     seerah: { title: "Сира" },
     hadith: {
       menuTitle: "Хадистер",
@@ -779,8 +769,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Qur'on", heroHadithTitle: "Sahih hadislar", heroDuaTitle: "Jamoa duosi",
       heroDuaSub: "Ulashish · omin", heroAiStripTitle: "QMDB", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Qurbon hayit", quickMenu: "Yana", duasShort: "Duolar", settingsShort: "Sozlamalar",
-      telegramShort: "Telegram", quranShort: "Qur'on", tileSeerah: "Siyra", tileCommunityDua: "Jamoa duosi",
-      tileHadith: "Hadislar", arabicLettersTile: "Tajvid", traditionTileShort: "Din va urf-odat",
+      telegramShort: "Telegram", quranShort: "Qur'on", tileSeerah: "Siyra", tileHadith: "Hadislar", arabicLettersTile: "Tajvid", traditionTileShort: "Din va urf-odat",
       traditionDinHubLabel: "Din va urf-odat", radialLauncherMenuA11y: "Asosiy bo'limlar", radialLauncherFabLabel: "Menyu",
     },
     prayer: {
@@ -806,7 +795,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "Qurbon hayit",
       raqatAiTitle: "QMDB · Savol-javob",
     },
-    communityDua: { screenTitle: "Jamoa duosi" },
     seerah: { title: "Siyra" },
     hadith: {
       menuTitle: "Hadislar",
@@ -870,8 +858,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Kur'an", heroHadithTitle: "Sahih hadisler", heroDuaTitle: "Topluluk duası",
       heroDuaSub: "Paylaş · amin", heroAiStripTitle: "KMDB", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Kurban Bayramı", quickMenu: "Daha", duasShort: "Dualar", settingsShort: "Ayarlar",
-      telegramShort: "Telegram", quranShort: "Kur'an", tileSeerah: "Siyer", tileCommunityDua: "Topluluk duası",
-      tileHadith: "Hadisler", arabicLettersTile: "Tecvid", traditionTileShort: "Din ve gelenek",
+      telegramShort: "Telegram", quranShort: "Kur'an", tileSeerah: "Siyer", tileHadith: "Hadisler", arabicLettersTile: "Tecvid", traditionTileShort: "Din ve gelenek",
       traditionDinHubLabel: "Din ve gelenek", radialLauncherMenuA11y: "Ana bölümler", radialLauncherFabLabel: "Menü",
     },
     prayer: {
@@ -897,7 +884,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "Kurban Bayramı",
       raqatAiTitle: "KMDB · Soru-cevap",
     },
-    communityDua: { screenTitle: "Topluluk duası" },
     seerah: { title: "Siyer" },
     hadith: {
       menuTitle: "Hadisler",
@@ -961,8 +947,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "القرآن", heroHadithTitle: "أحاديث صحيحة", heroDuaTitle: "دعاء الجماعة",
       heroDuaSub: "مشاركة · آمين", heroAiStripTitle: "QMDB", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "عيد الأضحى", quickMenu: "المزيد", duasShort: "الأدعية", settingsShort: "الإعدادات",
-      telegramShort: "Telegram", quranShort: "القرآن", tileSeerah: "السيرة", tileCommunityDua: "دعاء الجماعة",
-      tileHadith: "الأحاديث", arabicLettersTile: "التجويد", traditionTileShort: "الدين والتقاليد",
+      telegramShort: "Telegram", quranShort: "القرآن", tileSeerah: "السيرة", tileHadith: "الأحاديث", arabicLettersTile: "التجويد", traditionTileShort: "الدين والتقاليد",
       traditionDinHubLabel: "الدين والتقاليد", radialLauncherMenuA11y: "الأقسام الرئيسية", radialLauncherFabLabel: "القائمة",
     },
     prayer: {
@@ -988,7 +973,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "عيد الأضحى",
       raqatAiTitle: "QMDB · سؤال وجواب",
     },
-    communityDua: { screenTitle: "دعاء الجماعة" },
     seerah: { title: "السيرة" },
     hadith: {
       menuTitle: "الأحاديث",

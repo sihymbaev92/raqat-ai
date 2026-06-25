@@ -82,30 +82,15 @@ export function stripTajweedTags(taggedText: string): string {
 export type TajweedWordSpan = { text: string; rule?: TajweedRuleKey };
 export type TajweedColoredRun = { text: string; rule?: TajweedRuleKey };
 
-const HELPER_TAJWEED_RULES = new Set<TajweedRuleKey>(["h", "l", "s"]);
-
-function pickVisibleTajweedRule(rules: TajweedRuleKey[]): TajweedRuleKey | undefined {
-  return rules.find((rule) => !HELPER_TAJWEED_RULES.has(rule));
-}
-
 /**
- * Тәжуид тегтерін тек бос орын бойынша ғана бөледі — [h:1[ٱ]лلَّهِ сияқты
- * бір сөз ішіндегі сегменттер бір Text ішінде қалады (араб байланысы үзілмейді).
+ * Тәжуид тегтерін сегмент бойынша бояу — тек тег ішіндегі әріптер түс алады;
+ * ереже келесі әріптерге тарамайды (бір түсте 4/5 әріп боялмауы керек).
  */
 export function tajweedColoredRuns(taggedText: string): TajweedColoredRun[] {
   const raw = (taggedText ?? "").trim();
   if (!raw.includes("[")) return [];
 
   const runs: TajweedColoredRun[] = [];
-  let buf = "";
-  let rulesInBuf: TajweedRuleKey[] = [];
-
-  const flushBuf = () => {
-    if (!buf) return;
-    runs.push({ text: buf, rule: pickVisibleTajweedRule(rulesInBuf) });
-    buf = "";
-    rulesInBuf = [];
-  };
 
   for (const segment of parseAlquranTajweedTaggedText(raw)) {
     const text = segment.text;
@@ -113,7 +98,6 @@ export function tajweedColoredRuns(taggedText: string): TajweedColoredRun[] {
     while (i < text.length) {
       const ws = text.slice(i).match(/^\s+/u);
       if (ws) {
-        flushBuf();
         runs.push({ text: ws[0] });
         i += ws[0].length;
         continue;
@@ -121,17 +105,15 @@ export function tajweedColoredRuns(taggedText: string): TajweedColoredRun[] {
       let j = i;
       while (j < text.length && !/\s/u.test(text[j]!)) j += 1;
       const chunk = text.slice(i, j);
-      if (segment.rule) rulesInBuf.push(segment.rule);
-      buf += chunk;
+      runs.push(segment.rule ? { text: chunk, rule: segment.rule } : { text: chunk });
       i = j;
     }
   }
-  flushBuf();
 
   const merged: TajweedColoredRun[] = [];
   for (const run of runs) {
     const prev = merged[merged.length - 1];
-    if (prev && prev.rule === run.rule && !/^\s+$/u.test(run.text)) {
+    if (prev && prev.rule === run.rule) {
       prev.text += run.text;
       continue;
     }
@@ -220,10 +202,7 @@ export function tajweedRulesPerWordChar(
         pushWord();
         continue;
       }
-      const visible =
-        segment.rule && !HELPER_TAJWEED_RULES.has(segment.rule) ? segment.rule : undefined;
-      const prev = currentWord[currentWord.length - 1];
-      currentWord.push(visible ?? prev);
+      currentWord.push(segment.rule ?? undefined);
     }
   }
   pushWord();
@@ -238,7 +217,52 @@ export function tajweedRuleForWordGlyph(
   const perWord = tajweedRulesPerWordChar(taggedText);
   const chars = perWord[wordIndex];
   if (!chars?.length) return tajweedWholeWordRules(taggedText ?? "")[wordIndex];
-  return chars[glyphIndexInWord] ?? chars[chars.length - 1];
+  return chars[glyphIndexInWord];
+}
+
+/** Бір сөз ішіндегі әріптерді тәжуид ережесі бойынша қысқа runs-қа біріктіреді. */
+export function tajweedWordCharRuns(
+  taggedText: string | null | undefined,
+  wordIndex: number,
+  plainWord?: string
+): TajweedColoredRun[] {
+  const raw = (taggedText ?? "").trim();
+  if (!raw.includes("[")) return [];
+
+  const word =
+    plainWord ??
+    stripTajweedTags(raw)
+      .split(/\s+/u)
+      .filter(Boolean)[wordIndex];
+  if (!word) return [];
+
+  const chars = Array.from(word);
+  const rules = tajweedRulesPerWordChar(raw)[wordIndex] ?? [];
+  const runs: TajweedColoredRun[] = [];
+  for (let i = 0; i < chars.length; i++) {
+    const ch = chars[i]!;
+    const rule = i < rules.length ? rules[i] : undefined;
+    const prev = runs[runs.length - 1];
+    if (prev && prev.rule === rule) {
+      prev.text += ch;
+    } else {
+      runs.push(rule ? { text: ch, rule } : { text: ch });
+    }
+  }
+  return runs;
+}
+
+/** Сөз ішінде тек бірнеше әріп түстелсе — QCF4 glyph орнына әріп бойынша бояу керек. */
+export function tajweedWordHasPerLetterColoring(
+  taggedText: string | null | undefined,
+  wordIndex: number
+): boolean {
+  const rules = tajweedRulesPerWordChar(taggedText)[wordIndex];
+  if (!rules?.length) return false;
+  const normalized = rules.map((rule) => rule ?? null);
+  const tagged = normalized.filter((rule) => rule != null);
+  if (!tagged.length) return false;
+  return !(tagged.length === normalized.length && new Set(tagged).size === 1);
 }
 
 /** Түсті топтар: легенда үшін (Sajda-style топтау) */

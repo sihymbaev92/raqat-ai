@@ -20,7 +20,8 @@ import {
 } from "../../theme/quranComReadingTheme";
 import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
 import {
-  parseAlquranTajweedTaggedText,
+  stripTajweedTags,
+  tajweedRulesPerWordChar,
   type TajweedRuleKey,
 } from "../../utils/alquranTajweedParse";
 
@@ -38,56 +39,25 @@ function tajweedFlowWords(taggedText: string | null | undefined, plainText?: str
   const raw = (taggedText ?? "").trim();
   if (!raw.includes("[")) return [];
 
-  const out: TajweedFlowWord[] = [];
-  let parts: TajweedFlowWordPart[] = [];
-  let text = "";
+  const plainWords = (plainText ?? stripTajweedTags(raw)).trim().split(/\s+/u).filter(Boolean);
+  if (!plainWords.length) return [];
 
-  const flush = () => {
-    if (!text.trim()) {
-      parts = [];
-      text = "";
-      return;
-    }
-    out.push({ text, parts });
-    parts = [];
-    text = "";
-  };
-
-  for (const segment of parseAlquranTajweedTaggedText(raw)) {
-    for (const chunk of segment.text.split(/(\s+)/u)) {
-      if (!chunk) continue;
-      if (/^\s+$/u.test(chunk)) {
-        flush();
-        continue;
-      }
-      parts.push(segment.rule ? { text: chunk, rule: segment.rule } : { text: chunk });
-      text += chunk;
-    }
-  }
-  flush();
-
-  const plainWords = (plainText ?? "").trim().split(/\s+/u).filter(Boolean);
-  if (!plainWords.length) return out;
-
+  const perWord = tajweedRulesPerWordChar(raw);
   return plainWords.map((plainWord, idx) => {
-    const taggedWord = out[idx];
-    if (!taggedWord?.parts.length) return { text: plainWord, parts: [{ text: plainWord }] };
-    if (taggedWord.text === plainWord) return taggedWord;
-
     const chars = Array.from(plainWord);
-    let cursor = 0;
-    const mappedParts: TajweedFlowWordPart[] = [];
-    for (const part of taggedWord.parts) {
-      if (cursor >= chars.length) break;
-      const take = Math.max(1, Array.from(part.text).length);
-      const textPart = chars.slice(cursor, cursor + take).join("");
-      cursor += take;
-      if (textPart) mappedParts.push(part.rule ? { text: textPart, rule: part.rule } : { text: textPart });
+    const rules = perWord[idx] ?? [];
+    const parts: TajweedFlowWordPart[] = [];
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i]!;
+      const rule = i < rules.length ? rules[i] : undefined;
+      const prev = parts[parts.length - 1];
+      if (prev && prev.rule === rule) {
+        prev.text += ch;
+      } else {
+        parts.push(rule ? { text: ch, rule } : { text: ch });
+      }
     }
-    if (cursor < chars.length) {
-      mappedParts.push({ text: chars.slice(cursor).join("") });
-    }
-    return { text: plainWord, parts: mappedParts.length ? mappedParts : [{ text: plainWord }] };
+    return { text: plainWord, parts: parts.length ? parts : [{ text: plainWord }] };
   });
 }
 
@@ -403,21 +373,18 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
                 {typeof word === "string" ? (
                   word
                 ) : (
-                  <Text
-                    style={[
-                      wordStyle,
-                      (() => {
-                        const visibleRule = word.parts.find(
-                          (part) =>
-                            part.rule && part.rule !== "h" && part.rule !== "l" && part.rule !== "s"
-                        )?.rule;
-                        return visibleRule
-                          ? { color: tajweedColorForRule(visibleRule, isDark) }
-                          : null;
-                      })(),
-                    ]}
-                  >
-                    {word.text}
+                  <Text style={wordStyle} suppressHighlighting>
+                    {word.parts.map((part, pi) => (
+                      <Text
+                        key={`${word.text}-${pi}`}
+                        style={[
+                          wordStyle,
+                          part.rule ? { color: tajweedColorForRule(part.rule, isDark) } : null,
+                        ]}
+                      >
+                        {part.text}
+                      </Text>
+                    ))}
                   </Text>
                 )}
               </Text>

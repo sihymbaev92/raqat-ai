@@ -261,36 +261,18 @@ export function HatimScreen({ navigation }: Props) {
     [closeNavSheet, scrollHatimToSurah, openMushafBook]
   );
 
-  const openHatimSettings = useCallback(() => {
-    navigation.navigate("HatimSettings");
-  }, [navigation]);
-
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShadowVisible: false,
       headerTitleAlign: "center",
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", marginRight: 2 }}>
-          <Pressable
-            onPress={openHatimSettings}
-            style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.82 : 1 }]}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel={kk.hatim.settingsBtnA11y}
-          >
-            <MaterialIcons name="settings" size={24} color={colors.text} />
-          </Pressable>
-        </View>
-      ),
     });
     return () => {
       navigation.setOptions({
         headerTitleAlign: undefined,
         headerShadowVisible: undefined,
-        headerRight: undefined,
       });
     };
-  }, [navigation, colors.text, openHatimSettings]);
+  }, [navigation]);
 
   const goResume = () => {
     if (!resume) return;
@@ -351,13 +333,13 @@ export function HatimScreen({ navigation }: Props) {
           contentContainerStyle={[styles.pad, { paddingBottom: listBottomPad }]}
           ListHeaderComponent={
             <View style={styles.headerBlock} onLayout={onListHeaderLayout}>
-              <View style={styles.hatimProgressSolo}>
+              <View style={styles.hatimProgressRow}>
                 <Pressable
                   onPress={goResume}
                   disabled={!resume}
                   style={({ pressed }) => [
                     styles.progressCard,
-                    styles.progressCardSolo,
+                    styles.progressCardFlex,
                     resume ? styles.progressCardActive : null,
                     pressed && resume && { opacity: 0.94 },
                   ]}
@@ -397,51 +379,37 @@ export function HatimScreen({ navigation }: Props) {
                     <Text style={styles.tapHint}>{kk.hatim.tapAyahHint}</Text>
                   )}
                 </Pressable>
-              </View>
-              <View style={styles.hatimQuickActions}>
-                <Pressable
-                  onPress={openSearchSheet}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={kk.hatim.searchBtnA11y}
-                  style={({ pressed }) => [
-                    styles.hatimQuickAction,
-                    pressed && styles.hatimQuickActionPressed,
-                  ]}
-                >
-                  <MaterialIcons name="search" size={19} color={colors.accent} />
-                  <Text style={styles.hatimQuickActionText}>{kk.hatim.searchQuickAction}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={openNavSheet}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={kk.hatim.juzHeaderBtnA11y}
-                  style={({ pressed }) => [
-                    styles.hatimQuickAction,
-                    styles.hatimQuickActionPrimary,
-                    pressed && styles.hatimQuickActionPressed,
-                  ]}
-                >
-                  <View style={styles.hatimJuzIconBadge}>
-                    <MaterialIcons name="auto-stories" size={17} color={colors.accent} />
-                  </View>
-                  <Text style={styles.hatimQuickActionText}>{kk.hatim.juzQuickAction}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={openHatimSettings}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={kk.hatim.settingsBtnA11y}
-                  style={({ pressed }) => [
-                    styles.hatimQuickAction,
-                    styles.hatimQuickActionSettings,
-                    pressed && styles.hatimQuickActionPressed,
-                  ]}
-                >
-                  <MaterialIcons name="settings" size={18} color={colors.text} />
-                  <Text style={styles.hatimQuickActionSettingsText}>{kk.hatim.settingsTitle}</Text>
-                </Pressable>
+                <View style={styles.hatimQuickActionsCol}>
+                  <Pressable
+                    onPress={openNavSheet}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={kk.hatim.juzHeaderBtnA11y}
+                    style={({ pressed }) => [
+                      styles.hatimQuickAction,
+                      styles.hatimQuickActionPrimary,
+                      pressed && styles.hatimQuickActionPressed,
+                    ]}
+                  >
+                    <View style={styles.hatimJuzIconBadge}>
+                      <MaterialIcons name="auto-stories" size={17} color={colors.accent} />
+                    </View>
+                    <Text style={styles.hatimQuickActionText}>{kk.hatim.juzQuickAction}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={openSearchSheet}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={kk.hatim.searchBtnA11y}
+                    style={({ pressed }) => [
+                      styles.hatimQuickAction,
+                      pressed && styles.hatimQuickActionPressed,
+                    ]}
+                  >
+                    <MaterialIcons name="search" size={19} color={colors.accent} />
+                    <Text style={styles.hatimQuickActionText}>{kk.hatim.searchQuickAction}</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           }
@@ -533,11 +501,9 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       paddingVertical: 10,
       marginBottom: 0,
     },
-    progressCardSolo: {
-      alignSelf: "center",
-      width: Platform.OS === "web" ? "92%" : "84%",
-      maxWidth: Platform.OS === "web" ? 560 : 340,
-      minWidth: Platform.OS === "web" ? 360 : 248,
+    progressCardFlex: {
+      flex: 1,
+      minWidth: 0,
     },
     progressCardActive: {
       borderColor: colors.accent,
@@ -580,23 +546,23 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       color: colors.accent,
     },
     tapHint: { marginTop: 8, fontSize: 11, lineHeight: 15, color: inkMuted },
-    hatimProgressSolo: {
-      alignSelf: "stretch",
-      marginBottom: 0,
-    },
-    hatimQuickActions: {
+    hatimProgressRow: {
       flexDirection: "row",
-      justifyContent: "flex-end",
-      alignItems: "center",
-      gap: 8,
-      marginTop: 12,
+      alignItems: "stretch",
+      gap: 10,
       marginBottom: 8,
-      paddingRight: 2,
+    },
+    hatimQuickActionsCol: {
+      flexDirection: "column",
+      justifyContent: "center",
+      gap: 8,
+      flexShrink: 0,
     },
     hatimQuickAction: {
       minHeight: 34,
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 5,
       paddingHorizontal: 11,
       paddingVertical: 7,
@@ -604,14 +570,11 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: surfaceBorder,
       backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "rgba(255,255,255,0.82)",
+      minWidth: 108,
     },
     hatimQuickActionPrimary: {
       borderColor: colors.accent,
       backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.08)",
-    },
-    hatimQuickActionSettings: {
-      borderColor: colors.border,
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : colors.card,
     },
     hatimJuzIconBadge: {
       width: 22,
@@ -627,12 +590,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
     },
     hatimQuickActionText: {
       color: colors.accent,
-      fontSize: 12,
-      lineHeight: 16,
-      fontWeight: "900",
-    },
-    hatimQuickActionSettingsText: {
-      color: colors.text,
       fontSize: 12,
       lineHeight: 16,
       fontWeight: "900",

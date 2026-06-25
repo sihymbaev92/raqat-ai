@@ -446,8 +446,8 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       }) === "qcf4",
     [arabicScriptEdition, effectiveShowTajweedColors, readingThemeId]
   );
-  const effectiveShowReaderTranslit = effectiveShowTajweedColors ? false : showReaderTranslit;
-  const effectiveShowReaderMeaning = effectiveShowTajweedColors ? false : showReaderMeaning;
+  const effectiveShowReaderTranslit = showReaderTranslit;
+  const effectiveShowReaderMeaning = showReaderMeaning;
   /** Quran.com хатымда бет телефон экранының төрт бұрышына дейін жайылады. */
   const topInset = readingTheme.minimalPageChrome || Platform.OS === "web" ? 0 : insets.top;
   /** Кей Android-та gesture/navigation bar safe-area 0 болып келеді — төменгі аят кесілмеуі үшін аз резерв. */
@@ -1684,8 +1684,22 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
           if (menuAyah) void shareHatimAyah(menuAyah);
         }}
         onOpenTranslation={() => {
-          if (menuAyah) setTranslationTarget(resolveHatimSelection(menuAyah));
+          const selection = menuAyah;
           setMenuAyah(null);
+          if (!selection) return;
+          setTranslationTarget(resolveHatimSelection(selection));
+          void ensureBundledQuranReaderLoaded().then(() => {
+            setTranslationTarget((prev) => {
+              if (
+                !prev ||
+                prev.ref.surah !== selection.ref.surah ||
+                prev.ref.ayah !== selection.ref.ayah
+              ) {
+                return prev;
+              }
+              return resolveHatimSelection(prev);
+            });
+          });
         }}
         onPickMarkerColor={async (item, cid) => {
           const ref = menuAyah?.ref;

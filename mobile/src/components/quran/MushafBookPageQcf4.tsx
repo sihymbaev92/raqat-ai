@@ -56,6 +56,8 @@ import {
 } from "../../quran/mushafAyahMarkerStyle";
 import {
   tajweedRuleForWordGlyph,
+  tajweedWordCharRuns,
+  tajweedWordHasPerLetterColoring,
   type TajweedRuleKey,
 } from "../../utils/alquranTajweedParse";
 import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
@@ -590,15 +592,57 @@ export function MushafBookPageQcf4({
                 typeof word.position === "number" && word.position > 0
                   ? word.position - 1
                   : wordOrdinal;
+              const taggedAyah =
+                ref != null ? tajweedTaggedByAyah.get(`${ref.surah}:${ref.ayah}`) : undefined;
+              const readableWord = qcf4ReadableText(word);
+              const usePerLetterTajweed =
+                showTajweedColors &&
+                word.type === "word" &&
+                Boolean(taggedAyah) &&
+                wordRuleIndex != null &&
+                tajweedWordHasPerLetterColoring(taggedAyah, wordRuleIndex);
+              const tajweedCharRuns = usePerLetterTajweed
+                ? tajweedWordCharRuns(taggedAyah, wordRuleIndex!, readableWord)
+                : [];
               const tajweedRule =
-                ref != null && wordRuleIndex != null
+                ref != null && wordRuleIndex != null && !usePerLetterTajweed
                   ? tajweedRuleForWordGlyph(
-                      tajweedTaggedByAyah.get(`${ref.surah}:${ref.ayah}`),
+                      taggedAyah,
                       wordRuleIndex,
                       glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0
                     )
                   : undefined;
               const tappable = ref != null;
+              const glyphTextStyle = {
+                fontFamily:
+                  usePerLetterTajweed || readableWebText
+                    ? QCF4_READABLE_WEB_FONT
+                    : qcf4FontFamilyName(word.font),
+                fontSize: displayedFontSize,
+                lineHeight: glyphLineHeight,
+                paddingHorizontal: glyphSideBearingPad,
+                marginHorizontal: glyphSideBearingMargin,
+                fontWeight: usePerLetterTajweed || readableWebText ? "700" : "500",
+                color:
+                  word.type === "surah_header"
+                    ? QCF4_AYAH_MARKER_BLUE
+                    : tajweedRule
+                      ? tajweedColorForRule(tajweedRule, isDark)
+                      : st.mushafAyahTxt.color,
+                textShadowColor:
+                  !readableWebText && !usePerLetterTajweed && word.type !== "surah_header"
+                    ? st.mushafAyahTxt.color
+                    : "transparent",
+                textShadowRadius: readableWebText || usePerLetterTajweed ? 0 : 0.18,
+                transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
+                backgroundColor: isCurrentPlayingWord
+                  ? "rgba(16, 185, 129, 0.34)"
+                  : hl
+                    ? "rgba(232, 200, 106, 0.22)"
+                    : "transparent",
+                writingDirection: "rtl" as const,
+                includeFontPadding: true,
+              };
               const content =
                 word.type === "end" ? (
                   <View
@@ -620,40 +664,19 @@ export function MushafBookPageQcf4({
                       variant="qcom"
                     />
                   </View>
-                ) : (
-                  <Text
-                    style={{
-                      fontFamily: readableWebText
-                        ? QCF4_READABLE_WEB_FONT
-                        : qcf4FontFamilyName(word.font),
-                      fontSize: displayedFontSize,
-                      lineHeight: glyphLineHeight,
-                      paddingHorizontal: glyphSideBearingPad,
-                      marginHorizontal: glyphSideBearingMargin,
-                      fontWeight: readableWebText ? "700" : "500",
-                      color:
-                        word.type === "surah_header"
-                          ? QCF4_AYAH_MARKER_BLUE
-                          : tajweedRule
-                            ? tajweedColorForRule(tajweedRule, isDark)
-                          : st.mushafAyahTxt.color,
-                      textShadowColor:
-                        !readableWebText && word.type !== "surah_header"
-                          ? st.mushafAyahTxt.color
-                          : "transparent",
-                      textShadowRadius: readableWebText ? 0 : 0.18,
-                      transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
-                      backgroundColor: isCurrentPlayingWord
-                        ? "rgba(16, 185, 129, 0.34)"
-                        : hl
-                          ? "rgba(232, 200, 106, 0.22)"
-                          : "transparent",
-                      writingDirection: "rtl",
-                      includeFontPadding: true,
-                    }}
-                  >
-                    {displayedText}
+                ) : usePerLetterTajweed ? (
+                  <Text style={glyphTextStyle}>
+                    {tajweedCharRuns.map((run, ri) => (
+                      <Text
+                        key={`${wordRuleIndex}-${ri}`}
+                        style={run.rule ? { color: tajweedColorForRule(run.rule, isDark) } : undefined}
+                      >
+                        {run.text}
+                      </Text>
+                    ))}
                   </Text>
+                ) : (
+                  <Text style={glyphTextStyle}>{displayedText}</Text>
                 );
               if (!tappable) {
                 return (

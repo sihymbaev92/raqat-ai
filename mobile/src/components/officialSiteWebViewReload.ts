@@ -1,4 +1,52 @@
 import { NativeModules, Platform } from "react-native";
+import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
+import { halalDamuSiteHomeUrl } from "../api/halalDamuWp";
+import {
+  OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT,
+  OFFICIAL_SITE_SPA_HISTORY_INJECT,
+} from "./embeddedOfficialSiteNavigation";
+
+/** Viewport + SPA history — service worker purge жоқ (жылдам бірінші жүктеу). */
+export const OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT = `${OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
+
+/** ҚМДБ + Halal Damu басты беттер — DNS/TLS/HTML warm-up. */
+export const OFFICIAL_SITE_PREFETCH_URLS = [
+  halalDamuSiteHomeUrl(),
+  MUFTYAT_KK_HOME_URL,
+  FATUA_KK_HOME_URL,
+] as const;
+
+const prefetchInflight = new Map<string, Promise<void>>();
+
+/** Желіні алдын ала қыздыру (WebView ашылмай тұрып). */
+export async function prefetchOfficialSiteWebPages(
+  urls: readonly string[] = OFFICIAL_SITE_PREFETCH_URLS
+): Promise<void> {
+  await Promise.allSettled(
+    urls.map((url) => {
+      const hit = prefetchInflight.get(url);
+      if (hit) return hit;
+      const task = (async () => {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 10_000);
+          await fetch(url, {
+            method: "GET",
+            signal: ctrl.signal,
+            headers: { Accept: "text/html,application/xhtml+xml" },
+          });
+          clearTimeout(timer);
+        } catch {
+          /* best-effort */
+        } finally {
+          prefetchInflight.delete(url);
+        }
+      })();
+      prefetchInflight.set(url, task);
+      return task;
+    })
+  );
+}
 
 /** Қолмен жаңарту кезінде кэштен аулақ болу үшін URL-ге уақыт белгісі. */
 export function withEmbeddedSiteCacheBust(url: string, bustToken: number): string {

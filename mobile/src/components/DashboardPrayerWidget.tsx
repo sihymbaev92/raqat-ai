@@ -39,8 +39,8 @@ type PrayerRow = { key: string; label: string; time: string };
 /** Төменгі жол — реф. скриндегі қанық жасыл. */
 const NEXT_COUNTDOWN_STRIP = "#24A17B";
 
-/** Mockup hero: 5 парыз намаз бағаны (таң → бесін → екінті → ақшам → құптан). */
-const HOME_MOCKUP_STRIP_KEYS = ["fajr", "dhuhr", "asr", "maghrib", "isha"] as const;
+/** Mockup hero: таң + күн шығу + 5 парыз намаз бағаны. */
+const HOME_MOCKUP_STRIP_KEYS = ["fajr", "sun", "dhuhr", "asr", "maghrib", "isha"] as const;
 
 type HeroWeatherMotion = "sun" | "night" | "cloud" | "rain" | "snow" | "storm";
 
@@ -635,6 +635,7 @@ export function DashboardPrayerWidget({
                 const t = r.time.trim().split(/\s+/)[0] ?? "—";
                 const vis = prayerVisual(r.key, isDark);
                 const name = shortPrayerName(r.key);
+                const denseStrip = stripRows.length >= 6;
                 return (
                   <View
                     key={r.key}
@@ -642,19 +643,27 @@ export function DashboardPrayerWidget({
                   >
                     <LivePrayerIcon
                       name={vis.icon}
-                      size={14}
+                      size={denseStrip ? 13 : 14}
                       color={vis.fg}
                       prayerKey={r.key}
                       active={isNext}
                     />
                     <Text
-                      style={[styles.mockupStripName, isNext && styles.mockupStripNameActive]}
+                      style={[
+                        styles.mockupStripName,
+                        denseStrip && styles.mockupStripNameDense,
+                        isNext && styles.mockupStripNameActive,
+                      ]}
                       numberOfLines={1}
                     >
                       {name}
                     </Text>
                     <Text
-                      style={[styles.mockupStripTime, isNext && styles.mockupStripTimeActive]}
+                      style={[
+                        styles.mockupStripTime,
+                        denseStrip && styles.mockupStripTimeDense,
+                        isNext && styles.mockupStripTimeActive,
+                      ]}
                       numberOfLines={1}
                     >
                       {t}
@@ -1651,6 +1660,10 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       color: "#1B4332",
       fontWeight: "800",
     },
+    mockupStripNameDense: {
+      fontSize: 9,
+      lineHeight: 11,
+    },
     mockupStripTime: {
       color: "#FFFFFF",
       fontSize: 11,
@@ -1663,6 +1676,11 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     mockupStripTimeActive: {
       color: "#1B4332",
       fontWeight: "900",
+    },
+    mockupStripTimeDense: {
+      fontSize: 10,
+      lineHeight: 12,
+      letterSpacing: 0.2,
     },
     mockupWeatherText: {
       color: "#FFFFFF",

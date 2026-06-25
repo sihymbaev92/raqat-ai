@@ -32,10 +32,6 @@ export const menuIconAssets = {
   tileDaily: require("../../assets/menu-icons/tile-daily.png"),
   /** Сира тайлы: дөңгелек эмблема (тайлда scale арқылы төменгі «СИРА» жазуы мен сыртқы жиек кесілуі мүмкін) */
   tileSeerah: require("../../assets/seerah/tile-seerah.png"),
-  /** Басты бет: қауым дұғасы тайлы */
-  tileCommunity: require("../../assets/menu-icons/tile-community.png"),
-  /** Қауым дұғасы экраны: иллюстрация (фонсыз PNG) */
-  communityDuaHero: require("../../assets/menu-icons/community-dua-hero.png"),
   /** Хедер: Құбыла (Кағба PNG) */
   headerQibla: require("../../assets/menu-icons/header-qibla-custom.png"),
   /** Хедер: «Басты» / Дұғалар·Тәспі (тәспі суреті) */

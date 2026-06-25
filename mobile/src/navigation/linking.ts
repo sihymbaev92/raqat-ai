@@ -164,8 +164,6 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           HadithHub: "hadith",
           HadithList: "hadith/list",
           HadithDetail: "hadith/detail/:hadithId",
-          ScrapedHadithMuftyatList: "hadith/muftyat",
-          ScrapedHadithMuftyatDetail: "hadith/muftyat/:id",
           ImamAI: "ai",
           OfficialKnowledgePortal: "knowledge",
           IslamicKbSearch: "knowledge/search",

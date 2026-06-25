@@ -22,11 +22,12 @@ ATTRIBUTION = OUT_DIR / "AZAN_ATTRIBUTION.md"
 
 USER_AGENT = "RaqatApp/1.0 (prayer azan asset fetch; https://rahatomir.com)"
 
-# id → (Wikimedia title, wav name, attribution, duration ms, start offset ms)
-AZAN_SOURCES: dict[str, tuple[str, str, str, int, int]] = {
+# id → (Wikimedia title, wav name, mp3 release name, attribution, duration ms, start offset ms)
+AZAN_SOURCES: dict[str, tuple[str, str, str, str, int, int]] = {
     "adhan_haramain": (
         "File:Call to prayer by Sabah Fakhry.mp3",
         "prayer_azan_classic.wav",
+        "prayer_azan_user_01.mp3",
         "Call to prayer by Sabah Fakhry (Egypt) — Wikimedia Commons, CC BY-SA 4.0",
         29_000,
         0,
@@ -34,6 +35,7 @@ AZAN_SOURCES: dict[str, tuple[str, str, str, int, int]] = {
     "adhan_madina_clear": (
         "File:Azan.ogg",
         "prayer_azan_madina.wav",
+        "prayer_azan_user_02.mp3",
         "Azan.ogg (Andrewler, 2022) — Wikimedia Commons, CC BY-SA 4.0",
         29_000,
         0,
@@ -41,6 +43,7 @@ AZAN_SOURCES: dict[str, tuple[str, str, str, int, int]] = {
     "adhan_makkah_live": (
         "File:Adhan, Great Mosque of Mecca - Jan 21, 2013.webm",
         "prayer_azan_makkah.wav",
+        "prayer_azan_user_03.mp3",
         "Adhan, Great Mosque of Mecca (21 Jan 2013) — Wikimedia Commons, CC BY-SA 4.0",
         29_000,
         2_000,
@@ -48,6 +51,7 @@ AZAN_SOURCES: dict[str, tuple[str, str, str, int, int]] = {
     "adhan_soft_cc0": (
         "File:Beautiful adhan.ogg",
         "prayer_azan_soft.wav",
+        "prayer_azan_user_04.mp3",
         "Beautiful adhan.ogg — Wikimedia Commons, CC0 Public Domain",
         29_000,
         0,
@@ -55,6 +59,7 @@ AZAN_SOURCES: dict[str, tuple[str, str, str, int, int]] = {
     "adhan_takbir_high": (
         "File:The Adhan - Muslim Call to Prayer - Aaqib Azeez.mp3",
         "prayer_azan_takbir.wav",
+        "prayer_azan_user_05.mp3",
         "The Adhan by Aaqib Azeez — Atcovi, Wikimedia Commons, CC BY-SA 4.0",
         29_000,
         0,
@@ -176,16 +181,46 @@ def md5(path: Path) -> str:
     return h.hexdigest()
 
 
+def convert_to_mp3(wav: Path, dest: Path) -> None:
+    import imageio_ffmpeg
+    import subprocess
+
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(wav),
+        "-vn",
+        "-ac",
+        "1",
+        "-ar",
+        "44100",
+        "-codec:a",
+        "libmp3lame",
+        "-q:a",
+        "3",
+        str(dest),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderr, file=sys.stderr)
+        raise RuntimeError(f"mp3 export failed for {dest.name}")
+    print(f"  exported {dest.name} ({dest.stat().st_size:,} bytes)")
+
+
 def write_attribution() -> None:
     lines = [
         "# Азан дыбыстары — дереккөздер",
         "",
-        "Жинақтағы `prayer_azan_*.wav` — Wikimedia Commons (~29s клип, iOS/Android фондық хабарлама). Баптауларда тек 5 curated азан preset көрсетіледі.",
+        "Жинақтағы `prayer_azan_user_*.mp3` — Wikimedia Commons (~29s клип, CC BY-SA 4.0 / CC0).",
+        "SkySound немесе лицензиясы белгісіз файлдар қолданылмайды.",
         "",
     ]
-    for key, (_, wav, note, dur, start) in AZAN_SOURCES.items():
+    for key, (_, wav, mp3, note, dur, start) in AZAN_SOURCES.items():
         extra = f", start {start // 1000}s" if start else ""
-        lines.append(f"- **{key}** (`{wav}`, {dur // 1000}s{extra}): {note}")
+        lines.append(f"- **{key}** (`{mp3}`, {dur // 1000}s{extra}): {note}")
     lines.append("")
     lines.append("Жаңарту: `npm run fetch:azan` (mobile/)")
     ATTRIBUTION.write_text("\n".join(lines), encoding="utf-8")
@@ -197,15 +232,17 @@ def main() -> int:
     hashes: dict[str, str] = {}
 
     print("Fetching beautiful adhan recordings from Wikimedia Commons…")
-    for key, (title, wav_name, _, max_ms, start_ms) in AZAN_SOURCES.items():
+    for key, (title, wav_name, mp3_name, _, max_ms, start_ms) in AZAN_SOURCES.items():
         print(f"\n[{key}] {title}")
         url = commons_download_url(title)
         ext = Path(url).suffix or ".bin"
         raw = tmp / f"{key}{ext}"
         download(url, raw)
-        out = OUT_DIR / wav_name
-        convert_to_wav(raw, out, max_duration_ms=max_ms, start_offset_ms=start_ms)
-        hashes[key] = md5(out)
+        wav = OUT_DIR / wav_name
+        convert_to_wav(raw, wav, max_duration_ms=max_ms, start_offset_ms=start_ms)
+        mp3 = OUT_DIR / mp3_name
+        convert_to_mp3(wav, mp3)
+        hashes[key] = md5(mp3)
         time.sleep(1.5)
 
     uniq = set(hashes.values())

@@ -35,7 +35,6 @@ import {
   type HadithLetterSection,
 } from "../utils/hadithLetterSections";
 import { resolveHadithGradeText } from "../content/hadithGrade";
-import { HadithCrossLinkBar } from "../components/hadith/HadithCrossLinkBar";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "HadithList">;
@@ -505,22 +504,17 @@ export function HadithListScreen({ navigation }: Props) {
   const listHeader = useMemo(
     () =>
       corpus ? (
-        <>
-          <HadithCrossLinkBar navigation={navigation} active="sahih" />
-          <HadithListHeader
-            bukhariN={bukhariData.length}
-            muslimN={muslimData.length}
-            tab={tab}
-            onTab={setTab}
-            viewMode={viewMode}
-            onViewMode={setViewMode}
-            styles={styles}
-          />
-        </>
-      ) : (
-        <HadithCrossLinkBar navigation={navigation} active="sahih" />
-      ),
-    [corpus, bukhariData.length, muslimData.length, tab, viewMode, styles, navigation]
+        <HadithListHeader
+          bukhariN={bukhariData.length}
+          muslimN={muslimData.length}
+          tab={tab}
+          onTab={setTab}
+          viewMode={viewMode}
+          onViewMode={setViewMode}
+          styles={styles}
+        />
+      ) : null,
+    [corpus, bukhariData.length, muslimData.length, tab, viewMode, styles]
   );
 
   if (loading) {

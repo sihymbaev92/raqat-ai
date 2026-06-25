@@ -110,6 +110,11 @@ export default function App() {
             .then((m) => m.prefetchOfficialHomeNewsFeed())
             .catch((e) => reportBackgroundJobError("officialSitesBootstrap", e));
         }, 4000);
+        setTimeout(() => {
+          void import("./src/components/officialSiteWebViewReload")
+            .then((m) => m.prefetchOfficialSiteWebPages())
+            .catch((e) => reportBackgroundJobError("officialSiteWebPrefetch", e));
+        }, 3200);
 
         setTimeout(() => {
           void (async () => {

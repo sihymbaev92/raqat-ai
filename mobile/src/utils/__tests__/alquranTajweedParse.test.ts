@@ -6,7 +6,9 @@ import {
   tajweedRulesPerWordChar,
   tajweedRuleToColorGroup,
   tajweedWholeWordRules,
+  tajweedWordCharRuns,
   tajweedWordColorSpans,
+  tajweedWordHasPerLetterColoring,
 } from "../alquranTajweedParse";
 
 describe("parseAlquranTajweedTaggedText", () => {
@@ -58,15 +60,51 @@ describe("parseAlquranTajweedTaggedText", () => {
     const perWord = tajweedRulesPerWordChar(tagged);
     expect(perWord).toHaveLength(1);
     expect(perWord[0]?.some((r) => r === "n")).toBe(true);
-    expect(tajweedRuleForWordGlyph(tagged, 0, perWord[0]!.length - 1)).toBe("n");
+    const maddIndex = perWord[0]!.findIndex((r) => r === "n");
+    expect(tajweedRuleForWordGlyph(tagged, 0, maddIndex)).toBe("n");
   });
 
-  it("tajweedColoredRuns merges tag splits inside one Arabic word", () => {
+  it("tajweedColoredRuns colors only tagged segments inside a word", () => {
     expect(tajweedColoredRuns("بِسْمِ [h:1[ٱ]للَّهِ")).toEqual([
-      { text: "بِسْمِ", rule: undefined },
-      { text: " ٱللَّهِ" },
+      { text: "بِسْمِ " },
+      { text: "ٱ", rule: "h" },
+      { text: "للَّهِ" },
     ]);
-    expect(tajweedColoredRuns("[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ")).toEqual([{ text: "ٱلرَّحْمَـٰنِ", rule: "n" }]);
+    expect(tajweedColoredRuns("[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ")).toEqual([
+      { text: "ٱ", rule: "h" },
+      { text: "ل", rule: "l" },
+      { text: "رَّحْمَ" },
+      { text: "ـٰ", rule: "n" },
+      { text: "نِ" },
+    ]);
+  });
+
+  it("tajweedRulesPerWordChar does not propagate color to untagged letters", () => {
+    const tagged = "[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ";
+    const perWord = tajweedRulesPerWordChar(tagged);
+    expect(perWord).toHaveLength(1);
+    const rules = perWord[0]!;
+    expect(rules[0]).toBe("h");
+    expect(rules[1]).toBe("l");
+    expect(rules.slice(2, rules.findIndex((r) => r === "n")).every((r) => r == null)).toBe(true);
+    expect(rules.filter((r) => r === "n").length).toBeGreaterThanOrEqual(1);
+    expect(tajweedRuleForWordGlyph(tagged, 0, 2)).toBeUndefined();
+    expect(tajweedRuleForWordGlyph(tagged, 0, rules.length - 1)).toBeUndefined();
+  });
+
+  it("tajweedWordHasPerLetterColoring detects partial word coloring", () => {
+    const tagged = "[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ";
+    expect(tajweedWordHasPerLetterColoring(tagged, 0)).toBe(true);
+    expect(tajweedWordHasPerLetterColoring("قَالُوا [g[مِن] رَبِّهِمْ", 1)).toBe(false);
+  });
+
+  it("tajweedWordCharRuns merges adjacent letters with the same rule", () => {
+    const tagged = "[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ";
+    const runs = tajweedWordCharRuns(tagged, 0);
+    expect(runs.some((run) => run.rule === "h" && run.text === "ٱ")).toBe(true);
+    expect(runs.some((run) => run.rule === "l" && run.text === "ل")).toBe(true);
+    expect(runs.some((run) => run.rule === "n")).toBe(true);
+    expect(runs.some((run) => !run.rule && run.text.includes("ر"))).toBe(true);
   });
 });
 

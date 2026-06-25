@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 
 class PrayerWidgetModule(reactContext: ReactApplicationContext) :
@@ -283,6 +284,46 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
         promise.resolve(true)
       } catch (t: Throwable) {
         promise.reject("ERR_FULL_SCREEN_INTENT", t.message, t)
+      }
+    }
+  }
+
+  /** Батареяны үнемдеу — RAQAT үшін ерекшелік (азан уақытында ояту). */
+  @ReactMethod
+  fun openBatteryOptimizationSettings(promise: Promise) {
+    val ctx = reactApplicationContext.applicationContext
+    android.os.Handler(android.os.Looper.getMainLooper()).post {
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          val pm = ctx.getSystemService(Context.POWER_SERVICE) as? PowerManager
+          if (pm?.isIgnoringBatteryOptimizations(ctx.packageName) == true) {
+            promise.resolve("already_exempt")
+            return@post
+          }
+          val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:${ctx.packageName}")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          }
+          ctx.startActivity(intent)
+          promise.resolve("opened")
+          return@post
+        }
+        val listIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        ctx.startActivity(listIntent)
+        promise.resolve("list")
+      } catch (t: Throwable) {
+        try {
+          val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:${ctx.packageName}")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+          }
+          ctx.startActivity(fallback)
+          promise.resolve("app_settings")
+        } catch (e: Throwable) {
+          promise.reject("ERR_BATTERY", e.message, e)
+        }
       }
     }
   }

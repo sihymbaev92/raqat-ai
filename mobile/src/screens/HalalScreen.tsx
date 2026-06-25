@@ -5,10 +5,10 @@ import { Pressable } from "@/ui/Pressable";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  HALAL_DAMU_WEBVIEW_HOSTS,
   OfficialSiteFullWebView,
   type OfficialSiteFullWebViewHandle,
 } from "../components/OfficialSiteFullWebView";
+import { HALAL_DAMU_WEBVIEW_HOSTS } from "../components/embeddedOfficialSiteNavigation";
 import { halalDamuSiteHomeUrl } from "../api/halalDamuWp";
 import { useOfficialSiteWebViewScreenBack } from "../hooks/useOfficialSiteWebViewScreenBack";
 import { useAppLocale } from "../i18n/runtime";
@@ -89,6 +89,7 @@ export function HalalScreen({ navigation }: Props) {
       title={kk.features.halalTitle}
       allowedHosts={HALAL_DAMU_WEBVIEW_HOSTS}
       userAgentTag="RaqatHalalDamu/1"
+      refreshOnFocus={false}
     />
   );
 }

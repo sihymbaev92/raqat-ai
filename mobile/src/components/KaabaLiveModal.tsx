@@ -6,6 +6,7 @@ import {
   Modal,
   ActivityIndicator,
   Platform,
+  Linking,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -23,20 +24,21 @@ type KaabaLiveSource =
   | { kind: "video"; videoId: string }
   | { kind: "page"; uri: string };
 
+/** Тұрақты Makkah Live сайты — YouTube ID ауысқанда да жұмыс істейді. */
+export const MAKKAH_LIVE_PRIMARY_URL = "https://makkahlive.net/makkahlive.aspx";
+
 /** Экранда көрсетілмейтін ішкі fallback: біреуі ашылмаса, келесісіне автомат өтеді. */
 export const KAABA_LIVE_SOURCES: readonly KaabaLiveSource[] = [
-  /** Ресми live беттер video ID ауысқанда да жұмыс істейді; өлі embed ID-ге байланбаймыз. */
-  { kind: "page", uri: "https://www.youtube.com/SaudiQuranTv/live" },
-  { kind: "page", uri: "https://www.youtube.com/@SaudiQuranTv/live" },
-  { kind: "page", uri: `https://www.youtube.com/channel/${SAUDI_QURAN_TV_CHANNEL_ID}/live` },
+  { kind: "page", uri: MAKKAH_LIVE_PRIMARY_URL },
   { kind: "page", uri: "https://saudiatv.sba.sa/Channel-%D9%82%D9%86%D8%A7%D8%A9-%D8%A7%D9%84%D9%82%D8%B1%D8%A7%D9%86-%D8%A7%D9%84%D9%83%D8%B1%D9%8A%D9%85--11" },
-  { kind: "page", uri: "https://makkahlive.net/makkahlive.aspx" },
+  { kind: "page", uri: "https://www.youtube.com/SaudiQuranTv/live" },
+  { kind: "page", uri: `https://www.youtube.com/channel/${SAUDI_QURAN_TV_CHANNEL_ID}/live` },
 ] as const;
 
 const YOUTUBE_ORIGIN = "https://www.youtube.com";
 const YOUTUBE_NOCOOKIE_ORIGIN = "https://www.youtube-nocookie.com";
-const KAABA_LIVE_AUTO_FALLBACK_MS = 12000;
-const KAABA_LIVE_WEB_PLAYER_HEALTH_MS = 6500;
+const KAABA_LIVE_AUTO_FALLBACK_MS = 15000;
+const KAABA_LIVE_WEB_PLAYER_HEALTH_MS = 5500;
 const KAABA_LIVE_ERROR_DETECT_JS = `
 (function () {
   function postError(reason) {
@@ -71,7 +73,7 @@ const KAABA_LIVE_ERROR_DETECT_JS = `
   };
   function checkForDeadStream() {
     var text = ((document.body && document.body.innerText) || "").slice(0, 8000);
-    if (/Video unavailable|This video is unavailable|Playback on other websites|An error occurred|Error 153|404 Not Found/i.test(text)) {
+    if (/Video unavailable|This video is unavailable|Playback on other websites|An error occurred|Error 153/i.test(text)) {
       postError("dead-stream");
       return;
     }
@@ -79,6 +81,13 @@ const KAABA_LIVE_ERROR_DETECT_JS = `
     if (video) {
       video.muted = true;
       video.play && video.play().catch(function () {});
+      try {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(JSON.stringify({ type: "kaaba-live-healthy" }));
+      } catch (e) {}
+    }
+    var player = document.querySelector("video, iframe[src*='youtube'], .plyr");
+    if (player && player.scrollIntoView) {
+      try { player.scrollIntoView({ block: "start", behavior: "instant" }); } catch (e) {}
     }
   }
   setTimeout(checkForDeadStream, 1600);
@@ -98,7 +107,11 @@ function webEmbedOrigin(): string {
   return YOUTUBE_ORIGIN;
 }
 
-export function liveEmbedSrc(source: KaabaLiveSource, origin: string = YOUTUBE_ORIGIN): string {
+export function liveEmbedSrc(
+  source: KaabaLiveSource,
+  origin: string = YOUTUBE_ORIGIN,
+  platform: "web" | "native" = "native"
+): string {
   if (source.kind === "page") {
     if (isSaudiQuranTvLivePage(source.uri)) {
       const q = new URLSearchParams({
@@ -112,6 +125,10 @@ export function liveEmbedSrc(source: KaabaLiveSource, origin: string = YOUTUBE_O
         fs: "1",
         origin,
       });
+      if (platform === "web") {
+        q.set("widget_referrer", origin);
+        return `https://www.youtube.com/embed/live_stream?${q.toString()}`;
+      }
       return `${YOUTUBE_NOCOOKIE_ORIGIN}/embed/live_stream?${q.toString()}`;
     }
     return source.uri;
@@ -187,6 +204,24 @@ function isSaudiQuranTvLivePage(uri: string): boolean {
   }
 }
 
+function isMakkahLiveHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h === "makkahlive.net" ||
+    h.endsWith(".makkahlive.net") ||
+    h === "makkahlive.org" ||
+    h.endsWith(".makkahlive.org")
+  );
+}
+
+function isMakkahLivePage(uri: string): boolean {
+  try {
+    return isMakkahLiveHost(new URL(uri).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function isAllowedKaabaLiveUrl(raw: string): boolean {
   if (!raw || raw === "about:blank") return true;
   if (
@@ -212,6 +247,9 @@ function isAllowedKaabaLiveUrl(raw: string): boolean {
       host.endsWith(".aloula.sa") ||
       host === "makkahlive.net" ||
       host.endsWith(".makkahlive.net") ||
+      host === "makkahlive.org" ||
+      host.endsWith(".makkahlive.org") ||
+      host === "qurantv.makkahlive.net" ||
       host === "sba.sa" ||
       host.endsWith(".sba.sa") ||
       host === "saudiatv.sba.sa" ||
@@ -282,6 +320,7 @@ export function KaabaLiveModal({
   const [reloadTick, setReloadTick] = useState(0);
   const [muted, setMuted] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [showBrowserFallback, setShowBrowserFallback] = useState(false);
   const liveSources = useMemo(() => (isWeb ? kaabaLiveSourcesForWeb() : KAABA_LIVE_SOURCES), [isWeb]);
   const controlsBottomPadding =
     Platform.OS === "android" ? Math.max(modalInsets.bottom, 48) + 12 : Math.max(modalInsets.bottom, 12) + 8;
@@ -289,9 +328,13 @@ export function KaabaLiveModal({
   const liveSource = liveSources[sourceIndex] ?? liveSources[0]!;
   const sourceKey =
     (liveSource.kind === "video" ? `video-${liveSource.videoId}` : `page-${liveSource.uri}`) + `-${reloadTick}`;
-  const embedSrc = useMemo(() => liveEmbedSrc(liveSource, webEmbedOrigin()), [liveSource]);
+  const embedSrc = useMemo(
+    () => liveEmbedSrc(liveSource, webEmbedOrigin(), isWeb ? "web" : "native"),
+    [liveSource, isWeb]
+  );
   const nativeSource = useMemo(() => ({ uri: embedSrc }), [embedSrc]);
   const isYoutubeWebEmbed = isWeb && isYouTubeEmbedUrl(embedSrc);
+  const isMakkahLiveEmbed = isMakkahLivePage(embedSrc);
 
   useEffect(() => {
     if (!visible) return;
@@ -299,6 +342,7 @@ export function KaabaLiveModal({
     setReloadTick(0);
     setMuted(true);
     setLoading(true);
+    setShowBrowserFallback(false);
   }, [visible]);
 
   useEffect(() => {
@@ -309,16 +353,24 @@ export function KaabaLiveModal({
     setSourceIndex((i) => {
       setLoading(true);
       setReloadTick((tick) => tick + 1);
-      if (i + 1 >= liveSources.length) return 0;
-      return i + 1;
+      const next = i + 1 >= liveSources.length ? 0 : i + 1;
+      if (i + 1 >= liveSources.length) {
+        setShowBrowserFallback(true);
+      }
+      return next;
     });
   }, [liveSources.length]);
 
+  const openMakkahLiveInBrowser = useCallback(() => {
+    void Linking.openURL(MAKKAH_LIVE_PRIMARY_URL);
+  }, []);
+
   useEffect(() => {
     if (!visible || !loading) return undefined;
-    const timer = setTimeout(tryNextSource, KAABA_LIVE_AUTO_FALLBACK_MS);
+    const ms = isMakkahLiveEmbed ? 25000 : KAABA_LIVE_AUTO_FALLBACK_MS;
+    const timer = setTimeout(tryNextSource, ms);
     return () => clearTimeout(timer);
-  }, [loading, sourceKey, tryNextSource, visible]);
+  }, [isMakkahLiveEmbed, loading, sourceKey, tryNextSource, visible]);
 
   useEffect(() => {
     if (!visible || !isWeb) return undefined;
@@ -389,6 +441,11 @@ export function KaabaLiveModal({
   const onWebViewMessage = (event: { nativeEvent: { data?: string } }) => {
     try {
       const payload = JSON.parse(event.nativeEvent.data || "{}") as { type?: string };
+      if (payload.type === "kaaba-live-healthy") {
+        setLoading(false);
+        setShowBrowserFallback(false);
+        return;
+      }
       if (payload.type === "kaaba-live-error") {
         tryNextSource();
       }
@@ -469,6 +526,21 @@ export function KaabaLiveModal({
               <ActivityIndicator size="large" color="#fff" />
             </View>
           ) : null}
+          {showBrowserFallback ? (
+            <View style={styles.fallbackOverlay}>
+              <Text style={styles.fallbackTitle}>Эфир қолданба ішінде ашылмады</Text>
+              <Text style={styles.fallbackHint}>Makkah Live сайтын браузерде ашыңыз</Text>
+              <Pressable
+                onPress={openMakkahLiveInBrowser}
+                style={({ pressed }) => [styles.fallbackBtn, pressed && { opacity: 0.88 }]}
+                accessibilityRole="button"
+                accessibilityLabel="Makkah Live сайтын ашу"
+              >
+                <MaterialIcons name="open-in-new" size={20} color="#fff" />
+                <Text style={styles.fallbackBtnTxt}>Makkah Live ашу</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </View>
 
         <View style={[styles.controls, { paddingBottom: controlsBottomPadding }]}>
@@ -508,6 +580,26 @@ const styles = StyleSheet.create({
   videoWrap: { flex: 1, backgroundColor: "#000", justifyContent: "center" },
   web: { flex: 1, backgroundColor: "#000" },
   loadingOverlay: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center" },
+  fallbackOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    gap: 10,
+  },
+  fallbackTitle: { color: "#fff", fontSize: 16, fontWeight: "800", textAlign: "center" },
+  fallbackHint: { color: "rgba(255,255,255,0.78)", fontSize: 13, textAlign: "center", marginBottom: 6 },
+  fallbackBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  fallbackBtnTxt: { color: "#fff", fontSize: 15, fontWeight: "800" },
   controls: { paddingHorizontal: 16, paddingTop: 12, alignItems: "center", gap: 10 },
   soundBtn: {
     flexDirection: "row",

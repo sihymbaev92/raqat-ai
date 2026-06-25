@@ -7,6 +7,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Linking,
   type ListRenderItem,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
@@ -24,6 +25,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { FATUA_KZ_LABEL_KK, kk, MUFTYAT_KZ_LABEL_KK } from "../i18n/kk";
+import { FATUA_KK_HOME_URL } from "../config/officialIslamicSources";
 import { useAppLocale } from "../i18n/runtime";
 import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { RaqatAiHubHeader } from "../components/RaqatAiHubHeader";
@@ -896,7 +898,7 @@ export function RaqatAIChatScreen() {
     >
       <View style={styles.persistentSafetyNotice}>
         <MaterialIcons name="verified-user" size={16} color={colors.accent} />
-        <Text style={styles.persistentSafetyNoticeText} numberOfLines={1}>
+        <Text style={styles.persistentSafetyNoticeText}>
           {kk.aiChat.persistentSafetyNotice}
         </Text>
       </View>
@@ -954,6 +956,21 @@ export function RaqatAIChatScreen() {
           void send(q);
         }}
       />
+      <View style={styles.heroDisclaimerBox} accessibilityRole="text">
+        <MaterialIcons name="gavel" size={22} color={colors.error} />
+        <View style={styles.heroDisclaimerTextCol}>
+          <Text style={styles.heroDisclaimerText}>{kk.aiChat.heroDisclaimer}</Text>
+          <Pressable
+            onPress={() => void Linking.openURL(FATUA_KZ_HOME_URL)}
+            style={({ pressed }) => [styles.heroDisclaimerLink, pressed && { opacity: 0.85 }]}
+            accessibilityRole="link"
+            accessibilityLabel={kk.aiChat.heroDisclaimerFatuaLink}
+          >
+            <Text style={styles.heroDisclaimerLinkTxt}>{kk.aiChat.heroDisclaimerFatuaLink}</Text>
+            <MaterialIcons name="open-in-new" size={16} color={colors.accent} />
+          </Pressable>
+        </View>
+      </View>
       <View style={[styles.inputRow, { paddingBottom: inputBottomPad }]}>
         {/*
           flex қатарында TextInput кесіліп қалмауы үшін орауышқа minWidth: 0
@@ -1005,14 +1022,14 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     flex: { flex: 1, backgroundColor: colors.bg },
     persistentSafetyNotice: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 7,
       marginHorizontal: 12,
       marginTop: 8,
       marginBottom: 2,
       paddingHorizontal: 10,
-      paddingVertical: 7,
-      borderRadius: 999,
+      paddingVertical: 8,
+      borderRadius: 12,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.card,
@@ -1022,6 +1039,38 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       minWidth: 0,
       color: colors.muted,
       fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "800",
+    },
+    heroDisclaimerBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      marginHorizontal: 12,
+      marginBottom: 8,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: `${colors.error}66`,
+      backgroundColor: isDark ? "rgba(220,38,38,0.12)" : "rgba(220,38,38,0.08)",
+    },
+    heroDisclaimerTextCol: { flex: 1, minWidth: 0, gap: 8 },
+    heroDisclaimerText: {
+      color: colors.text,
+      fontSize: 16,
+      lineHeight: 23,
+      fontWeight: "900",
+    },
+    heroDisclaimerLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      gap: 4,
+    },
+    heroDisclaimerLinkTxt: {
+      color: colors.accent,
+      fontSize: 14,
       fontWeight: "800",
     },
     configBox: {

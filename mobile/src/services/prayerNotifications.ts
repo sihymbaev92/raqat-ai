@@ -97,6 +97,27 @@ export async function openAndroidExactAlarmSettings(): Promise<void> {
   }
 }
 
+/** Android 6+: батареяны үнемдеуден босату (Samsung/Xiaomi азан тұрақтылығы). */
+export async function openAndroidBatteryOptimizationSettings(): Promise<void> {
+  if (Platform.OS !== "android" || Number(Platform.Version) < 23) return;
+  const PrayerWidget = NativeModules.PrayerWidget as {
+    openBatteryOptimizationSettings?: () => Promise<string>;
+  };
+  try {
+    if (typeof PrayerWidget?.openBatteryOptimizationSettings === "function") {
+      await PrayerWidget.openBatteryOptimizationSettings();
+      return;
+    }
+  } catch {
+    /* */
+  }
+  try {
+    await Linking.openSettings();
+  } catch {
+    /* */
+  }
+}
+
 /** Android 14+: full-screen intent рұқсаты (locked-screen azan). */
 export async function openAndroidFullScreenIntentSettings(): Promise<void> {
   if (Platform.OS !== "android" || Number(Platform.Version) < 34) return;

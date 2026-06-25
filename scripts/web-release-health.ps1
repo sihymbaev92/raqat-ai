@@ -59,7 +59,7 @@ foreach ($src in $scriptSrcs) {
   }
 }
 
-foreach ($route in @("/", "/more/quran", "/more/surah/1", "/more/mushaf-book/1")) {
+foreach ($route in @("/", "/more/quran", "/more/surah/1", "/more/mushaf-book/1", "/more/kmdb", "/more/halal", "/more/hajj")) {
   $url = Join-Url $WebUrl $route
   $code = Get-StatusCode $url "HEAD"
   Write-Host "ROUTE $code $url"

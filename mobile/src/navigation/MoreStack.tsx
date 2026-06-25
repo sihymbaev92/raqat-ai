@@ -45,8 +45,6 @@ const OfficialKnowledgePortalScreen = lazyScreen(() => import("../screens/Offici
 const IslamicKbSearchScreen = lazyScreen(() => import("../screens/IslamicKbSearchScreen").then((m) => ({ default: m.IslamicKbSearchScreen })));
 const EcosystemScreen = lazyScreen(() => import("../screens/EcosystemScreen").then((m) => ({ default: m.EcosystemScreen })));
 const HadithHubScreen = lazyScreen(() => import("../screens/HadithHubScreen").then((m) => ({ default: m.HadithHubScreen })));
-const ScrapedHadithMuftyatListScreen = lazyScreen(() => import("../screens/ScrapedHadithMuftyatListScreen").then((m) => ({ default: m.ScrapedHadithMuftyatListScreen })));
-const ScrapedHadithMuftyatDetailScreen = lazyScreen(() => import("../screens/ScrapedHadithMuftyatDetailScreen").then((m) => ({ default: m.ScrapedHadithMuftyatDetailScreen })));
 const HadithListScreen = lazyScreen(() => import("../screens/HadithListScreen").then((m) => ({ default: m.HadithListScreen })));
 const HadithDetailScreen = lazyScreen(() => import("../screens/HadithDetailScreen").then((m) => ({ default: m.HadithDetailScreen })));
 
@@ -244,16 +242,6 @@ export function MoreNavigator() {
         options={{ title: kk.ecosystem.cardTitle }}
       />
       <Stack.Screen name="HadithHub" component={HadithHubScreen} options={{ title: kk.hadith.hub.screenTitle }} />
-      <Stack.Screen
-        name="ScrapedHadithMuftyatList"
-        component={ScrapedHadithMuftyatListScreen}
-        options={{ title: kk.hadith.muftyatExcerpts.screenTitle }}
-      />
-      <Stack.Screen
-        name="ScrapedHadithMuftyatDetail"
-        component={ScrapedHadithMuftyatDetailScreen}
-        options={{ title: kk.hadith.detailTitle }}
-      />
       <Stack.Screen name="HadithList" component={HadithListScreen} options={{ title: kk.hadith.title }} />
       <Stack.Screen name="HadithDetail" component={HadithDetailScreen} options={{ title: kk.hadith.detailTitle }} />
     </Stack.Navigator>

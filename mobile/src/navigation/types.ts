@@ -83,8 +83,6 @@ export type MoreStackParamList = {
   HadithHub: undefined;
   HadithList: undefined;
   HadithDetail: { hadithId: string };
-  ScrapedHadithMuftyatList: undefined;
-  ScrapedHadithMuftyatDetail: { id: string };
 };
 
 /** Тәспі табы: тізім → таңдалған зікірдің тәспі экраны */

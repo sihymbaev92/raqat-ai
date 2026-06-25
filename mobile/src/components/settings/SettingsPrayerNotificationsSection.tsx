@@ -14,6 +14,7 @@ import {
 import { prayerNotifSoundLabelKk } from "../../utils/prayerNotifSoundUi";
 import { PRAYER_NOTIF_SOUND_UI_ORDER, type PrayerNotifSoundId } from "../../storage/prefs";
 import {
+  openAndroidBatteryOptimizationSettings,
   openAndroidExactAlarmSettings,
   openAndroidFullScreenIntentSettings,
   type PrayerNotificationDiagnostics,
@@ -167,6 +168,22 @@ export function SettingsPrayerNotificationsSection({
         ) : (
           <Text style={styles.diagnosticLine}>{kk.settings.prayerNotifDiagnosticsNoData}</Text>
         )}
+        {Platform.OS === "android" && notif ? (
+          <View style={styles.batteryBox}>
+            <Text style={styles.batteryTitle}>{kk.settings.prayerAzanBatteryTitle}</Text>
+            <Text style={styles.batteryHint}>{kk.settings.prayerAzanBatteryHint}</Text>
+            <Text style={styles.batteryStep}>{kk.settings.prayerAzanBatterySamsungSteps}</Text>
+            <Text style={styles.batteryStep}>{kk.settings.prayerAzanBatteryXiaomiSteps}</Text>
+            <Pressable
+              onPress={() => void openAndroidBatteryOptimizationSettings()}
+              style={({ pressed }) => [styles.warnLinkBtn, pressed && { opacity: 0.88 }]}
+              accessibilityRole="button"
+              accessibilityLabel={kk.settings.prayerAzanOpenBatterySettingsA11y}
+            >
+              <Text style={styles.warnLinkTxt}>{kk.settings.prayerAzanOpenBatterySettings}</Text>
+            </Pressable>
+          </View>
+        ) : null}
         {Platform.OS === "android" ? (
           <View style={styles.acceptanceBox}>
             <Text style={styles.acceptanceTitle}>{kk.settings.prayerNotifAcceptanceTitle}</Text>
@@ -329,6 +346,15 @@ function makeNotifStyles(colors: ThemeColors) {
     },
     diagnosticRows: { gap: 3 },
     diagnosticLine: { color: colors.muted, fontSize: 11, lineHeight: 16, fontWeight: "700" },
+    batteryBox: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+      gap: 6,
+    },
+    batteryTitle: { color: colors.text, fontSize: 13, lineHeight: 18, fontWeight: "900" },
+    batteryHint: { color: colors.muted, fontSize: 12, lineHeight: 17, fontWeight: "700" },
+    batteryStep: { color: colors.muted, fontSize: 11, lineHeight: 16, fontWeight: "700" },
     acceptanceBox: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: colors.border,
