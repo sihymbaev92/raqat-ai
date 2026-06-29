@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import {
   fallbackMushafAyahHotspots,
   getMushafAyahMapHotspots,
@@ -56,24 +57,38 @@ describe("mushafPageRenderBackend", () => {
 
   it("book reader backend for Quran.com original when env default", () => {
     delete process.env.EXPO_PUBLIC_MUSHAF_PAGE_BACKEND;
-    expect(mushafBookPageRenderBackend("original")).toBe("qcf4");
-    expect(mushafBookPageRenderBackend("muftyat")).toBe("text-hafs");
+    const os = Platform.OS;
+    try {
+      Platform.OS = "web";
+      expect(mushafBookPageRenderBackend("original")).toBe("qcf4");
+      expect(mushafBookPageRenderBackend("muftyat")).toBe("text-hafs");
+      Platform.OS = "ios";
+      expect(mushafBookPageRenderBackend("original")).toBe("text-hafs");
+    } finally {
+      Platform.OS = os;
+    }
   });
 
   it("keeps QCF4 mushaf when tajweed colors are on (Sajda-style glyph page)", () => {
     delete process.env.EXPO_PUBLIC_MUSHAF_PAGE_BACKEND;
-    expect(
-      mushafBookEffectiveRenderBackend("original", {
-        showTajweedColors: true,
-        arabicScriptEdition: "madinah",
-      })
-    ).toBe("qcf4");
-    expect(
-      mushafBookEffectiveRenderBackend("original", {
-        showTajweedColors: false,
-        arabicScriptEdition: "madinah",
-      })
-    ).toBe("qcf4");
+    const os = Platform.OS;
+    try {
+      Platform.OS = "web";
+      expect(
+        mushafBookEffectiveRenderBackend("original", {
+          showTajweedColors: true,
+          arabicScriptEdition: "madinah",
+        })
+      ).toBe("qcf4");
+      expect(
+        mushafBookEffectiveRenderBackend("original", {
+          showTajweedColors: false,
+          arabicScriptEdition: "madinah",
+        })
+      ).toBe("qcf4");
+    } finally {
+      Platform.OS = os;
+    }
   });
 
   it("mushafBookPageImageUri is null for qcf4 book backend", () => {

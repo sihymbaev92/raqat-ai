@@ -6,10 +6,17 @@ import { ActivityIndicator, AppState, type AppStateStatus, Platform, useColorSch
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  appBottomSafeInset,
+  DeviceSafeAreaInsetsProvider,
+  deviceSafeAreaInsets,
+  useZeroedSafeAreaMetrics,
+} from "./src/theme/deviceSafeArea";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { appDeepLinking } from "./src/navigation/linking";
 import { AndroidBackNavigationBridge } from "./src/navigation/AndroidBackNavigationBridge";
 import { RootNavigator } from "./src/navigation/RootNavigator";
+import { CorePermissionsAppGate } from "./src/components/CorePermissionsAppGate";
 import { rootNavigationRef } from "./src/navigation/rootNavigationRef";
 import { darkColors, lightColors } from "./src/theme/colors";
 import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
@@ -40,32 +47,34 @@ function ThemedStatusBar() {
 
 function AppSafeAreaFrame({ children }: { children: React.ReactNode }) {
   const { colors } = useAppTheme();
-  const insets = useSafeAreaInsets();
+  const rawInsets = useSafeAreaInsets();
+  const deviceInsets = React.useMemo(() => deviceSafeAreaInsets(rawInsets), [rawInsets]);
+  const innerMetrics = useZeroedSafeAreaMetrics();
   const screenFit = useScreenFitMetrics();
   const webClamp = webViewportClampStyle(screenFit);
-  /**
-   * Android 15+/edge-to-edge and 3-button navigation can place app content
-   * behind the system Back/Home/Recents area. Keep the whole app frame above it.
-   */
-  const bottomGuard = Platform.OS === "android" ? Math.max(insets.bottom, 12) : insets.bottom;
+  const bottomGuard = appBottomSafeInset(deviceInsets);
   return (
-    <View
-      style={[
-        {
-          flex: 1,
-          backgroundColor: colors.bg,
-          paddingTop: insets.top,
-          paddingBottom: bottomGuard,
-        },
-        webClamp,
-      ]}
-    >
-      {/*
-        The outer frame consumes device system insets once. The nested provider
-        lets screens keep using useSafeAreaInsets() without adding those insets twice.
-      */}
-      <SafeAreaProvider style={{ flex: 1 }}>{children}</SafeAreaProvider>
-    </View>
+    <DeviceSafeAreaInsetsProvider value={deviceInsets}>
+      <View
+        style={[
+          {
+            flex: 1,
+            backgroundColor: colors.bg,
+            paddingTop: deviceInsets.top,
+            paddingBottom: bottomGuard,
+          },
+          webClamp,
+        ]}
+      >
+        {/*
+          The outer frame consumes device system insets once. The nested provider
+          reports zero top/bottom so screens do not pad twice under the status bar.
+        */}
+        <SafeAreaProvider style={{ flex: 1 }} initialMetrics={innerMetrics}>
+          {children}
+        </SafeAreaProvider>
+      </View>
+    </DeviceSafeAreaInsetsProvider>
   );
 }
 
@@ -83,6 +92,10 @@ export default function App() {
         await hydrateRaqatApiBaseOverride();
         await hydrateLocale();
         await import("./src/fonts/brandFont").then((m) => m.loadBrandFont()).catch(() => {});
+        /** Boot: тек сүре тізімі (~30 KB RAM). Uthmani — Хатым/Құран экранында lazy. */
+        await import("./src/services/bundledQuranSeed")
+          .then((m) => m.seedBundledQuranCachesIfNeeded({ skipInteractionDefer: true }))
+          .catch(() => {});
       } catch (e) {
         console.error("boot hydrate failed", e);
       } finally {
@@ -117,40 +130,34 @@ export default function App() {
         }, 3200);
 
         setTimeout(() => {
+          void import("./src/services/contentPackManager")
+            .then((m) => m.scheduleContentPackAutoDownload())
+            .catch((e) => reportBackgroundJobError("contentPackAutoDownload", e));
+        }, 5_200);
+
+        if (Platform.OS !== "web") {
+          void import("./src/quran/hatimBookPolicy")
+            .then((m) => m.preloadHatimOfflineAssets())
+            .catch((e) => reportBackgroundJobError("hatimOfflinePreload", e));
+        }
+
+        setTimeout(() => {
           void (async () => {
             if (Platform.OS === "web") return;
 
-            const { seedBundledQuranCachesIfNeeded } = await import("./src/services/bundledQuranSeed");
-            await seedBundledQuranCachesIfNeeded().catch(() => {
-              /* QuranList қайта сидинг жасай алады */
-            });
-
             const [
-              { getFirstLaunchPermissionsBurstDone, setFirstLaunchPermissionsBurstDone },
-              { requestAllCorePermissionsOnFirstLaunch },
               { reschedulePrayerNotificationsFromCache },
               { ensurePrayerNotificationBackgroundTask },
               { ensureQuranAudioBackgroundTask },
-              { kickQuranAudioAutoDownloadLoop },
+              { maybeKickQuranAudioAutoDownloadLoop },
               { syncAndroidPrayerWidgetFromStorage },
             ] = await Promise.all([
-              import("./src/storage/prefs"),
-              import("./src/services/firstLaunchPermissions"),
               import("./src/services/prayerNotifications"),
               import("./src/services/prayerNotificationBackgroundTask"),
               import("./src/services/quranAudioBackgroundTask"),
               import("./src/services/quranAudioDownloadManager"),
               import("./src/storage/prayerCache"),
             ]);
-            const burstDone = await getFirstLaunchPermissionsBurstDone();
-            if (!burstDone) {
-              try {
-                await requestAllCorePermissionsOnFirstLaunch();
-              } catch {
-                /* рұқсат терезесі немесе модуль қатесі */
-              }
-              await setFirstLaunchPermissionsBurstDone();
-            }
 
             await Promise.allSettled([
               reschedulePrayerNotificationsFromCache(),
@@ -158,7 +165,7 @@ export default function App() {
               ensureQuranAudioBackgroundTask(),
               syncAndroidPrayerWidgetFromStorage(),
             ]);
-            void kickQuranAudioAutoDownloadLoop();
+            void maybeKickQuranAudioAutoDownloadLoop();
           })().catch((e) => reportBackgroundJobError("postBootNativeWarmup", e));
         }, POST_BOOT_NATIVE_WARMUP_DELAY_MS);
       });
@@ -186,7 +193,7 @@ export default function App() {
           { refreshPrayerCacheIfCalendarStale },
           { reschedulePrayerNotificationsFromCache },
           { syncAndroidPrayerWidgetFromStorage },
-          { kickQuranAudioAutoDownloadLoop, resumeQuranAudioDownloadsInBackground },
+          { maybeKickQuranAudioAutoDownloadLoop, resumeQuranAudioDownloadsInBackground },
         ] = await Promise.all([
           import("./src/services/prayerDaySelfHeal"),
           import("./src/services/prayerNotifications"),
@@ -198,7 +205,7 @@ export default function App() {
           await resumeQuranAudioDownloadsInBackground();
         }
         if (next === "active") {
-          void kickQuranAudioAutoDownloadLoop();
+          void maybeKickQuranAudioAutoDownloadLoop();
           void import("./src/services/prayerAzanPermissions")
             .then((m) => m.ensurePrayerAzanPermissionsOnAppActive())
             .catch((e) => reportBackgroundJobError("prayerAzanPermissions", e));
@@ -257,7 +264,9 @@ export default function App() {
         }}
       >
         <AndroidBackNavigationBridge />
-        <RootNavigator />
+        <CorePermissionsAppGate>
+          <RootNavigator />
+        </CorePermissionsAppGate>
       </NavigationContainer>
       <ThemedStatusBar />
     </>

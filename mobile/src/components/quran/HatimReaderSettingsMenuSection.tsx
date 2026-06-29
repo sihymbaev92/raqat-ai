@@ -6,10 +6,7 @@ import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { MushafDensityId } from "../../config/mushafConfig";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
-import {
-  QURAN_READING_THEMES,
-  type QuranReadingThemeId,
-} from "../../theme/quranComReadingTheme";
+import type { QuranReadingThemeId } from "../../theme/quranComReadingTheme";
 import type { HatimAudioPlayUntil } from "../../storage/hatimPrefs";
 
 export type HatimReaderSettingsSnapshot = {
@@ -48,10 +45,6 @@ function playUntilLabel(scope: HatimAudioPlayUntil): string {
   if (scope === "juz") return kk.hatim.settingsPlayUntilJuz;
   if (scope === "surah") return kk.hatim.settingsPlayUntilSurah;
   return kk.hatim.settingsPlayUntilAyah;
-}
-
-function scriptLabel(id: QuranArabicScriptEditionId): string {
-  return id === "madinah" ? kk.quran.readerArabicScriptChipMadinah : kk.quran.readerArabicScriptChipTurkish;
 }
 
 function SettingCard({
@@ -161,35 +154,6 @@ export function HatimReaderSettingsMenuSection({ colors, values, handlers }: Pro
     <View style={styles.panel}>
       <View style={styles.flatGroup}>
         <Text style={[styles.flatTitle, { color: colors.text }]}>{kk.hatim.contextMenuReaderTitle}</Text>
-        <Text style={[styles.inlineLabel, { color: colors.muted }]}>{kk.hatim.contextMenuGroupTheme}</Text>
-        <View style={styles.chipRow}>
-          {QURAN_READING_THEMES.map((theme) => (
-            <CompactChip
-              key={theme.id}
-              colors={colors}
-              label={theme.labelKk}
-              value={theme.id}
-              selected={values.readingThemeId === theme.id}
-              onPress={handlers.onReadingTheme}
-            />
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.flatGroup}>
-        <Text style={[styles.inlineLabel, { color: colors.muted }]}>{kk.quran.readerArabicScriptTitle}</Text>
-        <View style={styles.chipRow}>
-          {(["madinah", "turkish"] as const).map((script) => (
-            <CompactChip
-              key={script}
-              colors={colors}
-              label={scriptLabel(script)}
-              value={script}
-              selected={values.arabicScriptEdition === script}
-              onPress={handlers.onArabicScriptEdition}
-            />
-          ))}
-        </View>
         <Text style={[styles.inlineLabel, { color: colors.muted }]}>{kk.hatim.settingsPlayUntil}</Text>
         <View style={styles.chipRow}>
           {(["juz", "surah", "ayah"] as const).map((scope) => (

@@ -102,9 +102,13 @@ type Props = {
   onToggleAudio: (ref: MushafAyahRef, item: CachedAyah) => void;
 };
 
-/** Hafs 604: backend — text-hafs | svg | webp | qcf4. */
+/** Hafs 604: backend — text-hafs | svg | webp | qcf4 (native хатым: әрқашан text-hafs). */
 export function MushafBookPageScroll(props: Props) {
   if (props.arabicScriptEdition !== "madinah") {
+    return <MushafBookPageTextHafs {...props} />;
+  }
+
+  if (Platform.OS !== "web") {
     return <MushafBookPageTextHafs {...props} />;
   }
 

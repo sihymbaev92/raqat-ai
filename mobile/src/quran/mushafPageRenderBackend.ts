@@ -1,8 +1,10 @@
 import { mushafPageSvgUrl, mushafPageWebpUrl } from "../config/mushafPagesBase";
+import { Platform } from "react-native";
 import {
   resolveQuranReadingTheme,
   type QuranReadingThemeId,
 } from "../theme/quranComReadingTheme";
+import { hatimBookUsesBundledTextHafsOffline } from "./hatimBookPolicy";
 
 /**
  * Мұсаф бет render backend.
@@ -33,6 +35,9 @@ export function mushafPageRenderBackend(): MushafPageRenderBackend {
 export function mushafBookPageRenderBackend(
   readingThemeId?: QuranReadingThemeId | null
 ): MushafPageRenderBackend {
+  if (hatimBookUsesBundledTextHafsOffline()) {
+    return "text-hafs";
+  }
   const env = readBackendFromEnv();
   if (env !== "text-hafs") return env;
   if (resolveQuranReadingTheme(readingThemeId).minimalPageChrome) {

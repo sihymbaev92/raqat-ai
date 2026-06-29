@@ -59,7 +59,7 @@ import {
   toggleHatimSurah,
   type HatimResume,
 } from "../storage/hatimProgress";
-import { loadQuranBookFonts } from "../fonts/quranBookFonts";
+import { preloadHatimOfflineAssets, persistHatimBookLockedPrefs } from "../quran/hatimBookPolicy";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "Hatim">;
@@ -94,7 +94,8 @@ export function HatimScreen({ navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
-      void loadQuranBookFonts().catch(() => {});
+      void persistHatimBookLockedPrefs();
+      void preloadHatimOfflineAssets();
     }, [])
   );
 
@@ -216,6 +217,7 @@ export function HatimScreen({ navigation }: Props) {
 
   const openMushafBook = useCallback(
     (opts?: { initialPage?: number; focusSurah?: number; focusAyah?: number }) => {
+      void preloadHatimOfflineAssets();
       navigateToQuranMushafBook(
         {
           ...(opts?.initialPage != null ? { initialPage: opts.initialPage } : {}),

@@ -128,6 +128,15 @@ import {
   type CachedAyah,
 } from "../storage/quranSurahCache";
 import { HATIM_LOCKED_MUSHAF_TEXT_SCALE } from "../quran/mushafTextScale";
+import {
+  resolveHatimBookArabicFont,
+  resolveHatimBookDensity,
+  resolveHatimBookReadingTheme,
+  resolveHatimBookScript,
+  hatimBookUsesBundledTextHafsOffline,
+  preloadHatimOfflineAssets,
+  persistHatimBookLockedPrefs,
+} from "../quran/hatimBookPolicy";
 import { getQuranTranslitOverride } from "../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { useAppLocale } from "../i18n/runtime";
@@ -352,8 +361,15 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
-  const [pages, setPages] = useState<MushafBookPageSlice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pages, setPages] = useState<MushafBookPageSlice[]>(() => {
+    try {
+      const light = buildMushafPagesGlobalLight();
+      return light.length ? light : [];
+    } catch {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(() => pages.length === 0);
   const [err, setErr] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(routeStartPageIndex);
   const [pageTurn, setPageTurn] = useState<HatimPageTurnState>(null);
@@ -372,13 +388,13 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const [showReaderMeaning, setShowReaderMeaning] = useState(false);
   const [showTajweedColors, setShowTajweedColors] = useState(false);
   const [reciterEdition, setReciterEdition] = useState(DEFAULT_QURAN_RECITER_EDITION);
-  const [arabicScriptEdition, setArabicScriptEdition] = useState(DEFAULT_QURAN_ARABIC_SCRIPT_EDITION);
-  const [mushafDensity, setMushafDensityState] = useState(DEFAULT_MUSHAF_DENSITY);
+  const [arabicScriptEdition, setArabicScriptEdition] = useState(resolveHatimBookScript());
+  const [mushafDensity, setMushafDensityState] = useState(resolveHatimBookDensity());
   const [mushafTextScale, setMushafTextScale] = useState(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
   const [arabicFontPreset, setArabicFontPreset] = useState<QuranArabicFontPresetId>(
-    DEFAULT_QURAN_ARABIC_FONT_PRESET
+    resolveHatimBookArabicFont()
   );
-  const [readingThemeId, setReadingThemeId] = useState(DEFAULT_QURAN_READING_THEME);
+  const [readingThemeId, setReadingThemeId] = useState(resolveHatimBookReadingTheme());
   const [hatimPlayUntil, setHatimPlayUntil] = useState<HatimAudioPlayUntil>("juz");
   const [ayahMarkers, setAyahMarkers] = useState<Record<string, AyahMarkerRecord>>({});
   const [playingRef, setPlayingRef] = useState<MushafAyahRef | null>(null);
@@ -440,6 +456,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const effectiveShowTajweedColors = showTajweedColors && arabicScriptEdition === "madinah";
   const useQcf4PageRanges = useMemo(
     () =>
+      !hatimBookUsesBundledTextHafsOffline() &&
       mushafBookEffectiveRenderBackend(readingThemeId, {
         showTajweedColors: effectiveShowTajweedColors,
         arabicScriptEdition,
@@ -457,7 +474,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     if (pagerViewHeight > 0) return pagerViewHeight;
     return Math.max(320, Math.floor(windowHeight - topInset - bottomInset - (readingTheme.minimalPageChrome ? 0 : 96)));
   }, [pagerViewHeight, readingTheme.minimalPageChrome, topInset, bottomInset, windowHeight]);
-  const hatimAutoFitReady = Platform.OS === "web" || (pagerViewWidth > 0 && pagerViewHeight > 0);
+  const hatimAutoFitReady = true;
   const styles = useMemo(
     () => makeMushafBookPageStyles(colors, isDark, metrics, readingThemeId),
     [colors, isDark, metrics, readingThemeId]
@@ -569,13 +586,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
     void (async () => {
       try {
-        void loadQuranBookFonts().catch(() => {});
-        await runWhenHeavyWorkAllowed();
-        await ensureBundledQuranReaderLoaded();
-        await runWhenHeavyWorkAllowed();
+        await preloadHatimOfflineAssets();
         if (!alive) return;
-        const full = useQcf4PageRanges ? buildQcf4MushafPagesGlobal() : buildMushafPagesGlobal();
+        const full = buildMushafPagesGlobal();
         if (full.length) applyPages(full);
+        setQuranTextRev((v) => v + 1);
       } catch (e) {
         if (__DEV__) console.error("[QuranMushafBook] load failed", e);
       }
@@ -622,16 +637,13 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       void (async () => {
-        const [showArabic, showTranslit, showMeaning, tj, rec, fontRaw, script, dens, theme, markers, playScope] = await Promise.all([
+        await persistHatimBookLockedPrefs();
+        const [showArabic, showTranslit, showMeaning, tj, rec, markers, playScope] = await Promise.all([
           getQuranReaderShowArabic(),
           getQuranReaderShowTranslit(),
           getQuranReaderShowMeaning(),
           AsyncStorage.getItem(QURAN_TAJWEED_COLORS_KEY),
           AsyncStorage.getItem(QURAN_READER_RECITER_KEY),
-          AsyncStorage.getItem(QURAN_READER_ARABIC_FONT_KEY),
-          getQuranArabicScriptEdition(),
-          getMushafDensity(),
-          getQuranReadingTheme(),
           loadAyahMarkers(),
           getHatimAudioPlayUntil(),
         ]);
@@ -640,14 +652,14 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         setShowReaderMeaning(showMeaning);
         if (tj != null) setShowTajweedColors(tj === "1");
         setReciterEdition(normalizeReciterEdition(rec));
-        if (fontRaw) setArabicFontPreset(normalizeArabicFontPreset(fontRaw));
-        setArabicScriptEdition(script);
-        setMushafDensityState(dens);
+        setArabicFontPreset(resolveHatimBookArabicFont());
+        setArabicScriptEdition(resolveHatimBookScript());
+        setMushafDensityState(resolveHatimBookDensity());
         setMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
-        void setQuranMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
-        setReadingThemeId(theme);
+        setReadingThemeId(resolveHatimBookReadingTheme());
         setHatimPlayUntil(playScope);
         setAyahMarkers(markers);
+        void preloadHatimOfflineAssets();
       })();
     }, [])
   );
@@ -1127,18 +1139,14 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
   const hatimReaderSettingsHandlers = useMemo(
     () => ({
-      onReadingTheme: (id: typeof readingThemeId) => {
-        setReadingThemeId(id);
-        void setQuranReadingTheme(id);
-      },
-      onMushafTextScale: (scale: number) => {
-        void scale;
+      onReadingTheme: () => {},
+      onMushafTextScale: () => {
         setMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
         void setQuranMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
       },
-      onMushafDensity: (id: typeof mushafDensity) => {
-        setMushafDensityState(id);
-        void setMushafDensity(id);
+      onMushafDensity: () => {
+        setMushafDensityState(resolveHatimBookDensity());
+        void setMushafDensity(resolveHatimBookDensity());
       },
       onShowReaderArabic: (v: boolean) => {
         setShowReaderArabic(v);
@@ -1156,13 +1164,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         setShowTajweedColors(v);
         void setQuranTajweedColorsEnabled(v);
       },
-      onArabicScriptEdition: (id: typeof arabicScriptEdition) => {
-        setArabicScriptEdition(id);
-        void setQuranArabicScriptEdition(id);
-        if (id !== "madinah") {
-          setShowTajweedColors(false);
-          void setQuranTajweedColorsEnabled(false);
-        }
+      onArabicScriptEdition: () => {
+        setArabicScriptEdition(resolveHatimBookScript());
+        void setQuranArabicScriptEdition(resolveHatimBookScript());
       },
       onPlayUntil: (scope: HatimAudioPlayUntil) => {
         setHatimPlayUntil(scope);
@@ -1335,35 +1339,28 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     });
   }, [navigation, colors.text]);
 
-  if (loading) {
+  if (err || (!pages.length && loading)) {
     return (
       <View style={styles.center}>
-        <RaqatOrnamentSpinner size={36} />
-        <Text style={styles.muted}>{kk.common.loading}</Text>
-      </View>
-    );
-  }
-
-  if (err || !pages.length) {
-    return (
-      <View style={styles.center}>
-        <RaqatOrnamentSpinner size={48} />
+        <RaqatOrnamentSpinner size={loading && !err ? 36 : 48} />
         <Text style={[styles.muted, { marginTop: 12, textAlign: "center", paddingHorizontal: 24 }]}>
-          {err ?? kk.common.error}
+          {err ?? (loading ? kk.common.loading : kk.common.error)}
         </Text>
-        <Pressable
-          style={({ pressed }) => [{ marginTop: 16, padding: 12, opacity: pressed ? 0.85 : 1 }]}
-          onPress={() => {
-            setErr(null);
-            setPages([]);
-            setLoading(true);
-            setLoadKey((k) => k + 1);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={kk.common.retry}
-        >
-          <Text style={{ color: colors.accent, fontWeight: "700" }}>{kk.common.retry}</Text>
-        </Pressable>
+        {err ? (
+          <Pressable
+            style={({ pressed }) => [{ marginTop: 16, padding: 12, opacity: pressed ? 0.85 : 1 }]}
+            onPress={() => {
+              setErr(null);
+              setPages([]);
+              setLoading(true);
+              setLoadKey((k) => k + 1);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={kk.common.retry}
+          >
+            <Text style={{ color: colors.accent, fontWeight: "700" }}>{kk.common.retry}</Text>
+          </Pressable>
+        ) : null}
       </View>
     );
   }
