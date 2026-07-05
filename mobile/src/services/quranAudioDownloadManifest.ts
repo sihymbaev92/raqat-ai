@@ -1,4 +1,4 @@
-import { QURAN_RECITER_OPTIONS } from "../config/quranReciters";
+import { QURAN_RECITER_OPTIONS, normalizeReciterEdition } from "../config/quranReciters";
 import { quranAyahMp3Url } from "./quranSudaisAudio";
 import { globalAyahToRef, TOTAL_AYAHS } from "../data/quranAyahCounts";
 
@@ -21,33 +21,31 @@ type ReciterBlock = {
   kind: "ayah";
 };
 
-export function quranAudioDownloadReciterBlocks(): ReciterBlock[] {
-  const blocks: ReciterBlock[] = [];
-  let start = 0;
-  for (const reciter of QURAN_RECITER_OPTIONS) {
-    const count = TOTAL_AYAHS;
-    blocks.push({
+/** Таңдалған қаридың 6236 аяты — барлық қариларды бірден жүктемейміз. */
+export function quranAudioDownloadReciterBlocks(edition?: string): ReciterBlock[] {
+  const ed = normalizeReciterEdition(edition);
+  const reciter = QURAN_RECITER_OPTIONS.find((o) => o.edition === ed) ?? QURAN_RECITER_OPTIONS[0]!;
+  return [
+    {
       edition: reciter.edition,
       labelKk: reciter.labelKk,
-      start,
-      count,
+      start: 0,
+      count: TOTAL_AYAHS,
       kind: "ayah",
-    });
-    start += count;
-  }
-  return blocks;
+    },
+  ];
 }
 
-export function quranAudioDownloadTotalTasks(): number {
-  const blocks = quranAudioDownloadReciterBlocks();
+export function quranAudioDownloadTotalTasks(edition?: string): number {
+  const blocks = quranAudioDownloadReciterBlocks(edition);
   const last = blocks[blocks.length - 1];
   return last ? last.start + last.count : 0;
 }
 
-export function quranAudioDownloadTaskAt(index: number): QuranAudioDownloadTask | null {
+export function quranAudioDownloadTaskAt(index: number, edition?: string): QuranAudioDownloadTask | null {
   const ix = Math.floor(index);
   if (ix < 0) return null;
-  const block = quranAudioDownloadReciterBlocks().find((b) => ix >= b.start && ix < b.start + b.count);
+  const block = quranAudioDownloadReciterBlocks(edition).find((b) => ix >= b.start && ix < b.start + b.count);
   if (!block) return null;
   const local = ix - block.start;
   const globalAyah = local + 1;

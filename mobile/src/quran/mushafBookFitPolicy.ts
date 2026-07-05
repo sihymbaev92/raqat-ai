@@ -1,24 +1,31 @@
 import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
-import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
+import { lookupQuranReadingTheme, type QuranReadingThemeId } from "../theme/quranComReadingTheme";
 
 type OnePageFitInput = {
   arabicScriptEdition: QuranArabicScriptEditionId;
   readingThemeId?: QuranReadingThemeId;
   mushafLayout?: boolean;
   bookPageLayout?: boolean;
+  showReaderTranslit?: boolean;
+  showReaderMeaning?: boolean;
 };
 
+/** Хатым / Quran.com original: бір Hafs беті — бір экран, скроллсыз (тығыз беттер scale-down). */
 export function shouldForceMushafOnePageFit({
   arabicScriptEdition,
   readingThemeId,
   mushafLayout = true,
   bookPageLayout = true,
+  showReaderTranslit = false,
+  showReaderMeaning = false,
 }: OnePageFitInput): boolean {
-  return Boolean(
-    mushafLayout &&
-      bookPageLayout &&
-      (arabicScriptEdition === "turkish" || readingThemeId === "muftyat")
-  );
+  if (showReaderTranslit || showReaderMeaning) return false;
+  if (!mushafLayout || !bookPageLayout) return false;
+  if (arabicScriptEdition === "turkish" || readingThemeId === "muftyat") return true;
+  if (readingThemeId) {
+    return lookupQuranReadingTheme(readingThemeId).minimalPageChrome;
+  }
+  return false;
 }
 
 export function forcedMushafReaderLayers(
@@ -32,11 +39,13 @@ export function forcedMushafReaderLayers(
   return { showReaderTranslit: false, showReaderMeaning: false };
 }
 
+/** Сиrek беттер (<220 glyph): масштаб 1. Тығыз беттер: кішірейту. */
 export function mushafOnePageFitScale(
   glyphs: number,
   viewportHeight: number,
   profile: "pager" | "book"
 ): number {
+  if (glyphs > 0 && glyphs < 220) return 1;
   const heightPenalty =
     viewportHeight > 0 && viewportHeight < 640
       ? profile === "pager"

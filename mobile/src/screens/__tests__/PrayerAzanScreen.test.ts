@@ -15,7 +15,7 @@ describe("PrayerAzanScreen", () => {
     const { normalizePrayerAzanSoundId } = require("../PrayerAzanScreen") as typeof import("../PrayerAzanScreen");
 
     expect(normalizePrayerAzanSoundId("off")).toBe("off");
-    expect(normalizePrayerAzanSoundId("adhan_madina_clear")).toBe("adhan_madina_clear");
+    expect(normalizePrayerAzanSoundId("adhan_madina_clear")).toBe("adhan_haramain");
     expect(normalizePrayerAzanSoundId("legacy_bell")).toBe("adhan_haramain");
   });
 

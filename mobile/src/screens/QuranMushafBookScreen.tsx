@@ -31,6 +31,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import { kk, APP_BRAND_KK } from "../i18n/kk";
 import { toEasternArabicIndic } from "../utils/easternArabicIndic";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
+import { loadBundledTajweedSurahMap } from "../services/bundledQuranTajweed";
 import {
   buildQcf4MushafPagesGlobal,
   buildQcf4MushafPagesGlobalLight,
@@ -137,6 +138,7 @@ import {
   preloadHatimOfflineAssets,
   persistHatimBookLockedPrefs,
 } from "../quran/hatimBookPolicy";
+import { HATIM_MUSHAF_ARABIC_ONLY, hatimMushafReaderLayers } from "../quran/quranReaderModePolicy";
 import { getQuranTranslitOverride } from "../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { useAppLocale } from "../i18n/runtime";
@@ -171,6 +173,9 @@ function hatimTajweedUrl(surah: number): string {
 }
 
 async function fetchHatimTajweedMap(surah: number): Promise<Record<number, string> | null> {
+  const bundled = await loadBundledTajweedSurahMap(surah);
+  if (bundled) return bundled;
+
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), HATIM_REMOTE_QURAN_FETCH_TIMEOUT_MS);
   try {
@@ -463,8 +468,16 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       }) === "qcf4",
     [arabicScriptEdition, effectiveShowTajweedColors, readingThemeId]
   );
-  const effectiveShowReaderTranslit = showReaderTranslit;
-  const effectiveShowReaderMeaning = showReaderMeaning;
+  const hatimReaderLayers = hatimMushafReaderLayers();
+  const effectiveShowReaderTranslit = HATIM_MUSHAF_ARABIC_ONLY
+    ? hatimReaderLayers.showReaderTranslit
+    : showReaderTranslit;
+  const effectiveShowReaderMeaning = HATIM_MUSHAF_ARABIC_ONLY
+    ? hatimReaderLayers.showReaderMeaning
+    : showReaderMeaning;
+  const effectiveShowReaderArabic = HATIM_MUSHAF_ARABIC_ONLY
+    ? hatimReaderLayers.showReaderArabic
+    : showReaderArabic;
   /** Quran.com хатымда бет телефон экранының төрт бұрышына дейін жайылады. */
   const topInset = readingTheme.minimalPageChrome || Platform.OS === "web" ? 0 : insets.top;
   /** Кей Android-та gesture/navigation bar safe-area 0 болып келеді — төменгі аят кесілмеуі үшін аз резерв. */
@@ -588,11 +601,27 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       try {
         await preloadHatimOfflineAssets();
         if (!alive) return;
-        const full = buildMushafPagesGlobal();
+        let full = buildMushafPagesGlobal();
+        const firstText = full[0]?.ayahs[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
+        if (!firstText.length) {
+          const { invalidateBundledJsonCache } = await import("../utils/loadBundledJson");
+          const { clearMushafPagesGlobalCache } = await import("../quran/buildMushafPagesGlobal");
+          const { releaseBundledQuranReaderMemory } = await import("../services/bundledQuranReader");
+          await invalidateBundledJsonCache("quran-uthmani-full.json");
+          releaseBundledQuranReaderMemory({ keepSurahList: true });
+          clearMushafPagesGlobalCache();
+          await preloadHatimOfflineAssets();
+          if (!alive) return;
+          full = buildMushafPagesGlobal();
+        }
         if (full.length) applyPages(full);
         setQuranTextRev((v) => v + 1);
       } catch (e) {
         if (__DEV__) console.error("[QuranMushafBook] load failed", e);
+        if (alive) {
+          setErr(kk.common.error);
+          setLoading(false);
+        }
       }
     })();
     return () => {
@@ -1208,7 +1237,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       readingThemeId,
       mushafTextScale,
       mushafDensity,
-      showReaderArabic,
+      showReaderArabic: effectiveShowReaderArabic,
       effectiveShowReaderTranslit,
       effectiveShowReaderMeaning,
       effectiveShowTajweedColors,
@@ -1226,7 +1255,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       readingThemeId,
       mushafTextScale,
       mushafDensity,
-      showReaderArabic,
+      effectiveShowReaderArabic,
       effectiveShowReaderTranslit,
       effectiveShowReaderMeaning,
       effectiveShowTajweedColors,
@@ -1422,7 +1451,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
                 isDark={isDark}
                 styles={styles}
                 isActive
-                showReaderArabic={showReaderArabic}
+                showReaderArabic={effectiveShowReaderArabic}
                 showReaderTranslit={effectiveShowReaderTranslit}
                 showReaderMeaning={effectiveShowReaderMeaning}
                 showTajweedColors={effectiveShowTajweedColors}
@@ -1480,7 +1509,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
                       isDark={isDark}
                       styles={styles}
                       isActive={isMushafBookRenderPageActive(logicalIndex, pageIndex)}
-                      showReaderArabic={showReaderArabic}
+                      showReaderArabic={effectiveShowReaderArabic}
                       showReaderTranslit={effectiveShowReaderTranslit}
                       showReaderMeaning={effectiveShowReaderMeaning}
                       showTajweedColors={effectiveShowTajweedColors}

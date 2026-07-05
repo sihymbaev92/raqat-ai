@@ -1,5 +1,5 @@
 import { hadithTextForLocale, type SahihHadithEntry } from "../hadithCorpus";
-import seedJson from "../../../assets/bundled/hadith-sahih-seed.json";
+import seedJson from "../../../assets/bundled/hadith-from-db-seed.json";
 
 const sourceOnlyHadith: SahihHadithEntry = {
   id: "bukhari-1",
@@ -28,7 +28,7 @@ describe("hadithTextForLocale", () => {
     expect(hadithTextForLocale(sourceOnlyHadith, "ar")).toContain("الْأَعْمَالُ");
   });
 
-  it("keeps bundled Sahih seed source-only when Kazakh text is not officially approved", () => {
+  it("keeps bundled hadith seed source-only when Kazakh text is not officially approved", () => {
     const rows = (seedJson as { hadiths?: SahihHadithEntry[] }).hadiths ?? [];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {

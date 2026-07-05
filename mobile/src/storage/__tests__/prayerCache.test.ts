@@ -22,12 +22,12 @@ jest.mock("../../services/openMeteoCurrent", () => ({
 
 const CACHE_KEY = "raqat_prayer_cache_v1";
 
-const shymkentMuftyat = {
+const shymkentPrayer = {
   city: "Shymkent",
   country: "Kazakhstan",
   latitude: 42.368009,
   longitude: 69.612769,
-  source: "muftyat" as const,
+  source: "aladhan" as const,
   date: "2026-06-13",
   fajr: "02:59",
   sunrise: "04:41",
@@ -42,39 +42,22 @@ describe("prayer cache source guard", () => {
     await AsyncStorage.clear();
   });
 
-  it("keeps official Muftyat cache for Kazakhstan", async () => {
-    await savePrayerCache(shymkentMuftyat);
+  it("keeps Aladhan cache for Kazakhstan", async () => {
+    await savePrayerCache(shymkentPrayer);
 
     await expect(loadPrayerCache()).resolves.toMatchObject({
       city: "Shymkent",
-      source: "muftyat",
+      source: "aladhan",
       asr: "17:42",
     });
   });
 
-  it("rejects legacy Kazakhstan cache without official source", async () => {
+  it("rejects legacy cache with mismatched calculation profile", async () => {
     await AsyncStorage.setItem(
       CACHE_KEY,
       JSON.stringify({
-        ...shymkentMuftyat,
-        source: undefined,
-        calculationMethod: 2,
-        calculationSchool: 1,
-        savedAt: new Date().toISOString(),
-      })
-    );
-
-    await expect(loadPrayerCache()).resolves.toBeNull();
-  });
-
-  it("rejects Kazakhstan Aladhan fallback cache so the app retries official source", async () => {
-    await AsyncStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({
-        ...shymkentMuftyat,
-        source: "aladhan",
-        asr: "17:16",
-        calculationMethod: 2,
+        ...shymkentPrayer,
+        calculationMethod: 3,
         calculationSchool: 1,
         savedAt: new Date().toISOString(),
       })

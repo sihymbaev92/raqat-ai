@@ -20,16 +20,9 @@ import {
 
 type Props = NativeStackScreenProps<RootStackParamList, "PrayerAzan">;
 
-const AZAN_BACKGROUND = require("../../assets/namaz/azan-background-generated.png");
+const AZAN_BACKGROUND = require("../../assets/namaz/azan-background-generated.webp");
 
-const PRAYER_AZAN_SOUND_IDS = new Set<PrayerNotifSoundId>([
-  "off",
-  "adhan_haramain",
-  "adhan_madina_clear",
-  "adhan_makkah_live",
-  "adhan_soft_cc0",
-  "adhan_takbir_high",
-]);
+const PRAYER_AZAN_SOUND_IDS = new Set<PrayerNotifSoundId>(["off", "adhan_haramain"]);
 
 type AzanTextBlock = {
   id: string;

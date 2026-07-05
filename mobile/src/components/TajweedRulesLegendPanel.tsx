@@ -3,34 +3,75 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { TAJWEED_RULES_CATALOG } from "../content/tajweedRulesCatalog";
+import {
+  TAJWEED_LEGEND_SECTIONS,
+  TAJWEED_RULES_CATALOG,
+  type TajweedRuleMeta,
+} from "../content/tajweedRulesCatalog";
 
 type Props = {
   /** Қысқа режим — ScrollView жоқ, бірақ барлық 17 ереже көрінеді. */
   compact?: boolean;
+  /** Топтар бойынша топтау (бастапқы «Тәжуид» беті сияқты). */
+  grouped?: boolean;
 };
 
-export function TajweedRulesLegendPanel({ compact = false }: Props) {
+function RuleLine({
+  meta,
+  isDark,
+  styles,
+}: {
+  meta: TajweedRuleMeta;
+  isDark: boolean;
+  styles: ReturnType<typeof makeStyles>;
+}) {
+  return (
+    <View style={styles.line}>
+      <View
+        style={[styles.dot, { backgroundColor: isDark ? meta.colorDark : meta.colorLight }]}
+      />
+      <View style={styles.txtCol}>
+        <Text style={styles.ruleTitle}>
+          {meta.labelKk} <Text style={styles.tag}>{meta.tagOpen}</Text>
+        </Text>
+        <Text style={styles.detail}>{meta.detailKk}</Text>
+      </View>
+    </View>
+  );
+}
+
+export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Props) {
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const rules = TAJWEED_RULES_CATALOG;
+  const metaByRule = useMemo(
+    () => new Map(TAJWEED_RULES_CATALOG.map((meta) => [meta.rule, meta])),
+    []
+  );
+
+  const ruleList =
+    grouped && !compact ? (
+      TAJWEED_LEGEND_SECTIONS.map((section) => (
+        <View key={section.titleKk} style={styles.section}>
+          <Text style={styles.sectionTitle}>{section.titleKk}</Text>
+          {section.rules.map((rule) => {
+            const meta = metaByRule.get(rule);
+            return meta ? (
+              <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} />
+            ) : null;
+          })}
+        </View>
+      ))
+    ) : (
+      TAJWEED_RULES_CATALOG.map((meta) => (
+        <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} />
+      ))
+    );
 
   const body = (
     <>
       <Text style={styles.intro}>{kk.quran.tajweedLegendIntro}</Text>
-      {rules.map((meta) => (
-        <View key={meta.rule} style={styles.line}>
-          <View
-            style={[styles.dot, { backgroundColor: isDark ? meta.colorDark : meta.colorLight }]}
-          />
-          <View style={styles.txtCol}>
-            <Text style={styles.ruleTitle}>
-              {meta.labelKk} <Text style={styles.tag}>{meta.tagOpen}</Text>
-            </Text>
-            <Text style={styles.detail}>{meta.detailKk}</Text>
-          </View>
-        </View>
-      ))}
+      {ruleList}
+      <Text style={styles.helperNote}>{kk.quran.tajweedHelperLegendNote}</Text>
       {compact ? (
         <Text style={styles.compactFoot}>{kk.tajweedGuide.quranColorsHint}</Text>
       ) : (
@@ -61,12 +102,21 @@ function makeStyles(colors: ThemeColors) {
     scroll: { maxHeight: 320 },
     scrollContent: { gap: 10, paddingBottom: 4 },
     intro: { color: colors.muted, fontSize: 13, lineHeight: 20, marginBottom: 2 },
+    section: { gap: 8 },
+    sectionTitle: {
+      color: colors.text,
+      fontWeight: "800",
+      fontSize: 13,
+      lineHeight: 18,
+      marginTop: 2,
+    },
     line: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
     dot: { width: 12, height: 12, borderRadius: 6, marginTop: 4 },
     txtCol: { flex: 1, minWidth: 0 },
     ruleTitle: { color: colors.text, fontWeight: "800", fontSize: 14, lineHeight: 20 },
     tag: { color: colors.muted, fontWeight: "600", fontSize: 12 },
     detail: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 2 },
+    helperNote: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 2 },
     foot: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 6 },
     compactFoot: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 4 },
   });

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, StyleSheet, TextInput, Platform } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -7,25 +7,20 @@ import { useAppTheme } from "../../theme/ThemeContext";
 import { kk } from "../../i18n/kk";
 import { HalalFilterChipRow, type HalalFilterChip } from "../HalalFilterChipRow";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
-export type HalalCheckFlowPhase = null | "ai" | "registry";
+
+export type HalalCheckFlowPhase = null | "registry";
 
 type Props = {
   colors: ThemeColors;
   productStatusChips: HalalFilterChip[];
   productStatusFilter: string;
   onProductStatusFilterChange: (v: string) => void;
-  goodsQuick: string;
-  onGoodsQuickChange: (t: string) => void;
-  goodsQuickBusy: boolean;
-  checkInput: string;
-  onCheckInputChange: (t: string) => void;
   checkBusy: boolean;
   checkErr: string | null;
   checkFlowPhase: HalalCheckFlowPhase;
-  photoAnalysisText: string | null;
-  onOpenCamera: () => void;
+  lastBarcode: string | null;
   onOpenBarcode: () => void;
-  onRunCheck: () => void;
+  onSubmitBarcode: (barcode: string) => void;
 };
 
 export function HalalVerifyHub({
@@ -33,21 +28,23 @@ export function HalalVerifyHub({
   productStatusChips,
   productStatusFilter,
   onProductStatusFilterChange,
-  goodsQuick,
-  onGoodsQuickChange,
-  goodsQuickBusy,
-  checkInput,
-  onCheckInputChange,
   checkBusy,
   checkErr,
   checkFlowPhase,
-  photoAnalysisText,
-  onOpenCamera,
+  lastBarcode,
   onOpenBarcode,
-  onRunCheck,
+  onSubmitBarcode,
 }: Props) {
   const { isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
+  const isWeb = Platform.OS === "web";
+  const [manualBarcode, setManualBarcode] = useState("");
+
+  const submitManual = () => {
+    const digits = manualBarcode.replace(/\D/g, "").trim();
+    if (digits.length < 4) return;
+    onSubmitBarcode(digits);
+  };
 
   return (
     <View style={styles.card}>
@@ -56,7 +53,8 @@ export function HalalVerifyHub({
         <Text style={styles.headTitle}>{kk.features.halalCheckSectionTitle}</Text>
       </View>
 
-      <Text style={styles.label}>{kk.features.halalGoodsQuickTitle}</Text>
+      <Text style={styles.lead}>{kk.features.halalBarcodeOnlyLead}</Text>
+
       <HalalFilterChipRow
         chips={productStatusChips}
         value={productStatusFilter}
@@ -65,101 +63,84 @@ export function HalalVerifyHub({
         accessibilityGroupLabel={kk.features.halalProductStatusLabel}
       />
 
-      <View style={styles.quickRow}>
-        <MaterialIcons name="search" size={20} color={colors.muted} />
-        <TextInput
-          value={goodsQuick}
-          onChangeText={onGoodsQuickChange}
-          placeholder={kk.features.halalGoodsQuickPlaceholder}
-          placeholderTextColor={colors.muted}
-          style={styles.quickInput}
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel={kk.features.halalGoodsQuickPlaceholder}
-        />
-        {goodsQuickBusy ? <RaqatOrnamentSpinner size={20} /> : null}
-      </View>
-      <Text style={styles.hint}>{kk.features.halalGoodsQuickHint}</Text>
-
       {checkFlowPhase ? (
         <View style={styles.flowBanner} accessibilityLiveRegion="polite">
           <RaqatOrnamentSpinner size={20} />
-          <Text style={styles.flowTxt}>
-            {checkFlowPhase === "ai" ? kk.features.halalScanFlowAi : kk.features.halalScanFlowRegistry}
-          </Text>
+          <Text style={styles.flowTxt}>{kk.features.halalScanFlowRegistry}</Text>
         </View>
       ) : null}
 
-      <View style={styles.actionRow}>
-        <Pressable
-          onPress={onOpenCamera}
-          style={({ pressed }) => [styles.actionTile, pressed && { opacity: 0.92 }]}
-          accessibilityRole="button"
-          accessibilityLabel={kk.features.halalCheckPhotoBtn}
-        >
-          <MaterialIcons name="photo-camera" size={26} color={colors.accent} />
-          <Text style={styles.actionLbl} numberOfLines={2}>
-            {kk.features.halalCheckPhotoShort}
-          </Text>
-        </Pressable>
+      {isWeb ? (
+        <View style={styles.webBarcodeBlock}>
+          <View style={styles.webBarcodeRow}>
+            <MaterialIcons name="qr-code-2" size={22} color={colors.muted} />
+            <TextInput
+              value={manualBarcode}
+              onChangeText={setManualBarcode}
+              placeholder={kk.features.halalBarcodeWebPlaceholder}
+              placeholderTextColor={colors.muted}
+              style={styles.webBarcodeInput}
+              keyboardType="number-pad"
+              inputMode="numeric"
+              autoCapitalize="none"
+              autoCorrect={false}
+              maxLength={20}
+              accessibilityLabel={kk.features.halalBarcodeWebPlaceholder}
+              onSubmitEditing={submitManual}
+              returnKeyType="search"
+            />
+          </View>
+          <Pressable
+            onPress={submitManual}
+            disabled={checkBusy || manualBarcode.replace(/\D/g, "").length < 4}
+            style={({ pressed }) => [
+              styles.runBtn,
+              pressed && !checkBusy && { opacity: 0.92 },
+              (checkBusy || manualBarcode.replace(/\D/g, "").length < 4) && { opacity: 0.65 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={kk.features.halalBarcodeCheckBtn}
+          >
+            {checkBusy ? (
+              <RaqatOrnamentSpinner size={22} />
+            ) : (
+              <>
+                <MaterialIcons name="search" size={20} color="#fff" />
+                <Text style={styles.runTxt}>{kk.features.halalBarcodeCheckBtn}</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+      ) : (
         <Pressable
           onPress={onOpenBarcode}
-          style={({ pressed }) => [styles.actionTile, pressed && { opacity: 0.92 }]}
+          disabled={checkBusy}
+          style={({ pressed }) => [
+            styles.actionTile,
+            pressed && !checkBusy && { opacity: 0.92 },
+            checkBusy && { opacity: 0.65 },
+          ]}
           accessibilityRole="button"
           accessibilityLabel={kk.features.halalCheckBarcodeBtn}
         >
-          <MaterialIcons name="qr-code-scanner" size={26} color={colors.accent} />
+          <MaterialIcons name="qr-code-scanner" size={32} color={colors.accent} />
           <Text style={styles.actionLbl} numberOfLines={2}>
-            {kk.features.halalCheckBarcodeShort}
+            {kk.features.halalCheckBarcodeBtn}
           </Text>
+          <Text style={styles.actionSub}>{kk.features.halalBarcodeOnlyHint}</Text>
         </Pressable>
-      </View>
+      )}
 
-      <TextInput
-        value={checkInput}
-        onChangeText={onCheckInputChange}
-        placeholder={kk.features.halalCheckTextPlaceholder}
-        placeholderTextColor={colors.muted}
-        multiline
-        style={styles.multiline}
-        accessibilityLabel={kk.features.halalCheckTextPlaceholder}
-      />
-
-      <Pressable
-        onPress={onRunCheck}
-        disabled={checkBusy}
-        style={({ pressed }) => [
-          styles.runBtn,
-          pressed && !checkBusy && { opacity: 0.92 },
-          checkBusy && { opacity: 0.65 },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={kk.features.halalCheckRun}
-      >
-        {checkBusy ? (
-          <RaqatOrnamentSpinner size={22} />
-        ) : (
-          <>
-            <MaterialIcons name="search" size={20} color="#fff" />
-            <Text style={styles.runTxt}>{kk.features.halalCheckRun}</Text>
-          </>
-        )}
-      </Pressable>
+      {lastBarcode ? (
+        <Text style={styles.lastBarcode} accessibilityLabel={kk.features.halalLastBarcodeLabel(lastBarcode)}>
+          {kk.features.halalLastBarcodeLabel(lastBarcode)}
+        </Text>
+      ) : null}
 
       {checkErr ? (
         <View style={styles.errBox} accessibilityRole="alert">
           <MaterialIcons name="error-outline" size={18} color={colors.error} />
           <Text style={styles.err}>{checkErr}</Text>
-        </View>
-      ) : null}
-
-      {photoAnalysisText ? (
-        <View style={styles.visionBox}>
-          <Text style={styles.visionTitle}>{kk.features.halalPhotoVisionTitle}</Text>
-          <Text style={styles.visionBody} selectable>
-            {photoAnalysisText}
-          </Text>
-          <Text style={styles.visionDisclaimer}>{kk.features.halalPhotoVisionDisclaimer}</Text>
         </View>
       ) : null}
     </View>
@@ -180,7 +161,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
-      marginBottom: 12,
+      marginBottom: 8,
     },
     headTitle: {
       flex: 1,
@@ -188,37 +169,10 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "900",
       color: colors.text,
     },
-    label: {
-      fontSize: 11,
-      fontWeight: "800",
+    lead: {
+      fontSize: 13,
+      lineHeight: 19,
       color: colors.muted,
-      textTransform: "uppercase",
-      letterSpacing: 0.35,
-      marginBottom: 6,
-    },
-    quickRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      backgroundColor: colors.bg,
-      paddingHorizontal: 10,
-      paddingVertical: Platform.OS === "ios" ? 8 : 4,
-      marginTop: 8,
-    },
-    quickInput: {
-      flex: 1,
-      fontSize: 15,
-      color: colors.text,
-      minHeight: 36,
-    },
-    hint: {
-      fontSize: 11,
-      lineHeight: 15,
-      color: colors.muted,
-      marginTop: 6,
       marginBottom: 10,
     },
     flowBanner: {
@@ -236,43 +190,55 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "700",
       color: colors.text,
     },
-    actionRow: {
-      flexDirection: "row",
-      gap: 10,
-      marginBottom: 10,
-      alignItems: "stretch",
-    },
     actionTile: {
-      flex: 1,
-      minHeight: 88,
+      minHeight: 112,
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      paddingVertical: 12,
-      paddingHorizontal: 8,
+      paddingVertical: 16,
+      paddingHorizontal: 12,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.bg,
+      marginTop: 8,
     },
     actionLbl: {
-      fontSize: 12,
-      fontWeight: "800",
+      fontSize: 15,
+      fontWeight: "900",
       color: colors.text,
       textAlign: "center",
     },
-    multiline: {
-      minHeight: 88,
+    actionSub: {
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "600",
+      color: colors.muted,
+      textAlign: "center",
+      paddingHorizontal: 8,
+    },
+    webBarcodeBlock: {
+      marginTop: 8,
+      gap: 10,
+    },
+    webBarcodeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
       borderRadius: 12,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.bg,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      fontSize: 15,
+      paddingHorizontal: 10,
+      paddingVertical: Platform.OS === "ios" ? 8 : 4,
+    },
+    webBarcodeInput: {
+      flex: 1,
+      fontSize: 17,
+      fontWeight: "700",
       color: colors.text,
-      textAlignVertical: "top",
-      marginBottom: 10,
+      minHeight: 40,
+      fontVariant: ["tabular-nums"],
     },
     runBtn: {
       flexDirection: "row",
@@ -287,6 +253,13 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       color: "#fff",
       fontSize: 16,
       fontWeight: "900",
+    },
+    lastBarcode: {
+      marginTop: 10,
+      fontSize: 12,
+      fontWeight: "700",
+      color: colors.muted,
+      fontVariant: ["tabular-nums"],
     },
     errBox: {
       flexDirection: "row",
@@ -305,31 +278,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       lineHeight: 18,
       color: colors.error,
       textAlign: "left",
-    },
-    visionBox: {
-      marginTop: 12,
-      padding: 10,
-      borderRadius: 10,
-      backgroundColor: colors.bg,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-    },
-    visionTitle: {
-      fontSize: 12,
-      fontWeight: "800",
-      color: colors.text,
-      marginBottom: 6,
-    },
-    visionBody: {
-      fontSize: 13,
-      lineHeight: 19,
-      color: colors.text,
-    },
-    visionDisclaimer: {
-      marginTop: 8,
-      fontSize: 11,
-      lineHeight: 16,
-      color: colors.muted,
     },
   });
 }

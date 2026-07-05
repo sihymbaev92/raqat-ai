@@ -16,9 +16,9 @@ export const menuIconAssets = {
   /** Намаз тайлы: ішкі сәжде суреті (тайл қоршауында scale арқылы сыртқы жиек кесіледі) */
   tileNamaz: require("../../assets/namaz/tile-namaz.png"),
   /** Қажылық тайлы: алтын шеңбер ішіндегі сурет (тайл қоршауында scale арқылы сыртқы жиек пен төменгі жазу кесілуі мүмкін) */
-  tileHajj: require("../../assets/hajj/tile-hajj.png"),
+  tileHajj: require("../../assets/hajj/tile-hajj.webp"),
   /** Басты бет: құрбан айт промо жолы (дәстүр экранына сілтеме) */
-  promoKurbanAit: require("../../assets/hajj/kurban-ait-promo.png"),
+  promoKurbanAit: require("../../assets/hajj/kurban-ait-promo.webp"),
   /** Басты бет / мазмұн хабы: тәжуид — custom нұсқа (алтын әріптер, айқындық) */
   tileTajweed: require("../../assets/menu-icons/tile-tajweed-custom.png"),
   /** Басты бет / мазмұн хабы: «Дәстүр мен дін» (KazakhTradition) */

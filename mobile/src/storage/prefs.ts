@@ -121,24 +121,11 @@ export async function setIftarEnabled(on: boolean): Promise<void> {
   await AsyncStorage.setItem(K.iftarEnabled, on ? "1" : "0");
 }
 
-export type PrayerNotifSoundId =
-  | "off"
-  | "adhan_haramain"
-  | "adhan_madina_clear"
-  | "adhan_makkah_live"
-  | "adhan_soft_cc0"
-  | "adhan_takbir_high";
+export type PrayerNotifSoundId = "off" | "adhan_haramain";
 
 export type PrayerNotifSalatKey = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
-const PRAYER_SOUND_IDS: PrayerNotifSoundId[] = [
-  "off",
-  "adhan_haramain",
-  "adhan_madina_clear",
-  "adhan_makkah_live",
-  "adhan_soft_cc0",
-  "adhan_takbir_high",
-];
+const PRAYER_SOUND_IDS: PrayerNotifSoundId[] = ["off", "adhan_haramain"];
 
 export const PRAYER_NOTIF_SALAT_KEYS: PrayerNotifSalatKey[] = [
   "fajr",
@@ -148,14 +135,8 @@ export const PRAYER_NOTIF_SALAT_KEYS: PrayerNotifSalatKey[] = [
   "isha",
 ];
 
-/** Баптаулар тізімі — тек таңдаулы 5 азан. */
-export const PRAYER_NOTIF_SOUND_UI_ORDER: PrayerNotifSoundId[] = [
-  "adhan_haramain",
-  "adhan_madina_clear",
-  "adhan_makkah_live",
-  "adhan_soft_cc0",
-  "adhan_takbir_high",
-];
+/** Баптаулар тізімі — жинақтағы жалғыз азан. */
+export const PRAYER_NOTIF_SOUND_UI_ORDER: PrayerNotifSoundId[] = ["adhan_haramain"];
 
 function isPrayerNotifSoundId(x: string | null): x is PrayerNotifSoundId {
   return x != null && (PRAYER_SOUND_IDS as string[]).includes(x);
@@ -179,14 +160,18 @@ export async function getPrayerNotifSoundId(): Promise<PrayerNotifSoundId> {
 
 function migrateLegacyPrayerNotifSoundId(raw: string | null): PrayerNotifSoundId | null {
   switch (raw) {
+    case "off":
+      return "off";
+    case "adhan_haramain":
+      return "adhan_haramain";
     case "azan_madina":
-      return "adhan_madina_clear";
+    case "adhan_madina_clear":
     case "azan_makkah":
-      return "adhan_makkah_live";
+    case "adhan_makkah_live":
     case "azan_soft":
-      return "adhan_soft_cc0";
+    case "adhan_soft_cc0":
     case "azan_takbir":
-      return "adhan_takbir_high";
+    case "adhan_takbir_high":
     case "azan_classic":
     case "system":
     case "bell":

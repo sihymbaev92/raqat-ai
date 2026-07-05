@@ -63,11 +63,9 @@ def build_prompt(base_doc: str, delta_doc: str) -> str:
 ## Strengths
 ## Weaknesses (нақты минустар ғана)
 ## Risks
-## Prioritized recommendations (P0 / P1 / P2 кесте — әр ұяшық max 100 символ, қайталау ЖОҚ)
+## Prioritized recommendations (P0 / P1 / P2 кесте)
 ## Release verdict (Go / No-Go / Go with conditions) + неге
 ## Келесі 5 қадам (иесі, estimate S/M/L)
-
-МАҢЫЗДЫ: жауапты қысқа және структуралы жаз. Бір сөзді немесе фразаны мыңдап қайталама.
 """
 
 
@@ -82,7 +80,7 @@ def call_gemini(prompt: str, model: str) -> str:
     response = client.models.generate_content(
         model=model,
         contents=prompt,
-        config={"max_output_tokens": 8192, "temperature": 0.2},
+        config={"max_output_tokens": 8192, "temperature": 0.3},
     )
     text = (getattr(response, "text", None) or "").strip()
     if not text:

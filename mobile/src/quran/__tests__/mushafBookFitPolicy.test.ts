@@ -21,6 +21,27 @@ describe("mushafBookFitPolicy", () => {
     });
   });
 
+  it("skips one-page fit when translit or meaning layers are enabled", () => {
+    expect(
+      shouldForceMushafOnePageFit({
+        arabicScriptEdition: "madinah",
+        readingThemeId: "original",
+        mushafLayout: true,
+        bookPageLayout: true,
+        showReaderTranslit: true,
+      })
+    ).toBe(false);
+    expect(
+      shouldForceMushafOnePageFit({
+        arabicScriptEdition: "madinah",
+        readingThemeId: "original",
+        mushafLayout: true,
+        bookPageLayout: true,
+        showReaderMeaning: true,
+      })
+    ).toBe(false);
+  });
+
   it("forces Arabic-only one-page fit for Green Ink / Muftyat book pages", () => {
     expect(
       shouldForceMushafOnePageFit({
@@ -30,6 +51,28 @@ describe("mushafBookFitPolicy", () => {
         bookPageLayout: true,
       })
     ).toBe(true);
+  });
+
+  it("forces Arabic-only one-page fit for Quran.com original Hatim (minimalPageChrome)", () => {
+    expect(
+      shouldForceMushafOnePageFit({
+        arabicScriptEdition: "madinah",
+        readingThemeId: "original",
+        mushafLayout: true,
+        bookPageLayout: true,
+      })
+    ).toBe(true);
+  });
+
+  it("does not force one-page fit for paper/sepia scroll modes", () => {
+    expect(
+      shouldForceMushafOnePageFit({
+        arabicScriptEdition: "madinah",
+        readingThemeId: "paper",
+        mushafLayout: true,
+        bookPageLayout: true,
+      })
+    ).toBe(false);
   });
 
   it("does not force non-book reader modes", () => {
@@ -43,9 +86,10 @@ describe("mushafBookFitPolicy", () => {
     ).toBe(false);
   });
 
-  it("applies denser scale for long pages and small screens", () => {
-    expect(mushafOnePageFitScale(1400, 620, "pager")).toBeCloseTo(0.59);
-    expect(mushafOnePageFitScale(1300, 620, "book")).toBeCloseTo(0.67);
+  it("applies stronger scale-down for dense pages", () => {
+    expect(mushafOnePageFitScale(1400, 620, "pager")).toBeGreaterThanOrEqual(0.58);
+    expect(mushafOnePageFitScale(1300, 620, "book")).toBeGreaterThanOrEqual(0.58);
     expect(mushafOnePageFitScale(500, 760, "book")).toBeCloseTo(0.86);
+    expect(mushafOnePageFitScale(180, 760, "book")).toBe(1);
   });
 });

@@ -57,6 +57,7 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
         />
       );
     }
+    if (nestedInText) return plainText;
     return <Text style={baseStyle}>{plainText}</Text>;
   }
 

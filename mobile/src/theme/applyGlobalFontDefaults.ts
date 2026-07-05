@@ -1,4 +1,5 @@
 import { StyleSheet, Text, TextInput, type TextStyle } from "react-native";
+import { appTextLayoutDefaults } from "./textLayoutGuard";
 import { typography, uiFontStyle } from "./typography";
 
 /**
@@ -16,21 +17,26 @@ function mergeStyle(prev: TextStyle | TextStyle[] | undefined | null): TextStyle
   return StyleSheet.flatten([DEFAULT_BODY_STYLE, prev]);
 }
 
+type WithDefaults = {
+  defaultProps?: Record<string, unknown> & { style?: TextStyle | TextStyle[] };
+};
+
 function applyGlobalFontDefaults(): void {
-  type WithDefaults = {
-    defaultProps?: { style?: TextStyle | TextStyle[] };
-  };
   const T = Text as unknown as WithDefaults;
   const I = TextInput as unknown as WithDefaults;
-  /** RN 0.81+: defaultProps жоқ болса — өткізу (native құлауды болдырмау). */
-  if (!("defaultProps" in Text) && T.defaultProps === undefined) {
-    return;
-  }
   try {
-    T.defaultProps = { ...T.defaultProps, style: mergeStyle(T.defaultProps?.style) };
-    I.defaultProps = { ...I.defaultProps, style: mergeStyle(I.defaultProps?.style) };
+    T.defaultProps = {
+      ...(T.defaultProps ?? {}),
+      ...appTextLayoutDefaults,
+      style: mergeStyle(T.defaultProps?.style),
+    };
+    I.defaultProps = {
+      ...(I.defaultProps ?? {}),
+      ...appTextLayoutDefaults,
+      style: mergeStyle(I.defaultProps?.style),
+    };
   } catch {
-    /* ignore */
+    /* RN 0.81+ defaultProps жоқ болса — FitText / компонент дефолттары қалды */
   }
 }
 

@@ -45,7 +45,7 @@ export function HadithHubScreen({ navigation }: Props) {
         onPress={() => navigation.navigate("HadithList")}
         style={({ pressed }) => [styles.sahihCta, pressed && { opacity: 0.92 }]}
         accessibilityRole="button"
-        accessibilityLabel={tr(kk.settings.openHadithList)}
+        accessibilityLabel={tr(kk.hadith.openHadithList)}
       >
         <MaterialIcons name="menu-book" size={22} color={colors.accent} />
         <View style={styles.sahihCtaText}>

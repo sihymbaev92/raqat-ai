@@ -114,8 +114,7 @@ function RecitationBlocks({
         <View key={b.id} style={styles.recBlock}>
           <Text style={styles.recLabel}>{tr(b.label)}</Text>
           <Text style={styles.recAr}>{b.arabic}</Text>
-          {b.transliterationEn ? <Text style={styles.recTrEn}>{b.transliterationEn}</Text> : null}
-          <Text style={styles.recTr}>{b.transliterationKk}</Text>
+          {b.transliterationKk ? <Text style={styles.recTr}>{b.transliterationKk}</Text> : null}
           <Text style={styles.recMean}>{tr(b.meaningKk)}</Text>
         </View>
       ))}
@@ -123,7 +122,7 @@ function RecitationBlocks({
   );
 }
 
-/** Намаз нұсқауының сурет карточкасында: араб мәтін, ағылшынша транскрипция, қазақша оқылым, қазақша мағына. */
+/** Намаз нұсқауының сурет карточкасында: араб мәтін, қазақша оқылым, қазақша мағына. */
 export function NamazGuidePoseRecitationBlocks({
   blocks,
   colors,
@@ -140,8 +139,7 @@ export function NamazGuidePoseRecitationBlocks({
         <View key={b.id} style={styles.recBlock}>
           <Text style={styles.recLabel}>{tr(b.label)}</Text>
           <Text style={styles.recAr}>{b.arabic}</Text>
-          {b.transliterationEn ? <Text style={styles.recTrEn}>{b.transliterationEn}</Text> : null}
-          <Text style={styles.recTr}>{b.transliterationKk}</Text>
+          {b.transliterationKk ? <Text style={styles.recTr}>{b.transliterationKk}</Text> : null}
           <Text style={styles.recMean}>{tr(b.meaningKk)}</Text>
         </View>
       ))}

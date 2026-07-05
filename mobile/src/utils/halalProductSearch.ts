@@ -7,17 +7,12 @@ import {
   fetchHalalDamuProductsBrowse,
   halalCompanyDisplayImageUrl,
   searchHalalDamuProducts,
-  searchHalalDamuWpSiteCompanies,
 } from "../api/halalDamuWp";
 import {
   listHalalProductsSeedBrowse,
   searchHalalProductsSeed,
 } from "../services/halalProductsSeedKz";
-import {
-  dedupeHalalCompanyCards,
-  filterHalalCompaniesInstant,
-  INSTANT_HALAL_SEARCH_LIMIT,
-} from "./halalInstantSearch";
+import { INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
 
 const BAD_CERT = new Set([
   "expired",
@@ -75,8 +70,7 @@ export async function resolveHalalProductBrowse(
     return { items: seedItems, fromProducers: false, fromSeed: true, error: api.error };
   }
 
-  const producers = catalog.filter(isHalalCertifiedCompany).slice(0, limit).map(companyToHalalProductItem);
-  return { items: producers, fromProducers: producers.length > 0, fromSeed: false, error: api.error };
+  return { items: [], fromProducers: false, fromSeed: false, error: api.error };
 }
 
 export async function resolveHalalProductSearch(
@@ -100,16 +94,5 @@ export async function resolveHalalProductSearch(
     return { items: seedItems, fromProducers: false, fromSeed: true, error: api.error };
   }
 
-  const local = filterHalalCompaniesInstant(catalog, q, { limit: limit * 3 }).filter(
-    isHalalCertifiedCompany
-  );
-
-  const wpMatches = await searchHalalDamuWpSiteCompanies(q, catalog, { limit: limit * 2 });
-  const merged = dedupeHalalCompanyCards([
-    ...local,
-    ...wpMatches.filter(isHalalCertifiedCompany),
-  ]);
-  const items = merged.slice(0, limit).map(companyToHalalProductItem);
-
-  return { items, fromProducers: items.length > 0, fromSeed: false, error: api.error };
+  return { items: [], fromProducers: false, fromSeed: false, error: api.error };
 }

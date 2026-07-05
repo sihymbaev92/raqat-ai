@@ -1,19 +1,9 @@
 import {
   DASHBOARD_NEWS_BROWSE_LIMIT,
   officialHomeFeedToDashboardNewsItem,
-  platformHomeFeedToDashboardNewsItem,
   type DashboardNewsItem,
 } from "../content/dashboardNewsItems";
 import { fetchOfficialSiteHomeFeeds } from "./officialSiteHomeFeed";
-import {
-  fetchPlatformHomeNewsFeed,
-  type PlatformHomeFeedItem,
-  type PlatformHomeFeedResponse,
-} from "./platformApiClient";
-import { Platform } from "react-native";
-import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
-import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
-import { getValidAccessToken } from "../storage/authTokens";
 import { writeOfficialHomeFeedCache } from "../storage/officialHomeFeedCache";
 
 let prefetchInFlight: Promise<DashboardNewsItem[] | null> | null = null;
@@ -22,56 +12,13 @@ function mapDirect(items: Awaited<ReturnType<typeof fetchOfficialSiteHomeFeeds>>
   return items.map(officialHomeFeedToDashboardNewsItem);
 }
 
-function mapApi(items: PlatformHomeFeedItem[]) {
-  return items.map(platformHomeFeedToDashboardNewsItem);
-}
-
-function newsFeedScore(items: DashboardNewsItem[]): number {
-  const withImage = items.filter((i) => Boolean((i.imageUrl ?? "").trim())).length;
-  return withImage * 10 + items.length;
-}
-
-/** API ok=false болса бос; API vs direct — картинкасы көп/ұзын тізім жеңеді. */
-export function pickRicherOfficialNewsFeed(
-  apiRes: PlatformHomeFeedResponse,
-  apiItems: DashboardNewsItem[],
-  directItems: DashboardNewsItem[]
-): DashboardNewsItem[] {
-  if (apiRes.ok === false) return directItems;
-  if (directItems.length === 0) return apiItems;
-  if (apiItems.length === 0) return directItems;
-  return newsFeedScore(apiItems) >= newsFeedScore(directItems) ? apiItems : directItems;
-}
-
-export function shouldFetchDirectOfficialHomeFeeds(platformOS = Platform.OS): boolean {
-  return platformOS !== "web";
-}
-
-/** API proxy → native-та ғана тікелей сайт fetch (web-та CORS үшін proxy/cache ғана). */
+/**
+ * Fatua/Muftyat жаңалықтары — HTML parse.
+ * Native: тікелей сайт; web/CORS: `/api/v1/official-site/proxy` (JWT/AI жоқ).
+ */
 export async function loadOfficialHomeNewsItems(): Promise<DashboardNewsItem[]> {
-  await hydrateRaqatApiBaseOverride();
-  const apiBase = getRaqatApiBase();
-  const bearer = ((await getValidAccessToken()) ?? "").trim();
-  const common = {
-    authorizationBearer: bearer || undefined,
-    aiSecret: getRaqatContentReadSecret(),
-    timeoutMs: 15_000,
-  };
-
-  const [apiRes, directFeeds] = await Promise.all([
-    apiBase
-      ? fetchPlatformHomeNewsFeed(apiBase, { ...common, limit: DASHBOARD_NEWS_BROWSE_LIMIT }).catch(
-          () => ({ ok: false as const, results: [] as PlatformHomeFeedItem[] })
-        )
-      : Promise.resolve({ ok: false as const, results: [] as PlatformHomeFeedItem[] }),
-    shouldFetchDirectOfficialHomeFeeds()
-      ? fetchOfficialSiteHomeFeeds(DASHBOARD_NEWS_BROWSE_LIMIT).catch(() => [])
-      : Promise.resolve([]),
-  ]);
-
-  const apiItems = mapApi(apiRes.results ?? []);
-  const directItems = mapDirect(directFeeds);
-  const items = pickRicherOfficialNewsFeed(apiRes, apiItems, directItems);
+  const directFeeds = await fetchOfficialSiteHomeFeeds(DASHBOARD_NEWS_BROWSE_LIMIT).catch(() => []);
+  const items = mapDirect(directFeeds);
   if (items.length > 0) {
     void writeOfficialHomeFeedCache(items);
   }

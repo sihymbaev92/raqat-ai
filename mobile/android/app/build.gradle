@@ -171,12 +171,12 @@ android {
 
 tasks.register("copyPrayerAzanRawResources", Copy) {
     doFirst {
-        def expected = (1..5).collect { String.format("prayer_azan_user_%02d.mp3", it) }
+        def expected = ["prayer_azan_user_01.mp3"]
         def missing = expected.findAll { !file("$projectRoot/assets/sounds/$it").isFile() }
         if (!missing.isEmpty()) {
             throw new GradleException(
-                "Missing prayer azan sound assets: ${missing.join(', ')}. " +
-                "Restore mobile/assets/sounds/prayer_azan_user_01.mp3..05.mp3 before release builds."
+                "Missing prayer azan sound asset: ${missing.join(', ')}. " +
+                "Place the bundled azan at mobile/assets/sounds/prayer_azan_user_01.mp3 before release builds."
             )
         }
     }

@@ -13,12 +13,45 @@ object PrayerAzanNativePlayer {
   @Volatile private var player: MediaPlayer? = null
   @Volatile private var audioManager: AudioManager? = null
   @Volatile private var focusRequest: AudioFocusRequest? = null
-  private val focusListener = AudioManager.OnAudioFocusChangeListener { }
+  @Volatile private var lastSoundId: String? = null
+  @Volatile private var lastContext: Context? = null
+
+  private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
+    when (change) {
+      AudioManager.AUDIOFOCUS_GAIN,
+      AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> {
+        val ctx = lastContext ?: return@OnAudioFocusChangeListener
+        val soundId = lastSoundId ?: return@OnAudioFocusChangeListener
+        val current = player
+        if (current != null) {
+          try {
+            if (!current.isPlaying) current.start()
+          } catch (t: Throwable) {
+            Log.w("PrayerAzanNativePlayer", "Unable to resume azan after focus gain", t)
+          }
+        } else {
+          play(ctx, soundId)
+        }
+      }
+      AudioManager.AUDIOFOCUS_LOSS -> stop()
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+        try {
+          player?.pause()
+        } catch (_: Throwable) {
+          /* best effort */
+        }
+      }
+    }
+  }
 
   @Synchronized
   fun play(context: Context, soundId: String) {
+    if (soundId.isBlank() || soundId == "off") return
     stop()
     val app = context.applicationContext
+    lastContext = app
+    lastSoundId = soundId
     val resId = rawResourceId(soundId)
     try {
       val afd = app.resources.openRawResourceFd(resId)
@@ -40,6 +73,7 @@ object PrayerAzanNativePlayer {
       }
       next.prepare()
       player = next
+      PrayerAzanActiveSession.active = true
       next.start()
       Log.i("PrayerAzanNativePlayer", "Started native azan audio: $soundId")
     } catch (t: Throwable) {
@@ -52,6 +86,7 @@ object PrayerAzanNativePlayer {
   fun stop() {
     val current = player ?: run {
       abandonAudioFocus()
+      PrayerAzanActiveSession.active = false
       return
     }
     player = null
@@ -66,6 +101,16 @@ object PrayerAzanNativePlayer {
       /* best effort */
     }
     abandonAudioFocus()
+    PrayerAzanActiveSession.active = false
+  }
+
+  @Synchronized
+  fun isPlaying(): Boolean {
+    return try {
+      player?.isPlaying == true
+    } catch (_: Throwable) {
+      false
+    }
   }
 
   private fun requestAudioFocus(context: Context, attrs: AudioAttributes) {
@@ -73,7 +118,7 @@ object PrayerAzanNativePlayer {
     audioManager = mgr
     try {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+        val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
           .setAudioAttributes(attrs)
           .setOnAudioFocusChangeListener(focusListener)
           .build()
@@ -84,7 +129,7 @@ object PrayerAzanNativePlayer {
         mgr.requestAudioFocus(
           focusListener,
           AudioManager.STREAM_ALARM,
-          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+          AudioManager.AUDIOFOCUS_GAIN
         )
       }
     } catch (t: Throwable) {
@@ -109,13 +154,7 @@ object PrayerAzanNativePlayer {
     }
   }
 
-  private fun rawResourceId(soundId: String): Int {
-    return when (soundId) {
-      "adhan_madina_clear" -> R.raw.prayer_azan_user_02
-      "adhan_makkah_live" -> R.raw.prayer_azan_user_03
-      "adhan_soft_cc0" -> R.raw.prayer_azan_user_04
-      "adhan_takbir_high" -> R.raw.prayer_azan_user_05
-      else -> R.raw.prayer_azan_user_01
-    }
+  private fun rawResourceId(@Suppress("UNUSED_PARAMETER") soundId: String): Int {
+    return R.raw.prayer_azan_user_01
   }
 }

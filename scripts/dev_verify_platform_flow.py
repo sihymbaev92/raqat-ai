@@ -15,6 +15,7 @@ import argparse
 import os
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 from unittest import mock
 
@@ -37,12 +38,6 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--db", default=None, help="SQLite жолы (әдепкі: RAQAT_DB_PATH / DB_PATH / config.DB_PATH)")
     p.add_argument(
-        "--telegram-user-id",
-        type=int,
-        default=987_654_321,
-        help="Тест tg id (боттағы /start сияқты уникалды id)",
-    )
-    p.add_argument(
         "--hadith-seed",
         action="store_true",
         help="hadith_corpus_sync import-json (тек бар id-ға text_kk жаңарту, шағын seed)",
@@ -56,7 +51,6 @@ def main() -> int:
 
     os.environ["RAQAT_DB_PATH"] = db_path
     os.environ.setdefault("RAQAT_JWT_SECRET", "k" * 32)
-    os.environ.setdefault("RAQAT_BOT_LINK_SECRET", "b" * 32)
     os.environ.setdefault("RAQAT_AI_PROXY_SECRET", "a" * 32)
 
     if str(ROOT) not in sys.path:
@@ -92,28 +86,20 @@ def main() -> int:
             if r.returncode != 0:
                 print("   hadith import-json non-zero exit (allow_errors may still update rows)", file=sys.stderr)
 
-    print("3) API: link/telegram → ai/chat → users/me/history …")
+    print("3) API: JWT → ai/chat → users/me/history …")
     from fastapi.testclient import TestClient
 
+    from jwt_auth import create_token_pair
     from main import app
 
-    tid = int(args.telegram_user_id)
-    client = TestClient(app)
-    r = client.post(
-        "/api/v1/auth/link/telegram",
-        json={"telegram_user_id": tid},
-        headers={"X-Raqat-Bot-Link-Secret": os.environ["RAQAT_BOT_LINK_SECRET"]},
-    )
-    if r.status_code != 200:
-        print(r.text, file=sys.stderr)
-        return 2
-    body = r.json()
-    token = body.get("access_token")
-    pid = body.get("platform_user_id")
-    if not token or not pid:
-        print(f"Bad link response: {body!r}", file=sys.stderr)
+    pid = str(uuid.uuid4())
+    pair = create_token_pair(subject=pid, scopes=["ai", "content", "user"], platform_user_id=pid)
+    token = pair["access_token"]
+    if not token:
+        print(f"Bad token pair: {pair!r}", file=sys.stderr)
         return 2
 
+    client = TestClient(app)
     with mock.patch("ai_routes.generate_ai_reply", return_value="[dev_verify] assistant"):
         c = client.post(
             "/api/v1/ai/chat",
@@ -132,7 +118,6 @@ def main() -> int:
     if len(items) < 2:
         print(f"Expected at least 2 history items, got {len(items)}: {hist.json()!r}", file=sys.stderr)
         return 5
-    # Тарих беті: ескі → жаңа; қайта жүргізуде элементтер көбейеді — соңғы жұпты тексереміз
     prev, last = items[-2], items[-1]
     if last.get("body") != "[dev_verify] assistant" or prev.get("body") != "[dev_verify] user prompt":
         print(f"Unexpected latest history pair: {prev!r} {last!r}", file=sys.stderr)
@@ -142,30 +127,12 @@ def main() -> int:
     from db.get_db import get_db_reader, is_postgresql_configured
 
     if is_postgresql_configured():
-        q_one = "SELECT platform_user_id FROM platform_identities WHERE telegram_user_id = %s"
         q_cnt = "SELECT COUNT(*) AS c FROM platform_ai_chat_messages WHERE platform_user_id = %s"
-        params = (tid,)
-        params_pid = (str(pid),)
     else:
-        q_one = "SELECT platform_user_id FROM platform_identities WHERE telegram_user_id = ?"
         q_cnt = "SELECT COUNT(*) AS c FROM platform_ai_chat_messages WHERE platform_user_id = ?"
-        params = (tid,)
-        params_pid = (str(pid),)
+    params_pid = (str(pid),)
 
     with get_db_reader() as con:
-        row = con.execute(q_one, params).fetchone()
-        row_pid = None
-        if row:
-            if isinstance(row, dict):
-                row_pid = row.get("platform_user_id")
-            else:
-                try:
-                    row_pid = row["platform_user_id"]  # sqlite Row
-                except Exception:
-                    row_pid = row[0]
-        if not row or str(row_pid) != str(pid):
-            print("platform_identities: row mismatch", file=sys.stderr)
-            return 6
         crow = con.execute(q_cnt, params_pid).fetchone()
         if isinstance(crow, dict):
             n_msg = crow.get("c", 0)
@@ -180,7 +147,7 @@ def main() -> int:
 
     print("--- Бәрі OK ---")
     print(f"    db={db_path}")
-    print(f"    telegram_user_id={tid} platform_user_id={pid}")
+    print(f"    platform_user_id={pid}")
     print(f"    history items={len(items)}")
     return 0
 

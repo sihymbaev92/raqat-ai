@@ -247,6 +247,8 @@ export function MushafPagerPageScroll({
     readingThemeId,
     mushafLayout,
     bookPageLayout,
+    showReaderTranslit,
+    showReaderMeaning,
   });
   const {
     showReaderTranslit: effectiveShowReaderTranslit,
@@ -405,6 +407,7 @@ export function MushafPagerPageScroll({
             mushafAyahTxt={st.mushafAyahTxt}
             bookFitScale={fitScale}
             compactBookPage={compactBookPage}
+            contentWidth={pagerWidth}
             toEasternArabicIndic={toEasternArabicIndic}
             scrollViewRef={vScrollRef}
             scrollContentRef={contentRef}

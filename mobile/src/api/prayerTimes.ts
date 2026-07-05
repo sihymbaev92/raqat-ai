@@ -290,13 +290,14 @@ function formatDateParam(d: Date): string {
   return `${dd}-${mm}-${yyyy}`;
 }
 
-/** Координат бойынша (тізімдегі Қазақстан қалалары үшін дәлірек). */
+/** Координат бойынша (Aladhan) — бүгінгі күн. */
 export async function fetchPrayerTimesByCoordinates(
   lat: number,
   lng: number,
   city: string,
   country: string,
-  method: number = APP_PRAYER_CALCULATION_METHOD
+  method: number = APP_PRAYER_CALCULATION_METHOD,
+  when: Date = new Date()
 ): Promise<PrayerTimesResult> {
   const params = new URLSearchParams({
     latitude: String(lat),
@@ -304,7 +305,7 @@ export async function fetchPrayerTimesByCoordinates(
     method: String(method),
     school: String(APP_PRAYER_ASR_SCHOOL),
   });
-  const url = `${ALADHAN_TIMINGS}?${params.toString()}`;
+  const url = `${ALADHAN_TIMINGS}/${formatDateParam(when)}?${params.toString()}`;
   try {
     const r = await fetchWithTimeout(url, {}, FETCH_TIMEOUT_MS);
     if (!r.ok) {
@@ -345,16 +346,20 @@ export async function fetchPrayerTimesByCoordinates(
   }
 }
 
-/** Тізімдегі қала болса координатпен, әйтпесе қаламен (Aladhan geocode). */
+/** Тізімдегі қала / GPS координаты / Aladhan geocode. */
 export async function fetchPrayerTimesForLocation(
   city: string,
   country: string,
-  method: number = APP_PRAYER_CALCULATION_METHOD
+  method: number = APP_PRAYER_CALCULATION_METHOD,
+  coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerTimesResult> {
   const official = await fetchPrayerTimesByMuftyatForDate(city, country, new Date());
   if (official) return official;
 
-  const coords = getKzPresetCoords(city, country);
+  const coords =
+    coordsHint && Number.isFinite(coordsHint.lat) && Number.isFinite(coordsHint.lon)
+      ? coordsHint
+      : getKzPresetCoords(city, country);
   if (coords) {
     return fetchPrayerTimesByCoordinates(coords.lat, coords.lon, city, country, method);
   }
@@ -473,12 +478,16 @@ export async function fetchPrayerTimesForLocationForDate(
   city: string,
   country: string,
   when: Date,
-  method: number = APP_PRAYER_CALCULATION_METHOD
+  method: number = APP_PRAYER_CALCULATION_METHOD,
+  coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerTimesResult> {
   const official = await fetchPrayerTimesByMuftyatForDate(city, country, when);
   if (official) return official;
 
-  const coords = getKzPresetCoords(city, country);
+  const coords =
+    coordsHint && Number.isFinite(coordsHint.lat) && Number.isFinite(coordsHint.lon)
+      ? coordsHint
+      : getKzPresetCoords(city, country);
   if (coords) {
     return fetchPrayerTimesByCoordinatesForDate(coords.lat, coords.lon, city, country, when, method);
   }

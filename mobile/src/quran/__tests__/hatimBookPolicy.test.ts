@@ -1,4 +1,3 @@
-import { Platform } from "react-native";
 import {
   HATIM_BOOK_ARABIC_FONT,
   HATIM_BOOK_DENSITY,
@@ -30,15 +29,16 @@ describe("hatimBookPolicy", () => {
     expect(HATIM_BOOK_SCRIPT).toBe("madinah");
   });
 
-  it("uses bundled text-hafs offline on native", () => {
-    const os = Platform.OS;
+  it("uses QCF4 Madinah on native unless EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS=1", () => {
+    const prev = process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
     try {
-      Platform.OS = "android";
-      expect(hatimBookUsesBundledTextHafsOffline()).toBe(true);
-      Platform.OS = "web";
+      delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
       expect(hatimBookUsesBundledTextHafsOffline()).toBe(false);
+      process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS = "1";
+      expect(hatimBookUsesBundledTextHafsOffline()).toBe(true);
     } finally {
-      Platform.OS = os;
+      if (prev === undefined) delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
+      else process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS = prev;
     }
   });
 

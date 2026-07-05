@@ -3,6 +3,7 @@ import type { TextStyle, ViewStyle } from "react-native";
 import { Text, View } from "react-native";
 import type { AyahMarkerStyleId } from "../../storage/quranReaderPrefs";
 import { MushafAyahSvgMarker } from "./MushafAyahSvgMarker";
+import { quranSurahArabicWrapStyle, quranSurahAyahClusterStyle } from "../../quran/quranResponsiveLayout";
 
 export type MushafAyahRowStyles = {
   mushafAyahRow: ViewStyle;
@@ -23,9 +24,7 @@ type Props = {
   markerStyleId: AyahMarkerStyleId;
   showResumeHighlight: boolean;
   isAudioFocus: boolean;
-  /** Түсті бетбелгі — оң жақта шеңбер (маркерден бөлек). */
   bookmarkRingColor?: string;
-  /** SVG маркер үшін */
   mushafMarkerStroke: string;
   mushafMarkerFill: string;
   mushafMarkerInk: string;
@@ -34,7 +33,7 @@ type Props = {
   styles: MushafAyahRowStyles;
 };
 
-/** Мұсаф режиміндегі бір аят жолы (маркер + араб кластері + оң жақта бетбелгі нүктесі + астындағы мәтін). */
+/** Мұсаф режиміндегі бір аят жолы: RTL wrap, маркер + араб мәтін + бетбелгі. */
 export function MushafAyahRow({
   markerLabel,
   markerStyleId,
@@ -68,7 +67,6 @@ export function MushafAyahRow({
       </View>
     );
 
-  /** Мадани мұсаф: аят нөмірі жолдың соңында (сол жақта), араб мәтіні бір жолға толық ағады. */
   return (
     <View
       style={[
@@ -77,11 +75,18 @@ export function MushafAyahRow({
         showResumeHighlight && s.mushafAyahRowResumeHighlight,
       ]}
     >
-      <View style={s.mushafAyahArabicCluster} accessible={false}>
-        <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <View
+        style={[quranSurahAyahClusterStyle(), s.mushafAyahArabicCluster]}
+        accessible={false}
+      >
+        <View
+          style={{ flexShrink: 0 }}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           {markerNode}
         </View>
-        <View style={s.mushafAyahArabicWrap}>{arabicBody}</View>
+        <View style={[quranSurahArabicWrapStyle(), s.mushafAyahArabicWrap]}>{arabicBody}</View>
         <View style={s.mushafAyahBookmarkRail} importantForAccessibility="no-hide-descendants">
           <View
             style={[

@@ -1,6 +1,8 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { OfficialIslamicSourceId } from "../config/officialIslamicSources";
+import type { PlatformIslamicKbArticle } from "../services/platformApiClient";
 
 export type MoreStackParamList = {
   /** Мазмұн тізімі (басты бет тайлдары өзгермейді). */
@@ -40,6 +42,8 @@ export type MoreStackParamList = {
       }
     | undefined;
   Hajj: undefined;
+  /** Мекке тікелей эфир (YouTube live — Flutter MakkahLiveScreen эквиваленті). */
+  MakkahLive: undefined;
   ZakatCalculator: undefined;
   Halal: undefined;
   ImamAI:
@@ -83,6 +87,13 @@ export type MoreStackParamList = {
   HadithHub: undefined;
   HadithList: undefined;
   HadithDetail: { hadithId: string };
+  /** Fatua/Muftyat мақала карточкасы */
+  KbArticleDetail: { article: PlatformIslamicKbArticle };
+  /** Fatua.kz / Muftyat.kz толық WebView */
+  OfficialIslamicWeb: {
+    site: OfficialIslamicSourceId;
+    url?: string;
+  };
 };
 
 /** Тәспі табы: тізім → таңдалған зікірдің тәспі экраны */

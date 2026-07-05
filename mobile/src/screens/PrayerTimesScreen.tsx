@@ -16,6 +16,7 @@ import {
   applyPrayerTimeShift,
   fetchPrayerTimesForLocation,
   fetchPrayerTimesForLocationForDate,
+  isPrayerTimesResultForLocalToday,
   parsePrayerResultLocalDayKey,
   type PrayerTimesResult,
 } from "../api/prayerTimes";
@@ -48,6 +49,7 @@ import {
 } from "../storage/prefs";
 import type { RootStackParamList } from "../navigation/types";
 import { savePrayerCache } from "../storage/prayerCache";
+import { loadPrayerCache } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import { PRAYER_TIMES_SCREEN_HERO_BG } from "../config/dashboardPrayerHero";
@@ -65,6 +67,10 @@ import { useAppLocale } from "../i18n/runtime";
 import { useScreenFitMetrics } from "../theme/screenFit";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
+import {
+  canPreviewPrayerNotifSound,
+  previewPrayerNotifSound,
+} from "../utils/previewPrayerNotifSound";
 
 function mondayFirstWeekdayIndex(): number {
   const d = new Date().getDay();
@@ -415,21 +421,56 @@ export function PrayerTimesScreen() {
       setLoading(true);
       let cityName: string;
       let countryName: string;
+      let scheduleCoords: { lat: number; lon: number } | undefined;
       if (c?.trim() && co?.trim()) {
         await disablePrayerLocationAutoFromManualPick();
         cityName = c.trim();
         countryName = co.trim();
+        const preset = getKzPresetCoords(cityName, countryName);
+        scheduleCoords = preset ?? undefined;
       } else {
         const loc = await resolvePrayerScheduleLocation();
         cityName = loc.city;
         countryName = loc.country;
+        scheduleCoords = { lat: loc.lat, lon: loc.lon };
       }
       setCity(cityName);
       setCountry(countryName);
       try {
-        const data = await fetchPrayerTimesForLocation(cityName, countryName);
+        const data = await fetchPrayerTimesForLocation(
+          cityName,
+          countryName,
+          undefined,
+          scheduleCoords
+        );
         const out = applyMosqueShift(data);
         if (!isCurrentRequest()) return;
+        if (out.error) {
+          const cached = await loadPrayerCache();
+          if (
+            cached &&
+            !cached.error &&
+            cached.city === cityName &&
+            cached.country === countryName &&
+            isPrayerTimesResultForLocalToday(cached)
+          ) {
+            const cachedOut = applyMosqueShift(cached);
+            setResult(cachedOut);
+            if (!isCurrentRequest()) return;
+            try {
+              const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
+              if (!isCurrentRequest()) return;
+              await reschedulePrayerNotifications(cachedOut, {
+                enabled: en,
+                iftarExtra: ift,
+                prayerTimesAlreadyAdjusted: true,
+              });
+            } catch {
+              /* кесте көрсетіле береді */
+            }
+            return;
+          }
+        }
         setResult(out);
         if (!out.error) {
           if (!isCurrentRequest()) return;
@@ -453,6 +494,15 @@ export function PrayerTimesScreen() {
         }
       } catch (e) {
         if (!isCurrentRequest()) return;
+        const cached = await loadPrayerCache();
+        if (
+          cached &&
+          !cached.error &&
+          isPrayerTimesResultForLocalToday(cached)
+        ) {
+          setResult(applyMosqueShift(cached));
+          return;
+        }
         const message = e instanceof Error ? e.message : "Network error";
         setResult(prayerTimesErrorResult(cityName, countryName, message));
       } finally {
@@ -537,11 +587,19 @@ export function PrayerTimesScreen() {
 
   const togglePrayerSound = useCallback(
     async (key: PrayerNotifSalatKey) => {
-      const nextMuted = mutedSalatKeys.includes(key)
+      const wasMuted = mutedSalatKeys.includes(key);
+      const nextMuted = wasMuted
         ? mutedSalatKeys.filter((x) => x !== key)
         : [...mutedSalatKeys, key];
       setMutedSalatKeys(nextMuted);
       await setPrayerNotifMutedSalatKeys(nextMuted);
+      if (
+        wasMuted &&
+        notifEnabled &&
+        canPreviewPrayerNotifSound(prayerSoundId)
+      ) {
+        void previewPrayerNotifSound(prayerSoundId);
+      }
       if (result && !result.error) {
         const iftar = await getIftarEnabled();
         await reschedulePrayerNotifications(result, {
@@ -551,7 +609,7 @@ export function PrayerTimesScreen() {
         });
       }
     },
-    [mutedSalatKeys, notifEnabled, result]
+    [mutedSalatKeys, notifEnabled, prayerSoundId, result]
   );
 
   /** Намаз кестесінің `date` жолымен бір локальды күн (хижра/григориан көрсетілімі). */

@@ -24,6 +24,7 @@ describe("mushafPageRenderBackend", () => {
 
   afterEach(() => {
     process.env = env;
+    delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
   });
 
   it("defaults to text-hafs", () => {
@@ -57,20 +58,16 @@ describe("mushafPageRenderBackend", () => {
 
   it("book reader backend for Quran.com original when env default", () => {
     delete process.env.EXPO_PUBLIC_MUSHAF_PAGE_BACKEND;
-    const os = Platform.OS;
-    try {
-      Platform.OS = "web";
-      expect(mushafBookPageRenderBackend("original")).toBe("qcf4");
-      expect(mushafBookPageRenderBackend("muftyat")).toBe("text-hafs");
-      Platform.OS = "ios";
-      expect(mushafBookPageRenderBackend("original")).toBe("text-hafs");
-    } finally {
-      Platform.OS = os;
-    }
+    delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
+    expect(mushafBookPageRenderBackend("original")).toBe("qcf4");
+    expect(mushafBookPageRenderBackend("muftyat")).toBe("text-hafs");
+    process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS = "1";
+    expect(mushafBookPageRenderBackend("original")).toBe("text-hafs");
   });
 
   it("keeps QCF4 mushaf when tajweed colors are on (Sajda-style glyph page)", () => {
     delete process.env.EXPO_PUBLIC_MUSHAF_PAGE_BACKEND;
+    delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
     const os = Platform.OS;
     try {
       Platform.OS = "web";

@@ -7,96 +7,30 @@ import {
   FlatList,
   type ListRenderItem,
 } from "react-native";
-import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable } from "@/ui/Pressable";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { HubScreenHero } from "../components/HubScreenHero";
-import { EmbeddedSiteSheet } from "../components/EmbeddedSiteSheet";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
 import { HalalFilterChipRow, type HalalFilterChip } from "../components/HalalFilterChipRow";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
-import { RasterImage } from "@/ui/RasterImage";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { FATUA_KZ_LABEL_KK, kk, MUFTYAT_KZ_LABEL_KK } from "../i18n/kk";
 import { menuIconAssets } from "../theme/menuIconAssets";
-import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
-import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
-import { getValidAccessToken } from "../storage/authTokens";
-import {
-  fetchPlatformIslamicKbBrowse,
-  fetchPlatformIslamicKbSearch,
-  type PlatformIslamicKbArticle,
-} from "../services/platformApiClient";
-import {
-  loadOfficialHomeNewsItems,
-} from "../services/officialSitesBootstrap";
-import type { DashboardNewsItem } from "../content/dashboardNewsItems";
+import type { PlatformIslamicKbArticle } from "../services/platformApiClient";
 import type { MoreStackParamList } from "../navigation/types";
-import type { KbSiteFilter } from "../components/RaqatKbShelf";
+import type { KbSiteFilter } from "../types/islamicKb";
 import { screenFitScrollContentStyle, useScreenFitMetrics } from "../theme/screenFit";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
+import { loadKbArticlesFeed, type KbArticlesFeedSource } from "../services/kbArticlesFeed";
+import { KbArticleCard } from "../components/kb/KbArticleCard";
+import { KbContentSourceBanner } from "../components/kb/KbContentSourceBanner";
+import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
 
 const SEARCH_DEBOUNCE_MS = 420;
-const BROWSE_LIMIT = 20;
-const FATUA_KK_URL = "https://fatua.kz/kk/";
-const MUFTYAT_KK_URL = "https://www.muftyat.kz/kk/";
-
-function siteLabel(site: string): string {
-  if (site === "fatua") return FATUA_KZ_LABEL_KK;
-  if (site === "muftyat") return MUFTYAT_KZ_LABEL_KK;
-  return site;
-}
-
-function dashboardNewsToArticle(item: DashboardNewsItem): PlatformIslamicKbArticle {
-  let site = "fatua";
-  if (item.id.startsWith("home-muftyat") || item.sourceLabel === MUFTYAT_KZ_LABEL_KK) {
-    site = "muftyat";
-  } else if (item.id.startsWith("home-fatua") || item.sourceLabel === FATUA_KZ_LABEL_KK) {
-    site = "fatua";
-  }
-  const docMatch = item.id.match(/^kb-(\d+)$/);
-  return {
-    document_id: docMatch ? parseInt(docMatch[1]!, 10) : Math.abs(hashCode(item.id)),
-    site,
-    source_label: item.sourceLabel ?? siteLabel(site),
-    title: item.title,
-    excerpt: item.subtitle ?? "",
-    url: item.articleUrl ?? "",
-    image_url: item.imageUrl ?? null,
-  };
-}
-
-function hashCode(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i += 1) {
-    h = (h << 5) - h + s.charCodeAt(i);
-    h |= 0;
-  }
-  return h;
-}
-
-function buildArticleAskPrompt(article: PlatformIslamicKbArticle): string {
-  const title = (article.title || article.source_label || kk.knowledgePortal.untitled).trim();
-  const excerpt = (article.excerpt || "").trim();
-  const url = (article.url || "").trim();
-  return [
-    kk.aiChat.kbShelfAskDefault,
-    "",
-    `${kk.knowledgePortal.sourceLabel}: ${article.source_label || article.site}`,
-    `${kk.knowledgePortal.topicLabel}: ${title}`,
-    url ? `URL: ${url}` : "",
-    excerpt ? `${kk.knowledgePortal.excerptLabel}: ${excerpt}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
-}
-
-function filterBySite(items: PlatformIslamicKbArticle[], site: KbSiteFilter): PlatformIslamicKbArticle[] {
-  if (!site) return items;
-  return items.filter((a) => a.site === site);
-}
 
 export function OfficialKnowledgePortalScreen() {
   const { colors, isDark } = useAppTheme();
@@ -110,77 +44,44 @@ export function OfficialKnowledgePortalScreen() {
   useTabHomeBackHeader(navigation, colors);
   const chips: HalalFilterChip[] = useMemo(
     () => [
-      { value: "", label: kk.aiChat.kbChipAll },
-      { value: "fatua", label: kk.aiChat.kbChipFatua },
-      { value: "muftyat", label: kk.aiChat.kbChipMuftyat },
+      { value: "", label: kk.knowledgePortal.chipAll },
+      { value: "fatua", label: kk.knowledgePortal.chipFatua },
+      { value: "muftyat", label: kk.knowledgePortal.chipMuftyat },
     ],
     []
   );
   const [site, setSite] = useState<KbSiteFilter>("");
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<PlatformIslamicKbArticle[]>([]);
+  const [feedSource, setFeedSource] = useState<KbArticlesFeedSource>("seed");
+  const [cacheAgeMs, setCacheAgeMs] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [embeddedArticle, setEmbeddedArticle] = useState<{ title: string; url: string } | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const requestSeqRef = useRef(0);
 
   const load = useCallback(async (q: string, siteFilter: KbSiteFilter) => {
     const { isCurrentRequest } = beginLatestRequest(requestSeqRef);
-    await hydrateRaqatApiBaseOverride();
-    if (!isCurrentRequest()) return;
-    const base = getRaqatApiBase();
-    const term = q.trim();
     setLoading(true);
     setError(null);
     try {
-      if (term.length >= 2) {
-        if (!base) {
-          setError(kk.aiChat.kbDisabledNoApi);
-          setItems([]);
-          return;
-        }
-        const bearer = ((await getValidAccessToken()) ?? "").trim();
-        const res = await fetchPlatformIslamicKbSearch(base, term, {
-          authorizationBearer: bearer || undefined,
-          aiSecret: getRaqatContentReadSecret(),
-          limit: BROWSE_LIMIT,
-          site: siteFilter || undefined,
-          timeoutMs: 12_000,
-        });
-        if (!isCurrentRequest()) return;
-        if (!res.ok) {
-          setError(kk.aiChat.kbSearchError);
-          setItems([]);
-          return;
-        }
-        setItems(res.results ?? []);
-        return;
-      }
-
-      if (siteFilter && base) {
-        const bearer = ((await getValidAccessToken()) ?? "").trim();
-        const res = await fetchPlatformIslamicKbBrowse(base, {
-          authorizationBearer: bearer || undefined,
-          aiSecret: getRaqatContentReadSecret(),
-          limit: BROWSE_LIMIT,
-          site: siteFilter,
-          timeoutMs: 12_000,
-        });
-        if (!isCurrentRequest()) return;
-        if (res.ok && (res.results?.length ?? 0) > 0) {
-          setItems(res.results ?? []);
-          return;
-        }
-      }
-
-      const news = await loadOfficialHomeNewsItems();
+      const res = await loadKbArticlesFeed({ query: q, site: siteFilter });
       if (!isCurrentRequest()) return;
-      const mapped = news.map(dashboardNewsToArticle);
-      setItems(filterBySite(mapped, siteFilter));
+      setItems(res.items);
+      setFeedSource(res.source);
+      setCacheAgeMs(res.cacheSnapshot?.ageMs ?? null);
+      if (res.error === "no_api" && res.items.length === 0) {
+        setError(kk.knowledgePortal.errorNoApi);
+      } else if (res.error === "network" && res.items.length === 0) {
+        setError(kk.knowledgePortal.errorNetwork);
+      } else if (res.error === "api" && res.items.length === 0) {
+        setError(kk.knowledgePortal.errorSearch);
+      } else {
+        setError(null);
+      }
     } catch {
       if (!isCurrentRequest()) return;
-      setError(kk.aiChat.kbSearchError);
+      setError(kk.knowledgePortal.errorNetwork);
       setItems([]);
     } finally {
       if (isCurrentRequest()) setLoading(false);
@@ -198,67 +99,23 @@ export function OfficialKnowledgePortalScreen() {
     };
   }, [query, site, load]);
 
-  const onAskAbout = useCallback(
+  const openDetail = useCallback(
     (article: PlatformIslamicKbArticle) => {
-      navigation.navigate("ImamAI", {
-        initialPrompt: buildArticleAskPrompt(article),
-        autoSend: true,
-      });
+      navigation.navigate("KbArticleDetail", { article });
     },
     [navigation]
   );
 
   const renderItem: ListRenderItem<PlatformIslamicKbArticle> = useCallback(
-    ({ item }) => {
-      const imageUrl = (item.image_url ?? "").trim();
-      return (
-        <View style={styles.card}>
-          {imageUrl ? (
-            <RasterImage source={{ uri: imageUrl }} style={styles.cardImage} resizeMode="cover" />
-          ) : null}
-          <View style={styles.cardBody}>
-            <Text style={styles.sourceChip}>{item.source_label || siteLabel(item.site)}</Text>
-            <Text style={styles.cardTitle} accessibilityRole="header">
-              {item.title || kk.knowledgePortal.untitled}
-            </Text>
-            {item.excerpt ? (
-              <Text style={styles.excerpt} numberOfLines={4}>
-                {item.excerpt}
-              </Text>
-            ) : null}
-            <Text style={styles.attribution}>{kk.aiChat.kbSearchAttribution}</Text>
-            <View style={styles.cardActions}>
-              {item.url ? (
-                <Pressable
-                  style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
-                  onPress={() =>
-                    setEmbeddedArticle({
-                      title: item.title || kk.knowledgePortal.untitled,
-                      url: item.url,
-                    })
-                  }
-                  accessibilityRole="link"
-                  accessibilityLabel={kk.aiChat.kbSearchReadFullA11y(item.title)}
-                >
-                  <MaterialIcons name="open-in-new" size={16} color={colors.accent} />
-                  <Text style={styles.actionBtnTxt}>{kk.aiChat.kbSearchReadFull}</Text>
-                </Pressable>
-              ) : null}
-              <Pressable
-                style={({ pressed }) => [styles.actionBtnPrimary, pressed && { opacity: 0.9 }]}
-                onPress={() => onAskAbout(item)}
-                accessibilityRole="button"
-                accessibilityLabel={kk.aiChat.kbShelfAskA11y(item.title)}
-              >
-                <MaterialIcons name="smart-toy" size={16} color="#fff" />
-                <Text style={styles.actionBtnPrimaryTxt}>{kk.aiChat.kbShelfAsk}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      );
-    },
-    [colors.accent, onAskAbout, styles]
+    ({ item }) => (
+      <KbArticleCard
+        item={item}
+        colors={colors}
+        onPress={() => openDetail(item)}
+        onOpenSite={item.url ? () => openOfficialSiteExternally(item.url) : undefined}
+      />
+    ),
+    [colors, openDetail]
   );
 
   const listHeader = useMemo(
@@ -266,8 +123,8 @@ export function OfficialKnowledgePortalScreen() {
       <View style={styles.headerBlock}>
         <HubScreenHero
           variant="ai"
-          title={kk.knowledgePortal.title}
-          lead={kk.knowledgePortal.lead}
+          title={kk.knowledgePortal.bilimTitle}
+          lead={kk.knowledgePortal.bilimLead}
           image={menuIconAssets.promoAi}
           colors={colors}
           isDark={isDark}
@@ -275,10 +132,11 @@ export function OfficialKnowledgePortalScreen() {
           eyebrowUppercase={false}
           tags={[FATUA_KZ_LABEL_KK, MUFTYAT_KZ_LABEL_KK, kk.knowledgePortal.qmdbTag]}
         />
+        <KbContentSourceBanner colors={colors} source={feedSource} cacheAgeMs={cacheAgeMs} />
         <View style={styles.partnerRow}>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => setEmbeddedArticle({ title: FATUA_KZ_LABEL_KK, url: FATUA_KK_URL })}
+            onPress={() => openOfficialSiteExternally(FATUA_KK_HOME_URL)}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openFatuaA11y}
           >
@@ -287,7 +145,7 @@ export function OfficialKnowledgePortalScreen() {
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => setEmbeddedArticle({ title: MUFTYAT_KZ_LABEL_KK, url: MUFTYAT_KK_URL })}
+            onPress={() => openOfficialSiteExternally(MUFTYAT_KK_HOME_URL)}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openMuftyatA11y}
           >
@@ -301,48 +159,37 @@ export function OfficialKnowledgePortalScreen() {
           value={site}
           onChange={(v) => setSite(v as KbSiteFilter)}
           colors={colors}
-          accessibilityGroupLabel={kk.aiChat.kbShelfChipsA11y}
+          accessibilityGroupLabel={kk.knowledgePortal.chipsA11y}
         />
         <View style={styles.searchRow}>
           <TextInput
             style={styles.input}
-            placeholder={kk.aiChat.kbSearchPlaceholder}
+            placeholder={kk.knowledgePortal.searchPlaceholder}
             placeholderTextColor={colors.muted}
             value={query}
             onChangeText={setQuery}
             returnKeyType="search"
-            accessibilityLabel={kk.aiChat.kbSearchPlaceholder}
+            accessibilityLabel={kk.knowledgePortal.searchPlaceholder}
           />
           {loading ? <RaqatOrnamentSpinner size={22} /> : null}
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
       </View>
     ),
-    [chips, colors, error, isDark, loading, query, site, styles]
+    [cacheAgeMs, chips, colors, error, feedSource, isDark, loading, query, site, styles]
   );
 
   return (
-    <>
-      <FlatList
-        testID="screen-main-articles"
-        data={items}
-        keyExtractor={(item) => `${item.document_id}-${item.url}`}
-        renderItem={renderItem}
-        ListHeaderComponent={listHeader}
-        contentContainerStyle={listContentStyle}
-        keyboardShouldPersistTaps="handled"
-        ListEmptyComponent={
-          !loading ? <Text style={styles.empty}>{kk.knowledgePortal.feedEmpty}</Text> : null
-        }
-      />
-      <EmbeddedSiteSheet
-        visible={Boolean(embeddedArticle)}
-        url={embeddedArticle?.url ?? ""}
-        title={embeddedArticle?.title ?? kk.knowledgePortal.title}
-        colors={colors}
-        onClose={() => setEmbeddedArticle(null)}
-      />
-    </>
+    <FlatList
+      testID="screen-main-articles"
+      data={items}
+      keyExtractor={(item) => `${item.document_id}-${item.url}`}
+      renderItem={renderItem}
+      ListHeaderComponent={listHeader}
+      contentContainerStyle={listContentStyle}
+      keyboardShouldPersistTaps="handled"
+      ListEmptyComponent={!loading ? <Text style={styles.empty}>{kk.knowledgePortal.feedEmpty}</Text> : null}
+    />
   );
 }
 
@@ -350,7 +197,7 @@ function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     listContent: { paddingBottom: 0 },
     headerBlock: { paddingTop: 8, paddingBottom: 6 },
-    partnerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10, marginBottom: 10 },
+    partnerRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4, marginBottom: 10 },
     partnerBtn: {
       flexDirection: "row",
       alignItems: "center",
@@ -390,45 +237,6 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.card,
     },
     error: { color: colors.error, fontSize: 13, marginBottom: 8 },
-    card: {
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      marginBottom: 12,
-      overflow: "hidden",
-    },
-    cardImage: { width: "100%", height: 140, backgroundColor: colors.border },
-    cardBody: { padding: 12 },
-    sourceChip: {
-      alignSelf: "flex-start",
-      fontSize: 11,
-      fontWeight: "800",
-      color: colors.accent,
-      marginBottom: 6,
-    },
-    cardTitle: {
-      fontSize: 16,
-      fontWeight: "800",
-      color: colors.text,
-      lineHeight: 21,
-      marginBottom: 6,
-    },
-    excerpt: { fontSize: 14, lineHeight: 20, color: colors.text, marginBottom: 8 },
-    attribution: { fontSize: 11, color: colors.muted, marginBottom: 10 },
-    cardActions: { flexDirection: "row", flexWrap: "wrap", gap: 12, alignItems: "center" },
-    actionBtn: { flexDirection: "row", alignItems: "center", gap: 6 },
-    actionBtnTxt: { fontSize: 14, fontWeight: "700", color: colors.accent },
-    actionBtnPrimary: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
-      borderRadius: 20,
-      backgroundColor: colors.accent,
-    },
-    actionBtnPrimaryTxt: { fontSize: 13, fontWeight: "800", color: "#fff" },
     empty: {
       textAlign: "center",
       color: colors.muted,

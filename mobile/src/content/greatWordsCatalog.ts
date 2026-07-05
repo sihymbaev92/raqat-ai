@@ -1,4 +1,4 @@
-import catalogJson from "../../assets/bundled/great-words-catalog.json";
+import { tryLoadBundledJson } from "../utils/loadBundledJson";
 
 export type GreatWordsAuthor = {
   id: string;
@@ -35,7 +35,25 @@ export type GreatWordsCatalog = {
   entries: GreatWordsEntry[];
 };
 
-const catalog = catalogJson as GreatWordsCatalog;
+const EMPTY_CATALOG: GreatWordsCatalog = { version: 0, authors: [], entries: [] };
+
+let catalogCache: GreatWordsCatalog = EMPTY_CATALOG;
+let loadPromise: Promise<GreatWordsCatalog | null> | null = null;
+
+export async function ensureGreatWordsCatalogLoaded(): Promise<GreatWordsCatalog | null> {
+  if (catalogCache.entries.length) return catalogCache;
+  if (!loadPromise) {
+    loadPromise = tryLoadBundledJson<GreatWordsCatalog>("great-words-catalog.json")
+      .then((data) => {
+        if (data?.entries?.length) catalogCache = data;
+        return catalogCache.entries.length ? catalogCache : null;
+      })
+      .finally(() => {
+        loadPromise = null;
+      });
+  }
+  return loadPromise;
+}
 
 const MERGED_TOPIC_ID_PREFIX = "merged-topic:";
 const MERGED_AUTHOR_TOPIC_ID_PREFIX = "merged-author-topic:";
@@ -122,19 +140,19 @@ function buildMergedTopics(entries: GreatWordsEntry[]): GreatWordsMergedTopic[] 
 }
 
 export function getGreatWordsCatalog(): GreatWordsCatalog {
-  return catalog;
+  return catalogCache;
 }
 
 export function getGreatWordsAuthors(): GreatWordsAuthor[] {
-  return catalog.authors;
+  return catalogCache.authors;
 }
 
 export function getAuthorById(id: string): GreatWordsAuthor | undefined {
-  return catalog.authors.find((a) => a.id === id);
+  return catalogCache.authors.find((a) => a.id === id);
 }
 
 export function getEntriesByAuthorId(authorId: string): GreatWordsEntry[] {
-  const list = catalog.entries.filter((e) => e.authorId === authorId);
+  const list = catalogCache.entries.filter((e) => e.authorId === authorId);
   if (authorId === "abai") {
     return [...list].sort(
       (a, b) => (a.karaSozNumber ?? 0) - (b.karaSozNumber ?? 0) || a.title.localeCompare(b.title, "kk")
@@ -171,17 +189,17 @@ export function getEntryById(id: string): GreatWordsEntry | undefined {
     const topic = getMergedGreatWordsTopics().find((item) => item.key === key);
     return topic ? buildMergedEntry(topic) : undefined;
   }
-  return catalog.entries.find((e) => e.id === id);
+  return catalogCache.entries.find((e) => e.id === id);
 }
 
 export function getMergedGreatWordsTopics(limit = 14): GreatWordsMergedTopic[] {
-  return buildMergedTopics(catalog.entries).slice(0, limit);
+  return buildMergedTopics(catalogCache.entries).slice(0, limit);
 }
 
 export function searchMergedGreatWordsTopics(query: string, limit = 16): GreatWordsMergedTopic[] {
   const q = query.trim().toLowerCase();
   if (!q) return getMergedGreatWordsTopics(limit);
-  return buildMergedTopics(catalog.entries)
+  return buildMergedTopics(catalogCache.entries)
     .filter((topic) => {
       const blob = [
         topic.title,
@@ -198,7 +216,7 @@ export function searchMergedGreatWordsTopics(query: string, limit = 16): GreatWo
 export function getReflectiveGreatWordsEntries(limit = 8): GreatWordsEntry[] {
   const chosen: GreatWordsEntry[] = [];
   const seenAuthors = new Set<string>();
-  const candidates = [...catalog.entries]
+  const candidates = [...catalogCache.entries]
     .filter((entry) => entry.body.trim().length >= 480)
     .sort((a, b) => {
       const aScore = (a.karaSozNumber ? 400 : 0) + Math.min(a.body.length, 2400);
@@ -216,8 +234,8 @@ export function getReflectiveGreatWordsEntries(limit = 8): GreatWordsEntry[] {
 
 export function searchGreatWordsEntries(query: string): GreatWordsEntry[] {
   const q = query.trim().toLowerCase();
-  if (!q) return catalog.entries;
-  return catalog.entries.filter((e) => {
+  if (!q) return catalogCache.entries;
+  return catalogCache.entries.filter((e) => {
     const author = getAuthorById(e.authorId);
     const blob = [e.title, e.body, author?.name ?? "", author?.bio ?? ""].join(" ").toLowerCase();
     return blob.includes(q);
@@ -225,14 +243,14 @@ export function searchGreatWordsEntries(query: string): GreatWordsEntry[] {
 }
 
 export function countEntriesForAuthor(authorId: string): number {
-  return catalog.entries.filter((e) => e.authorId === authorId).length;
+  return catalogCache.entries.filter((e) => e.authorId === authorId).length;
 }
 
 export function getGreatWordsStats(): { authors: number; entries: number; mergedTopics: number; reflectiveEntries: number } {
   return {
-    authors: catalog.authors.length,
-    entries: catalog.entries.length,
-    mergedTopics: buildMergedTopics(catalog.entries).length,
+    authors: catalogCache.authors.length,
+    entries: catalogCache.entries.length,
+    mergedTopics: buildMergedTopics(catalogCache.entries).length,
     reflectiveEntries: getReflectiveGreatWordsEntries(999).length,
   };
 }

@@ -1,5 +1,4 @@
-# Lists Python processes: uvicorn and bot_main.py (conflict hints).
-# "Duplicate" system copies often omit .venv in path; repo venv is ...\.venv\Scripts\python.exe
+# Lists Python uvicorn processes (conflict hints for :8787).
 # Usage from repo root:
 #   powershell -ExecutionPolicy Bypass -File .\scripts\diagnostics_raqat_processes.ps1
 $ErrorActionPreference = "Continue"
@@ -12,7 +11,6 @@ Write-Host "== RAQAT Python processes =="
 
 $allPy = @(Get-PythonCmdlines)
 $uv = @($allPy | Where-Object { $_.CommandLine -like "*uvicorn*" })
-$bot = @($allPy | Where-Object { $_.CommandLine -like "*bot_main.py*" })
 
 function Count-TopLevelProcesses {
     param(
@@ -24,7 +22,7 @@ function Count-TopLevelProcesses {
     $n = 0
     foreach ($p in $procs) {
         $ppid = [uint32]$p.ParentProcessId
-        if ($byId.ContainsKey($ppid)) { continue } # child of another listed python
+        if ($byId.ContainsKey($ppid)) { continue }
         $n++
     }
     return $n
@@ -42,21 +40,6 @@ if ($uv.Count -eq 0) {
     }
     if ($uvTop -gt 1) {
         Write-Warning "Multiple independent uvicorn starters detected. Only one should bind :8787. Stop extras, then re-run restart_raqat_stack.ps1"
-    }
-}
-
-if ($bot.Count -eq 0) {
-    Write-Host "bot_main.py: none"
-} else {
-    $botTop = Count-TopLevelProcesses -procs $bot
-    Write-Host "bot_main.py: $botTop top-level, $($bot.Count) total (child python.exe is often normal on Windows)"
-    foreach ($p in $bot) {
-        $c = $p.CommandLine
-        if ($c.Length -gt 120) { $c = $c.Substring(0, 120) + "..." }
-        Write-Host "  PID $($p.ProcessId) (parent $($p.ParentProcessId)) : $c"
-    }
-    if ($botTop -gt 1) {
-        Write-Warning "Multiple independent bot starters detected. One BOT_TOKEN => one poller. Stop the extra bot (VPS/second shell)."
     }
 }
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState, useCallback } from "react";
+﻿import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { Platform, ScrollView, View, Text } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
@@ -39,6 +39,8 @@ import {
   mushafOnePageFitScale,
   shouldForceMushafOnePageFit,
 } from "../../quran/mushafBookFitPolicy";
+import { useMushafPageAutoFitScale } from "../../quran/mushafPageAutoFit";
+import { MushafBookPageFitBox } from "./MushafBookPageFitBox";
 
 const MUSHAF_BOOK_PHONE_TEXT_SAFE_INSET = 10;
 
@@ -102,13 +104,9 @@ type Props = {
   onToggleAudio: (ref: MushafAyahRef, item: CachedAyah) => void;
 };
 
-/** Hafs 604: backend — text-hafs | svg | webp | qcf4 (native хатым: әрқашан text-hafs). */
+/** Hafs 604: backend — text-hafs | svg | webp | qcf4 (native/web бір маршрут). */
 export function MushafBookPageScroll(props: Props) {
   if (props.arabicScriptEdition !== "madinah") {
-    return <MushafBookPageTextHafs {...props} />;
-  }
-
-  if (Platform.OS !== "web") {
     return <MushafBookPageTextHafs {...props} />;
   }
 
@@ -306,169 +304,247 @@ function MushafBookPageTextHafs({
       ? pageWidth
       : Math.max(252, pageWidth - 36)
     : undefined;
-  const forceCompactBookPage = shouldForceMushafOnePageFit({ arabicScriptEdition, readingThemeId });
+  const hatimOnePageFit = shouldForceMushafOnePageFit({
+    arabicScriptEdition,
+    readingThemeId,
+    showReaderTranslit,
+    showReaderMeaning,
+  });
+  const pageGlyphCount = pageArabicGlyphCount(page, arabicScriptEdition);
+  const sparsePage = hatimOnePageFit && pageGlyphCount < 220;
   const {
     showReaderTranslit: effectiveShowReaderTranslit,
     showReaderMeaning: effectiveShowReaderMeaning,
-  } = forcedMushafReaderLayers(forceCompactBookPage, showReaderTranslit, showReaderMeaning);
-  const compactBookPage = forceCompactBookPage && showReaderArabic;
-  const fitScale = compactBookPage
-    ? mushafOnePageFitScale(pageArabicGlyphCount(page, arabicScriptEdition), pageHeight, "book")
+  } = forcedMushafReaderLayers(hatimOnePageFit, showReaderTranslit, showReaderMeaning);
+  const compactBookPage = hatimOnePageFit && showReaderArabic && !sparsePage;
+  const headerGlyphReserve =
+    compactBookPage && minimalChrome
+      ? (segments.some((s) => (s.ayahs[0]?.numberInSurah ?? 1) === 1) ? 90 : 0) +
+        (segments.some((s) => shouldShowBismillah(s.surah, s.ayahs[0]?.numberInSurah ?? 1)) ? 38 : 0)
+      : 0;
+  const fitScaleInitial = compactBookPage
+    ? mushafOnePageFitScale(pageGlyphCount + headerGlyphReserve, pageHeight, "book")
     : 1;
+  const baseMushafFontSize =
+    typeof st.mushafAyahTxt.fontSize === "number" ? st.mushafAyahTxt.fontSize : 22;
+  const chromeReserve = minimalChrome ? 32 : 0;
+  const headerBlockReserve =
+    minimalChrome && sparsePage
+      ? (segments.some((s) => (s.ayahs[0]?.numberInSurah ?? 1) === 1) ? 92 : 0) +
+        (segments.some((s) => shouldShowBismillah(s.surah, s.ayahs[0]?.numberInSurah ?? 1)) ? 40 : 0)
+      : compactBookPage
+        ? headerGlyphReserve
+        : 0;
+  const arabicAreaHeight =
+    hatimOnePageFit && fitToViewport
+      ? Math.max(120, pageHeight - chromeReserve - headerBlockReserve)
+      : undefined;
+  const {
+    scale: autoFitScale,
+    atMinScale: autoFitAtMinScale,
+    onContentLayout: onAutoFitLayout,
+  } = useMushafPageAutoFitScale(page.key, fitScaleInitial, arabicAreaHeight ?? 0, baseMushafFontSize);
+  const [fitContentOverflow, setFitContentOverflow] = useState(false);
+  useEffect(() => {
+    setFitContentOverflow(false);
+  }, [page.key]);
+  const effectiveFitScale = compactBookPage ? autoFitScale : 1;
+  const onArabicBlockLayout = useCallback(
+    (contentHeight: number) => {
+      if (arabicAreaHeight && arabicAreaHeight > 0) {
+        setFitContentOverflow(contentHeight > arabicAreaHeight + 2);
+      }
+      onAutoFitLayout(contentHeight);
+    },
+    [onAutoFitLayout, arabicAreaHeight]
+  );
   const chromeSurah = page.ayahs[0]?.surahNumber ?? 1;
   const chromeAyah = page.ayahs[0]?.numberInSurah ?? 1;
+
+  const renderSegment = (seg: { surah: number; ayahs: MushafBookAyah[] }, keySuffix = "") => {
+    const firstAyah = seg.ayahs[0]?.numberInSurah ?? 1;
+    const showHeader = minimalChrome && firstAyah === 1;
+    const showBism = shouldShowBismillah(seg.surah, firstAyah);
+    const titleAr = surahArabicBannerTitle(seg.surah);
+    const titleKk = surahDisplayTitle(seg.surah, "");
+    const playingAyah = playingRef?.surah === seg.surah ? playingRef.ayah : null;
+    const loadingAyah = loadingAyahAudio?.surah === seg.surah ? loadingAyahAudio.ayah : null;
+    const resumeAyah = resumeHighlight?.surah === seg.surah ? resumeHighlight.ayah : null;
+    return (
+      <View
+        key={`${page.key}-s${seg.surah}${keySuffix}`}
+        style={minimalChrome ? { width: "100%", alignSelf: "stretch" } : undefined}
+      >
+        {showHeader ? (
+          <MushafSurahHeader
+            colors={colors}
+            mushafLayout
+            bookPageLayout={!minimalChrome}
+            qcomBookLayout={minimalChrome}
+            surahArabicTitleLine={titleAr}
+            showMushafBismillahBanner={showBism}
+            styles={st}
+          />
+        ) : showBism && !showHeader ? (
+          <MushafSurahHeader
+            colors={colors}
+            mushafLayout
+            bookPageLayout={!minimalChrome}
+            qcomBookLayout={minimalChrome}
+            surahArabicTitleLine={null}
+            showMushafBismillahBanner
+            styles={st}
+          />
+        ) : null}
+        <View style={minimalChrome ? { width: "100%", alignSelf: "stretch" } : undefined}>
+          <MushafContinuousArabicBlock
+            ayahs={seg.ayahs}
+            surahNumber={seg.surah}
+            arabicScriptEdition={arabicScriptEdition}
+            showReaderArabic={showReaderArabic}
+            showTajweedColors={showTajweedColors}
+            isDark={isDark}
+            readingThemeId={readingThemeId}
+            playingAyahInSurah={playingAyah}
+            ayahAudioIsPlaying={ayahAudioIsPlaying}
+            loadingAyahAudio={loadingAyah}
+            resumeHighlightAyah={resumeAyah}
+            ayahMarkers={ayahMarkers}
+            mushafAyahTxt={st.mushafAyahTxt}
+            bookFitScale={effectiveFitScale}
+            compactBookPage={compactBookPage}
+            contentWidth={pageTextWidth ?? pageWidth}
+            toEasternArabicIndic={toEasternArabicIndic}
+            scrollViewRef={vScrollRef}
+            scrollContentRef={contentRef}
+            onPressArabic={(ayahInSurah) => {
+              const stub = seg.ayahs.find((a) => a.numberInSurah === ayahInSurah);
+              if (stub) {
+                onPressAyah({ surah: seg.surah, ayah: ayahInSurah }, resolveMushafBookAyah(stub));
+              }
+            }}
+            onLongPressAyah={(item) =>
+              onLongPressAyah(
+                { surah: seg.surah, ayah: item.numberInSurah },
+                resolveMushafBookAyah(item as MushafBookAyah)
+              )
+            }
+          />
+        </View>
+        {effectiveShowReaderMeaning || effectiveShowReaderTranslit || playingRef || loadingAyahAudio
+          ? seg.ayahs.map((a) => {
+              const resolved = resolveMushafBookAyah(a);
+              const isLoad =
+                loadingAyahAudio?.surah === seg.surah && loadingAyahAudio.ayah === a.numberInSurah;
+              const hasLoaded = playingRef?.surah === seg.surah && playingRef.ayah === a.numberInSurah;
+              const isPlayingNow = hasLoaded && ayahAudioIsPlaying;
+              const isAudioFocus = hasLoaded || isLoad;
+              if (!effectiveShowReaderMeaning && !effectiveShowReaderTranslit && !isAudioFocus) return null;
+              return (
+                <View key={`${seg.surah}-${a.numberInSurah}-sec`} style={st.mushafSecondaryAyahBlock}>
+                  <Text style={st.mushafSecondaryAyahRibbon}>
+                    {titleKk} · {a.numberInSurah}
+                  </Text>
+                  {effectiveShowReaderTranslit && resolved.translit ? (
+                    <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
+                  ) : null}
+                  {effectiveShowReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
+                    <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
+                  ) : null}
+                  {isAudioFocus ? (
+                    <Pressable
+                      oyuBackdrop={false}
+                      onPress={() => onToggleAudio({ surah: seg.surah, ayah: a.numberInSurah }, resolved)}
+                      disabled={isLoad}
+                      accessibilityRole="button"
+                      accessibilityState={{ busy: isLoad }}
+                      accessibilityLabel={
+                        isLoad
+                          ? kk.quran.ayahPlaySudaisA11y(a.numberInSurah)
+                          : isPlayingNow
+                            ? kk.quran.ayahPauseSudaisA11y(a.numberInSurah)
+                            : kk.quran.ayahResumeSudaisA11y(a.numberInSurah)
+                      }
+                      style={({ pressed }) => [st.mushafInlineAudioControl, pressed && { opacity: 0.82 }]}
+                    >
+                      {isLoad ? null : (
+                        <MaterialIcons
+                          name={isPlayingNow ? "pause" : "play-arrow"}
+                          size={18}
+                          color={colors.accent}
+                        />
+                      )}
+                      <Text style={st.mushafInlineAudioText}>
+                        {isLoad
+                          ? kk.quran.ayahAudioLoadingAction
+                          : isPlayingNow
+                            ? kk.quran.ayahAudioPauseAction
+                            : kk.quran.ayahAudioResumeAction}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              );
+            })
+          : null}
+      </View>
+    );
+  };
+
   const pageBody = (
     <View
       ref={contentRef}
       style={
         fitToViewport
-          ? { width: pageTextWidth, alignSelf: "center", overflow: "visible" }
+          ? {
+              width: pageTextWidth,
+              alignSelf: "center",
+              overflow: "visible",
+              ...(hatimOnePageFit
+                ? { height: pageHeight, flexDirection: "column" as const }
+                : {}),
+            }
           : undefined
       }
     >
-        {minimalChrome ? (
-          <MushafBookPageChrome
-            primarySurah={chromeSurah}
-            primaryAyah={chromeAyah}
-            mushafPageNumber={page.mushafPageNumber}
-            styles={st}
-          />
-        ) : null}
-        {segments.map((seg) => {
-          const firstAyah = seg.ayahs[0]?.numberInSurah ?? 1;
-          const showHeader = minimalChrome && firstAyah === 1;
-          const showBism = shouldShowBismillah(seg.surah, firstAyah);
-          const titleAr = surahArabicBannerTitle(seg.surah);
-          const titleKk = surahDisplayTitle(seg.surah, "");
-          const playingAyah =
-            playingRef?.surah === seg.surah ? playingRef.ayah : null;
-          const loadingAyah =
-            loadingAyahAudio?.surah === seg.surah ? loadingAyahAudio.ayah : null;
-          const resumeAyah =
-            resumeHighlight?.surah === seg.surah ? resumeHighlight.ayah : null;
-          return (
+      {minimalChrome ? (
+        <MushafBookPageChrome
+          primarySurah={chromeSurah}
+          primaryAyah={chromeAyah}
+          mushafPageNumber={page.mushafPageNumber}
+          styles={st}
+        />
+      ) : null}
+      {compactBookPage && fitToViewport && arabicAreaHeight ? (
+        <View style={{ flex: 1, width: "100%", minHeight: arabicAreaHeight, overflow: "visible" }}>
+          <MushafBookPageFitBox
+            pageWidth={pageTextWidth ?? pageWidth}
+            pageHeight={arabicAreaHeight}
+            lockOnePage
+            allowOverflowScroll={fitContentOverflow && autoFitAtMinScale}
+          >
             <View
-              key={`${page.key}-s${seg.surah}`}
-              style={minimalChrome ? { width: "100%", alignSelf: "stretch" } : undefined}
+              style={{ width: "100%", alignSelf: "stretch", overflow: "visible" }}
+              onLayout={(e) => onArabicBlockLayout(e.nativeEvent.layout.height)}
             >
-              {showHeader ? (
-                <MushafSurahHeader
-                  colors={colors}
-                  mushafLayout
-                  bookPageLayout={!minimalChrome}
-                  qcomBookLayout={minimalChrome}
-                  surahArabicTitleLine={titleAr}
-                  showMushafBismillahBanner={showBism}
-                  styles={st}
-                />
-              ) : showBism && !showHeader ? (
-                <MushafSurahHeader
-                  colors={colors}
-                  mushafLayout
-                  bookPageLayout={!minimalChrome}
-                  qcomBookLayout={minimalChrome}
-                  surahArabicTitleLine={null}
-                  showMushafBismillahBanner
-                  styles={st}
-                />
-              ) : null}
-              <View style={minimalChrome ? { width: "100%", alignSelf: "stretch" } : undefined}>
-              <MushafContinuousArabicBlock
-                ayahs={seg.ayahs}
-                surahNumber={seg.surah}
-                arabicScriptEdition={arabicScriptEdition}
-                showReaderArabic={showReaderArabic}
-                showTajweedColors={showTajweedColors}
-                isDark={isDark}
-                readingThemeId={readingThemeId}
-                playingAyahInSurah={playingAyah}
-                ayahAudioIsPlaying={ayahAudioIsPlaying}
-                loadingAyahAudio={loadingAyah}
-                resumeHighlightAyah={resumeAyah}
-                ayahMarkers={ayahMarkers}
-                mushafAyahTxt={st.mushafAyahTxt}
-                bookFitScale={fitScale}
-                compactBookPage={compactBookPage}
-                toEasternArabicIndic={toEasternArabicIndic}
-                scrollViewRef={vScrollRef}
-                scrollContentRef={contentRef}
-                onPressArabic={(ayahInSurah) => {
-                  const stub = seg.ayahs.find((a) => a.numberInSurah === ayahInSurah);
-                  if (stub) {
-                    onPressAyah(
-                      { surah: seg.surah, ayah: ayahInSurah },
-                      resolveMushafBookAyah(stub)
-                    );
-                  }
-                }}
-                onLongPressAyah={(item) =>
-                  onLongPressAyah(
-                    { surah: seg.surah, ayah: item.numberInSurah },
-                    resolveMushafBookAyah(item as MushafBookAyah)
-                  )
-                }
-              />
-              </View>
-              {effectiveShowReaderMeaning || effectiveShowReaderTranslit || playingRef || loadingAyahAudio
-                ? seg.ayahs.map((a) => (
-                    (() => {
-                      const resolved = resolveMushafBookAyah(a);
-                      const isLoad = loadingAyahAudio?.surah === seg.surah && loadingAyahAudio.ayah === a.numberInSurah;
-                      const hasLoaded = playingRef?.surah === seg.surah && playingRef.ayah === a.numberInSurah;
-                      const isPlayingNow = hasLoaded && ayahAudioIsPlaying;
-                      const isAudioFocus = hasLoaded || isLoad;
-                      if (!effectiveShowReaderMeaning && !effectiveShowReaderTranslit && !isAudioFocus) return null;
-                      return (
-                        <View key={`${seg.surah}-${a.numberInSurah}-sec`} style={st.mushafSecondaryAyahBlock}>
-                          <Text style={st.mushafSecondaryAyahRibbon}>
-                            {titleKk} · {a.numberInSurah}
-                          </Text>
-                          {effectiveShowReaderTranslit && resolved.translit ? (
-                            <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
-                          ) : null}
-                          {effectiveShowReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
-                            <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
-                          ) : null}
-                          {isAudioFocus ? (
-                            <Pressable
-                              oyuBackdrop={false}
-                              onPress={() => onToggleAudio({ surah: seg.surah, ayah: a.numberInSurah }, resolved)}
-                              disabled={isLoad}
-                              accessibilityRole="button"
-                              accessibilityState={{ busy: isLoad }}
-                              accessibilityLabel={
-                                isLoad
-                                  ? kk.quran.ayahPlaySudaisA11y(a.numberInSurah)
-                                  : isPlayingNow
-                                    ? kk.quran.ayahPauseSudaisA11y(a.numberInSurah)
-                                    : kk.quran.ayahResumeSudaisA11y(a.numberInSurah)
-                              }
-                              style={({ pressed }) => [st.mushafInlineAudioControl, pressed && { opacity: 0.82 }]}
-                            >
-                              {isLoad ? null : (
-                                <MaterialIcons
-                                  name={isPlayingNow ? "pause" : "play-arrow"}
-                                  size={18}
-                                  color={colors.accent}
-                                />
-                              )}
-                              <Text style={st.mushafInlineAudioText}>
-                                {isLoad
-                                  ? kk.quran.ayahAudioLoadingAction
-                                  : isPlayingNow
-                                    ? kk.quran.ayahAudioPauseAction
-                                    : kk.quran.ayahAudioResumeAction}
-                              </Text>
-                            </Pressable>
-                          ) : null}
-                        </View>
-                      );
-                    })()
-                  ))
-                : null}
+              {segments.map((seg) => renderSegment(seg, "-fit"))}
             </View>
-          );
-        })}
+          </MushafBookPageFitBox>
+        </View>
+      ) : sparsePage && fitToViewport ? (
+        <View
+          style={{
+            flex: 1,
+            width: "100%",
+            justifyContent: "flex-start",
+            overflow: "visible",
+          }}
+        >
+          {segments.map((seg) => renderSegment(seg, "-sparse"))}
+        </View>
+      ) : (
+        segments.map((seg) => renderSegment(seg))
+      )}
     </View>
   );
 
@@ -518,13 +594,14 @@ function MushafBookPageTextHafs({
       <ScrollView
         ref={vScrollRef}
         style={{ flex: 1, width: pagerWidth }}
+        scrollEnabled={!hatimOnePageFit}
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
           paddingTop: minimalChrome ? MUSHAF_BOOK_PAGE_EDGE_INSET : 10,
           paddingBottom,
         }}
-        showsVerticalScrollIndicator
+        showsVerticalScrollIndicator={!hatimOnePageFit}
       >
         {fallbackNotice ? (
           <Text
@@ -545,7 +622,9 @@ function MushafBookPageTextHafs({
             {fallbackNotice}
           </Text>
         ) : null}
-        <View style={{ width: pageWidth, minHeight: minimalChrome ? undefined : pageHeight }}>{pageBody}</View>
+        <View style={{ width: pageWidth, height: hatimOnePageFit ? pageHeight : undefined, minHeight: minimalChrome ? undefined : pageHeight }}>
+          {pageBody}
+        </View>
       </ScrollView>
     </View>
   );

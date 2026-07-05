@@ -4,12 +4,13 @@ import { resolveQuranReadingTheme, type QuranReadingThemeId } from "../theme/qur
 import type { MushafTypographyMetrics } from "./mushafTypography";
 import { QURAN_BOOK_FONT_FACE } from "../fonts/quranBookFonts";
 import { quranArabicNoClipTextStyle } from "./quranArabicNoClipTextStyle";
+import { QURAN_AYAH_LINE_HEIGHT_FACTOR, QURAN_SCREEN_HORIZONTAL_PADDING } from "./quranResponsiveLayout";
 
 const QCOM_SURAH_TITLE_FONT = Platform.select({
   web: {
-    fontFamily: `"${QURAN_BOOK_FONT_FACE.scheherazade}", "Scheherazade New", serif`,
+    fontFamily: `"${QURAN_BOOK_FONT_FACE.uthmanic}", "Lateef", "Scheherazade New", serif`,
   },
-  default: { fontFamily: QURAN_BOOK_FONT_FACE.scheherazade },
+  default: { fontFamily: QURAN_BOOK_FONT_FACE.uthmanic },
 });
 
 /** Quran.com: Al-Baqarah, Part 1 — латын serif. */
@@ -41,9 +42,11 @@ export function makeMushafBookPageStyles(
     mushafBismLh,
   } = metrics;
   const mushafPageInk = metrics.mushafPageInk;
-  const qcomArabSize = qcomBook && mushafArabSize ? Math.min(mushafArabSize, 30) : mushafArabSize;
+  const qcomArabSize = qcomBook && mushafArabSize ? Math.min(mushafArabSize, 28) : mushafArabSize;
   const qcomArabLineHeight =
-    qcomBook && qcomArabSize ? Math.max(48, Math.round(qcomArabSize * 1.68)) : mushafArabLineHeight;
+    qcomBook && qcomArabSize
+      ? Math.max(44, Math.round(qcomArabSize * QURAN_AYAH_LINE_HEIGHT_FACTOR))
+      : mushafArabLineHeight;
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: uiBg },
@@ -59,8 +62,9 @@ export function makeMushafBookPageStyles(
     muted: { color: uiMuted, marginTop: 12 },
     pad: { flex: 1, minHeight: 0, backgroundColor: theme.pageFace },
     mushafListPad: {
-      paddingHorizontal: qcomBook ? 16 : 20,
-      paddingTop: qcomBook ? 0 : 6,
+      paddingHorizontal: QURAN_SCREEN_HORIZONTAL_PADDING,
+      paddingTop: qcomBook ? 10 : 6,
+      paddingBottom: qcomBook ? 8 : 0,
     },
     mushafArabicCentered: {
       alignSelf: "stretch",
@@ -73,17 +77,18 @@ export function makeMushafBookPageStyles(
       alignSelf: "stretch",
       width: "100%",
       marginBottom: qcomBook ? 12 : 10,
-      paddingHorizontal: qcomBook ? 12 : 16,
-      transform: [{ translateY: qcomBook ? -8 : -4 }],
+      paddingHorizontal: qcomBook ? QURAN_SCREEN_HORIZONTAL_PADDING : 16,
+      paddingTop: qcomBook ? 8 : 0,
     },
     pageChromeSurah: {
       flexShrink: 0,
       flexGrow: 0,
       color: mushafPageInk,
-      fontSize: qcomBook ? 15 : 15,
-      fontWeight: "600",
+      fontSize: qcomBook ? 13 : 15,
+      fontWeight: qcomBook ? "400" : "600",
       textAlign: "left",
-      letterSpacing: qcomBook ? 0.2 : 0,
+      letterSpacing: qcomBook ? 0.15 : 0,
+      opacity: qcomBook ? 0.72 : 1,
       ...(qcomBook ? QCOM_CHROME_LATIN : null),
     },
     pageChromePart: {
@@ -91,14 +96,15 @@ export function makeMushafBookPageStyles(
       flexGrow: 0,
       marginLeft: "auto",
       color: mushafPageInk,
-      fontSize: qcomBook ? 15 : 15,
-      fontWeight: "600",
+      fontSize: qcomBook ? 13 : 15,
+      fontWeight: qcomBook ? "400" : "600",
       textAlign: "right",
-      letterSpacing: qcomBook ? 0.2 : 0,
+      letterSpacing: qcomBook ? 0.15 : 0,
+      opacity: qcomBook ? 0.72 : 1,
       ...(qcomBook ? QCOM_CHROME_LATIN : null),
     },
     mushafSurahTitleBlock: {
-      marginBottom: qcomBook ? 2 : 10,
+      marginBottom: qcomBook ? 8 : 10,
       alignItems: "center",
     },
     mushafSurahTitlePaper: {
@@ -151,11 +157,11 @@ export function makeMushafBookPageStyles(
     mushafAyahTxt: quranArabicNoClipTextStyle({
       color: mushafPageInk,
       writingDirection: "rtl",
-      textAlign: "justify",
+      textAlign: "right",
       ...arabAyahFont,
       ...(qcomArabSize ? { fontSize: qcomArabSize } : null),
       ...(qcomArabLineHeight ? { lineHeight: qcomArabLineHeight } : null),
-      letterSpacing: qcomBook ? 0 : 0.12,
+      letterSpacing: 0,
       ...(qcomBook && Platform.OS === "android" ? { textAlignVertical: "center" as const } : null),
     }, { compact: qcomBook }),
     mushafAyahSectionCaption: {

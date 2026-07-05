@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Play release: HTTPS-only. -->
+<!-- Play release: HTTPS-only (local HTTP hosts → debug/res/xml/network_security_config.xml). -->
 <network-security-config>
   <base-config cleartextTrafficPermitted="false" />
+  <domain-config cleartextTrafficPermitted="true">
+    <domain includeSubdomains="false">10.191.110.203</domain>
+    <domain includeSubdomains="false">192.168.1.100</domain>
+    <domain includeSubdomains="false">192.168.0.148</domain>
+  </domain-config>
 </network-security-config>

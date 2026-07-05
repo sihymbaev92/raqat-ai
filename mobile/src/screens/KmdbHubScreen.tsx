@@ -1,267 +1,503 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
-import { Pressable } from "@/ui/Pressable";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
+import { Linking, Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+import { Pressable } from "@/ui/Pressable";
+
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { HubScreenHero } from "../components/HubScreenHero";
-import { AppIconBadge } from "../components/AppIconBadge";
-import { HUB_MENU_TILE_BOX_PX } from "../config/dashboardLauncherTileImage";
-import { getKmdbHubTiles } from "../config/kmdbHubTiles";
-import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
-import { useAppTheme } from "../theme/ThemeContext";
-import type { ThemeColors } from "../theme/colors";
-import { FATUA_KZ_LABEL_KK, kk, MUFTYAT_KZ_LABEL_KK } from "../i18n/kk";
+
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import {
+
+  OfficialSiteFullWebView,
+
+  type OfficialSiteFullWebViewHandle,
+
+} from "../components/OfficialSiteFullWebView";
+
+import { NearbyMosquesPanel } from "../components/kmdb/NearbyMosquesPanel";
+
+import {
+
+  getKmdbHubWebTabs,
+
+  KMDB_HUB_WEB_TAB_DEFAULT,
+
+  kmdbHubWebTabById,
+
+  kmdbHubWebTabAllowedHosts,
+
+  kmdbHubWebTabExtraPageInject,
+
+  kmdbHubWebTabSitePresentation,
+
+  kmdbHubWebTabUsesWebView,
+
+  type KmdbHubWebTabId,
+
+} from "../config/kmdbHubWebTabs";
+
+import { useOfficialSiteWebViewScreenBack } from "../hooks/useOfficialSiteWebViewScreenBack";
+
 import { useAppLocale } from "../i18n/runtime";
-import { menuIconAssets } from "../theme/menuIconAssets";
+
+import { kk } from "../i18n/kk";
+
 import type { MoreStackParamList } from "../navigation/types";
-import { navigateToMoreStackScreen } from "../navigation/navigateToMoreStack";
+
+import { useAppTheme } from "../theme/ThemeContext";
+
+import { domainSettingsHeaderRightContainerStyle } from "../components/settings/DomainSettingsHeaderButton";
+
+
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KmdbHub">;
-type IconName = React.ComponentProps<typeof MaterialIcons>["name"];
 
-type OfficialSourceCard = {
-  label: string;
-  domain: string;
-  description: string;
-  chips: string[];
-  icon: IconName;
-  url: string;
-  accessibilityLabel: string;
-};
 
-const HUB_TILE_IMAGE_OPACITY = 0.92;
 
-function getOfficialSourceCards(): OfficialSourceCard[] {
-  return [
-    {
-      label: FATUA_KZ_LABEL_KK,
-      domain: "fatua.kz",
-      description: kk.kmdbHub.fatuaDescription,
-      chips: [kk.kmdbHub.fatuaChipFatwa, kk.kmdbHub.fatuaChipQa, kk.kmdbHub.fatuaChipPersonal],
-      icon: "gavel",
-      url: FATUA_KK_HOME_URL,
-      accessibilityLabel: kk.kmdbHub.openFatuaA11y,
-    },
-    {
-      label: MUFTYAT_KZ_LABEL_KK,
-      domain: "muftyat.kz",
-      description: kk.kmdbHub.muftyatDescription,
-      chips: [kk.kmdbHub.muftyatChipArticle, kk.kmdbHub.muftyatChipBook, kk.kmdbHub.muftyatChipNews],
-      icon: "account-balance",
-      url: MUFTYAT_KK_HOME_URL,
-      accessibilityLabel: kk.kmdbHub.openMuftyatA11y,
-    },
-  ];
+type KmdbWebTabId = "muftyat" | "fatua";
+
+
+
+const HEADER_BTN = 36;
+
+const WEB_TAB_IDS: readonly KmdbWebTabId[] = ["muftyat", "fatua"];
+
+
+
+function addVisitedWebTab(prev: Set<KmdbWebTabId>, next: KmdbWebTabId): Set<KmdbWebTabId> {
+
+  if (prev.has(next)) return prev;
+
+  const out = new Set(prev);
+
+  out.add(next);
+
+  return out;
+
 }
+
+
+
+/**
+
+ * ҚМДБ — Muftyat.kz, Fatua.kz (WebView) және Мешіттер (2GIS каталог).
+
+ */
 
 export function KmdbHubScreen({ navigation }: Props) {
-  const { colors, isDark } = useAppTheme();
+
   const locale = useAppLocale();
-  const styles = useMemo(() => makeStyles(colors), [colors, isDark]);
-  const tiles = useMemo(() => getKmdbHubTiles(), [locale]);
-  const officialSourceCards = useMemo(() => getOfficialSourceCards(), [locale]);
-  const accentHubBg = colors.accentSurface;
-  const hubRasterTileDim = isDark ? 0.11 : 0.085;
+
+  const { colors } = useAppTheme();
+
+  const { width: windowWidth } = useWindowDimensions();
+
+  const insets = useSafeAreaInsets();
+
+  const tabs = useMemo(() => getKmdbHubWebTabs(), [locale]);
+
+  const [activeTabId, setActiveTabId] = useState<KmdbHubWebTabId>(KMDB_HUB_WEB_TAB_DEFAULT);
+
+  const [mountedWebTabs, setMountedWebTabs] = useState<Set<KmdbWebTabId>>(() => new Set(["muftyat"]));
+
+  const [mosquesPaneKey, setMosquesPaneKey] = useState(0);
+
+  const [mosquesMounted, setMosquesMounted] = useState(false);
+
+  const activeTab = useMemo(
+
+    () => kmdbHubWebTabById(activeTabId, tabs),
+
+    [activeTabId, tabs]
+
+  );
+
+  const usesWebView = kmdbHubWebTabUsesWebView(activeTabId);
+
+  const muftyatRef = useRef<OfficialSiteFullWebViewHandle>(null);
+
+  const fatuaRef = useRef<OfficialSiteFullWebViewHandle>(null);
+
+  const activeWebRef = activeTabId === "fatua" ? fatuaRef : muftyatRef;
+
+
+
+  useOfficialSiteWebViewScreenBack(navigation, activeWebRef);
+
+
+
+  useEffect(() => {
+
+    if (activeTabId === "muftyat" || activeTabId === "fatua") {
+
+      setMountedWebTabs((prev) => addVisitedWebTab(prev, activeTabId));
+
+    }
+
+    if (activeTabId === "mosques") setMosquesMounted(true);
+
+  }, [activeTabId]);
+
+
+
+  const onReload = useCallback(() => {
+
+    if (usesWebView) {
+
+      activeWebRef.current?.reload();
+
+      return;
+
+    }
+
+    setMosquesPaneKey((k) => k + 1);
+
+  }, [activeWebRef, usesWebView]);
+
+
+
+  const openInBrowser = useCallback(() => {
+
+    void Linking.openURL(activeTab.url);
+
+  }, [activeTab.url]);
+
+
+
+  useLayoutEffect(() => {
+
+    navigation.setOptions({
+
+      headerRight: () => (
+
+        <View style={[domainSettingsHeaderRightContainerStyle(insets), { flexDirection: "row", gap: 2 }]}>
+
+          <Pressable
+
+            onPress={onReload}
+
+            style={({ pressed }) => ({
+
+              width: HEADER_BTN,
+
+              height: HEADER_BTN,
+
+              alignItems: "center",
+
+              justifyContent: "center",
+
+              opacity: pressed ? 0.72 : 1,
+
+            })}
+
+            accessibilityRole="button"
+
+            accessibilityLabel={kk.kmdbHub.muftyatRefreshA11y}
+
+          >
+
+            <MaterialIcons name="refresh" size={22} color={colors.accent} />
+
+          </Pressable>
+
+          {usesWebView ? (
+
+            <Pressable
+
+              onPress={openInBrowser}
+
+              style={({ pressed }) => ({
+
+                width: HEADER_BTN,
+
+                height: HEADER_BTN,
+
+                alignItems: "center",
+
+                justifyContent: "center",
+
+                opacity: pressed ? 0.72 : 1,
+
+                marginRight: Platform.OS === "web" ? 4 : 0,
+
+              })}
+
+              accessibilityRole="button"
+
+              accessibilityLabel={kk.common.openInBrowser}
+
+            >
+
+              <MaterialIcons name="open-in-new" size={22} color={colors.accent} />
+
+            </Pressable>
+
+          ) : null}
+
+        </View>
+
+      ),
+
+    });
+
+  }, [navigation, colors, insets, onReload, openInBrowser, usesWebView]);
+
+
+
+  const styles = useMemo(
+
+    () =>
+
+      StyleSheet.create({
+
+        root: { flex: 1, backgroundColor: colors.bg },
+
+        tabRow: {
+
+          flexDirection: "row",
+
+          gap: 6,
+
+          paddingHorizontal: 10,
+
+          paddingTop: 6,
+
+          paddingBottom: 0,
+
+          backgroundColor: colors.bg,
+
+        },
+
+        tabChip: {
+
+          flex: 1,
+
+          borderWidth: 1,
+
+          borderColor: colors.border,
+
+          backgroundColor: colors.card,
+
+          borderRadius: 999,
+
+          paddingVertical: 8,
+
+          paddingHorizontal: 6,
+
+          alignItems: "center",
+
+          justifyContent: "center",
+
+          minHeight: 34,
+
+        },
+
+        tabChipActive: {
+
+          borderColor: colors.accent,
+
+          backgroundColor: colors.accentSurface,
+
+        },
+
+        tabTxt: {
+
+          color: colors.muted,
+
+          fontSize: 12,
+
+          fontWeight: "700",
+
+          textAlign: "center",
+
+        },
+
+        tabTxtActive: { color: colors.accent, fontWeight: "900" },
+
+        webPane: {
+
+          flex: 1,
+
+          minHeight: 0,
+
+          overflow: "hidden",
+
+          position: "relative",
+
+        },
+
+        webStack: { ...StyleSheet.absoluteFillObject },
+
+        webLayer: { ...StyleSheet.absoluteFillObject },
+
+        webLayerActive: { opacity: 1, zIndex: 1 },
+
+        webLayerHidden: { opacity: 0, zIndex: 0 },
+
+        mosquesLayer: { ...StyleSheet.absoluteFillObject },
+
+      }),
+
+    [colors]
+
+  );
+
+
 
   return (
-    <ScrollView
-      style={styles.root}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
-      <HubScreenHero
-        variant="ai"
-        title={kk.kmdbHub.title}
-        image={menuIconAssets.promoAi}
-        colors={colors}
-        isDark={isDark}
-        eyebrow={kk.kmdbHub.eyebrow}
-        compact
-        tags={[FATUA_KZ_LABEL_KK, MUFTYAT_KZ_LABEL_KK]}
-      />
 
-      <Text style={[styles.lead, { color: colors.muted }]}>{kk.kmdbHub.lead}</Text>
+    <View style={styles.root}>
 
-      <View style={styles.grid}>
-        {tiles.map((tile) => (
-          <Pressable
-            key={tile.key}
-            onPress={() => navigateToMoreStackScreen(tile.screen, undefined, navigation)}
-            style={({ pressed }) => [styles.tile, pressed && { opacity: 0.92 }]}
-            accessibilityRole="button"
-            accessibilityLabel={tile.label}
-          >
-            <AppIconBadge
-              imageSource={tile.image}
-              colors={colors}
-              tintBg={accentHubBg}
-              size="xl"
-              boxPx={HUB_MENU_TILE_BOX_PX}
-              border={false}
-              shape="circle"
-              plain
-              imageOpacity={HUB_TILE_IMAGE_OPACITY}
-              imageDarken={hubRasterTileDim}
-            />
-            <Text style={[styles.tileLabel, { color: colors.text }]} numberOfLines={2}>
-              {tile.label}
-            </Text>
-            <Text style={[styles.tileSub, { color: colors.muted }]} numberOfLines={3}>
-              {tile.subtitle}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <View style={styles.tabRow} accessibilityRole="tablist">
 
-      <View style={styles.officialSourcesPanel}>
-        <Text style={[styles.sectionTitle, { color: colors.accentDark }]}>{kk.kmdbHub.officialSitesTitle}</Text>
-        <Text style={[styles.officialSourcesLead, { color: colors.muted }]}>
-          {kk.kmdbHub.officialSitesLead}
-        </Text>
-        {officialSourceCards.map((source) => (
-          <Pressable
-            key={source.domain}
-            onPress={() => void Linking.openURL(source.url)}
-            style={({ pressed }) => [
-              styles.officialSourceCard,
-              { borderColor: colors.border, backgroundColor: colors.card },
-              pressed && { opacity: 0.9 },
-            ]}
-            accessibilityRole="link"
-            accessibilityLabel={source.accessibilityLabel}
-          >
-            <View style={[styles.officialSourceIcon, { backgroundColor: colors.accentSurface }]}>
-              <MaterialIcons name={source.icon} size={22} color={colors.accent} />
-            </View>
-            <View style={styles.officialSourceText}>
-              <View style={styles.officialSourceHead}>
-                <Text style={[styles.officialSourceTitle, { color: colors.text }]}>{source.label}</Text>
-                <Text style={[styles.officialSourceDomain, { color: colors.accent }]}>{source.domain}</Text>
-              </View>
-              <Text style={[styles.officialSourceDescription, { color: colors.muted }]} numberOfLines={2}>
-                {source.description}
+        {tabs.map((tab) => {
+
+          const selected = tab.id === activeTabId;
+
+          return (
+
+            <Pressable
+
+              key={tab.id}
+
+              style={({ pressed }) => [
+
+                styles.tabChip,
+
+                selected && styles.tabChipActive,
+
+                pressed && { opacity: 0.9 },
+
+              ]}
+
+              onPress={() => setActiveTabId(tab.id)}
+
+              accessibilityRole="tab"
+
+              accessibilityState={{ selected }}
+
+              accessibilityLabel={tab.label}
+
+            >
+
+              <Text style={[styles.tabTxt, selected && styles.tabTxtActive]} numberOfLines={1}>
+
+                {tab.label}
+
               </Text>
-              <View style={styles.officialSourceChips}>
-                {source.chips.map((chip) => (
-                  <View key={chip} style={[styles.officialSourceChip, { backgroundColor: colors.accentSurface }]}>
-                    <Text style={[styles.officialSourceChipText, { color: colors.accent }]}>{chip}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-            <MaterialIcons name="open-in-new" size={20} color={colors.muted} />
-          </Pressable>
-        ))}
+
+            </Pressable>
+
+          );
+
+        })}
+
       </View>
 
-      <Text style={[styles.disclaimer, { color: colors.muted }]}>{kk.kmdbHub.disclaimer}</Text>
-    </ScrollView>
+      <View style={styles.webPane}>
+
+        <View
+
+          style={[
+
+            styles.webStack,
+
+            activeTabId === "mosques" ? styles.webLayerHidden : styles.webLayerActive,
+
+          ]}
+
+          pointerEvents={activeTabId === "mosques" ? "none" : "auto"}
+
+        >
+
+          {WEB_TAB_IDS.filter((id) => mountedWebTabs.has(id)).map((id) => {
+
+            const tab = kmdbHubWebTabById(id, tabs);
+
+            const isActive = activeTabId === id;
+
+            return (
+
+              <View
+
+                key={id}
+
+                style={[styles.webLayer, isActive ? styles.webLayerActive : styles.webLayerHidden]}
+
+                pointerEvents={isActive ? "auto" : "none"}
+
+              >
+
+                <OfficialSiteFullWebView
+
+                  ref={id === "muftyat" ? muftyatRef : fatuaRef}
+
+                  url={tab.url}
+
+                  colors={colors}
+
+                  title={tab.title}
+
+                  allowedHosts={kmdbHubWebTabAllowedHosts(id)}
+
+                  userAgentTag={tab.userAgentTag}
+
+                  sitePresentation={kmdbHubWebTabSitePresentation(id, windowWidth)}
+
+                  extraPageInject={kmdbHubWebTabExtraPageInject(id)}
+
+                  refreshOnFocus={false}
+
+                />
+
+              </View>
+
+            );
+
+          })}
+
+        </View>
+
+        {mosquesMounted ? (
+
+          <View
+
+            style={[
+
+              styles.mosquesLayer,
+
+              activeTabId === "mosques" ? styles.webLayerActive : styles.webLayerHidden,
+
+            ]}
+
+            pointerEvents={activeTabId === "mosques" ? "auto" : "none"}
+
+          >
+
+            <NearbyMosquesPanel
+
+              key={`mosques-${mosquesPaneKey}`}
+
+              active={activeTabId === "mosques"}
+
+              colors={colors}
+
+            />
+
+          </View>
+
+        ) : null}
+
+      </View>
+
+    </View>
+
   );
+
 }
 
-function makeStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    root: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: 14, paddingBottom: 36 },
-    lead: {
-      fontSize: 13,
-      lineHeight: 19,
-      marginBottom: 14,
-      paddingHorizontal: 4,
-    },
-    grid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 10,
-      marginBottom: 18,
-    },
-    tile: {
-      width: "47.5%",
-      minHeight: 148,
-      padding: 12,
-      borderRadius: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      alignItems: "center",
-    },
-    tileLabel: {
-      marginTop: 8,
-      fontSize: 14,
-      fontWeight: "900",
-      textAlign: "center",
-    },
-    tileSub: {
-      marginTop: 4,
-      fontSize: 11,
-      lineHeight: 15,
-      textAlign: "center",
-    },
-    sectionTitle: {
-      fontSize: 12,
-      fontWeight: "900",
-      letterSpacing: 0.35,
-      textTransform: "uppercase",
-      marginBottom: 8,
-      paddingHorizontal: 4,
-    },
-    officialSourcesPanel: {
-      marginTop: 2,
-      marginBottom: 8,
-    },
-    officialSourcesLead: {
-      fontSize: 12,
-      lineHeight: 17,
-      marginBottom: 10,
-      paddingHorizontal: 4,
-      fontWeight: "600",
-    },
-    officialSourceCard: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-      padding: 12,
-      borderRadius: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      marginBottom: 10,
-    },
-    officialSourceIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 16,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    officialSourceText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    officialSourceHead: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: "wrap",
-      gap: 6,
-    },
-    officialSourceTitle: { fontSize: 14, lineHeight: 18, fontWeight: "900" },
-    officialSourceDomain: { fontSize: 11, lineHeight: 15, fontWeight: "900" },
-    officialSourceDescription: { fontSize: 12, lineHeight: 17, marginTop: 4, fontWeight: "600" },
-    officialSourceChips: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 6,
-      marginTop: 8,
-    },
-    officialSourceChip: {
-      borderRadius: 999,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-    },
-    officialSourceChipText: { fontSize: 10, lineHeight: 13, fontWeight: "900" },
-    disclaimer: {
-      marginTop: 12,
-      fontSize: 11,
-      lineHeight: 16,
-      paddingHorizontal: 4,
-    },
-  });
-}
+

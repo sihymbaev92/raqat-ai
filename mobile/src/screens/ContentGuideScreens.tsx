@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  type ImageSourcePropType,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -14,13 +13,18 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
-import type { TextSection } from "../content/hajjUmrahContent";
-import { NAMAZ_GUIDE_SECTIONS } from "../content/namazContent";
 import {
   getNamazLearningHintsForGuidePose,
   getNamazRecitationBlocksForGuidePose,
   type RecitationBlock,
 } from "../content/namazLearningContent";
+import {
+  FIVE_PRAYER_RAKAT_ROWS,
+  FIVE_PRAYER_RAKAT_SUMMARY,
+  NAMAZ_POSE_VISUAL_STEPS,
+  NAMAZ_PRAYER_TYPE_CARDS,
+  type NamazPrayerTypeCardContent,
+} from "../content/namazPrayerGuideContent";
 import { NAMAZ_WUDU_EXTENDED } from "../content/namazWuduExtended";
 import { NAMAZ_WUDU_VISUAL_STEPS } from "../content/namazWuduSteps";
 import { GuideImageLightbox } from "../components/GuideImageLightbox";
@@ -36,22 +40,6 @@ const WUDU_THEORY_ACC_KEY = "wudu-theory";
 const NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER = Platform.OS === "android" ? 0.45 : undefined;
 const NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO = 0.34;
 type NamazPrimarySectionKey = "wudu" | "five-prayers";
-
-type NamazStudyCard = {
-  key: string;
-  no: number;
-  title: string;
-  subtitle: string;
-  image: ImageSourcePropType;
-  body: string;
-};
-
-type FivePrayerRakatRow = {
-  key: string;
-  title: string;
-  time: string;
-  rakats: string[];
-};
 
 const FIVE_PRAYER_END_RECITATIONS: RecitationBlock[] = [
   {
@@ -76,45 +64,6 @@ const FIVE_PRAYER_END_RECITATIONS: RecitationBlock[] = [
   },
 ];
 
-const FIVE_PRAYER_RAKAT_ROWS: FivePrayerRakatRow[] = [
-  {
-    key: "fajr",
-    title: "Таң намазы",
-    time: "Күн шығардан бұрын",
-    rakats: ["2 рәкәт сүннет муәккәд", "2 рәкәт парыз"],
-  },
-  {
-    key: "dhuhr",
-    title: "Бесін намазы",
-    time: "Күн тас төбеден ауғаннан кейін",
-    rakats: ["4 рәкәт алғашқы сүннет", "4 рәкәт парыз", "2 рәкәт соңғы сүннет"],
-  },
-  {
-    key: "asr",
-    title: "Екінті намазы",
-    time: "Бесін уақыты шыққаннан кейін",
-    rakats: ["4 рәкәт парыз"],
-  },
-  {
-    key: "maghrib",
-    title: "Ақшам намазы",
-    time: "Күн батқаннан кейін",
-    rakats: ["3 рәкәт парыз", "2 рәкәт сүннет"],
-  },
-  {
-    key: "isha",
-    title: "Құптан намазы",
-    time: "Ақшам уақыты шыққаннан кейін",
-    rakats: ["4 рәкәт парыз", "2 рәкәт сүннет", "3 рәкәт үтір уәжіп"],
-  },
-];
-
-const FIVE_PRAYER_RAKAT_SUMMARY = [
-  "Барлығы: 17 рәкәт парыз.",
-  "Үтір: 3 рәкәт уәжіп.",
-  "Бекітілген сүннет: 12 рәкәт.",
-];
-
 export function NamazGuideScreen() {
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
@@ -130,174 +79,8 @@ function NamazGuideBody({
 }) {
   const { tr, translated } = useKkAutoTranslator();
   const [selectedPrimarySection, setSelectedPrimarySection] = useState<NamazPrimarySectionKey | null>(null);
-  const visualSteps: { title: string; desc: string; image: ImageSourcePropType }[] = [
-    {
-      title: "Ниет және алғашқы тәкбір",
-      desc: "Намазды ниетпен бастап, қол көтеріп «Аллаһу әкбар» деу",
-      image: require("../../assets/namaz/namaz_takbir_tahreema.png"),
-    },
-    {
-      title: "Қиям",
-      desc: "Тік тұрып, Субханака, Фатиха және қысқа сүре оқу",
-      image: require("../../assets/namaz/namaz_qiyam.png"),
-    },
-    {
-      title: "Рукуғ",
-      desc: "Белді түзу иіп, зікір айту",
-      image: require("../../assets/namaz/namaz_ruku.png"),
-    },
-    {
-      title: "Сәжде",
-      desc: "Екі сәжде және дұға",
-      image: require("../../assets/namaz/namaz_sajdah.png"),
-    },
-    {
-      title: "Соңғы отырыс",
-      desc: "Әттахият, салауат, дұға және сәлем",
-      image: require("../../assets/namaz/namaz_final_sitting_custom.png"),
-    },
-  ];
-
-  const jamaatGuideBody = useMemo(
-    () => NAMAZ_GUIDE_SECTIONS.find((s) => s.title === "VIII. Жамағат пен имамға ілесу")?.body ?? "",
-    []
-  );
-  const travelGuideBody = useMemo(
-    () => NAMAZ_GUIDE_SECTIONS.find((s) => s.title === "IX. Саяхат намазы")?.body ?? "",
-    []
-  );
-  const janazaGuideBody = useMemo(
-    () => NAMAZ_GUIDE_SECTIONS.find((s) => s.title === "XIII. Жаназа намазы")?.body ?? "",
-    []
-  );
-  const prayerTypeCards = useMemo<NamazStudyCard[]>(
-    () => [
-      {
-        key: "jamaat",
-        no: 3,
-        title: "Жамағат намазы",
-        subtitle: "Имамға ілесу, сап, жұма",
-        image: require("../../assets/namaz/namaz_jamaat.png"),
-        body: jamaatGuideBody,
-      },
-      {
-        key: "janaza",
-        no: 4,
-        title: "Жаназа намазы",
-        subtitle: "Тәкбірлер, дұға, сәлем",
-        image: require("../../assets/namaz/namaz_janaza.png"),
-        body: janazaGuideBody,
-      },
-      {
-        key: "travel",
-        no: 5,
-        title: "Сапар намазы",
-        subtitle: "Қаср, жолдағы тәртіп",
-        image: require("../../assets/namaz/namaz_takbir_tahreema.png"),
-        body: travelGuideBody,
-      },
-      {
-        key: "dhuha",
-        no: 6,
-        title: "Дұха намазы",
-        subtitle: "Күн көтерілгеннен кейінгі нәпіл",
-        image: require("../../assets/namaz/namaz_qiyam.png"),
-        body:
-          "Дұха намазы — күн найза бойы көтерілгеннен кейін, бесінге дейін оқылатын нәпіл намаз.\n\n" +
-          "Қысқаша: 2 рәкәттен бастап оқылады; мүмкіндігіне қарай 4, 6 немесе 8 рәкәт етіп оқуға болады. Әр 2 рәкәттен кейін сәлем беру ыңғайлы.\n\n" +
-          "Ниет: «Алла разылығы үшін дұха намазын оқуға ниет еттім» деп жүрекпен ниет ету.\n\n" +
-          "Ескерту: нақты уақытын жергілікті күн шығу кестесімен және ұстаз нұсқауымен нақтылаңыз.",
-      },
-      {
-        key: "tahajjud",
-        no: 7,
-        title: "Тәһәжжуд намазы",
-        subtitle: "Түнгі нәпіл, дұға уақыты",
-        image: require("../../assets/namaz/namaz_sajdah.png"),
-        body:
-          "Тәһәжжуд — түнде ұйқыдан кейін тұрып оқылатын нәпіл намаз. Бұл намазда асықпай оқу, дұға мен истиғфарды көбейту абзал.\n\n" +
-          "Қысқаша: 2 рәкәттен бастап оқылады; шамасы келгенше 2–8 рәкәт оқуға болады. Соңынан витр оқылса, витрдің уақытын ұстазбен нақтылаңыз.\n\n" +
-          "Ниет: «Алла разылығы үшін түнгі тәһәжжуд намазын оқуға ниет еттім» деп жүрекпен ниет ету.\n\n" +
-          "Кеңес: аз болса да тұрақты оқу — ең пайдалы жол.",
-      },
-      {
-        key: "tawba",
-        no: 8,
-        title: "Тәубе намазы",
-        subtitle: "Күнәдан қайтып, кешірім тілеу",
-        image: require("../../assets/namaz/namaz_sajdah.png"),
-        body:
-          "Тәубе намазы — пенде қателігін сезіп, Алладан кешірім сұрағанда оқылатын нәпіл намаз.\n\n" +
-          "Не үшін оқылады: жүректі жұмсарту, күнәдан қайтуға бекіну, истиғфарды көбейту үшін.\n\n" +
-          "Қалай оқылады: дәрет алып, 2 рәкәт нәпіл намаз оқылады. Әр рәкәтте Фатиха және қысқа сүре оқылады. Сәлемнен кейін шын жүрекпен тәубе етіп, «Астағфируллаһ» деп истиғфар айту, күнәні қайталамауға ниет ету керек.\n\n" +
-          "Маңызды: тәубенің шарты — күнәні тоқтату, өкіну және қайталамауға бекіну; кісі ақысы болса, ақысын өтеу.",
-      },
-      {
-        key: "hajat",
-        no: 9,
-        title: "Қажет намазы",
-        subtitle: "Мұқтаждық, тілек, қиын іс",
-        image: require("../../assets/namaz/namaz_qiyam.png"),
-        body:
-          "Қажет намазы — адам Алладан бір ісінің жеңілдеуін, халал тілегінің орындалуын сұрағанда оқылатын нәпіл намаз.\n\n" +
-          "Не үшін оқылады: қиындықта, маңызды шешім алдында, ризық, ем, отбасы немесе оқу-жұмыс мәселесінде Алладан жәрдем сұрау үшін.\n\n" +
-          "Қалай оқылады: әдетте 2 рәкәт нәпіл намаз оқылады. Сәлемнен кейін Аллаға мадақ, Пайғамбарға ﷺ салауат айтып, өз қажетіңізді дұға етіп сұрайсыз.\n\n" +
-          "Кеңес: тілек адал болуы керек; себептерін жасап, нәтижесін Аллаға тапсырыңыз.",
-      },
-      {
-        key: "istikharah",
-        no: 10,
-        title: "Истихара намазы",
-        subtitle: "Таңдау алдында жақсылық сұрау",
-        image: require("../../assets/namaz/namaz_final_sitting_custom.png"),
-        body:
-          "Истихара — екі істің бірін таңдау қиын болғанда Алладан қайырлысын сұрау намазы.\n\n" +
-          "Не үшін оқылады: үйлену, жұмыс, көшу, оқу, келісім сияқты маңызды шешімдерде қайырлы бағыт сұрау үшін.\n\n" +
-          "Қалай оқылады: парыз емес уақытта 2 рәкәт нәпіл намаз оқылады. Сәлемнен кейін истихара дұғасы оқылып, қай істің қайырлы екенін Алладан сұрайсыз. Дұғадан кейін жүрек тыныштығы, жағдайдың жеңілдеуі және ақылдасуға мән беріледі.\n\n" +
-          "Ескерту: түс көру шарт емес. Истихарамен бірге ақылдасу, ақпарат жинау және адал себеп жасау қажет.",
-      },
-      {
-        key: "tahiyyat-masjid",
-        no: 11,
-        title: "Тахиятул-мәсжид",
-        subtitle: "Мешітке кіргендегі сәлем намазы",
-        image: require("../../assets/namaz/namaz_takbir_tahreema.png"),
-        body:
-          "Тахиятул-мәсжид — мешітке кіргенде, отырмай тұрып оқылатын 2 рәкәт нәпіл намаз.\n\n" +
-          "Не үшін оқылады: мешітті құрметтеу, жүректі құлшылыққа дайындау және Алланың үйіне әдеппен кіру үшін.\n\n" +
-          "Қалай оқылады: мешітке кіріп, намаз оқуға тыйым салынған уақыт болмаса, 2 рәкәт оқылады. Егер жамағат парызға тұрып кеткен болса, сол парызға қосылу жеткілікті болады.\n\n" +
-          "Кеңес: мешіт әдебі бөліміндегі кірер/шығар дұғаларын бірге жаттап алыңыз.",
-      },
-      {
-        key: "awwabin",
-        no: 12,
-        title: "Әууәбин намазы",
-        subtitle: "Ақшамнан кейінгі нәпіл",
-        image: require("../../assets/namaz/namaz_qiyam.png"),
-        body:
-          "Әууәбин намазы — ақшам намазынан кейін оқылатын нәпіл намаздардың бірі.\n\n" +
-          "Не үшін оқылады: кешкі уақытта тәубе, шүкір және қосымша құлшылықты көбейту үшін.\n\n" +
-          "Қалай оқылады: ақшамның парызы мен сүннетінен кейін 2 рәкәттен бастап оқуға болады; кей кітаптарда 6 рәкәтке дейін айтылған. Әр 2 рәкәттен кейін сәлем беру ыңғайлы.\n\n" +
-          "Ескерту: нақты рәкәт саны мен әдетін жергілікті ұстаздан нақтылап алыңыз.",
-      },
-      {
-        key: "tarawih",
-        no: 13,
-        title: "Тарауих намазы",
-        subtitle: "Рамазан түніндегі сүннет",
-        image: require("../../assets/namaz/namaz_jamaat.png"),
-        body:
-          "Тарауих — Рамазан айында құптаннан кейін, үтірден бұрын оқылатын түнгі сүннет намаз.\n\n" +
-          "Не үшін оқылады: Рамазан түндерін құлшылықпен өткізу, Құран тыңдау, жамағатпен рухани тәрбие алу үшін.\n\n" +
-          "Қалай оқылады: мешітте имаммен жамағат болып немесе үйде оқуға болады. Көп жерде 20 рәкәт оқылады; 2 рәкәт сайын сәлем беріледі. Соңынан үтір намазы оқылады.\n\n" +
-          "Кеңес: мешіт кестесіне ілесіп, шаршасаңыз да тұрақты қатысуға тырысыңыз; денсаулық пен отбасы жағдайын да ескеріңіз.",
-      },
-    ],
-    [jamaatGuideBody, janazaGuideBody, travelGuideBody]
-  );
-
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
-  const [selectedPrayerCard, setSelectedPrayerCard] = useState<NamazStudyCard | null>(null);
+  const [selectedPrayerCard, setSelectedPrayerCard] = useState<NamazPrayerTypeCardContent | null>(null);
   const closeOpenNamazPanel = useCallback(() => {
     if (selectedPrayerCard) {
       setSelectedPrayerCard(null);
@@ -413,6 +196,11 @@ function NamazGuideBody({
                 {tr(rakat)}
               </Text>
             ))}
+            {row.notes.map((note) => (
+              <Text key={`${row.key}-note-${note}`} style={styles.rakatNoteLine}>
+                {tr(note)}
+              </Text>
+            ))}
           </View>
         ))}
         <View style={styles.rakatSummaryBox}>
@@ -426,11 +214,10 @@ function NamazGuideBody({
       <Text style={styles.unifiedIntro}>{tr(kk.namazGuide.unifiedNamazIntro)}</Text>
       <Text style={styles.imageHint}>{tr(kk.namazGuide.imageTapHint)}</Text>
 
-      {visualSteps.map((v) => {
+      {NAMAZ_POSE_VISUAL_STEPS.map((v) => {
         const poseKey = `pose-${v.title}`;
         const recBlocks = getNamazRecitationBlocksForGuidePose(v.title);
         const learnHints = getNamazLearningHintsForGuidePose(v.title);
-        const isJamaat = v.title === "Жамағат";
         return (
           <View key={poseKey} style={[styles.visualStepCard, { marginBottom: 14 }]}>
             <View style={styles.unifiedStepHead}>
@@ -452,12 +239,12 @@ function NamazGuideBody({
             </View>
             <View style={styles.visualStepCardBody}>
               <Text style={styles.stepShortExplain}>{tr(v.desc)}</Text>
-              {(learnHints?.actions ?? []).map((a, i) => (
+              {(v.actions.length ? v.actions : learnHints?.actions ?? []).map((a, i) => (
                 <Text key={`${v.title}-act-${i}`} style={styles.namazPoseLearningLine}>
                   {tr(a)}
                 </Text>
               ))}
-              {(learnHints?.hints ?? []).map((h, i) => (
+              {(v.hints?.length ? v.hints : learnHints?.hints ?? []).map((h, i) => (
                 <Text key={`${v.title}-hint-${i}`} style={styles.namazPoseLearningHint}>
                   {tr(h)}
                 </Text>
@@ -468,10 +255,6 @@ function NamazGuideBody({
               {recBlocks.length ? (
                 <View style={styles.namazPoseReciteWrap}>
                   <NamazGuidePoseRecitationBlocks blocks={recBlocks} colors={colors} />
-                </View>
-              ) : isJamaat && jamaatGuideBody ? (
-                <View style={styles.stepReciteBox}>
-                  <Text style={styles.stepReciteLine}>{tr(jamaatGuideBody)}</Text>
                 </View>
               ) : null}
             </View>
@@ -540,7 +323,7 @@ function NamazGuideBody({
               {tr("Ниеттен сәлемге дейін")}
             </Text>
           </Pressable>
-          {prayerTypeCards.map((card) => {
+          {NAMAZ_PRAYER_TYPE_CARDS.map((card) => {
             return (
               <Pressable
                 key={card.key}
@@ -648,10 +431,20 @@ function NamazGuideBody({
                 />
               </View>
               <View style={styles.visualStepCardBody}>
-                <Text style={styles.stepShortExplain}>{tr(selectedPrayerCard.subtitle)}</Text>
-                <View style={styles.stepReciteBox}>
-                  <Text style={styles.stepReciteLine}>{tr(selectedPrayerCard.body)}</Text>
-                </View>
+                <Text style={styles.stepShortExplain}>{tr(selectedPrayerCard.lead)}</Text>
+                {selectedPrayerCard.sections.map((section) => (
+                  <View key={`${selectedPrayerCard.key}-${section.title}`} style={styles.block}>
+                    <Text style={styles.blockTitle}>{tr(section.title)}</Text>
+                    {section.lines.map((line) => (
+                      <Text
+                        key={`${selectedPrayerCard.key}-${section.title}-${line}`}
+                        style={[styles.blockBody, styles.prayerGuideSectionLine]}
+                      >
+                        {tr(line)}
+                      </Text>
+                    ))}
+                  </View>
+                ))}
                 <GuideAutoTranslateBanner colors={colors} visible={translated} />
               </View>
             </View>
@@ -722,6 +515,7 @@ function makeStyles(colors: ThemeColors) {
     },
     blockTitle: { color: colors.accent, fontWeight: "800", fontSize: 15, marginBottom: 8 },
     blockBody: { color: colors.text, fontSize: 15, lineHeight: 24 },
+    prayerGuideSectionLine: { marginBottom: 6 },
     studyMap: {
       backgroundColor: colors.card,
       borderWidth: 1,
@@ -1025,6 +819,13 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 21,
       fontWeight: "700",
       textAlign: "center",
+    },
+    rakatNoteLine: {
+      color: colors.muted,
+      fontSize: 13,
+      lineHeight: 20,
+      textAlign: "center",
+      marginTop: 6,
     },
     rakatSummaryBox: {
       borderRadius: 14,

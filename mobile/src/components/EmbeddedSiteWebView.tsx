@@ -106,8 +106,12 @@ export function shouldOpenEmbeddedSiteUrlExternally(rawUrl: string | null | unde
   return EXTERNAL_SCHEME_RE.test(u) || !shouldLoadEmbeddedSiteUrl(u);
 }
 
-import { withEmbeddedSiteCacheBust } from "./officialSiteWebViewReload";
-export { withEmbeddedSiteCacheBust } from "./officialSiteWebViewReload";
+/** Қолмен жаңарту кезінде кэштен аулақ болу үшін URL-ге уақыт белгісі. */
+export function withEmbeddedSiteCacheBust(url: string, bustToken: number): string {
+  if (!url || bustToken <= 0) return url;
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}_raqat=${bustToken}`;
+}
 
 export type EmbeddedSiteWebViewHandle = {
   /** Түпнұсқа URL-ге оралып, кэшсіз қайта жүктейді. */

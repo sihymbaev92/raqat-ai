@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useMemo } from "react";
-import { View, Text, type TextStyle, type ViewStyle } from "react-native";
+import { View, Text, useWindowDimensions, type TextStyle, type ViewStyle } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import Animated, {
   cancelAnimation,
@@ -13,6 +13,8 @@ import Animated, {
 import { Pressable } from "@/ui/Pressable";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import { AyahArabicKaraokeText } from "./AyahArabicKaraokeText";
+import { buildQuranArabicFlowMetrics, QuranArabicFlowRoot } from "./QuranArabicAyahFlow";
+import { quranSurahArabicWrapStyle } from "../../quran/quranResponsiveLayout";
 import { kk } from "../../i18n/kk";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
@@ -132,35 +134,53 @@ function QuranSurahAyahListRowInner({
     ),
   }));
 
+  const { width: windowWidth } = useWindowDimensions();
+  const baseFs = typeof styles.ayahTxt.fontSize === "number" ? styles.ayahTxt.fontSize : 22;
+  const listMetrics = useMemo(
+    () =>
+      buildQuranArabicFlowMetrics({
+        contentWidth: Math.max(280, windowWidth - 48),
+        baseFontSize: baseFs,
+        baseTextStyle: styles.ayahTxt,
+        ayahScrollStyle: true,
+      }),
+    [windowWidth, baseFs, styles.ayahTxt]
+  );
+
   const arabicBody = showArBlock ? (
-    <Pressable
-      onPress={() => onPlay(ayahN)}
-      onLongPress={() => onLongPress(item)}
-      disabled={isLoad}
-      style={({ pressed }) => [
-        styles.ayahArabicTap,
-        pressed && !isLoad && styles.ayahArabicTapPressed,
-        isLoad && styles.ayahArabicTapDisabled,
-      ]}
-      accessibilityRole="button"
-      accessibilityState={{ busy: isLoad }}
-      accessibilityLabel={audioA11y}
-    >
-      <AyahArabicKaraokeText
-        plainText={arabicPlain}
-        taggedText={showTajweedForDisplay ? item.textTajweed : undefined}
-        showTajweedColors={showTajweedForDisplay}
-        isDark={isDark}
-        baseStyle={styles.ayahTxt}
-        audioFocus={hasLoadedAudio}
-        audioLoading={isLoad}
-      />
-      {isLoad ? (
-        <View style={styles.ayahArabicLoadingOverlay} pointerEvents="none">
-          <RaqatOrnamentSpinner size={20} />
-        </View>
-      ) : null}
-    </Pressable>
+    <QuranArabicFlowRoot metrics={listMetrics}>
+      <View style={quranSurahArabicWrapStyle()}>
+        <Pressable
+          onPress={() => onPlay(ayahN)}
+          onLongPress={() => onLongPress(item)}
+          disabled={isLoad}
+          style={({ pressed }) => [
+            styles.ayahArabicTap,
+            pressed && !isLoad && styles.ayahArabicTapPressed,
+            isLoad && styles.ayahArabicTapDisabled,
+          ]}
+          accessibilityRole="button"
+          accessibilityState={{ busy: isLoad }}
+          accessibilityLabel={audioA11y}
+        >
+          <AyahArabicKaraokeText
+            plainText={arabicPlain}
+            taggedText={showTajweedForDisplay ? item.textTajweed : undefined}
+            showTajweedColors={showTajweedForDisplay}
+            isDark={isDark}
+            baseStyle={listMetrics.baseTextStyle}
+            nestedInText={false}
+            audioFocus={hasLoadedAudio}
+            audioLoading={isLoad}
+          />
+          {isLoad ? (
+            <View style={styles.ayahArabicLoadingOverlay} pointerEvents="none">
+              <RaqatOrnamentSpinner size={20} />
+            </View>
+          ) : null}
+        </Pressable>
+      </View>
+    </QuranArabicFlowRoot>
   ) : null;
 
   return (

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Құпиялылық саясаты — RAHAT OMIR</title>
+  <meta name="description" content="RAHAT OMIR (kz.raqat.app) қолданбасының құпиялылық саясаты." />
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      line-height: 1.55;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+      color: #111;
+      background: #fafafa;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { color: #eee; background: #111; }
+      a { color: #8ec5ff; }
+    }
+    h1, h2 { line-height: 1.25; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+    .meta { opacity: 0.75; font-size: 0.95rem; margin-bottom: 1.5rem; }
+    section { margin: 1.25rem 0; }
+    ul { padding-left: 1.2rem; }
+    code { font-size: 0.92em; }
+  </style>
+</head>
+<body>
+  <h1>Құпиялылық саясаты</h1>
+  <p class="meta">RAHAT OMIR · <code>kz.raqat.app</code> · жаңартылған: 2026-06-21 · нұсқа 1.1.0</p>
+
+  <section>
+    <p>
+      RAHAT OMIR — намаз уақыты, Құран, құбыла, халал тексеру және AI көмекшісі бар
+      исламдық қолданба. Біз деректерді тек қолданба функцияларын қамтамасыз ету үшін
+      өңдейміз; жарнама желілеріне сатпаймыз.
+    </p>
+  </section>
+
+  <section>
+    <h2>1. Қандай деректер жиналады</h2>
+    <ul>
+      <li><strong>Орналасу (GPS)</strong> — құбыла бағыты мен жергілікті намаз уақыты үшін (рұқсат бергенде). Қалады қолмен таңдауға болады.</li>
+      <li><strong>Аккаунт (email, аты)</strong> — тек тіркелгенде; Hatim/синхрондау үшін.</li>
+      <li><strong>Кamera / сурет</strong> — тек пайдаланушы халал/штрихкод тексеруін бастағанда; сурет AI/API арқылы өңделуі мүмкін.</li>
+      <li><strong>AI мәтін сұраулары</strong> — пайдаланушы енгізген мәтін backend-ке жіберілуі мүмкін.</li>
+    </ul>
+    <p>Жарнама ID жиналмайды. Намаз ескертулері құрылғыда жергілікті жоспарланады.</p>
+  </section>
+
+  <section>
+    <h2>2. Деректер қалай қолданылады</h2>
+    <ul>
+      <li>Намаз уақыты, құбыла, халал каталог/карта</li>
+      <li>Аккаунт және оқу прогресін синхрондау</li>
+      <li>Пайдаланушы сұраған AI/фото тексеру</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>3. Бөлісу және сақтау</h2>
+    <p>
+      Деректер HTTPS арқылы <code>api.rahatomir.com</code> серверіне жіберіледі.
+      Үшінші тарап жарнама желілеріне сатылмайды.
+      Кamera суреті тек пайдаланушы бастаған тексеру кезінде API-ге жіберілуі мүмкін.
+    </p>
+  </section>
+
+  <section>
+    <h2>4. Пайдаланушы таңдауы</h2>
+    <ul>
+      <li>Орналасу, camera, хабарландыру рұқсаттарын жүйеден өшіруге болады.</li>
+      <li>Аккаунтсыз негізгі мазмұн қолжетімді (AI — prod-та логин қажет болуы мүмкін).</li>
+      <li>Аккаунтты жою/деректерді өшіру — Баптаулар немесе қолдау арқылы.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>5. Балалар</h2>
+    <p>Қолданба 13 жасқа дейінгі балаларға арналған негізгі аудитория емес.</p>
+  </section>
+
+  <section>
+    <h2>6. Байланыс</h2>
+    <p>
+      Сайт: <a href="https://rahatomir.com">rahatomir.com</a><br />
+      API: <a href="https://api.rahatomir.com/health">api.rahatomir.com</a>
+    </p>
+  </section>
+
+  <section lang="ru">
+    <h2>Политика конфиденциальности (кратко, RU)</h2>
+    <p>
+      Приложение RAHAT OMIR обрабатывает ограниченные данные: геолокацию (если разрешено),
+      данные аккаунта при регистрации, фото/камеру только по инициативе пользователя для
+      halal-проверки, текст AI-запросов. Данные передаются по HTTPS на api.rahatomir.com,
+      не продаются рекламным сетям. Уведомления о намазе планируются локально на устройстве.
+    </p>
+  </section>
+</body>
+</html>

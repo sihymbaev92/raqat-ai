@@ -1,8 +1,8 @@
 import * as React from "react";
-import { Pressable } from "@/ui/Pressable";
-import { BackOrnamentLead } from "@/ui/BackOrnamentLead";
+import { StyleSheet } from "react-native";
 import type { NavigationProp, ParamListBase } from "@react-navigation/native";
-import { kk } from "../i18n/kk";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { useHardwareBackPress } from "./useHardwareBackPress";
 
@@ -28,30 +28,30 @@ type TabHomeBackButtonProps = {
   colors: ThemeColors;
 };
 
-/** Тақырып жиегі өшірілгенде — экран ішіндегі нақты back түймесі. */
+/** Таб экрандарындағы артқа батырмасы — тек navigation history барда көрінеді. */
 export function TabHomeBackButton({ navigation, colors }: TabHomeBackButtonProps) {
-  const goBackOnly = React.useCallback((): void => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-    }
-  }, [navigation]);
-
   if (!navigation.canGoBack()) return null;
-
   return (
     <Pressable
       oyuBackdrop={false}
-      onPress={goBackOnly}
-      style={({ pressed }) => ({
-        paddingRight: 8,
-        paddingVertical: 8,
-        opacity: pressed ? 0.72 : 1,
-      })}
-      hitSlop={10}
+      onPress={() => {
+        if (navigation.canGoBack()) navigation.goBack();
+      }}
       accessibilityRole="button"
-      accessibilityLabel={kk.common.back}
+      accessibilityLabel="Артқа"
+      style={({ pressed }) => [styles.btn, pressed && { opacity: 0.78 }]}
     >
-      <BackOrnamentLead iconColor={colors.text} iconSize={24} />
+      <MaterialIcons name="arrow-back" size={24} color={colors.text} />
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  btn: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 20,
+  },
+});

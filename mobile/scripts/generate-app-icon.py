@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""RAHAT OMIR логотипінен Expo icon.png және Android mipmap жасау."""
+"""RAHAT OMIR — app icon: emblem пикселдерін маска safe zone ішіне автоматты сыйдыру."""
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from PIL import Image
@@ -19,7 +20,13 @@ FAB_LOGO_OUT = ROOT / "assets" / "rahat-omir-fab-logo.png"
 ANDROID_RES = ROOT / "android" / "app" / "src" / "main" / "res"
 
 TRANSPARENT = (0, 0, 0, 0)
-ICON_BG = (247, 255, 254, 255)
+ICON_BG = (255, 255, 255, 255)
+
+# Android adaptive 108dp canvas, 66dp safe diameter → radius 33/108.
+ANDROID_ADAPTIVE_MASK_RADIUS = 33 / 108
+# Samsung squircle / round launcher — консервативті шеңбер.
+LAUNCHER_CIRCLE_MASK_RADIUS = 0.46
+MASK_CUSHION = 0.94
 
 DENSITIES: dict[str, tuple[int, int]] = {
     "mipmap-mdpi": (48, 108),
@@ -39,7 +46,6 @@ SPLASH_DRAWABLES: dict[str, int] = {
 
 
 def remove_outer_background(src: Image.Image, *, tolerance: int = 44) -> Image.Image:
-    """Сыртқы фонды (қара, қағаз, беж) edge flood-fill арқылы alpha=0 қылу."""
     from collections import deque
 
     im = src.copy().convert("RGBA")
@@ -57,7 +63,6 @@ def remove_outer_background(src: Image.Image, *, tolerance: int = 44) -> Image.I
         for cr, cg, cb, _ in corners:
             if abs(r - cr) <= tolerance and abs(g - cg) <= tolerance and abs(b - cb) <= tolerance:
                 return True
-        # Жеңіл қағаз/су белгісі
         if r > 198 and g > 188 and b > 168 and r - b < 48 and max(r, g, b) - min(r, g, b) < 36:
             return True
         return False
@@ -98,49 +103,73 @@ def remove_outer_background(src: Image.Image, *, tolerance: int = 44) -> Image.I
     return im
 
 
-def remove_paper_background(src: Image.Image, *, tolerance: int = 44) -> Image.Image:
-    """Кері үйлесімділік — remove_outer_background."""
-    return remove_outer_background(src, tolerance=tolerance)
-
-
-def fit_emblem(
-    src: Image.Image,
-    size: int,
-    *,
-    pad_ratio: float = 0.06,
-    background: tuple[int, int, int, int] = TRANSPARENT,
-) -> Image.Image:
-    canvas = Image.new("RGBA", (size, size), background)
-    margin = int(size * pad_ratio)
-    inner = size - 2 * margin
-    im = crop_visible(src.copy())
-    im.thumbnail((inner, inner), Image.Resampling.LANCZOS)
-    x = (size - im.width) // 2
-    y = (size - im.height) // 2
-    canvas.paste(im, (x, y), im)
-    return canvas
-
-
 def crop_visible(src: Image.Image) -> Image.Image:
     im = src.convert("RGBA")
-    alpha = im.getchannel("A")
-    bbox = alpha.getbbox()
+    bbox = im.getchannel("A").getbbox()
     if not bbox:
         return im
     return im.crop(bbox)
+
+
+def max_alpha_radius(emblem: Image.Image) -> float:
+    im = crop_visible(emblem.convert("RGBA"))
+    cx, cy = im.width / 2.0, im.height / 2.0
+    px = im.load()
+    max_d = 0.0
+    for y in range(im.height):
+        for x in range(im.width):
+            if px[x, y][3] < 20:
+                continue
+            max_d = max(max_d, math.hypot(x - cx + 0.5, y - cy + 0.5))
+    return max_d
+
+
+def fit_emblem_in_mask(
+    src: Image.Image,
+    size: int,
+    *,
+    mask_radius_ratio: float,
+    background: tuple[int, int, int, int] = TRANSPARENT,
+) -> Image.Image:
+    """Эмблеманың барлық пикселдері маска шеңберіне сыйсын (қолмен pad емес)."""
+    im = crop_visible(src.copy())
+    max_r = max_alpha_radius(im)
+    if max_r <= 0:
+        return Image.new("RGBA", (size, size), background)
+    allowed = size * mask_radius_ratio * MASK_CUSHION
+    scale = allowed / max_r
+    new_w = max(1, int(round(im.width * scale)))
+    new_h = max(1, int(round(im.height * scale)))
+    im = im.resize((new_w, new_h), Image.Resampling.LANCZOS)
+    canvas = Image.new("RGBA", (size, size), background)
+    x = (size - new_w) // 2
+    y = (size - new_h) // 2
+    canvas.paste(im, (x, y), im)
+    return canvas
 
 
 def main() -> None:
     if not SRC.is_file():
         raise SystemExit(f"source not found: {SRC}")
     full = remove_outer_background(Image.open(SRC).convert("RGBA"))
+    max_r = max_alpha_radius(full)
+    print(f"emblem max radius (px): {max_r:.1f}")
 
-    fit_emblem(full, 1024, pad_ratio=0.16, background=ICON_BG).save(ICON_OUT, "PNG", optimize=True)
-    fit_emblem(full, 1024, pad_ratio=0.16, background=TRANSPARENT).save(SPLASH_OUT, "PNG", optimize=True)
-    fit_emblem(full, 1024, pad_ratio=0.16, background=TRANSPARENT).save(BRAND_LOGO_OUT, "PNG", optimize=True)
-    # Adaptive foreground is masked by launchers; keep the artwork inside the safe zone.
-    fit_emblem(full, 1024, pad_ratio=0.26, background=TRANSPARENT).save(ADAPTIVE_OUT, "PNG", optimize=True)
-    fit_emblem(full, 192, pad_ratio=0.16, background=ICON_BG).save(FAVICON_OUT, "PNG", optimize=True)
+    fit_emblem_in_mask(
+        full, 1024, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS, background=ICON_BG
+    ).save(ICON_OUT, "PNG", optimize=True)
+    fit_emblem_in_mask(full, 1024, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS).save(
+        SPLASH_OUT, "PNG", optimize=True
+    )
+    fit_emblem_in_mask(full, 1024, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS).save(
+        BRAND_LOGO_OUT, "PNG", optimize=True
+    )
+    fit_emblem_in_mask(full, 1024, mask_radius_ratio=ANDROID_ADAPTIVE_MASK_RADIUS).save(
+        ADAPTIVE_OUT, "PNG", optimize=True
+    )
+    fit_emblem_in_mask(
+        full, 192, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS, background=ICON_BG
+    ).save(FAVICON_OUT, "PNG", optimize=True)
     print(f"wrote {ICON_OUT}")
     print(f"wrote {ADAPTIVE_OUT}")
     print(f"wrote {FAVICON_OUT}")
@@ -149,7 +178,7 @@ def main() -> None:
 
     if FAB_SRC.is_file():
         fab_full = remove_outer_background(Image.open(FAB_SRC).convert("RGBA"))
-        fit_emblem(fab_full, 512, pad_ratio=0.14, background=TRANSPARENT).save(
+        fit_emblem_in_mask(fab_full, 512, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS).save(
             FAB_LOGO_OUT, "PNG", optimize=True
         )
         print(f"wrote {FAB_LOGO_OUT}")
@@ -158,14 +187,18 @@ def main() -> None:
         out_dir = ANDROID_RES / folder
         out_dir.mkdir(parents=True, exist_ok=True)
         path = out_dir / "splashscreen_logo.png"
-        fit_emblem(full, px, pad_ratio=0.16, background=TRANSPARENT).save(path, "PNG", optimize=True)
+        fit_emblem_in_mask(full, px, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS).save(
+            path, "PNG", optimize=True
+        )
         print(f"  {folder}/splashscreen_logo.png: {px}px")
 
     for folder, (legacy_px, fg_px) in DENSITIES.items():
         out_dir = ANDROID_RES / folder
         out_dir.mkdir(parents=True, exist_ok=True)
-        legacy = fit_emblem(full, legacy_px, pad_ratio=0.14, background=ICON_BG)
-        fg = fit_emblem(full, fg_px, pad_ratio=0.28, background=TRANSPARENT)
+        legacy = fit_emblem_in_mask(
+            full, legacy_px, mask_radius_ratio=LAUNCHER_CIRCLE_MASK_RADIUS, background=ICON_BG
+        )
+        fg = fit_emblem_in_mask(full, fg_px, mask_radius_ratio=ANDROID_ADAPTIVE_MASK_RADIUS)
         for name, img in (
             ("ic_launcher.webp", legacy),
             ("ic_launcher_round.webp", legacy),

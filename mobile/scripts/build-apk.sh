@@ -152,15 +152,9 @@ artifact_info() {
 }
 
 if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
-  _missing_sounds=()
-  for i in 01 02 03 04 05; do
-    if [[ ! -f "$ROOT/assets/sounds/prayer_azan_user_${i}.mp3" ]]; then
-      _missing_sounds+=("prayer_azan_user_${i}.mp3")
-    fi
-  done
-  if [[ "${#_missing_sounds[@]}" -gt 0 ]]; then
-    echo "Азан MP3 файлдары жоқ: ${_missing_sounds[*]}" >&2
-    echo "  mobile/assets/sounds/prayer_azan_user_01.mp3..05.mp3 қалпына келтіріңіз." >&2
+  if [[ ! -f "$ROOT/assets/sounds/prayer_azan_user_01.mp3" ]]; then
+    echo "Азан MP3 файлы жоқ: prayer_azan_user_01.mp3" >&2
+    echo "  mobile/assets/sounds/prayer_azan_user_01.mp3 орнына қойыңыз." >&2
     exit 1
   fi
   if [[ ! -f "$ROOT/android/keystore.properties" ]]; then
@@ -173,6 +167,21 @@ if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
     echo "Play release signing жоқ: storeFile табылмады ($ROOT/android/${_store_file:-<empty>})." >&2
     exit 1
   fi
+fi
+
+_apk_slim_restore() {
+  node "$ROOT/scripts/strip-apk-remote-assets.cjs" restore 2>/dev/null || true
+  bash "$ROOT/scripts/apk-slim-assets.sh" restore 2>/dev/null || true
+}
+
+if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
+  trap _apk_slim_restore EXIT
+  echo "=== QCF4 bundled page map (offline Hatim) ==="
+  node "$ROOT/scripts/generate-qcf4-bundled-page-map.cjs"
+  echo "=== APK slim: CDN-only asset-терді stash (Metro/APK-ға кірмейді) ==="
+  _apk_slim_restore
+  bash "$ROOT/scripts/apk-slim-assets.sh" stash
+  node "$ROOT/scripts/strip-apk-remote-assets.cjs" strip
 fi
 
 # Gradle кэшін /tmp-ке (cursor sandbox cache) жібермеу — диск толып build құлауы мүмкін.

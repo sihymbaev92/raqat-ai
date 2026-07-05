@@ -7,33 +7,35 @@ import {
   FlatList,
   type ListRenderItem,
 } from "react-native";
-import { Pressable } from "@/ui/Pressable";
-import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { Pressable } from "@/ui/Pressable";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { EmbeddedSiteSheet } from "../components/EmbeddedSiteSheet";
-import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
-import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
-import { getValidAccessToken } from "../storage/authTokens";
-import {
-  fetchPlatformIslamicKbSearch,
-  type PlatformIslamicKbArticle,
-} from "../services/platformApiClient";
+import type { PlatformIslamicKbArticle } from "../services/platformApiClient";
+import type { MoreStackParamList } from "../navigation/types";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
+import { loadKbArticlesFeed } from "../services/kbArticlesFeed";
+import { KbArticleCard } from "../components/kb/KbArticleCard";
+import { KbContentSourceBanner } from "../components/kb/KbContentSourceBanner";
+import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { InformationalToolBanner } from "../components/InformationalToolBanner";
 
 export function IslamicKbSearchScreen() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlatformIslamicKbArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [embeddedArticle, setEmbeddedArticle] = useState<{ title: string; url: string } | null>(null);
+  const [feedSource, setFeedSource] = useState<"api_search" | "cache" | "seed">("seed");
   const requestSeqRef = useRef(0);
 
   const runSearch = useCallback(async (q: string) => {
@@ -45,36 +47,20 @@ export function IslamicKbSearchScreen() {
       setError(null);
       return;
     }
-    await hydrateRaqatApiBaseOverride();
-    if (!isCurrentRequest()) return;
-    const base = getRaqatApiBase();
-    if (!base) {
-      setError(kk.aiChat.kbDisabledNoApi);
-      setResults([]);
-      setSearched(true);
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const bearer = ((await getValidAccessToken()) ?? "").trim();
-      if (!isCurrentRequest()) return;
-      const res = await fetchPlatformIslamicKbSearch(base, term, {
-        authorizationBearer: bearer || undefined,
-        aiSecret: getRaqatContentReadSecret(),
-        limit: 12,
-      });
+      const res = await loadKbArticlesFeed({ query: term, site: "" });
       if (!isCurrentRequest()) return;
       setSearched(true);
-      if (!res.ok) {
-        setError(kk.aiChat.kbSearchError);
-        setResults([]);
-        return;
+      setResults(res.items);
+      setFeedSource(res.source === "api_browse" || res.source === "live_scrape" ? "cache" : res.source);
+      if (res.items.length === 0) {
+        setError(res.error === "no_api" ? kk.knowledgePortal.errorNoApi : kk.knowledgePortal.searchEmpty);
       }
-      setResults(res.results ?? []);
     } catch {
       if (!isCurrentRequest()) return;
-      setError(kk.aiChat.kbSearchError);
+      setError(kk.knowledgePortal.errorNetwork);
       setResults([]);
       setSearched(true);
     } finally {
@@ -90,84 +76,54 @@ export function IslamicKbSearchScreen() {
 
   const renderItem: ListRenderItem<PlatformIslamicKbArticle> = useCallback(
     ({ item }) => (
-      <View style={styles.card}>
-        <Text style={styles.sourceChip}>{item.source_label || item.site}</Text>
-        <Text style={styles.cardTitle} accessibilityRole="header">
-          {item.title}
-        </Text>
-        {item.excerpt ? (
-          <Text style={styles.excerpt} numberOfLines={5}>
-            {item.excerpt}
-          </Text>
-        ) : null}
-        <Text style={styles.attribution}>{kk.aiChat.kbSearchAttribution}</Text>
-        {item.url ? (
-          <Pressable
-            style={({ pressed }) => [styles.readBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => setEmbeddedArticle({ title: item.title, url: item.url })}
-            accessibilityRole="link"
-            accessibilityLabel={kk.aiChat.kbSearchReadFullA11y(item.title)}
-          >
-            <MaterialIcons name="open-in-new" size={16} color={colors.accent} />
-            <Text style={styles.readBtnTxt}>{kk.aiChat.kbSearchReadFull}</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <KbArticleCard
+        item={item}
+        colors={colors}
+        onPress={() => navigation.navigate("KbArticleDetail", { article: item })}
+        onOpenSite={item.url ? () => openOfficialSiteExternally(item.url) : undefined}
+      />
     ),
-    [colors.accent, styles]
+    [colors, navigation]
   );
 
   return (
-    <>
-      <View style={styles.root}>
-        <Text style={styles.hint}>{kk.aiChat.kbSearchHint}</Text>
-        <View style={styles.searchRow}>
-          <TextInput
-            style={styles.input}
-            placeholder={kk.aiChat.kbSearchPlaceholder}
-            placeholderTextColor={colors.muted}
-            value={query}
-            onChangeText={setQuery}
-            returnKeyType="search"
-            onSubmitEditing={() => void runSearch(query)}
-            accessibilityLabel={kk.aiChat.kbSearchPlaceholder}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.88 }]}
-            onPress={() => void runSearch(query)}
-            disabled={loading}
-            accessibilityRole="button"
-            accessibilityLabel={kk.aiChat.kbSearchSubmitA11y}
-          >
-            {loading ? (
-              <RaqatOrnamentSpinner size={20} />
-            ) : (
-              <MaterialIcons name="search" size={22} color="#fff" />
-            )}
-          </Pressable>
-        </View>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-        <FlatList
-          data={results}
-          keyExtractor={(item) => `${item.document_id}-${item.url}`}
-          renderItem={renderItem}
-          contentContainerStyle={[styles.listContent, { paddingBottom: 24 + Math.max(insets.bottom, 8) }]}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={
-            searched && !loading ? (
-              <Text style={styles.empty}>{kk.aiChat.kbSearchEmpty}</Text>
-            ) : null
-          }
+    <View style={styles.root}>
+      <InformationalToolBanner colors={colors} hint={kk.knowledgePortal.searchBoundaryHint} />
+      <Text style={styles.hint}>{kk.knowledgePortal.searchHint}</Text>
+      <View style={styles.searchRow}>
+        <TextInput
+          style={styles.input}
+          placeholder={kk.knowledgePortal.searchPlaceholder}
+          placeholderTextColor={colors.muted}
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+          onSubmitEditing={() => void runSearch(query)}
+          accessibilityLabel={kk.knowledgePortal.searchPlaceholder}
         />
+        <Pressable
+          style={({ pressed }) => [styles.searchBtn, pressed && { opacity: 0.88 }]}
+          onPress={() => void runSearch(query)}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel={kk.knowledgePortal.searchSubmitA11y}
+        >
+          {loading ? <RaqatOrnamentSpinner size={20} /> : <MaterialIcons name="search" size={22} color="#fff" />}
+        </Pressable>
       </View>
-      <EmbeddedSiteSheet
-        visible={Boolean(embeddedArticle)}
-        url={embeddedArticle?.url ?? ""}
-        title={embeddedArticle?.title ?? kk.aiChat.kbSearchTitle}
-        colors={colors}
-        onClose={() => setEmbeddedArticle(null)}
+      {searched ? <KbContentSourceBanner colors={colors} source={feedSource} /> : null}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <FlatList
+        data={results}
+        keyExtractor={(item) => `${item.document_id}-${item.url}`}
+        renderItem={renderItem}
+        contentContainerStyle={[styles.listContent, { paddingBottom: 24 + Math.max(insets.bottom, 8) }]}
+        keyboardShouldPersistTaps="handled"
+        ListEmptyComponent={
+          searched && !loading && !error ? <Text style={styles.empty}>{kk.knowledgePortal.searchEmpty}</Text> : null
+        }
       />
-    </>
+    </View>
   );
 }
 
@@ -197,50 +153,6 @@ function makeStyles(colors: ThemeColors) {
     },
     error: { color: colors.error, fontSize: 13, marginBottom: 8 },
     listContent: { paddingBottom: 24, gap: 10 },
-    card: {
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      padding: 12,
-      marginBottom: 10,
-    },
-    sourceChip: {
-      alignSelf: "flex-start",
-      fontSize: 11,
-      fontWeight: "800",
-      color: colors.accent,
-      marginBottom: 6,
-    },
-    cardTitle: {
-      fontSize: 16,
-      fontWeight: "800",
-      color: colors.text,
-      lineHeight: 21,
-      marginBottom: 6,
-    },
-    excerpt: {
-      fontSize: 14,
-      lineHeight: 20,
-      color: colors.text,
-      marginBottom: 8,
-    },
-    attribution: {
-      fontSize: 11,
-      color: colors.muted,
-      marginBottom: 8,
-    },
-    readBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      alignSelf: "flex-start",
-    },
-    readBtnTxt: {
-      fontSize: 14,
-      fontWeight: "700",
-      color: colors.accent,
-    },
     empty: {
       textAlign: "center",
       color: colors.muted,

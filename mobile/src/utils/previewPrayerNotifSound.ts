@@ -8,13 +8,7 @@ const FADE_IN_DURATION_MS = 4_000;
 const FADE_IN_STEPS = 16;
 const FADE_IN_START_VOLUME = 0.55;
 
-const BUNDLED: Record<Exclude<PrayerNotifSoundId, "off">, number> = {
-  adhan_haramain: require("../../assets/sounds/prayer_azan_user_01.mp3"),
-  adhan_madina_clear: require("../../assets/sounds/prayer_azan_user_02.mp3"),
-  adhan_makkah_live: require("../../assets/sounds/prayer_azan_user_03.mp3"),
-  adhan_soft_cc0: require("../../assets/sounds/prayer_azan_user_04.mp3"),
-  adhan_takbir_high: require("../../assets/sounds/prayer_azan_user_05.mp3"),
-};
+const BUNDLED_AZAN = require("../../assets/sounds/prayer_azan_user_01.mp3");
 
 export function canPreviewPrayerNotifSound(id: PrayerNotifSoundId): boolean {
   return id !== "off";
@@ -43,7 +37,27 @@ export async function stopPreviewPrayerNotifSound(): Promise<void> {
   }
 }
 
-/** Жинақтағы намаз хабарлама MP3 дыбысын бір рет ойнату (таңдауды өзгертпейді). */
+export async function getPreviewAzanPlaybackStatus(): Promise<{
+  positionMs: number;
+  durationMs: number;
+  isPlaying: boolean;
+} | null> {
+  const sound = active;
+  if (!sound) return null;
+  try {
+    const st = await sound.getStatusAsync();
+    if (!st.isLoaded) return null;
+    return {
+      positionMs: Math.max(0, Math.trunc(st.positionMillis ?? 0)),
+      durationMs: Math.max(0, Math.trunc(st.durationMillis ?? 0)),
+      isPlaying: st.isPlaying === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Жинақтағы жалғыз azan MP3 дыбысын бір рет ойнату. */
 export async function previewPrayerNotifSound(id: PrayerNotifSoundId): Promise<void> {
   if (!canPreviewPrayerNotifSound(id)) return;
 
@@ -63,8 +77,7 @@ export async function previewPrayerNotifSound(id: PrayerNotifSoundId): Promise<v
     /* */
   }
 
-  const src = BUNDLED[id as Exclude<PrayerNotifSoundId, "off">];
-  const { sound } = await Audio.Sound.createAsync(src, {
+  const { sound } = await Audio.Sound.createAsync(BUNDLED_AZAN, {
     shouldPlay: true,
     volume: FADE_IN_START_VOLUME,
   });

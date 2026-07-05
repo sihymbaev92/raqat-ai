@@ -1,4 +1,5 @@
 import { filterMosquesWithinRadius, type Mosque2GisWithDistance } from "../utils/mosqueGeoFilter";
+import { tryLoadBundledJson } from "../utils/loadBundledJson";
 
 export type Mosque2GisEntry = {
   id: string;
@@ -27,18 +28,36 @@ type MosqueBundle = {
 };
 
 let cached: Mosque2GisEntry[] | null = null;
+let syncedAtCache: string | null = null;
+let loadPromise: Promise<Mosque2GisEntry[] | null> | null = null;
 
-/** 2GIS rubric 13374 — Қазақстан мешіттері (bundled). */
-export function loadMosques2gisCatalog(): Mosque2GisEntry[] {
+async function loadMosqueBundle(): Promise<MosqueBundle | null> {
+  return tryLoadBundledJson<MosqueBundle>("mosques-2gis-kz.json");
+}
+
+export async function ensureMosques2gisCatalogLoaded(): Promise<Mosque2GisEntry[]> {
   if (cached) return cached;
-  const raw = require("../../assets/bundled/mosques-2gis-kz.json") as MosqueBundle;
-  cached = Array.isArray(raw.mosques) ? raw.mosques : [];
-  return cached;
+  if (!loadPromise) {
+    loadPromise = loadMosqueBundle()
+      .then((raw) => {
+        cached = Array.isArray(raw?.mosques) ? raw.mosques : [];
+        syncedAtCache = raw?.syncedAt ?? null;
+        return cached;
+      })
+      .finally(() => {
+        loadPromise = null;
+      });
+  }
+  return (await loadPromise) ?? [];
+}
+
+/** 2GIS rubric 13374 — Қазақстан мешіттері (CDN/cache). */
+export function loadMosques2gisCatalog(): Mosque2GisEntry[] {
+  return cached ?? [];
 }
 
 export function mosqueCatalogSyncedAt(): string | null {
-  const raw = require("../../assets/bundled/mosques-2gis-kz.json") as MosqueBundle;
-  return raw.syncedAt ?? null;
+  return syncedAtCache;
 }
 
 export function mosqueCatalogCount(): number {

@@ -1,7 +1,9 @@
 import {
   HALAL_DAMU_WEBVIEW_HOSTS,
   MUFTYAT_WEBVIEW_HOSTS,
+  OFFICIAL_SITE_DESKTOP_VIEWPORT_INJECT,
   OFFICIAL_SITE_SPA_HISTORY_INJECT,
+  buildOfficialSiteUserAgent,
   isEmbeddedSiteHostAllowed,
   shouldStayInOfficialSiteWebView,
 } from "../embeddedOfficialSiteNavigation";
@@ -32,8 +34,8 @@ describe("embeddedOfficialSiteNavigation", () => {
     expect(shouldStayInOfficialSiteWebView("https://www.muftyat.kz/kk/news", MUFTYAT_WEBVIEW_HOSTS)).toBe(true);
   });
 
-  it("normalizes www host matching", () => {
-    expect(isEmbeddedSiteHostAllowed("www.muftyat.kz", MUFTYAT_WEBVIEW_HOSTS)).toBe(true);
-    expect(isEmbeddedSiteHostAllowed("cdn.muftyat.kz", MUFTYAT_WEBVIEW_HOSTS)).toBe(true);
+  it("exports desktop viewport inject for muftyat embed", () => {
+    expect(OFFICIAL_SITE_DESKTOP_VIEWPORT_INJECT).toContain("minimum-scale=0.2");
+    expect(buildOfficialSiteUserAgent("RaqatMuftyat/1", "desktop")).toContain("Windows NT");
   });
 });

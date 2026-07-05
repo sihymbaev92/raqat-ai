@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
 import { kk } from "./kk";
+import { PRAYER_AZAN_PATCH_KY, PRAYER_AZAN_PATCH_UZ } from "./azanLocalePatches";
 import {
   ensureOfflineAutoTranslationsLoaded,
   getOfflineAutoTranslation,
@@ -238,6 +239,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       muftyatChipArticle: "Статья",
       muftyatChipBook: "Книга",
       muftyatChipNews: "Новость",
+      tabMuftyat: "Muftyat.kz",
+      tabFatua: "Fatua.kz",
+      tabMosques: "Мечети",
+      tileMosques: "Мечети",
+      tileMosquesSub: "Найдите ближайшие мечети через каталог 2GIS.",
     },
     namazGuide: {
       shortTitle: "Намаз",
@@ -528,6 +534,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       muftyatChipArticle: "Article",
       muftyatChipBook: "Book",
       muftyatChipNews: "News",
+      tabMuftyat: "Muftyat.kz",
+      tabFatua: "Fatua.kz",
+      tabMosques: "Mosques",
+      tileMosques: "Mosques",
+      tileMosquesSub: "Find nearby mosques via the 2GIS catalog.",
     },
     namazGuide: {
       shortTitle: "Prayer",
@@ -665,6 +676,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       sunrise: "Күн чыгуу", dhuhr: "Бешим", asr: "Аср", maghrib: "Шам", isha: "Куптан",
       fajrShort: "Багымдат", sunriseShort: "Күн", dhuhrShort: "Бешим", asrShort: "Аср",
       maghribShort: "Шам", ishaShort: "Куптан", notifications: "Билдирүүлөр",
+      ...PRAYER_AZAN_PATCH_KY,
     },
     aiChat: {
       kbShelfSourceLabel: "Булак",
@@ -685,6 +697,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       muftyatChipArticle: "Макала",
       muftyatChipBook: "Китеп",
       muftyatChipNews: "Жаңылык",
+      tabMuftyat: "Muftyat.kz",
+      tabFatua: "Fatua.kz",
+      tabMosques: "Мечиттер",
+      tileMosques: "Мечиттер",
+      tileMosquesSub: "Жакынкы мечиттерди 2GIS каталогу аркылуу табыңыз.",
     },
     namazGuide: { shortTitle: "Намаз", screenTitle: "Намаз окуу китеби" },
     asma: {
@@ -775,6 +792,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     prayer: {
       title: "Namoz vaqti", city: "Shahar", country: "Davlat", refresh: "Yangilash", fajr: "Bomdod",
       sunrise: "Quyosh chiqishi", dhuhr: "Peshin", asr: "Asr", maghrib: "Shom", isha: "Xufton", notifications: "Bildirishnomalar",
+      ...PRAYER_AZAN_PATCH_UZ,
     },
     namazGuide: { shortTitle: "Namoz", screenTitle: "Namoz darsligi" },
     asma: {

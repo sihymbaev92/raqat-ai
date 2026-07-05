@@ -16,7 +16,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { appDeepLinking } from "./src/navigation/linking";
 import { AndroidBackNavigationBridge } from "./src/navigation/AndroidBackNavigationBridge";
 import { RootNavigator } from "./src/navigation/RootNavigator";
-import { CorePermissionsAppGate } from "./src/components/CorePermissionsAppGate";
 import { rootNavigationRef } from "./src/navigation/rootNavigationRef";
 import { darkColors, lightColors } from "./src/theme/colors";
 import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
@@ -114,20 +113,33 @@ export default function App() {
 
         // Non-critical network warmups should not compete with first paint/navigation.
         setTimeout(() => {
+          void import("./src/data/mosques2gisCatalog")
+            .then((m) => m.ensureMosques2gisCatalogLoaded())
+            .catch((e) => reportBackgroundJobError("mosquesCatalogPreload", e));
           void import("./src/services/halalHubBootstrap")
             .then((m) => m.prefetchHalalDamuHub())
             .catch((e) => reportBackgroundJobError("halalHubBootstrap", e));
-        }, 2500);
+          void import("./src/content/scrapedHadithMuftyat")
+            .then((m) => m.ensureScrapedHadithMuftyatLoaded())
+            .catch((e) => reportBackgroundJobError("scrapedHadithPreload", e));
+          void import("./src/content/extractedHadithMuftyat")
+            .then((m) => m.ensureExtractedHadithMuftyatLoaded())
+            .catch((e) => reportBackgroundJobError("extractedHadithPreload", e));
+          void import("./src/content/greatWordsCatalog")
+            .then((m) => m.ensureGreatWordsCatalogLoaded())
+            .catch((e) => reportBackgroundJobError("greatWordsPreload", e));
+          void import("./src/components/officialSiteWebViewReload")
+            .then((m) => m.prefetchOfficialSiteWebPages())
+            .catch((e) => reportBackgroundJobError("officialSiteWebPrefetch", e));
+          void import("./src/services/hubScreenWarmup")
+            .then((m) => m.warmHotHubScreens())
+            .catch((e) => reportBackgroundJobError("hubScreenWarmup", e));
+        }, 800);
         setTimeout(() => {
           void import("./src/services/officialSitesBootstrap")
             .then((m) => m.prefetchOfficialHomeNewsFeed())
             .catch((e) => reportBackgroundJobError("officialSitesBootstrap", e));
         }, 4000);
-        setTimeout(() => {
-          void import("./src/components/officialSiteWebViewReload")
-            .then((m) => m.prefetchOfficialSiteWebPages())
-            .catch((e) => reportBackgroundJobError("officialSiteWebPrefetch", e));
-        }, 3200);
 
         setTimeout(() => {
           void import("./src/services/contentPackManager")
@@ -166,6 +178,17 @@ export default function App() {
               syncAndroidPrayerWidgetFromStorage(),
             ]);
             void maybeKickQuranAudioAutoDownloadLoop();
+
+            void import("./src/storage/prefs")
+              .then(async (prefs) => {
+                if (await prefs.getFirstLaunchPermissionsBurstDone()) return;
+                const { requestAllCorePermissionsOnFirstLaunch } = await import(
+                  "./src/services/firstLaunchPermissions"
+                );
+                await requestAllCorePermissionsOnFirstLaunch();
+                await prefs.setFirstLaunchPermissionsBurstDone();
+              })
+              .catch((e) => reportBackgroundJobError("firstLaunchPermissions", e));
           })().catch((e) => reportBackgroundJobError("postBootNativeWarmup", e));
         }, POST_BOOT_NATIVE_WARMUP_DELAY_MS);
       });
@@ -264,9 +287,7 @@ export default function App() {
         }}
       >
         <AndroidBackNavigationBridge />
-        <CorePermissionsAppGate>
-          <RootNavigator />
-        </CorePermissionsAppGate>
+        <RootNavigator />
       </NavigationContainer>
       <ThemedStatusBar />
     </>

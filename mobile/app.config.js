@@ -33,7 +33,7 @@ const NATIVE_EXPO_CONFIG = {
     resizeMode: "contain",
     backgroundColor: "#000000",
   },
-  assetBundlePatterns: ["**/*"],
+  assetBundlePatterns: ["assets/**/*"],
   plugins: [
     [
       "expo-location",
@@ -131,6 +131,8 @@ const NATIVE_EXPO_CONFIG = {
       "USE_FULL_SCREEN_INTENT",
       "RECEIVE_BOOT_COMPLETED",
       "WAKE_LOCK",
+      "FOREGROUND_SERVICE",
+      "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
     ],
   },
   scheme: "imamai",

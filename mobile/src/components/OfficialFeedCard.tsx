@@ -17,6 +17,8 @@ type Props = {
   /** link — «Толық оқу»; ask — сұрақ қою */
   secondaryIcon?: "link" | "ask";
   accessibilityLabel?: string;
+  /** Halal каталог: логотип өлшемі (px). */
+  thumbSize?: number;
 };
 
 function sourceIcon(source: OfficialFeedItem["source"]): keyof typeof MaterialIcons.glyphMap {
@@ -32,10 +34,11 @@ export function OfficialFeedCard({
   secondaryLabel,
   secondaryIcon = "ask",
   accessibilityLabel,
+  thumbSize,
 }: Props) {
   const { isDark } = useAppTheme();
   const isHalal = item.source === "halaldamu";
-  const styles = useMemo(() => makeStyles(colors, isHalal), [colors, isHalal]);
+  const styles = useMemo(() => makeStyles(colors, isHalal, thumbSize), [colors, isHalal, thumbSize]);
 
   return (
     <View style={styles.card}>
@@ -43,7 +46,7 @@ export function OfficialFeedCard({
         <RasterImage
           source={{ uri: item.imageUrl }}
           style={styles.thumb}
-          resizeMode="cover"
+          resizeMode={isHalal ? "contain" : "cover"}
           resizeMethod={Platform.OS === "android" ? "resize" : undefined}
           resizeMultiplier={Platform.OS === "android" ? 0.6 : undefined}
           accessibilityIgnoresInvertColors
@@ -114,8 +117,8 @@ export function OfficialFeedCard({
   );
 }
 
-function makeStyles(colors: ThemeColors, isHalal: boolean) {
-  const thumbSize = isHalal ? 56 : 52;
+function makeStyles(colors: ThemeColors, isHalal: boolean, thumbSize?: number) {
+  const thumbSide = thumbSize ?? (isHalal ? 56 : 52);
   return StyleSheet.create({
     card: {
       flexDirection: "row",
@@ -131,8 +134,8 @@ function makeStyles(colors: ThemeColors, isHalal: boolean) {
     },
     pressed: { opacity: 0.92 },
     thumb: {
-      width: thumbSize,
-      height: thumbSize,
+      width: thumbSide,
+      height: thumbSide,
       borderRadius: isHalal ? 12 : 10,
       borderWidth: isHalal ? StyleSheet.hairlineWidth : 0,
       borderColor: isHalal ? colors.border : "transparent",

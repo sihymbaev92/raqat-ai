@@ -35,27 +35,24 @@ describe("prayer notification sound prefs", () => {
     await AsyncStorage.clear();
   });
 
-  it("shows only the five curated adhan presets in settings", () => {
-    expect(PRAYER_NOTIF_SOUND_UI_ORDER).toEqual([
-      "adhan_haramain",
-      "adhan_madina_clear",
-      "adhan_makkah_live",
-      "adhan_soft_cc0",
-      "adhan_takbir_high",
-    ]);
+  it("shows only the single bundled adhan in settings", () => {
+    expect(PRAYER_NOTIF_SOUND_UI_ORDER).toEqual(["adhan_haramain"]);
   });
 
-  it("migrates old sound choices into the curated adhan set", async () => {
+  it("migrates old sound choices into the single adhan preset", async () => {
     await AsyncStorage.setItem(KEY, "bell");
     expect(await getPrayerNotifSoundId()).toBe("adhan_haramain");
 
     await AsyncStorage.setItem(KEY, "azan_makkah");
-    expect(await getPrayerNotifSoundId()).toBe("adhan_makkah_live");
+    expect(await getPrayerNotifSoundId()).toBe("adhan_haramain");
+
+    await AsyncStorage.setItem(KEY, "adhan_soft_cc0");
+    expect(await getPrayerNotifSoundId()).toBe("adhan_haramain");
   });
 
-  it("keeps the selected curated adhan preset", async () => {
-    await setPrayerNotifSoundId("adhan_soft_cc0");
-    expect(await getPrayerNotifSoundId()).toBe("adhan_soft_cc0");
+  it("keeps the selected adhan preset", async () => {
+    await setPrayerNotifSoundId("adhan_haramain");
+    expect(await getPrayerNotifSoundId()).toBe("adhan_haramain");
   });
 
   it("stores individually muted prayer adhan keys in stable order", async () => {

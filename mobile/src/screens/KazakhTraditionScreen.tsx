@@ -21,6 +21,7 @@ import {
   type TraditionTopic,
 } from "../content/traditionTopicsCatalog";
 import { TraditionOrnamentDivider } from "../components/tradition/TraditionRedesignCards";
+import { DinMenDasturQuickList } from "../components/tradition/DinMenDasturQuickList";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { kk } from "../i18n/kk";
 import { traditionTopOrnament } from "../theme/ornamentAssets";
@@ -239,6 +240,10 @@ export function KazakhTraditionScreen() {
                 <MaterialIcons name="close" size={16} color={palette.goldMuted} />
               </Pressable>
             </View>
+          ) : null}
+
+          {!queryActive ? (
+            <DinMenDasturQuickList palette={palette} tr={tr} onOpenFullTopic={openTopic} />
           ) : null}
 
           {!queryActive ? (

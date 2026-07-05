@@ -54,6 +54,7 @@ import { fetchPlatformQuranSurah } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
 import { releaseBundledQuranReaderMemory } from "../services/bundledQuranReader";
+import { loadBundledTajweedSurahMap } from "../services/bundledQuranTajweed";
 import { releaseBundledQuranTranslationsMemory } from "../services/quranOfflineTranslations";
 import { enrichAyahsFromBundledQuranDb } from "../services/quranKkBundledLookup";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
@@ -81,6 +82,7 @@ import { useAyahPlayback } from "../quran/useAyahPlayback";
 import { useAyahPlaybackScroll } from "../quran/useAyahPlaybackScroll";
 import { useLastReadPersistence } from "../quran/useLastReadPersistence";
 import { quranArabicNoClipTextStyle } from "../quran/quranArabicNoClipTextStyle";
+import { QURAN_SCREEN_HORIZONTAL_PADDING } from "../quran/quranResponsiveLayout";
 import { getQuranTranslitOverride } from "../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { arabicRasmStringsDiffer } from "../lib/quranArabicDualRasm";
@@ -209,6 +211,13 @@ function shouldShowMushafBismillahBanner(surahNumber: number): boolean {
 
 async function enrichAyahsWithAlquranTajweed(surahNum: number, ayahs: CachedAyah[]): Promise<CachedAyah[]> {
   try {
+    const bundled = await loadBundledTajweedSurahMap(surahNum);
+    if (bundled) {
+      return ayahs.map((a) => {
+        const textTajweed = (bundled[a.numberInSurah] ?? "").trim();
+        return textTajweed.includes("[") ? { ...a, textTajweed } : a;
+      });
+    }
     const rt = await fetchWithTimeout(surahTajweedUrl(surahNum), QURAN_CLOUD_FETCH_TIMEOUT_MS);
     if (!rt.ok) return ayahs;
     const jt = await rt.json();
@@ -226,6 +235,10 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const activeSurahLoadRef = useRef(surahNumber);
   activeSurahLoadRef.current = surahNumber;
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const mushafArabicContentWidth = useMemo(
+    () => Math.max(280, windowWidth - QURAN_SCREEN_HORIZONTAL_PADDING * 2 - 32),
+    [windowWidth]
+  );
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlashListRef<CachedAyah>>(null);
   const mushafScrollRef = useRef<ScrollView>(null);
@@ -1799,6 +1812,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
                 resumeHighlightAyah={mushafHighlightAyah}
                 ayahMarkers={ayahMarkers}
                 mushafAyahTxt={styles.mushafAyahTxt}
+                contentWidth={mushafArabicContentWidth}
                 toEasternArabicIndic={toEasternArabicIndic}
                 scrollViewRef={mushafScrollRef}
                 scrollContentRef={mushafScrollContentRef}
@@ -3133,7 +3147,7 @@ function makeStyles(
         ? { fontFamily: arabAyahFont.fontFamily }
         : { fontFamily: QURAN_BOOK_FONT_FACE.lateef }),
     },
-    mushafListPad: { paddingHorizontal: 26, paddingTop: 10 },
+    mushafListPad: { paddingHorizontal: QURAN_SCREEN_HORIZONTAL_PADDING, paddingTop: 10 },
     /** Мұсаф скролл: арабтан кейінгі транскрипция/мағына блоктары */
     mushafSecondaryAyahBlock: {
       alignSelf: "stretch",
@@ -3171,9 +3185,13 @@ function makeStyles(
     mushafAyahArabicCluster: {
       width: "100%",
       flexDirection: "row",
-      alignItems: "center",
+      flexWrap: "wrap",
+      direction: "rtl",
+      alignItems: "flex-start",
+      alignContent: "flex-start",
       justifyContent: "flex-start",
       gap: densityLayout.mushafAyahArabicClusterGap,
+      overflow: "visible",
     },
     mushafAyahBookmarkRail: {
       width: 14,
@@ -3223,8 +3241,13 @@ function makeStyles(
       }),
     },
     mushafAyahArabicWrap: {
-      flex: 1,
+      flexGrow: 1,
+      flexShrink: 1,
+      flexBasis: "auto",
       minWidth: 0,
+      maxWidth: "100%",
+      alignSelf: "stretch",
+      overflow: "visible",
     },
     mushafAyahArabicTap: {
       position: "relative",
@@ -3238,7 +3261,11 @@ function makeStyles(
     mushafAyahTxt: quranArabicNoClipTextStyle({
       color: quranAyahArabicInk,
       writingDirection: "rtl",
-      textAlign: "justify",
+      textAlign: "right",
+      flexShrink: 1,
+      minWidth: 0,
+      maxWidth: "100%",
+      alignSelf: "stretch",
       ...arabAyahFont,
       ...(mushafArabSize ? { fontSize: mushafArabSize } : null),
       ...(mushafArabLineHeight ? { lineHeight: mushafArabLineHeight } : null),

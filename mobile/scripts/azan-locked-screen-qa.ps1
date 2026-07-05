@@ -1,11 +1,12 @@
 param(
   [string]$Package = "kz.raqat.app",
   [string]$Apk = "",
-  [int]$DelaySeconds = 90,
+  [int]$DelaySeconds = 45,
   [switch]$SkipInstall,
   [switch]$ImmediateBroadcast,
   [switch]$GrantExactAlarm,
-  [switch]$WhitelistBattery
+  [switch]$WhitelistBattery,
+  [switch]$WriteResultsJson
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,10 +14,12 @@ $ErrorActionPreference = "Stop"
 $mobileDir = Split-Path $PSScriptRoot
 $repoRoot = Split-Path $mobileDir
 if (-not $Apk) {
+  $releaseApk = Join-Path $mobileDir "raqat-release-latest.apk"
+  $releaseBuilt = Join-Path $mobileDir "android\app\build\outputs\apk\release\app-release.apk"
   $debugApk = Join-Path $mobileDir "android\app\build\outputs\apk\debug\app-debug.apk"
-  $releaseApk = Join-Path $mobileDir "android\app\build\outputs\apk\release\app-release.apk"
-  if (Test-Path $debugApk) { $Apk = $debugApk }
-  elseif (Test-Path $releaseApk) { $Apk = $releaseApk }
+  if (Test-Path $releaseApk) { $Apk = $releaseApk }
+  elseif (Test-Path $releaseBuilt) { $Apk = $releaseBuilt }
+  elseif (Test-Path $debugApk) { $Apk = $debugApk }
 }
 
 function Find-Adb {
@@ -54,12 +57,13 @@ $brand = (& $adb shell getprop ro.product.brand).Trim()
 
 Write-Host "== Azan locked-screen QA =="
 Write-Host "Device: $brand $model (API $api, $serial)"
+Write-Host "APK: $Apk"
 Write-Host "Output: $outDir"
 Write-Host ""
 
 if (-not $SkipInstall) {
   if (-not (Test-Path $Apk)) {
-    throw "APK жоқ: $Apk. Алдымен `npm run build:apk:debug`."
+    throw "APK жоқ: $Apk. Алдымен `npm run build:apk`."
   }
   Write-Host "== Install =="
   Invoke-Adb @("install", "-r", $Apk)
@@ -74,30 +78,31 @@ if ($GrantExactAlarm -and $api -ge 31) {
 }
 if ($WhitelistBattery) {
   & $adb shell dumpsys deviceidle whitelist "+$Package" 2>$null
+  & $adb shell cmd deviceidle whitelist +$Package 2>$null
 }
 
-Write-Host "Exact alarm appops:"
-& $adb shell appops get $Package SCHEDULE_EXACT_ALARM
+$exactAlarmOps = (& $adb shell appops get $Package SCHEDULE_EXACT_ALARM).Trim()
+Write-Host "Exact alarm appops: $exactAlarmOps"
 
 Write-Host ""
 Write-Host "== Launch app =="
 & $adb shell monkey -p $Package -c android.intent.category.LAUNCHER 1 | Out-Null
-Start-Sleep -Seconds 4
+Start-Sleep -Seconds 5
 
 if ($ImmediateBroadcast) {
-  Write-Host "== Immediate broadcast (receiver path) =="
+  Write-Host "== Immediate broadcast (receiver + FGS path) =="
   & $adb shell input keyevent 26
   Start-Sleep -Seconds 2
   $nowMs = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
   & $adb shell am broadcast -a kz.raqat.app.action.PRAYER_AZAN_FULLSCREEN -n $Package/.PrayerAzanAlarmReceiver --es label Asr --es enteredTitle "Asr_QA" --es time QA --es soundId adhan_haramain --es salatKey asr --el atMillis $nowMs
   if ($LASTEXITCODE -ne 0) { throw "azan broadcast failed" }
-  Start-Sleep -Seconds 8
+  Start-Sleep -Seconds 10
 } else {
   Write-Host "== Schedule test alarm ($DelaySeconds s) via QA receiver =="
   & $adb shell am broadcast -a kz.raqat.app.action.SCHEDULE_AZAN_QA -n $Package/.PrayerAzanQaReceiver --ei delaySeconds $DelaySeconds
   if ($LASTEXITCODE -ne 0) { throw "schedule QA broadcast failed" }
-  Write-Host "Экранды құлыптаңыз, қолданбаны фонға жіберіңіз. Күту: $DelaySeconds сек + 15 сек buffer."
-  $wait = [Math]::Max(30, $DelaySeconds + 20)
+  Write-Host "Экранды құлыптаңыз, қолданбаны фонға жіберіңіз. Күту: $DelaySeconds сек + buffer."
+  $wait = [Math]::Max(30, $DelaySeconds + 25)
   & $adb shell input keyevent 26
   Start-Sleep -Seconds $wait
 }
@@ -107,20 +112,63 @@ Write-Host "== Wake + screenshot =="
 & $adb shell input keyevent 224 2>$null
 Start-Sleep -Seconds 2
 $remote = "/sdcard/raqat-azan-qa-$stamp.png"
-Invoke-Adb @("shell", "screencap", "-p", $remote)
-Invoke-Adb @("pull", $remote, (Join-Path $outDir "screen.png"))
+$localShot = Join-Path $outDir "screen.png"
+$prevEap = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $adb shell screencap -p $remote 2>$null
+& $adb pull $remote $localShot 2>$null
+$ErrorActionPreference = $prevEap
+if (Test-Path $localShot) {
+  Write-Host "Screenshot: $localShot"
+} else {
+  Write-Host "WARN screenshot skipped (adb screencap failed — check logcat below)"
+}
 
 Write-Host ""
 Write-Host "== Logcat (PrayerAzan*) =="
 $logPath = Join-Path $outDir "logcat-prayer-azan.txt"
-& $adb logcat -d -s PrayerAzanAlarm PrayerAzanNativePlayer MainActivity | Out-File -FilePath $logPath -Encoding utf8
-Get-Content $logPath -Tail 40
+& $adb logcat -d -s PrayerAzanAlarm PrayerAzanDelivery PrayerAzanNativePlayer MainActivity | Out-File -FilePath $logPath -Encoding utf8
+Get-Content $logPath -Tail 50
 
 Write-Host ""
 Write-Host "== Alarm snapshot =="
 $alarmPath = Join-Path $outDir "dumpsys-alarm.txt"
-& $adb shell dumpsys alarm | Select-String -Pattern $Package -Context 0,3 | Out-File -FilePath $alarmPath -Encoding utf8
-Get-Content $alarmPath -Tail 30
+& $adb shell dumpsys alarm | Select-String -Pattern $Package -Context 0,4 | Out-File -FilePath $alarmPath -Encoding utf8
+Get-Content $alarmPath -Tail 40
+
+$logText = if (Test-Path $logPath) { Get-Content $logPath -Raw } else { "" }
+$activityStarted = $logText -match "Started azan activity|Azan activity started from FGS"
+$nativeAudio = $logText -match "Started native azan audio"
+$exactBlocked = $logText -match "Exact alarm blocked"
+$qaPass = $activityStarted -or $nativeAudio
+
+Write-Host ""
+Write-Host "== QA summary =="
+Write-Host "Exact alarm appops: $exactAlarmOps"
+Write-Host "Activity started: $activityStarted"
+Write-Host "Native audio: $nativeAudio"
+Write-Host "Overall: $(if ($qaPass) { 'PASS' } else { 'FAIL' })"
+
+if ($WriteResultsJson) {
+  $resultsPath = Join-Path $repoRoot "docs/mobile/changelog/azan-locked-qa-$stamp.json"
+  $payload = @{
+    timestamp = (Get-Date).ToString("o")
+    device = @{ serial = $serial; brand = $brand; model = $model; api = $api }
+    apk = $Apk
+    delaySeconds = $DelaySeconds
+    exactAlarmAppops = $exactAlarmOps
+    pass = [bool]$qaPass
+    activityStarted = [bool]$activityStarted
+    nativeAudio = [bool]$nativeAudio
+    exactAlarmBlockedInLog = [bool]$exactBlocked
+    screenshot = $localShot
+    logcat = $logPath
+    alarms = $alarmPath
+  }
+  $payload | ConvertTo-Json -Depth 5 | Set-Content -Path $resultsPath -Encoding utf8
+  Write-Host "Results JSON: $resultsPath"
+}
 
 Write-Host ""
 Write-Host "Done. Review: $outDir\screen.png"
+if (-not $qaPass) { exit 1 }

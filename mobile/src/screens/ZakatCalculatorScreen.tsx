@@ -4,31 +4,37 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Pressable } from "@/ui/Pressable";
 import type { MoreStackParamList } from "../navigation/types";
-import { navigateToMoreStackScreen } from "../navigation/navigateToMoreStack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { InformationalToolBanner } from "../components/InformationalToolBanner";
+import { GuideAccordionSection } from "../components/GuideAccordion";
+import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import {
+  FATUA_ZAKAT_SEARCH_URL,
+  MUFTYAT_ZAKAT_SEARCH_URL,
+  ZAKAT_GUIDE_SECTIONS,
+} from "../content/zakatCalculatorContent";
+import {
+  computeNisabKzt,
+  computeZakatTotals,
+  formatKzt,
+  GOLD_NISAB_GRAMS,
+  SILVER_NISAB_GRAMS,
+  type NisabMode,
+  type ZakatAmountInput,
+} from "../content/zakatCalculatorLogic";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "ZakatCalculator">;
 
 type AmountField = {
-  key: keyof AmountState;
+  key: keyof ZakatAmountInput;
   label: string;
   hint: string;
   icon: keyof typeof MaterialIcons.glyphMap;
 };
 
-type AmountState = {
-  cash: string;
-  gold: string;
-  silver: string;
-  tradeGoods: string;
-  receivables: string;
-  debts: string;
-  nisab: string;
-};
-
-const INITIAL_AMOUNTS: AmountState = {
+const INITIAL_AMOUNTS: ZakatAmountInput = {
   cash: "",
   gold: "",
   silver: "",
@@ -38,104 +44,51 @@ const INITIAL_AMOUNTS: AmountState = {
   nisab: "",
 };
 
-const ZAKAT_RATE = 0.025;
-
-function parseAmount(raw: string): number {
-  const normalized = raw.replace(/\s/g, "").replace(",", ".");
-  const value = Number(normalized);
-  return Number.isFinite(value) && value > 0 ? value : 0;
-}
-
-function formatKzt(value: number): string {
-  const rounded = Math.round(Math.max(0, value));
-  try {
-    return new Intl.NumberFormat("kk-KZ").format(rounded) + " ₸";
-  } catch {
-    return `${rounded.toLocaleString()} ₸`;
-  }
-}
-
 const amountFields: AmountField[] = [
-  {
-    key: "cash",
-    label: kk.zakatCalculator.cash,
-    hint: kk.zakatCalculator.cashHint,
-    icon: "account-balance-wallet",
-  },
-  {
-    key: "gold",
-    label: kk.zakatCalculator.gold,
-    hint: kk.zakatCalculator.goldHint,
-    icon: "workspace-premium",
-  },
-  {
-    key: "silver",
-    label: kk.zakatCalculator.silver,
-    hint: kk.zakatCalculator.silverHint,
-    icon: "toll",
-  },
-  {
-    key: "tradeGoods",
-    label: kk.zakatCalculator.tradeGoods,
-    hint: kk.zakatCalculator.tradeGoodsHint,
-    icon: "storefront",
-  },
-  {
-    key: "receivables",
-    label: kk.zakatCalculator.receivables,
-    hint: kk.zakatCalculator.receivablesHint,
-    icon: "receipt-long",
-  },
-  {
-    key: "debts",
-    label: kk.zakatCalculator.debts,
-    hint: kk.zakatCalculator.debtsHint,
-    icon: "remove-circle-outline",
-  },
-  {
-    key: "nisab",
-    label: kk.zakatCalculator.nisab,
-    hint: kk.zakatCalculator.nisabHint,
-    icon: "verified",
-  },
+  { key: "cash", label: kk.zakatCalculator.cash, hint: kk.zakatCalculator.cashHint, icon: "account-balance-wallet" },
+  { key: "gold", label: kk.zakatCalculator.gold, hint: kk.zakatCalculator.goldHint, icon: "workspace-premium" },
+  { key: "silver", label: kk.zakatCalculator.silver, hint: kk.zakatCalculator.silverHint, icon: "toll" },
+  { key: "tradeGoods", label: kk.zakatCalculator.tradeGoods, hint: kk.zakatCalculator.tradeGoodsHint, icon: "storefront" },
+  { key: "receivables", label: kk.zakatCalculator.receivables, hint: kk.zakatCalculator.receivablesHint, icon: "receipt-long" },
+  { key: "debts", label: kk.zakatCalculator.debts, hint: kk.zakatCalculator.debtsHint, icon: "remove-circle-outline" },
 ];
 
-export function ZakatCalculatorScreen({ navigation }: Props) {
+const NISAB_MODES: { id: NisabMode; label: string }[] = [
+  { id: "manual", label: kk.zakatCalculator.nisabModeManual },
+  { id: "gold", label: kk.zakatCalculator.nisabModeGold },
+  { id: "silver", label: kk.zakatCalculator.nisabModeSilver },
+];
+
+export function ZakatCalculatorScreen(_props: Props) {
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
-  const [amounts, setAmounts] = useState<AmountState>(INITIAL_AMOUNTS);
+  const [amounts, setAmounts] = useState<ZakatAmountInput>(INITIAL_AMOUNTS);
+  const [nisabMode, setNisabMode] = useState<NisabMode>("manual");
+  const [pricePerGram, setPricePerGram] = useState("");
+  const [openGuide, setOpenGuide] = useState<Record<string, boolean>>({});
+
+  const computedNisab = useMemo(
+    () => computeNisabKzt(nisabMode, nisabMode === "gold" ? GOLD_NISAB_GRAMS : SILVER_NISAB_GRAMS, pricePerGram),
+    [nisabMode, pricePerGram]
+  );
 
   const totals = useMemo(() => {
-    const assets =
-      parseAmount(amounts.cash) +
-      parseAmount(amounts.gold) +
-      parseAmount(amounts.silver) +
-      parseAmount(amounts.tradeGoods) +
-      parseAmount(amounts.receivables);
-    const debts = parseAmount(amounts.debts);
-    const net = Math.max(0, assets - debts);
-    const nisab = parseAmount(amounts.nisab);
-    const hasNisab = nisab > 0;
-    const reachedNisab = hasNisab ? net >= nisab : net > 0;
-    const zakat = reachedNisab ? net * ZAKAT_RATE : 0;
-    return {
-      assets,
-      debts,
-      net,
-      nisab,
-      hasNisab,
-      reachedNisab,
-      zakat,
-      missing: hasNisab ? Math.max(0, nisab - net) : 0,
-    };
-  }, [amounts]);
+    const override = nisabMode === "manual" ? undefined : computedNisab;
+    return computeZakatTotals(amounts, override);
+  }, [amounts, computedNisab, nisabMode]);
 
-  const setField = (key: keyof AmountState, value: string) => {
+  const setField = (key: keyof ZakatAmountInput, value: string) => {
     setAmounts((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const toggleGuide = (title: string) => {
+    setOpenGuide((cur) => ({ ...cur, [title]: !cur[title] }));
   };
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <InformationalToolBanner colors={colors} hint={kk.zakatCalculator.boundaryHint} />
+
       <View style={styles.hero}>
         <View style={styles.heroIcon}>
           <MaterialIcons name="calculate" size={30} color={colors.accent} />
@@ -157,6 +110,7 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
               : kk.zakatCalculator.nisabMissing(formatKzt(totals.missing))
             : kk.zakatCalculator.nisabNotSet}
         </Text>
+        <Text style={styles.hawlNote}>{kk.zakatCalculator.hawlNote}</Text>
         <View style={styles.summaryGrid}>
           <SummaryCell label={kk.zakatCalculator.assetsTotal} value={formatKzt(totals.assets)} />
           <SummaryCell label={kk.zakatCalculator.debtsTotal} value={formatKzt(totals.debts)} />
@@ -164,6 +118,65 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
           <SummaryCell label={kk.zakatCalculator.rateLabel} value="2.5%" />
         </View>
       </View>
+
+      <Text style={styles.sectionTitle}>{kk.zakatCalculator.nisabHelperTitle}</Text>
+      <View style={styles.nisabModeRow}>
+        {NISAB_MODES.map((mode) => {
+          const active = nisabMode === mode.id;
+          return (
+            <Pressable
+              key={mode.id}
+              onPress={() => setNisabMode(mode.id)}
+              style={({ pressed }) => [styles.nisabChip, active && styles.nisabChipActive, pressed && { opacity: 0.9 }]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.nisabChipTxt, active && styles.nisabChipTxtActive]}>{mode.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {nisabMode === "manual" ? (
+        <View style={styles.fieldCard}>
+          <View style={styles.fieldTop}>
+            <MaterialIcons name="verified" size={20} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>{kk.zakatCalculator.nisab}</Text>
+              <Text style={styles.fieldHint}>{kk.zakatCalculator.nisabHint}</Text>
+            </View>
+          </View>
+          <TextInput
+            value={amounts.nisab}
+            onChangeText={(value) => setField("nisab", value)}
+            keyboardType="decimal-pad"
+            placeholder="0"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+          />
+        </View>
+      ) : (
+        <View style={styles.fieldCard}>
+          <View style={styles.fieldTop}>
+            <MaterialIcons name="scale" size={20} color={colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fieldLabel}>{kk.zakatCalculator.pricePerGram}</Text>
+              <Text style={styles.fieldHint}>{kk.zakatCalculator.pricePerGramHint}</Text>
+            </View>
+          </View>
+          <TextInput
+            value={pricePerGram}
+            onChangeText={setPricePerGram}
+            keyboardType="decimal-pad"
+            placeholder="0"
+            placeholderTextColor={colors.muted}
+            style={styles.input}
+          />
+          {computedNisab > 0 ? (
+            <Text style={styles.computedNisab}>{kk.zakatCalculator.computedNisab(formatKzt(computedNisab))}</Text>
+          ) : null}
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>{kk.zakatCalculator.inputsTitle}</Text>
       {amountFields.map((field) => (
@@ -186,6 +199,19 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
         </View>
       ))}
 
+      <Text style={styles.sectionTitle}>{kk.zakatCalculator.guideTitle}</Text>
+      {ZAKAT_GUIDE_SECTIONS.map((section) => (
+        <GuideAccordionSection
+          key={section.title}
+          title={section.title}
+          expanded={!!openGuide[section.title]}
+          onToggle={() => toggleGuide(section.title)}
+          colors={colors}
+        >
+          <Text style={styles.guideBody}>{section.body}</Text>
+        </GuideAccordionSection>
+      ))}
+
       <View style={styles.noteCard}>
         <MaterialIcons name="info-outline" size={22} color={colors.accent} />
         <Text style={styles.noteText}>{kk.zakatCalculator.disclaimer}</Text>
@@ -193,27 +219,36 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
 
       <View style={styles.actions}>
         <Pressable
-          onPress={() =>
-            navigateToMoreStackScreen(
-              "ImamAI",
-              { initialPrompt: kk.zakatCalculator.aiPrompt, autoSend: false },
-              navigation
-            )
-          }
+          onPress={() => openOfficialSiteExternally(FATUA_ZAKAT_SEARCH_URL)}
           style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
+          accessibilityLabel={kk.zakatCalculator.openFatuaA11y}
         >
-          <MaterialIcons name="question-answer" size={18} color="#fff" />
-          <Text style={styles.actionTxt}>{kk.zakatCalculator.askAi}</Text>
+          <MaterialIcons name="open-in-new" size={16} color="#fff" />
+          <Text style={styles.actionTxt}>{kk.zakatCalculator.openFatua}</Text>
         </Pressable>
         <Pressable
-          onPress={() => setAmounts(INITIAL_AMOUNTS)}
-          style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
+          onPress={() => openOfficialSiteExternally(MUFTYAT_ZAKAT_SEARCH_URL)}
+          style={({ pressed }) => [styles.actionBtn, styles.actionBtnSecondary, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
+          accessibilityLabel={kk.zakatCalculator.openMuftyatA11y}
         >
-          <Text style={styles.secondaryTxt}>{kk.zakatCalculator.clear}</Text>
+          <MaterialIcons name="menu-book" size={16} color={colors.accent} />
+          <Text style={[styles.actionTxt, styles.actionTxtSecondary]}>{kk.zakatCalculator.openMuftyat}</Text>
         </Pressable>
       </View>
+
+      <Pressable
+        onPress={() => {
+          setAmounts(INITIAL_AMOUNTS);
+          setPricePerGram("");
+          setNisabMode("manual");
+        }}
+        style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.9 }]}
+        accessibilityRole="button"
+      >
+        <Text style={styles.secondaryTxt}>{kk.zakatCalculator.clear}</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -265,6 +300,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     resultLabel: { color: colors.muted, fontSize: 12, fontWeight: "800" },
     resultAmount: { color: colors.text, fontSize: 34, fontWeight: "900", marginTop: 4 },
     resultHint: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 6 },
+    hawlNote: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 8, fontStyle: "italic" },
     summaryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 14 },
     summaryCell: {
       width: "48.5%",
@@ -276,7 +312,19 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     summaryLabel: { color: colors.muted, fontSize: 11, lineHeight: 15 },
     summaryValue: { color: colors.text, fontSize: 14, fontWeight: "900", marginTop: 3 },
-    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "900", marginBottom: 8 },
+    sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "900", marginBottom: 8, marginTop: 4 },
+    nisabModeRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 },
+    nisabChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    nisabChipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
+    nisabChipTxt: { color: colors.text, fontSize: 12, fontWeight: "800" },
+    nisabChipTxtActive: { color: "#fff" },
     fieldCard: {
       padding: 12,
       borderRadius: 16,
@@ -299,6 +347,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontSize: 18,
       fontWeight: "800",
     },
+    computedNisab: { color: colors.accent, fontSize: 13, fontWeight: "800", marginTop: 8 },
+    guideBody: { color: colors.text, fontSize: 14, lineHeight: 22 },
     noteCard: {
       flexDirection: "row",
       gap: 10,
@@ -321,12 +371,19 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       borderRadius: 999,
       paddingVertical: 12,
     },
-    actionTxt: { color: "#fff", fontSize: 13, fontWeight: "900" },
+    actionBtnSecondary: {
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+    },
+    actionTxt: { color: "#fff", fontSize: 12, fontWeight: "900" },
+    actionTxtSecondary: { color: colors.accent },
     secondaryBtn: {
+      marginTop: 10,
+      alignSelf: "center",
       paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 999,
-      alignItems: "center",
-      justifyContent: "center",
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
       backgroundColor: colors.card,

@@ -13,6 +13,7 @@ import {
   resolveQuranReadingTheme,
   type QuranReadingThemeId,
 } from "../theme/quranComReadingTheme";
+import { QURAN_HATIM_COMPACT_LINE_HEIGHT_FACTOR } from "./quranResponsiveLayout";
 
 export type MushafTypographyMetrics = {
   scale: number;
@@ -57,10 +58,8 @@ export function computeMushafTypography(
   const arabAyahFont = quranArabicAyahTextMetrics(presetForMetrics, arabicLineFontFamily);
   const scale = clampMushafTextScale(mushafTextScale);
   const bookScaleBoost = qcomBook ? 1 : opts?.bookMushaf === true ? 1.04 : 1;
-  /** Quran.com кітап: жол биіктігі жайлы оқуға — аят жолдары тым жапсаспай, көзге ыңғайлы. */
-  const lineHeightFactor = qcomBook
-    ? Math.max(1.17, densityLayout.arabLineHeightFactor)
-    : densityLayout.arabLineHeightFactor;
+  /** Хатым compact: 604 бет бір экранға сiyу — line-height сәл тығыздау. */
+  const lineHeightFactor = qcomBook ? QURAN_HATIM_COMPACT_LINE_HEIGHT_FACTOR : densityLayout.arabLineHeightFactor;
   const mushafArabSize =
     typeof arabAyahFont.fontSize === "number"
       ? Math.round(arabAyahFont.fontSize * 1.02 * scale * bookScaleBoost)

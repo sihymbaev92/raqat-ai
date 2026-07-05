@@ -286,11 +286,18 @@ export function MushafBookPageQcf4({
     let alive = true;
     setLoadErr(false);
     setFontsReady(false);
+    const watchdog = setTimeout(() => {
+      if (!alive) return;
+      setLoadErr(true);
+      setQcfPage(null);
+      onLoadFailed?.();
+    }, 22_000);
     void (async () => {
       try {
         const json = await loadQcf4Page(page.mushafPageNumber);
         if (!alive) return;
         if (!json) {
+          clearTimeout(watchdog);
           setLoadErr(true);
           setQcfPage(null);
           onLoadFailed?.();
@@ -306,11 +313,13 @@ export function MushafBookPageQcf4({
           await loadQuranBookFonts().catch(() => undefined);
           const fontsOk = await ensureQcf4FontsLoaded([...fontIds]).catch(() => false);
           if (!alive) return;
+          clearTimeout(watchdog);
           setFontsReady(fontsOk);
           return;
         }
         const fontsOk = await ensureQcf4FontsLoaded([...fontIds]);
         if (!alive) return;
+        clearTimeout(watchdog);
         if (!fontsOk) {
           setLoadErr(true);
           setQcfPage(null);
@@ -320,6 +329,7 @@ export function MushafBookPageQcf4({
         setFontsReady(true);
       } catch {
         if (!alive) return;
+        clearTimeout(watchdog);
         setLoadErr(true);
         setQcfPage(null);
         onLoadFailed?.();
@@ -327,6 +337,7 @@ export function MushafBookPageQcf4({
     })();
     return () => {
       alive = false;
+      clearTimeout(watchdog);
     };
   }, [page.mushafPageNumber, isActive, onLoadFailed]);
 

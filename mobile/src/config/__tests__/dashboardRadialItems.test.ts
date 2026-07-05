@@ -12,7 +12,6 @@ describe("dashboardRadialItems", () => {
     "tasbih",
     "duas",
     "asma",
-    "ai",
     "halal",
     "tradition",
   ];
@@ -21,7 +20,7 @@ describe("dashboardRadialItems", () => {
     expect(getDashboardRadialItems().map((item) => item.key)).toEqual(expectedTileOrder);
   });
 
-  it("keeps the home grid aligned with the same 12 existing modules", () => {
+  it("keeps the home grid aligned with the same 11 existing modules", () => {
     expect(getDashboardHomeServices().map((item) => item.key)).toEqual(expectedTileOrder);
   });
 });

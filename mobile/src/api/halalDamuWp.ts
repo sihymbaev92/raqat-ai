@@ -889,6 +889,24 @@ export function halalPaginateCompanies(
   };
 }
 
+/** APK bundled snapshot → bulk memory (офлайн каталог, API сәтсіз болса). */
+export function seedHalalCompaniesBulkFromBundled(): void {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { getHalalCompaniesBundledCards } =
+      require("../services/halalCompaniesSnapshot") as typeof import("../services/halalCompaniesSnapshot");
+    const cards = getHalalCompaniesBundledCards();
+    if (!cards.length) return;
+    const serverKey = halalServerBulkKey(undefined);
+    if (companiesBulkMemory?.serverKey === serverKey && companiesBulkMemory.items.length >= cards.length) {
+      return;
+    }
+    companiesBulkMemory = { serverKey, items: cards };
+  } catch {
+    /* bundled asset жоқ */
+  }
+}
+
 async function halalWriteCompaniesBulkDisk(_serverKey: string, _items: HalalDamuCompanyCard[]): Promise<void> {
   /** ~4 МБ JSON AsyncStorage лимитін (Android ~6 МБ) асады — тек жадта сақтаймыз. */
 }
@@ -966,6 +984,10 @@ async function fetchHalalDamuCompaniesBulk(
     if (disk) {
       companiesBulkMemory = { serverKey, items: disk.items };
       return { all: disk.items, fromDisk: true, syncedAt: disk.syncedAt };
+    }
+    seedHalalCompaniesBulkFromBundled();
+    if (companiesBulkMemory?.serverKey === serverKey && companiesBulkMemory.items.length > 0) {
+      return { all: companiesBulkMemory.items, fromDisk: true, syncedAt: null };
     }
     return { all: [], error: "network" };
   }
@@ -1071,6 +1093,20 @@ export async function fetchHalalDamuCompaniesCatalog(
   if (!error && page === 1 && items.length > 0 && meta) {
     await halalWriteCatalogPage1Cache(filterKey, items, meta);
   }
+  if (error && page === 1) {
+    seedHalalCompaniesBulkFromBundled();
+    const bulk = companiesBulkMemory?.items ?? [];
+    if (bulk.length > 0) {
+      const filtered = halalFilterCompaniesClient(bulk, opts);
+      const paginated = halalPaginateCompanies(filtered, opts);
+      return {
+        items: paginated.items,
+        meta: paginated.meta,
+        fromCache: true,
+        syncedAt,
+      };
+    }
+  }
   return {
     items,
     error,
@@ -1080,10 +1116,15 @@ export async function fetchHalalDamuCompaniesCatalog(
   };
 }
 
-/** Кэш пен карта маркерлерін тазалау (жаңарту/синхрондау). */
-export async function invalidateHalalDamuAllCaches(): Promise<void> {
+/** Жадтағы API кэштерін босату; bundled snapshot seed қалдырылады. */
+export function releaseHalalDamuMemoryCache(): void {
   companiesBulkMemory = null;
   clearHalalDamuMapMarkersCache();
+}
+
+/** Кэш пен карта маркерлерін тазалау (жаңарту/синхрондау). */
+export async function invalidateHalalDamuAllCaches(): Promise<void> {
+  releaseHalalDamuMemoryCache();
   try {
     await AsyncStorage.multiRemove([
       RECENT_COMPANIES_DAY_CACHE_KEY,
@@ -1154,6 +1195,109 @@ export async function fetchHalalDamuCompanyById(
   } catch {
     return { card: null, error: "network" };
   }
+}
+
+function halalFlattenWpCompanyRecord(o: Record<string, unknown>): Record<string, unknown> {
+  const acf = o.acf && typeof o.acf === "object" ? (o.acf as Record<string, unknown>) : {};
+  const meta = o.meta && typeof o.meta === "object" ? (o.meta as Record<string, unknown>) : {};
+  const titleObj = o.title as { rendered?: string } | undefined;
+  const title =
+    titleObj?.rendered != null
+      ? String(titleObj.rendered)
+      : o.title != null
+        ? String(o.title)
+        : "";
+  return {
+    ...meta,
+    ...acf,
+    ...o,
+    id: o.id,
+    slug: o.slug,
+    title,
+    updated_at: o.modified ?? o.date ?? o.updated_at,
+  };
+}
+
+/** WP CPT — halal-bot бос/қысқа жауап бергенде толық карточка. */
+export async function fetchHalalDamuCompanyFromWp(
+  id: number
+): Promise<{ card: HalalDamuCompanyCard | null; error?: string }> {
+  if (!id) return { card: null, error: "bad_id" };
+  try {
+    const r = await halalDamuFetchGet(`wp/v2/company/${id}?_embed=1`, 12_000);
+    if (!r.ok) return { card: null, error: `HTTP ${r.status}` };
+    const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
+    return { card: parseCompanyCard(halalFlattenWpCompanyRecord(data)) };
+  } catch {
+    return { card: null, error: "network" };
+  }
+}
+
+function halalPreferRicherString(a: string | null | undefined, b: string | null | undefined): string | null {
+  const aa = (a ?? "").trim();
+  const bb = (b ?? "").trim();
+  if (!aa) return bb || null;
+  if (!bb) return aa;
+  return bb.length > aa.length ? bb : aa;
+}
+
+/** Карточка деректерін біріктіру — бос өрістер кейінгі көзден толықтырылады. */
+export function mergeHalalCompanyCards(
+  ...parts: (HalalDamuCompanyCard | null | undefined)[]
+): HalalDamuCompanyCard | null {
+  const cards = parts.filter(Boolean) as HalalDamuCompanyCard[];
+  if (cards.length === 0) return null;
+  const base = { ...cards[0] };
+  for (let i = 1; i < cards.length; i++) {
+    const c = cards[i];
+    base.legalName = halalPreferRicherString(base.legalName, c.legalName);
+    base.slug = base.slug ?? c.slug;
+    base.categoryType = base.categoryType ?? c.categoryType;
+    base.certificateStatus = base.certificateStatus ?? c.certificateStatus;
+    base.address = halalPreferRicherString(base.address, c.address);
+    base.phone = halalPreferRicherString(base.phone, c.phone);
+    base.website = halalPreferRicherString(base.website, c.website);
+    base.mapLink = halalPreferRicherString(base.mapLink, c.mapLink);
+    base.description = halalPreferRicherString(base.description, c.description);
+    base.certNumber = base.certNumber ?? c.certNumber;
+    base.certIssuedAt = base.certIssuedAt ?? c.certIssuedAt;
+    base.certExpiresAt = base.certExpiresAt ?? c.certExpiresAt;
+    base.updatedAt = base.updatedAt ?? c.updatedAt;
+    base.logoUrl = base.logoUrl ?? c.logoUrl;
+    base.thumbnailUrl = base.thumbnailUrl ?? c.thumbnailUrl;
+    base.lat = base.lat ?? c.lat;
+    base.lon = base.lon ?? c.lon;
+    base.resolvedMapUrl = base.resolvedMapUrl ?? c.resolvedMapUrl;
+    base.phones = base.phones.length ? base.phones : c.phones;
+    base.galleryUrls = base.galleryUrls.length ? base.galleryUrls : c.galleryUrls;
+    const extraSeen = new Set(base.extraUrls.map((e) => e.url.toLowerCase()));
+    for (const link of c.extraUrls) {
+      const low = link.url.toLowerCase();
+      if (!extraSeen.has(low)) {
+        extraSeen.add(low);
+        base.extraUrls.push(link);
+      }
+    }
+  }
+  if (!base.phones.length && base.phone) {
+    base.phones = halalSplitPhones(base.phone);
+  }
+  if (!base.resolvedMapUrl) {
+    base.resolvedMapUrl = halalBuildResolvedMapUrl(base.mapLink, base.address, base.lat, base.lon);
+  }
+  return base;
+}
+
+/** halal-bot + WP + тізім карточкасын біріктіреді. */
+export async function fetchHalalDamuCompanyFull(
+  seed: HalalDamuCompanyCard
+): Promise<{ card: HalalDamuCompanyCard; error?: string }> {
+  const [{ card: bot }, { card: wp }] = await Promise.all([
+    fetchHalalDamuCompanyById(seed.id),
+    fetchHalalDamuCompanyFromWp(seed.id),
+  ]);
+  const merged = mergeHalalCompanyCards(seed, bot ?? undefined, wp ?? undefined);
+  return { card: merged ?? seed, error: bot || wp ? undefined : "partial" };
 }
 
 /** halal-bot өнім карточкасы (өрістер сайт нұсқасына қарай өзгеруі мүмкін). */

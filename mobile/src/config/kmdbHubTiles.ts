@@ -3,9 +3,7 @@ import { kk } from "../i18n/kk";
 import { menuIconAssets } from "../theme/menuIconAssets";
 import type { MoreStackParamList } from "../navigation/types";
 
-export type KmdbHubTileKey =
-  | "ai"
-  | "zakat";
+export type KmdbHubTileKey = "ai" | "zakat";
 
 export type KmdbHubTileDef = {
   key: KmdbHubTileKey;
@@ -32,4 +30,13 @@ export function getKmdbHubTiles(): KmdbHubTileDef[] {
       image: menuIconAssets.tileDaily,
     },
   ];
+}
+
+/** @deprecated KmdbHubScreen енді табтар арқылы fatua/muftyat/meshit */
+export function getKmdbHubPrimaryRowKeys(): readonly ["fatua", "mosques", "muftyat"] {
+  return ["fatua", "mosques", "muftyat"];
+}
+
+export function getKmdbHubSecondaryTiles(): readonly [] {
+  return [];
 }

@@ -1,11 +1,10 @@
 import {
-  OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT,
   OFFICIAL_SITE_NO_CACHE_HEADERS,
-  OFFICIAL_SITE_PREFETCH_URLS,
   OFFICIAL_SITE_SW_CACHE_PURGE_INJECT,
   clearOfficialSiteWebCache,
-} from "../officialSiteWebViewReload";
-import { withEmbeddedSiteCacheBust } from "../officialSiteWebViewReload";
+} from "./officialSiteWebViewReload";
+import { withEmbeddedSiteCacheBust } from "./EmbeddedSiteWebView";
+import { OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT } from "./embeddedOfficialSiteNavigation";
 
 describe("officialSiteWebViewReload", () => {
   it("withEmbeddedSiteCacheBust adds unique query params", () => {
@@ -25,13 +24,8 @@ describe("officialSiteWebViewReload", () => {
     expect(OFFICIAL_SITE_NO_CACHE_HEADERS["Cache-Control"]).toMatch(/no-cache/);
   });
 
-  it("fast before-load inject skips service worker purge", () => {
-    expect(OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT).not.toContain("unregister");
-    expect(OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT).toContain("viewport");
-  });
-
-  it("prefetch URLs include halal and muftyat homes", () => {
-    expect(OFFICIAL_SITE_PREFETCH_URLS.some((u) => u.includes("halaldamu"))).toBe(true);
-    expect(OFFICIAL_SITE_PREFETCH_URLS.some((u) => u.includes("muftyat"))).toBe(true);
+  it("sw purge inject unregisters service workers", () => {
+    expect(OFFICIAL_SITE_SW_CACHE_PURGE_INJECT).toContain("unregister");
+    expect(OFFICIAL_SITE_SW_CACHE_PURGE_INJECT).toContain("caches.delete");
   });
 });

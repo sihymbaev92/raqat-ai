@@ -17,27 +17,39 @@ import type { ThemeColors } from "../theme/colors";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import { kk } from "../i18n/kk";
 import {
-  OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT,
   OFFICIAL_SITE_NO_CACHE_HEADERS,
   OFFICIAL_SITE_SW_CACHE_PURGE_INJECT,
   clearOfficialSiteWebCache,
   withEmbeddedSiteCacheBust,
 } from "./officialSiteWebViewReload";
 import {
+  OFFICIAL_SITE_DESKTOP_VIEWPORT_INJECT,
   OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT,
   OFFICIAL_SITE_SPA_HISTORY_INJECT,
+  buildOfficialSiteUserAgent,
   openEmbeddedSiteUrlExternally,
   shouldStayInOfficialSiteWebView,
+  type OfficialSitePresentation,
 } from "./embeddedOfficialSiteNavigation";
 
-const MOBILE_CHROME_BASE =
-  "Mozilla/5.0 (Linux; Android 13; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36";
+function viewportInjectFor(presentation: OfficialSitePresentation): string {
+  return presentation === "desktop"
+    ? OFFICIAL_SITE_DESKTOP_VIEWPORT_INJECT
+    : OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT;
+}
 
-const OFFICIAL_SITE_BEFORE_LOAD_INJECT = `${OFFICIAL_SITE_SW_CACHE_PURGE_INJECT}\n${OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
-const OFFICIAL_SITE_AFTER_LOAD_INJECT = `${OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
+function buildBeforeLoadInject(
+  presentation: OfficialSitePresentation,
+  forceFreshLoad: boolean
+): string {
+  const viewport = viewportInjectFor(presentation);
+  const core = `${viewport}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
+  if (forceFreshLoad) return `${OFFICIAL_SITE_SW_CACHE_PURGE_INJECT}\n${core}`;
+  return core;
+}
 
-function buildMobileUserAgent(tag: string): string {
-  return `${MOBILE_CHROME_BASE} ${tag}`;
+function buildAfterLoadInject(presentation: OfficialSitePresentation): string {
+  return `${viewportInjectFor(presentation)}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
 }
 
 export type OfficialSiteFullWebViewHandle = {
@@ -53,10 +65,13 @@ type Props = {
   /** Осы домендер WebView ішінде қалады; қалған http(s) — сыртқы браузер. */
   allowedHosts: readonly string[];
   userAgentTag?: string;
+  /** muftyat.kz — desktop UA + pinch-zoom (намаз жолағы, izdeu). */
+  sitePresentation?: OfficialSitePresentation;
+  /** @deprecated sitePresentation қолданыңыз */
   injectMobileViewport?: boolean;
   /** Экранға қайта оралғанда сайтты қайта жүктеу (әдепкі: false — кэш жылдам). */
   refreshOnFocus?: boolean;
-  /** Жүктелгеннен кейін DOM-ға қосымша JS (мыс. halaldamu промо блок). */
+  /** Жүктелгеннен кейін DOM-ға қосымша JS. */
   extraPageInject?: string;
 };
 
@@ -72,12 +87,15 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       title,
       allowedHosts,
       userAgentTag = "RaqatOfficialSite/1",
+      sitePresentation: sitePresentationProp,
       injectMobileViewport = true,
       refreshOnFocus = false,
       extraPageInject,
     },
     ref
   ) {
+    const sitePresentation: OfficialSitePresentation =
+      sitePresentationProp ?? (injectMobileViewport ? "mobile" : "desktop");
     const webRef = useRef<WebViewType>(null);
     const focusBootRef = useRef(true);
     const reloadGenRef = useRef(0);
@@ -104,7 +122,10 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
     }, [resolvedUrl, forceFreshLoad]);
 
     const webMountKey = sessionToken > 0 ? `session-${sessionToken}` : "boot";
-    const userAgent = useMemo(() => buildMobileUserAgent(userAgentTag), [userAgentTag]);
+    const userAgent = useMemo(
+      () => buildOfficialSiteUserAgent(userAgentTag, sitePresentation),
+      [userAgentTag, sitePresentation]
+    );
     const isWeb = Platform.OS === "web";
 
     const styles = useMemo(
@@ -244,29 +265,28 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       [allowedHosts]
     );
 
-    const beforeLoadInject = useMemo(() => {
-      if (!injectMobileViewport) {
-        return forceFreshLoad ? OFFICIAL_SITE_SW_CACHE_PURGE_INJECT : undefined;
-      }
-      return forceFreshLoad ? OFFICIAL_SITE_BEFORE_LOAD_INJECT : OFFICIAL_SITE_FAST_BEFORE_LOAD_INJECT;
-    }, [forceFreshLoad, injectMobileViewport]);
+    const afterLoadInject = useMemo(
+      () => buildAfterLoadInject(sitePresentation),
+      [sitePresentation]
+    );
+
+    const beforeLoadInject = useMemo(
+      () => buildBeforeLoadInject(sitePresentation, forceFreshLoad),
+      [sitePresentation, forceFreshLoad]
+    );
 
     const applyPageInject = useCallback(() => {
-      if (injectMobileViewport) {
-        webRef.current?.injectJavaScript(OFFICIAL_SITE_AFTER_LOAD_INJECT);
-      }
+      webRef.current?.injectJavaScript(afterLoadInject);
       if (extraPageInject) {
         webRef.current?.injectJavaScript(extraPageInject);
       }
-    }, [injectMobileViewport, extraPageInject]);
+    }, [afterLoadInject, extraPageInject]);
 
     const combinedAfterLoadInject = useMemo(() => {
-      if (!injectMobileViewport && !extraPageInject) return undefined;
-      const parts: string[] = [];
-      if (injectMobileViewport) parts.push(OFFICIAL_SITE_AFTER_LOAD_INJECT.replace(/\ntrue;\s*$/, ""));
+      const parts: string[] = [afterLoadInject.replace(/\ntrue;\s*$/, "")];
       if (extraPageInject) parts.push(extraPageInject.replace(/\ntrue;\s*$/, ""));
       return `${parts.join("\n")}\ntrue;`;
-    }, [injectMobileViewport, extraPageInject]);
+    }, [afterLoadInject, extraPageInject]);
 
     if (!resolvedUrl) {
       return (

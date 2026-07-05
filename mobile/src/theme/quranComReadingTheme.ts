@@ -33,25 +33,28 @@ export type QuranReadingThemeSpec = {
   titlePaperBorder: string;
 };
 
+/** Ayah-style оқу: жұмсақ сүт фон, көзге жайлы. */
+export const QURAN_READING_CREAM = "#FDFBF7";
+
 const ORIGINAL: QuranReadingThemeSpec = {
   id: "original",
-  labelKk: "Ақ",
+  labelKk: "Жұмсақ сүт",
   minimalPageChrome: true,
-  pageFace: "#FEF9F3",
-  desk: "#FEF9F3",
-  arabicInk: "#000000",
-  chromeInk: "#B08D57",
-  titleInk: "#B08D57",
+  pageFace: QURAN_READING_CREAM,
+  desk: QURAN_READING_CREAM,
+  arabicInk: "#1A1714",
+  chromeInk: "#9C8E7E",
+  titleInk: "#8A7B6C",
   pageBorderVertical: false,
-  pageBorderColor: "rgba(176,141,87,0.38)",
-  markerRingOuter: "#B59A7A",
-  markerAccentFill: "#FEF9F3",
-  markerFace: "#FEF9F3",
-  markerInk: "#000000",
+  pageBorderColor: "rgba(156,142,126,0.22)",
+  markerRingOuter: "#C9BBA8",
+  markerAccentFill: QURAN_READING_CREAM,
+  markerFace: QURAN_READING_CREAM,
+  markerInk: "#1A1714",
   bismBorder: "transparent",
   bismSurface: "transparent",
-  titlePaperBg: "#FEF9F3",
-  titlePaperBorder: "rgba(176,141,87,0.32)",
+  titlePaperBg: QURAN_READING_CREAM,
+  titlePaperBorder: "rgba(156,142,126,0.18)",
 };
 
 const PAPER: QuranReadingThemeSpec = {
@@ -163,6 +166,11 @@ export function isQuranReadingThemeInMenu(id: QuranReadingThemeId): boolean {
 
 export function resolveQuranReadingTheme(id: QuranReadingThemeId | string | null | undefined): QuranReadingThemeSpec {
   return BY_ID[normalizeQuranReadingTheme(typeof id === "string" ? id : id ?? undefined)];
+}
+
+/** Тема ID бойынша — normalize етпей (legacy paper/sepia сияқты). */
+export function lookupQuranReadingTheme(id: QuranReadingThemeId): QuranReadingThemeSpec {
+  return BY_ID[id] ?? ORIGINAL;
 }
 
 export function quranReadingThemeLabelKk(id: QuranReadingThemeId): string {

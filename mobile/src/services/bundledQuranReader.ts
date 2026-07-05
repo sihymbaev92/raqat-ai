@@ -5,7 +5,11 @@ import type { CachedAyah } from "../storage/quranSurahCache";
 import type { CachedSurah } from "../storage/quranListCache";
 import { parseSurahsFromApiJson } from "../storage/quranListCache";
 import { hasCyrillicScript } from "../utils/quranTranslitDisplay";
-import { loadBundledJson, releaseBundledJsonMemory } from "../utils/loadBundledJson";
+import {
+  loadBundledJson,
+  releaseBundledJsonMemory,
+  tryLoadBundledJson,
+} from "../utils/loadBundledJson";
 
 type SurahBundle = {
   number: number;
@@ -81,14 +85,16 @@ async function loadBundlesAsync(): Promise<void> {
   const [surahListBundle, fullQuranBundle, translitBundle, kkFromDbBundle] = await Promise.all([
     loadBundledJson("surah-list-api.json"),
     loadBundledJson("quran-uthmani-full.json"),
-    loadBundledJson("quran-en-transliteration-full.json"),
-    loadBundledJson("quran-kk-from-db.json"),
+    tryLoadBundledJson("quran-en-transliteration-full.json"),
+    tryLoadBundledJson("quran-kk-from-db.json"),
   ]);
   buildMapsFromBundles(
     surahListBundle,
     fullQuranBundle as { data?: { surahs?: SurahBundle[] } },
-    translitBundle as { data?: { surahs?: SurahBundle[] } },
-    kkFromDbBundle as { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
+    (translitBundle ?? { data: { surahs: [] } }) as { data?: { surahs?: SurahBundle[] } },
+    (kkFromDbBundle ?? { data: { surahs: [] } }) as {
+      data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> };
+    }
   );
   releaseBundledJsonMemory("quran-uthmani-full.json");
   releaseBundledJsonMemory("quran-en-transliteration-full.json");

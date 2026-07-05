@@ -1,10 +1,11 @@
 import {
   resolveQuranReadingTheme,
+  QURAN_READING_CREAM,
   type QuranReadingThemeId,
 } from "./quranComReadingTheme";
 
-/** Хатым кітап беті — Quran.com Original (крем қағаз). */
-export const MUSHAF_BOOK_PAGE_FACE_LIGHT = "#FEF9F3";
+/** Хатым кітап беті — Ayah-style жұмсақ сүт (#FDFBF7). */
+export const MUSHAF_BOOK_PAGE_FACE_LIGHT = QURAN_READING_CREAM;
 
 /**
  * Мұсаф / хатым — Quran.com оқу темасы (Original, Paper, Sepia, Dark, Muftyat).

@@ -3,6 +3,7 @@
  * Jest: assets/bundled require (офлайн тест).
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Asset } from "expo-asset";
 import {
   documentDirectory,
   getInfoAsync,
@@ -25,6 +26,12 @@ type MetaStore = Partial<Record<BundledJsonName, FileMeta>>;
 
 const memory = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();
+
+/** APK asset (JS bundle-ға inline емес — Asset resource). */
+const APK_JSON_ASSET_MODULES: Partial<Record<BundledJsonName, number>> = {
+  "surah-list-api.json": require("../../assets/bundled/surah-list-api.json"),
+  "quran-uthmani-full.json": require("../../assets/bundled/quran-uthmani-full.json"),
+};
 
 export class BundledJsonMissingError extends Error {
   readonly jsonName: BundledJsonName;
@@ -100,22 +107,36 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
       return { version: 1, authors: [], entries: [] };
     case "abai-kara-soz-full.json":
       return [];
+    case "scraped-hadith-muftyat.json":
+      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
+    case "extracted-hadith-muftyat.json":
+      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
+    case "external-hadith-kk.json":
+      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
+    case "hadith-from-db-seed.json":
+      return { books: [], hadiths: [] };
+    case "halal-companies-snapshot.json":
+      return { version: 1, syncedAt: "", items: [] };
+    case "mosques-2gis-kz.json":
+      return { source: "test", count: 0, syncedAt: "", mosques: [] };
     default:
       throw new Error(`unknown bundled json: ${name}`);
   }
 }
 
-function loadFromNativeAssetFallback(name: BundledJsonName): unknown | null {
+async function loadFromNativeAssetFallback(name: BundledJsonName): Promise<unknown | null> {
   if (!isApkBundledJson(name)) return null;
-  switch (name) {
-    case "surah-list-api.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/surah-list-api.json");
-    case "quran-uthmani-full.json":
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      return require("../../assets/bundled/quran-uthmani-full.json");
-    default:
-      return null;
+  const mod = APK_JSON_ASSET_MODULES[name];
+  if (mod == null) return null;
+  try {
+    const asset = Asset.fromModule(mod);
+    await asset.downloadAsync();
+    const uri = asset.localUri ?? asset.uri;
+    if (!uri) return null;
+    const raw = await readAsStringAsync(uri);
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
   }
 }
 
@@ -165,9 +186,10 @@ export async function saveCachedBundledJsonFile(name: BundledJsonName, data: unk
 }
 
 export async function isBundledJsonCached(name: BundledJsonName): Promise<boolean> {
-  if (isApkBundledJson(name) && loadFromNativeAssetFallback(name) != null) return true;
+  if (memory.has(name)) return true;
   const cached = await readCachedBundledJsonFile(name);
-  return cached != null;
+  if (cached != null) return true;
+  return isApkBundledJson(name) && APK_JSON_ASSET_MODULES[name] != null;
 }
 
 export async function downloadBundledJsonToCache<T>(
@@ -189,6 +211,21 @@ export async function downloadBundledJsonToCache<T>(
   }
 }
 
+function isValidApkBundledPayload(name: BundledJsonName, data: unknown): boolean {
+  if (name === "quran-uthmani-full.json") {
+    const surahs = (data as { data?: { surahs?: Array<{ ayahs?: Array<{ text?: string }> }> } })?.data
+      ?.surahs;
+    if (!Array.isArray(surahs) || surahs.length < 114) return false;
+    const text = surahs[0]?.ayahs?.[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
+    return text.length > 0;
+  }
+  if (name === "surah-list-api.json") {
+    const rows = (data as { data?: unknown[] })?.data;
+    return Array.isArray(rows) && rows.length >= 114;
+  }
+  return true;
+}
+
 async function resolveJson<T>(name: BundledJsonName, opts?: { optional?: boolean }): Promise<T | null> {
   const hit = memory.get(name);
   if (hit !== undefined) return hit as T;
@@ -203,46 +240,38 @@ async function resolveJson<T>(name: BundledJsonName, opts?: { optional?: boolean
       return data;
     }
 
+    /** Хатым Arabic: APK asset әрқашан алды — бұзылған CDN/FileSystem кэш placeholder қалдырmasın. */
     if (isApkBundledJson(name)) {
-      const native = loadFromNativeAssetFallback(name);
-      if (native != null) {
+      const native = await loadFromNativeAssetFallback(name);
+      if (native != null && isValidApkBundledPayload(name, native)) {
         memory.set(name, native);
         return native as T;
       }
     }
 
     const cached = await readCachedBundledJsonFile<T>(name);
-    if (cached != null) {
+    if (cached != null && isValidApkBundledPayload(name, cached)) {
       memory.set(name, cached);
       return cached;
     }
+    if (cached != null && isApkBundledJson(name)) {
+      void invalidateBundledJsonCache(name);
+    }
+
+    if (isApkBundledJson(name)) {
+      const native = await loadFromNativeAssetFallback(name);
+      if (native != null) {
+        memory.set(name, native);
+        return native as T;
+      }
+    }
 
     if (isRemoteBundledJson(name)) {
-      if (opts?.optional) {
-        if (__DEV__) {
-          try {
-            const dev = loadFromAssetRequire(name) as T;
-            memory.set(name, dev);
-            return dev;
-          } catch {
-            return null;
-          }
-        }
-        return null;
-      }
+      if (opts?.optional) return null;
       try {
         const data = await downloadBundledJsonToCache<T>(name);
         return data;
       } catch (err) {
-        if (__DEV__) {
-          try {
-            const dev = loadFromAssetRequire(name) as T;
-            memory.set(name, dev);
-            return dev;
-          } catch {
-            /* fall through */
-          }
-        }
         if (opts?.optional) return null;
         throw new BundledJsonMissingError(name, String(err));
       }
@@ -252,7 +281,7 @@ async function resolveJson<T>(name: BundledJsonName, opts?: { optional?: boolean
       const data = await downloadBundledJsonToCache<T>(name);
       return data;
     } catch (err) {
-      const fallback = loadFromNativeAssetFallback(name);
+      const fallback = await loadFromNativeAssetFallback(name);
       if (fallback != null) {
         memory.set(name, fallback);
         return fallback as T;

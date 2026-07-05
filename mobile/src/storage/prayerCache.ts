@@ -8,7 +8,7 @@ import {
 import { getCityApproxCoords, getKzPresetCoords } from "../constants/kzCities";
 import { fetchOpenMeteoCurrent } from "../services/openMeteoCurrent";
 
-const KEY = "raqat_prayer_cache_v1";
+const KEY = "raqat_prayer_cache_v2";
 
 export type CachedPrayer = PrayerTimesResult & {
   savedAt: string;
@@ -29,7 +29,7 @@ function cachedPrayerCoords(payload: PrayerTimesResult): { lat: number; lon: num
   return getKzPresetCoords(payload.city, payload.country) ?? getCityApproxCoords(payload.city);
 }
 
-async function buildAndroidWidgetPayload(payload: CachedPrayer): Promise<Record<string, unknown>> {
+async function buildWidgetPayload(payload: CachedPrayer): Promise<Record<string, unknown>> {
   const base: Record<string, unknown> = { ...payload };
   const coords = cachedPrayerCoords(payload);
   if (coords) {
@@ -42,37 +42,43 @@ async function buildAndroidWidgetPayload(payload: CachedPrayer): Promise<Record<
         base.weatherCode = w.wmoCode;
       }
     } catch {
-      /* ауа райы болмағанда да координаттар виджетке кетеді */
+      /* optional weather */
     }
   }
   return base;
 }
 
-/** Android home widget: құбыла стрелкасы (heading) — қолданба ашық кезде. */
-export function pushAndroidWidgetQiblaHeading(headingDeg: number): void {
-  if (Platform.OS !== "android" || !Number.isFinite(headingDeg)) {
-    return;
-  }
+type PrayerWidgetNative = {
+  setQiblaHeading?: (heading: number) => void;
+  setPayload?: (json: string) => void;
+};
+
+function prayerWidgetNative(): PrayerWidgetNative | undefined {
+  return (NativeModules as { PrayerWidget?: PrayerWidgetNative }).PrayerWidget;
+}
+
+/** Native home widget: Android + iOS (App Group / WidgetKit). */
+export function pushNativeWidgetQiblaHeading(headingDeg: number): void {
+  if (Platform.OS === "web" || !Number.isFinite(headingDeg)) return;
   try {
-    const PW = NativeModules as {
-      PrayerWidget?: { setQiblaHeading?: (heading: number) => void };
-    };
-    PW.PrayerWidget?.setQiblaHeading?.(headingDeg);
+    prayerWidgetNative()?.setQiblaHeading?.(headingDeg);
   } catch {
-    /* native модуль жоқ */
+    /* native module missing */
   }
 }
 
-async function pushAndroidPrayerWidgetIfNeeded(payload: CachedPrayer): Promise<void> {
-  if (Platform.OS !== "android") {
-    return;
-  }
+/** @deprecated use pushNativeWidgetQiblaHeading */
+export const pushAndroidWidgetQiblaHeading = pushNativeWidgetQiblaHeading;
+
+async function pushNativePrayerWidgetIfNeeded(payload: CachedPrayer): Promise<void> {
+  if (Platform.OS === "web") return;
   try {
-    const PW = (NativeModules as { PrayerWidget?: { setPayload: (json: string) => void } }).PrayerWidget;
-    const enriched = await buildAndroidWidgetPayload(payload);
-    PW?.setPayload(JSON.stringify(enriched));
+    const native = prayerWidgetNative();
+    if (!native?.setPayload) return;
+    const enriched = await buildWidgetPayload(payload);
+    native.setPayload(JSON.stringify(enriched));
   } catch {
-    /* native модуль болмаған жобада — елемеу */
+    /* native module missing */
   }
 }
 
@@ -99,13 +105,16 @@ export async function savePrayerCache(data: PrayerTimesResult): Promise<void> {
     savedAt: new Date().toISOString(),
   };
   await AsyncStorage.setItem(KEY, JSON.stringify(payload));
-  await pushAndroidPrayerWidgetIfNeeded(payload);
+  await pushNativePrayerWidgetIfNeeded(payload);
 }
 
-/** Қолданба ашылғанда / алдыңғы кэшті виджетке қайта жіберу (Android). */
-export async function syncAndroidPrayerWidgetFromStorage(): Promise<void> {
+/** Қолданба ашылғанда / кэшті native widget-ке синхрондау (Android + iOS). */
+export async function syncNativePrayerWidgetFromStorage(): Promise<void> {
   const c = await loadPrayerCache();
   if (c) {
-    await pushAndroidPrayerWidgetIfNeeded(c);
+    await pushNativePrayerWidgetIfNeeded(c);
   }
 }
+
+/** @deprecated use syncNativePrayerWidgetFromStorage */
+export const syncAndroidPrayerWidgetFromStorage = syncNativePrayerWidgetFromStorage;

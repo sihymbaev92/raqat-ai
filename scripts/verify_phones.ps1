@@ -70,15 +70,15 @@ function Wait-ForDevices([string]$adb, [int]$maxSec) {
   $seenUnauthorized = $false
   while ((Get-Date) -lt $deadline) {
     $lines = Adb $adb $null @("devices")
-    $devices = @()
-    $unauthorized = @()
-    foreach ($line in ($lines -split "`n")) {
-      if ($line -match "^(\S+)\s+device\s*$") { $devices += $Matches[1] }
-      elseif ($line -match "^(\S+)\s+unauthorized\s*$") {
-        $unauthorized += $Matches[1]
-        $seenUnauthorized = $true
-      }
+  $devices = @()
+  $unauthorized = @()
+  foreach ($line in ($lines -split "`n")) {
+    if ($line -match "^(\S+)\s+device\s*$") { $devices += $Matches[1] }
+    elseif ($line -match "^(\S+)\s+unauthorized\s*$") {
+      $unauthorized += $Matches[1]
+      $seenUnauthorized = $true
     }
+  }
     if ($devices.Count -gt 0) { return @{ authorized = $devices; unauthorized = $unauthorized } }
     if ($seenUnauthorized) {
       Write-Host "→ Телефонда «Allow USB debugging» басыңыз…"

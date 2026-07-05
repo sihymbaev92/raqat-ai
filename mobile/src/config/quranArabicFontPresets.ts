@@ -20,7 +20,7 @@ export type QuranArabicFontPresetId =
 export const DEFAULT_QURAN_ARABIC_FONT_PRESET: QuranArabicFontPresetId = "quran_com";
 
 export const QURAN_ARABIC_FONT_PRESETS: { id: QuranArabicFontPresetId; labelKk: string }[] = [
-  { id: "quran_com", labelKk: "Madina (Lateef)" },
+  { id: "quran_com", labelKk: "Uthmanic (Madina)" },
   { id: "book_muftyat", labelKk: "Muftyat (оқулық нақыші)" },
   { id: "default", labelKk: "Жүйелік (қалың)" },
   { id: "large", labelKk: "Ірі (оқуға ыңғайлы)" },
@@ -45,7 +45,7 @@ export function effectiveArabicPresetForMushafBook(
 ): QuranArabicFontPresetId {
   const qcom = resolveQuranReadingTheme(readingThemeId).minimalPageChrome;
   if (qcom) {
-    return "book_scheherazade";
+    return "book_lateef";
   }
   if (preset === "default" || preset === "large" || preset === "compact") return "quran_com";
   return preset;
@@ -69,9 +69,9 @@ export function quranArabicAyahTextMetrics(
     case "quran_com":
       return {
         fontSize: 26,
-        lineHeight: 34,
+        lineHeight: 47,
         fontWeight: "400",
-        fontFamily: QURAN_BOOK_FONT_FACE.scheherazade,
+        fontFamily: QURAN_BOOK_FONT_FACE.uthmanic,
       };
     case "large":
       return { fontSize: 36, lineHeight: 58, fontWeight: "700", ...androidFallback };
@@ -98,10 +98,10 @@ export function quranArabicAyahTextMetrics(
       };
     case "book_lateef":
       return {
-        fontSize: 30,
-        lineHeight: 50,
+        fontSize: 26,
+        lineHeight: 47,
         fontWeight: "400",
-        fontFamily: QURAN_BOOK_FONT_FACE.lateef,
+        fontFamily: QURAN_BOOK_FONT_FACE.uthmanic,
       };
     case "book_scheherazade":
       return {

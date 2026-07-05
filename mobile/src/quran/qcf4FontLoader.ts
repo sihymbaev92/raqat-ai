@@ -1,6 +1,12 @@
 import * as Font from "expo-font";
 import { Platform } from "react-native";
 import { getQcf4UpstreamBaseUrl, mushafQcf4FontFileUrl } from "../config/mushafPagesBase";
+import { qcf4FontPackRemoteUrls } from "../services/qcf4FontPackManifest";
+import {
+  downloadQcf4Font,
+  isQcf4FontCached,
+  qcf4FontCachePath,
+} from "../services/quranFontCache";
 
 const loaded = new Set<string>();
 const inflight = new Map<string, Promise<boolean>>();
@@ -113,12 +119,44 @@ async function loadQcf4Font(fontId: string): Promise<boolean> {
           ? `${fontId}_W.woff2`
           : `${fontId}_W.ttf`;
     const uris = [
-      mushafQcf4FontFileUrl(fontId, ext),
       `${getQcf4UpstreamBaseUrl()}/${dir}/${file}`,
+      mushafQcf4FontFileUrl(fontId, ext),
     ];
     if (Platform.OS === "web") {
       return loadQcf4FontWeb(fontId, family, qcf4WebFontUris(uris[0]!, uris[1]!));
     }
+
+    const cachePath = qcf4FontCachePath(fontId);
+    if (cachePath && (await isQcf4FontCached(fontId))) {
+      const loadedOk = await withTimeout(
+        Font.loadAsync({ [family]: cachePath }).then(() => true),
+        QCF4_FONT_LOAD_TIMEOUT_MS
+      );
+      if (loadedOk) {
+        loaded.add(fontId);
+        return true;
+      }
+    }
+
+    try {
+      const downloaded = await withTimeout(
+        downloadQcf4Font(fontId, qcf4FontPackRemoteUrls(fontId)),
+        QCF4_FONT_LOAD_TIMEOUT_MS
+      );
+      if (downloaded?.uri) {
+        const loadedOk = await withTimeout(
+          Font.loadAsync({ [family]: downloaded.uri }).then(() => true),
+          QCF4_FONT_LOAD_TIMEOUT_MS
+        );
+        if (loadedOk) {
+          loaded.add(fontId);
+          return true;
+        }
+      }
+    } catch {
+      /* remote fallback */
+    }
+
     for (const uri of uris) {
       try {
         const loadedOk = await withTimeout(

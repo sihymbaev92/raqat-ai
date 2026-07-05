@@ -1,14 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
-  Linking,
-  Platform,
 } from "react-native";
-import { Pressable } from "@/ui/Pressable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -16,8 +12,11 @@ import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { MoreStackParamList } from "../navigation/types";
-import { SEERAH_LESSON_COUNT, urlForSeerahLesson } from "../config/seerahVideos";
+import { SEERAH_LESSON_COUNT } from "../config/seerahVideos";
 import { loadSeerahProgress, saveSeerahLessonViewed } from "../storage/seerahProgress";
+import { OfflineBundleBanner } from "../components/OfflineBundleBanner";
+import { ModuleDepthStatsBar } from "../components/ModuleDepthStatsBar";
+import { SeerahCurriculumRoadmap } from "../components/SeerahCurriculumRoadmap";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "Seerah">;
 
@@ -26,10 +25,6 @@ export function SeerahScreen(_props: Props) {
   const styles = makeStyles(colors);
   const { tr, translated } = useKkAutoTranslator();
 
-  const lessons = useMemo(
-    () => Array.from({ length: SEERAH_LESSON_COUNT }, (_, i) => i + 1),
-    []
-  );
   const [viewedLessons, setViewedLessons] = useState<number[]>([]);
   const [lastLesson, setLastLesson] = useState<number | null>(null);
 
@@ -46,20 +41,16 @@ export function SeerahScreen(_props: Props) {
     };
   }, []);
 
-  const openLesson = useCallback(async (lesson: number) => {
-    try {
-      const url = urlForSeerahLesson(lesson);
-      await Linking.openURL(url);
-      const next = await saveSeerahLessonViewed(lesson);
-      setViewedLessons(next.viewedLessons);
-      setLastLesson(next.lastLesson);
-    } catch {
-      Alert.alert(kk.common.error, kk.seerah.openError);
-    }
+  const onLessonViewed = useCallback(async (lesson: number) => {
+    const next = await saveSeerahLessonViewed(lesson);
+    setViewedLessons(next.viewedLessons);
+    setLastLesson(next.lastLesson);
   }, []);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <OfflineBundleBanner colors={colors} hint={tr(kk.seerah.offlineNote)} />
+      <ModuleDepthStatsBar moduleId="seerah" colors={colors} tr={tr} />
       <Text style={styles.h1}>{tr(kk.seerah.title)}</Text>
       <Text style={styles.intro}>{tr(kk.seerah.intro)}</Text>
       {lastLesson ? (
@@ -68,27 +59,13 @@ export function SeerahScreen(_props: Props) {
         </Text>
       ) : null}
 
-      <Text style={styles.sectionLabel}>{tr(kk.seerah.lessonsSection)}</Text>
-      <View style={styles.lessonGrid} accessibilityRole="list">
-        {lessons.map((lesson) => (
-          <Pressable
-            key={lesson}
-            style={({ pressed }) => [
-              styles.lessonChip,
-              viewedLessons.includes(lesson) && styles.lessonChipViewed,
-              pressed && styles.chipPressed,
-            ]}
-            onPress={() => void openLesson(lesson)}
-            accessibilityRole="button"
-            accessibilityLabel={kk.seerah.lessonA11y(lesson)}
-          >
-            {lastLesson === lesson ? <Text style={styles.lastBadge}>{tr("Соңғы")}</Text> : null}
-            <Text style={styles.chipTitle} numberOfLines={1}>
-              {tr(kk.seerah.lessonTitle(lesson))}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <SeerahCurriculumRoadmap
+        colors={colors}
+        tr={tr}
+        viewedLessons={viewedLessons}
+        lastLesson={lastLesson}
+        onLessonViewed={onLessonViewed}
+      />
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </ScrollView>
   );
@@ -114,61 +91,8 @@ function makeStyles(colors: ThemeColors) {
     progressHint: {
       color: colors.muted,
       fontSize: 13,
-      lineHeight: 19,
-      marginBottom: 12,
-    },
-    sectionLabel: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: "800",
-      marginBottom: 12,
-      letterSpacing: 0.2,
-    },
-    lessonGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      rowGap: 10,
-    },
-    lessonChip: {
-      width: "48%",
-      minWidth: 0,
-      overflow: "hidden",
-      backgroundColor: colors.card,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingVertical: 12,
-      alignItems: "stretch",
-      ...Platform.select({
-        ios: {
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 4,
-        },
-        android: { elevation: 2 },
-        default: {},
-      }),
-    },
-    chipPressed: { opacity: 0.92 },
-    lessonChipViewed: {
-      borderColor: colors.accent,
-      backgroundColor: "rgba(34,197,94,0.1)",
-    },
-    lastBadge: {
-      alignSelf: "center",
-      color: colors.accent,
-      fontSize: 11,
-      fontWeight: "800",
-      marginBottom: 4,
-    },
-    chipTitle: {
-      color: colors.accent,
-      fontSize: 15,
-      fontWeight: "900",
-      paddingHorizontal: 8,
-      textAlign: "center",
+      marginBottom: 14,
+      fontWeight: "600",
     },
   });
 }

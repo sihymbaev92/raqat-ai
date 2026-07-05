@@ -6,9 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { modalSafeAreaInsets } from "../theme/modalSafeArea";
-import { EmbeddedSiteWebView, shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally, withEmbeddedSiteCacheBust } from "./EmbeddedSiteWebView";
+import { EmbeddedSiteWebView, shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally } from "./EmbeddedSiteWebView";
 
-export { shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally, withEmbeddedSiteCacheBust };
+export { shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally };
 
 type Props = {
   visible: boolean;

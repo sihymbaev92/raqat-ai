@@ -1,11 +1,13 @@
-import { kbBrowseArticles } from "../../hooks/useDashboardNewsItems";
+import { buildDashboardKurbanAitNewsItems } from "../../content/dashboardNewsItems";
 
-describe("kbBrowseArticles", () => {
-  it("returns empty when ok=false", () => {
-    expect(kbBrowseArticles({ ok: false, results: [{ title: "x" } as never] })).toEqual([]);
-  });
-
-  it("returns results when ok is undefined", () => {
-    expect(kbBrowseArticles({ results: [{ title: "x" } as never] })).toHaveLength(1);
+describe("dashboard news fallback", () => {
+  it("uses only in-app seasonal items without external KB feeds", () => {
+    const items = buildDashboardKurbanAitNewsItems();
+    expect(items.length).toBeGreaterThan(0);
+    for (const item of items) {
+      expect(item.title).toBeTruthy();
+      expect(item.target?.screen).toBe("KurbanAit");
+      expect(item.articleUrl ?? "").not.toMatch(/fatua|muftyat/i);
+    }
   });
 });

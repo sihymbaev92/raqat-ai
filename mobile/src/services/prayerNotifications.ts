@@ -206,13 +206,9 @@ async function fetchPrayerDaysAhead(
     .filter((x) => !x.pt.error);
 }
 
-/** Жинақтағы MP3 атаулары (app.config.js → expo-notifications sounds). */
+/** Жинақтағы жалғыз MP3 (app.config.js → expo-notifications sounds). */
 const BUNDLED_SOUND: Record<Exclude<PrayerNotifSoundId, "off">, string> = {
   adhan_haramain: "prayer_azan_user_01.mp3",
-  adhan_madina_clear: "prayer_azan_user_02.mp3",
-  adhan_makkah_live: "prayer_azan_user_03.mp3",
-  adhan_soft_cc0: "prayer_azan_user_04.mp3",
-  adhan_takbir_high: "prayer_azan_user_05.mp3",
 };
 
 function prayerAndroidChannelId(soundId: PrayerNotifSoundId): string {

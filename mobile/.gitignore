@@ -15,5 +15,17 @@ keystore/
 *.orig.*
 web-build/
 .DS_Store
+# QA screenshots / manual captures (APK-ға кірмейді, репода қалmasın)
+qa-*.png
+qa-*.xml
+qa-*.log
+manual-*.png
+kaaba-hajj-screen.png
+qa-*/
+qa-sweep-*/
+qa-hatim-check/
+manual-sweep-*/
+.content-pack-staging/
+.tmp-apk-slim-stash/
 # Ескі: build-тар .gradle-ascii репо ішіндегі кэш (қазір D:/raqat-gradle default)
 .gradle-ascii/

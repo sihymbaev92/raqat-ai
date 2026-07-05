@@ -48,6 +48,7 @@ import { DashboardPrayerWidget } from "../components/DashboardPrayerWidget";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { DashboardHomeServicesGrid } from "../components/dashboard/DashboardHomeServicesGrid";
 import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../config/dashboardHomeServices";
+import { warmHalalHubScreen, warmHotHubScreens, warmKmdbHubScreen } from "../services/hubScreenWarmup";
 import { PRAYER_TIMES_HERO_NEXT_BG } from "../config/dashboardPrayerHero";
 import { QiblaSensorProvider, useQiblaStable } from "../context/QiblaSensorContext";
 import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
@@ -475,7 +476,7 @@ function DashboardScreenContent({
     }
 
     const [freshRaw, shiftMin] = await Promise.all([
-      fetchPrayerTimesForLocation(city, country),
+      fetchPrayerTimesForLocation(city, country, undefined, { lat: loc.lat, lon: loc.lon }),
       getDashboardPrayerShiftMin(),
     ]);
     if (!isCurrent()) return;
@@ -749,6 +750,20 @@ function DashboardScreenContent({
     [navigation]
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setTimeout(() => {
+        runAfterInteractions(() => warmHotHubScreens());
+      }, 900);
+      return () => clearTimeout(timer);
+    }, [])
+  );
+
+  const onHomeServicePressIn = useCallback((key: DashboardHomeServiceKey) => {
+    if (key === "ai") warmKmdbHubScreen();
+    else if (key === "halal") warmHalalHubScreen();
+  }, []);
+
   const onHomeServicePress = useCallback(
     (key: DashboardHomeServiceKey) => {
       if (openWebRoute(dashboardHomeServiceWebPath(key))) return;
@@ -917,6 +932,7 @@ function DashboardScreenContent({
                 colors={colors}
                 isDark={isDark}
                 onPress={onHomeServicePress}
+                onPressIn={onHomeServicePressIn}
               />
             ) : null}
           </View>

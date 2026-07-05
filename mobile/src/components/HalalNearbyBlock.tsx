@@ -76,6 +76,8 @@ type Props = {
   onOpenCompany: (id: number) => void;
   onOpenProductLookup?: (query: string) => void;
   onLookupKindChange?: (kind: NearbyLookupKind) => void;
+  /** Тек мешіт/мекеме режимі — таб таңдау жасырылады. */
+  lockedLookupKind?: NearbyLookupKind;
 };
 
 function filterCompaniesByQuery(rows: HalalCompanyWithDistance[], query: string): HalalCompanyWithDistance[] {
@@ -128,11 +130,12 @@ export function HalalNearbyBlock({
   onOpenCompany,
   onOpenProductLookup,
   onLookupKindChange,
+  lockedLookupKind,
 }: Props) {
   const searchInputRef = useRef<TextInput>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [lookupKind, setLookupKind] = useState<NearbyLookupKind>("institution");
+  const [lookupKind, setLookupKind] = useState<NearbyLookupKind>(lockedLookupKind ?? "institution");
   const [institutionRows, setInstitutionRows] = useState<HalalCompanyWithDistance[]>([]);
   const [productRows, setProductRows] = useState<HalalDamuProductItem[]>([]);
   const [mosqueRows, setMosqueRows] = useState<Mosque2GisWithDistance[]>([]);
@@ -395,6 +398,11 @@ export function HalalNearbyBlock({
     void loadNearby();
   }, [lookupKind, searchText, loadNearby, productStatusFilter]);
 
+  useEffect(() => {
+    if (lookupKind !== "mosque") return;
+    void loadNearby();
+  }, [lookupKind, radiusKm, loadNearby]);
+
   const blockTitle =
     lookupKind === "product"
       ? kk.features.halalNearbyProductTitle
@@ -434,46 +442,50 @@ export function HalalNearbyBlock({
         </View>
       </View>
 
-      <Text style={[styles.filterLabel, { color: colors.muted }]}>{kk.features.halalNearbyLookupLabel}</Text>
-      <View style={styles.lookupKindRow} accessibilityRole="radiogroup">
-        {lookupKindChips.map((chip) => {
-          const selected = lookupKind === chip.value;
-          return (
-            <Pressable
-              key={chip.value}
-              onPress={() => {
-                dismissKeyboard();
-                setLookupKind(chip.value);
-                setSelectedMosque(null);
-                setErr(null);
-                setProductRows([]);
-                setProductFromProducers(false);
-                setLoadedOnce(false);
-              }}
-              style={({ pressed }) => [
-                styles.lookupKindChip,
-                {
-                  borderColor: selected ? colors.accent : colors.border,
-                  backgroundColor: selected ? colors.accentSurface : colors.bg,
-                },
-                pressed && { opacity: 0.9 },
-              ]}
-              accessibilityRole="radio"
-              accessibilityState={{ selected }}
-              accessibilityLabel={chip.label}
-            >
-              <Text
-                style={[
-                  styles.lookupKindTxt,
-                  { color: selected ? colors.accent : colors.text, fontWeight: selected ? "800" : "600" },
-                ]}
-              >
-                {chip.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {lockedLookupKind ? null : (
+        <>
+          <Text style={[styles.filterLabel, { color: colors.muted }]}>{kk.features.halalNearbyLookupLabel}</Text>
+          <View style={styles.lookupKindRow} accessibilityRole="radiogroup">
+            {lookupKindChips.map((chip) => {
+              const selected = lookupKind === chip.value;
+              return (
+                <Pressable
+                  key={chip.value}
+                  onPress={() => {
+                    dismissKeyboard();
+                    setLookupKind(chip.value);
+                    setSelectedMosque(null);
+                    setErr(null);
+                    setProductRows([]);
+                    setProductFromProducers(false);
+                    setLoadedOnce(false);
+                  }}
+                  style={({ pressed }) => [
+                    styles.lookupKindChip,
+                    {
+                      borderColor: selected ? colors.accent : colors.border,
+                      backgroundColor: selected ? colors.accentSurface : colors.bg,
+                    },
+                    pressed && { opacity: 0.9 },
+                  ]}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={chip.label}
+                >
+                  <Text
+                    style={[
+                      styles.lookupKindTxt,
+                      { color: selected ? colors.accent : colors.text, fontWeight: selected ? "800" : "600" },
+                    ]}
+                  >
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
 
       {lookupKind === "product" && onProductStatusFilterChange && productStatusChips.length > 0 ? (
         <>

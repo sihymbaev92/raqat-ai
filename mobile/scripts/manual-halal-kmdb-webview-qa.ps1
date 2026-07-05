@@ -29,21 +29,10 @@ $adbArgs = @()
 if ($Serial) { $adbArgs += "-s", $Serial }
 
 function Invoke-Adb {
-  param(
-    [Parameter(Mandatory)][string[]]$Cmd,
-    [switch]$AllowNonZero
-  )
-  $prev = $ErrorActionPreference
-  $ErrorActionPreference = "Continue"
-  try {
-    $out = & $adb @adbArgs @Cmd 2>&1
-    if (-not $AllowNonZero -and $LASTEXITCODE -ne 0) {
-      throw "adb failed: $($Cmd -join ' ') :: $out"
-    }
-    return $out
-  } finally {
-    $ErrorActionPreference = $prev
-  }
+  param([Parameter(Mandatory)][string[]]$Cmd)
+  $out = & $adb @adbArgs @Cmd 2>&1
+  if ($LASTEXITCODE -ne 0) { throw "adb failed: $($Cmd -join ' ') :: $out" }
+  return $out
 }
 
 function Shot {
@@ -77,16 +66,10 @@ function Open-DeepLink {
 
 function Tap-DashboardTileByLabel {
   param([string]$LabelFragment)
-  $dumpRemote = "/sdcard/window_dump.xml"
+  $dumpRemote = "/sdcard/qa-ui.xml"
   $dumpLocal = Join-Path $OutDir "_ui-dump.xml"
-  try {
-    Invoke-Adb -Cmd @("shell", "uiautomator", "dump", $dumpRemote) | Out-Null
-    Start-Sleep -Milliseconds 800
-    Invoke-Adb -Cmd @("pull", $dumpRemote, $dumpLocal) | Out-Null
-  } catch {
-    return $false
-  }
-  if (-not (Test-Path $dumpLocal)) { return $false }
+  Invoke-Adb -Cmd @("shell", "uiautomator", "dump", $dumpRemote) | Out-Null
+  Invoke-Adb -Cmd @("pull", $dumpRemote, $dumpLocal) | Out-Null
   [xml]$xml = Get-Content -Raw -Encoding UTF8 $dumpLocal
   $node = $xml.SelectNodes("//node") | Where-Object {
     $_.text -match $LabelFragment -or $_.'content-desc' -match $LabelFragment
@@ -114,7 +97,7 @@ function Test-WebViewFlow {
   Wake-Device
   Invoke-Adb -Cmd @("shell", "am", "force-stop", $pkg) | Out-Null
   Start-Sleep -Seconds 1
-  Invoke-Adb -Cmd @("shell", "monkey", "-p", $pkg, "-c", "android.intent.category.LAUNCHER", "1") -AllowNonZero | Out-Null
+  Invoke-Adb -Cmd @("shell", "monkey", "-p", $pkg, "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
   Start-Sleep -Seconds 8
   Invoke-Adb -Cmd @("logcat", "-c") | Out-Null
   Shot "$Id-00-home" | Out-Null

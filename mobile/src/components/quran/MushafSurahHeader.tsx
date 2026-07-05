@@ -140,6 +140,7 @@ export function MushafSurahHeader({
             s.bismillahBanner,
             s.mushafBismillahBanner,
             bookOrnate && ornate.bismillahBannerBook,
+            qcomBookLayout && ornate.bismillahBannerQcom,
             qcf4LineSlotLayout && ornate.bismillahBannerQcf4Line,
           ]}
           accessibilityLabel={QURAN_BASMALA_READER_AR}
@@ -240,7 +241,7 @@ const ornate = StyleSheet.create({
     width: "100%",
     alignSelf: "stretch",
     marginTop: -2,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   titleBlockQcf4Line: {
     width: "100%",
@@ -285,6 +286,10 @@ const ornate = StyleSheet.create({
     includeFontPadding: true,
   },
   bismillahBannerBook: {
+    paddingVertical: 2,
+    marginBottom: 2,
+  },
+  bismillahBannerQcom: {
     paddingVertical: 2,
     marginBottom: 2,
   },

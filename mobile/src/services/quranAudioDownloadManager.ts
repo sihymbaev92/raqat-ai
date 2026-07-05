@@ -1,25 +1,33 @@
 import { Platform } from "react-native";
 import * as Network from "expo-network";
 import {
+  deleteQuranAudioCache,
+  deleteQuranAudioCacheForEdition,
   downloadQuranAudioToCache,
   getQuranAudioCacheStats,
   getQuranAudioFreeDiskBytes,
   isQuranAudioCached,
 } from "./quranAudioCache";
 import {
-  quranAudioDownloadTaskAt,
+  quranAudioDownloadEditionAyahTotal,
+  quranAudioDownloadTaskForEditionAt,
   quranAudioDownloadTaskLabel,
-  quranAudioDownloadTotalTasks,
 } from "./quranAudioDownloadManifest";
+import { quranAyahMp3Url } from "./quranSudaisAudio";
 import {
+  aggregateQuranAudioDownloadStatus,
+  defaultReciterEditionDownloadState,
+  hasPendingQuranAudioDownloads,
   loadQuranAudioDownloadPrefs,
   loadQuranAudioDownloadSnapshot,
   loadQuranAudioDownloadState,
   patchQuranAudioDownloadPrefs,
+  patchQuranAudioDownloadState,
   resetQuranAudioDownloadState,
   saveQuranAudioDownloadState,
   type QuranAudioDownloadSnapshot,
   type QuranAudioDownloadState,
+  type ReciterEditionDownloadState,
 } from "../storage/quranAudioDownloadPrefs";
 
 const DEFAULT_CHUNK_FILES = 18;
@@ -82,25 +90,41 @@ async function hasEnoughDisk(): Promise<NetworkGate> {
 }
 
 function addFailedItem(
-  state: QuranAudioDownloadState,
+  state: ReciterEditionDownloadState,
   item: { index: number; uri: string; error: string }
-): QuranAudioDownloadState {
+): ReciterEditionDownloadState {
   return {
     ...state,
     failedItems: [item, ...state.failedItems].slice(0, MAX_FAILED_ITEMS),
   };
 }
 
-function finishQuranAudioDownloadState(state: QuranAudioDownloadState, total: number): QuranAudioDownloadState {
+function finishEditionState(state: ReciterEditionDownloadState, total: number): ReciterEditionDownloadState {
   const hasFailures = state.failed > 0 || state.failedItems.length > 0;
   return {
     ...state,
-    total,
     cursorIndex: total,
     status: hasFailures ? "error" : "complete",
-    currentLabel: undefined,
-    completedAt: hasFailures ? undefined : state.completedAt ?? new Date().toISOString(),
     lastError: hasFailures ? state.lastError ?? "Some Quran audio files failed to download" : undefined,
+    completedAt: hasFailures ? undefined : state.completedAt ?? new Date().toISOString(),
+  };
+}
+
+function ensureEditionState(
+  state: QuranAudioDownloadState,
+  edition: string
+): ReciterEditionDownloadState {
+  return state.editions[edition] ?? defaultReciterEditionDownloadState();
+}
+
+function setEditionState(
+  state: QuranAudioDownloadState,
+  edition: string,
+  editionState: ReciterEditionDownloadState
+): QuranAudioDownloadState {
+  return {
+    ...state,
+    editions: { ...state.editions, [edition]: editionState },
   };
 }
 
@@ -109,105 +133,158 @@ export async function resumeQuranAudioDownloads(
 ): Promise<QuranAudioDownloadSnapshot> {
   const prefs = await loadQuranAudioDownloadPrefs();
   let state = await loadQuranAudioDownloadState();
-  const total = quranAudioDownloadTotalTasks();
+  const totalPerEdition = quranAudioDownloadEditionAyahTotal();
 
-  if (!prefs.enabled) {
-    state = { ...state, total, status: "idle", currentLabel: undefined };
+  if (!state.queuedEditions.length) {
+    state = { ...state, currentEdition: undefined, currentLabel: undefined };
     await saveQuranAudioDownloadState(state);
     return { prefs, state };
   }
   if (prefs.paused) {
-    state = { ...state, total, status: "paused" };
+    state = {
+      ...state,
+      currentEdition: undefined,
+      currentLabel: undefined,
+    };
+    for (const edition of state.queuedEditions) {
+      const ed = ensureEditionState(state, edition);
+      if (ed.cursorIndex < totalPerEdition && ed.status !== "complete" && ed.status !== "error") {
+        state = setEditionState(state, edition, { ...ed, status: "paused" });
+      }
+    }
     await saveQuranAudioDownloadState(state);
     return { prefs, state };
   }
-  if (state.cursorIndex >= total) {
-    state = finishQuranAudioDownloadState(state, total);
+  if (!hasPendingQuranAudioDownloads(state)) {
     await saveQuranAudioDownloadState(state);
     return { prefs, state };
   }
 
   const network = await canDownloadQuranAudioNow(prefs.allowMobileData);
   if (!network.ok) {
-    state = { ...state, total, status: "blocked", lastError: network.reason };
+    for (const edition of state.queuedEditions) {
+      const ed = ensureEditionState(state, edition);
+      if (ed.cursorIndex < totalPerEdition && ed.status !== "complete") {
+        state = setEditionState(state, edition, { ...ed, status: "blocked", lastError: network.reason });
+      }
+    }
+    state = { ...state, currentEdition: undefined, currentLabel: undefined };
     await saveQuranAudioDownloadState(state);
     return { prefs, state };
   }
   const disk = await hasEnoughDisk();
   if (!disk.ok) {
-    state = { ...state, total, status: "blocked", lastError: disk.reason };
+    for (const edition of state.queuedEditions) {
+      const ed = ensureEditionState(state, edition);
+      if (ed.cursorIndex < totalPerEdition && ed.status !== "complete") {
+        state = setEditionState(state, edition, { ...ed, status: "blocked", lastError: disk.reason });
+      }
+    }
+    state = { ...state, currentEdition: undefined, currentLabel: undefined };
     await saveQuranAudioDownloadState(state);
     return { prefs, state };
   }
 
-  const budgetFiles = Math.max(1, Math.floor(opts.budgetFiles ?? DEFAULT_CHUNK_FILES));
-  state = { ...state, total, status: "running", lastError: undefined };
-  await saveQuranAudioDownloadState(state);
+  let budgetFiles = Math.max(1, Math.floor(opts.budgetFiles ?? DEFAULT_CHUNK_FILES));
 
-  for (let i = 0; i < budgetFiles && state.cursorIndex < total; i += 1) {
-    const freshPrefs = await loadQuranAudioDownloadPrefs();
-    if (!freshPrefs.enabled || freshPrefs.paused) {
-      state = { ...state, status: freshPrefs.paused ? "paused" : "idle" };
-      await saveQuranAudioDownloadState(state);
-      return { prefs: freshPrefs, state };
-    }
+  for (const edition of state.queuedEditions) {
+    if (budgetFiles <= 0) break;
 
-    const task = quranAudioDownloadTaskAt(state.cursorIndex);
-    if (!task) {
-      state = finishQuranAudioDownloadState(state, total);
-      await saveQuranAudioDownloadState(state);
-      return { prefs: freshPrefs, state };
-    }
-
-    const currentLabel = quranAudioDownloadTaskLabel(task);
-    try {
-      state = { ...state, currentLabel, status: "running" };
-      await saveQuranAudioDownloadState(state);
-      if (await isQuranAudioCached(task.uri)) {
-        state = {
-          ...state,
-          cursorIndex: state.cursorIndex + 1,
-          cached: state.cached + 1,
-        };
-      } else {
-        const result = await downloadQuranAudioToCache(task.uri);
-        state = {
-          ...state,
-          cursorIndex: state.cursorIndex + 1,
-          downloaded: state.downloaded + (result.alreadyCached ? 0 : 1),
-          cached: state.cached + (result.alreadyCached ? 1 : 0),
-          bytes: state.bytes + (result.alreadyCached ? 0 : result.bytes),
-        };
+    let editionState = ensureEditionState(state, edition);
+    if (editionState.cursorIndex >= totalPerEdition) {
+      if (editionState.status !== "complete" && editionState.status !== "error") {
+        editionState = finishEditionState(editionState, totalPerEdition);
+        state = setEditionState(state, edition, editionState);
       }
-    } catch (err) {
-      const error = err instanceof Error ? err.message : String(err);
-      state = addFailedItem(
-        {
-          ...state,
-          cursorIndex: state.cursorIndex + 1,
-          failed: state.failed + 1,
-          lastError: error,
-        },
-        { index: task.index, uri: task.uri, error }
-      );
+      continue;
     }
-    await saveQuranAudioDownloadState(state);
+
+    while (budgetFiles > 0 && editionState.cursorIndex < totalPerEdition) {
+      const freshPrefs = await loadQuranAudioDownloadPrefs();
+      if (freshPrefs.paused) {
+        editionState = { ...editionState, status: "paused" };
+        state = setEditionState(state, edition, editionState);
+        await saveQuranAudioDownloadState({ ...state, currentEdition: undefined, currentLabel: undefined });
+        return { prefs: freshPrefs, state };
+      }
+
+      const task = quranAudioDownloadTaskForEditionAt(edition, editionState.cursorIndex);
+      if (!task) {
+        editionState = finishEditionState(editionState, totalPerEdition);
+        state = setEditionState(state, edition, editionState);
+        break;
+      }
+
+      const currentLabel = quranAudioDownloadTaskLabel(task);
+      state = { ...state, currentEdition: edition, currentLabel };
+      editionState = { ...editionState, status: "running", lastError: undefined };
+      state = setEditionState(state, edition, editionState);
+      await saveQuranAudioDownloadState(state);
+
+      try {
+        if (await isQuranAudioCached(task.uri)) {
+          editionState = {
+            ...editionState,
+            cursorIndex: editionState.cursorIndex + 1,
+            cached: editionState.cached + 1,
+          };
+        } else {
+          const result = await downloadQuranAudioToCache(task.uri);
+          editionState = {
+            ...editionState,
+            cursorIndex: editionState.cursorIndex + 1,
+            downloaded: editionState.downloaded + (result.alreadyCached ? 0 : 1),
+            cached: editionState.cached + (result.alreadyCached ? 1 : 0),
+            bytes: editionState.bytes + (result.alreadyCached ? 0 : result.bytes),
+          };
+        }
+      } catch (err) {
+        const error = err instanceof Error ? err.message : String(err);
+        editionState = addFailedItem(
+          {
+            ...editionState,
+            cursorIndex: editionState.cursorIndex + 1,
+            failed: editionState.failed + 1,
+            lastError: error,
+          },
+          { index: task.index, uri: task.uri, error }
+        );
+      }
+
+      state = setEditionState(state, edition, editionState);
+      await saveQuranAudioDownloadState(state);
+      budgetFiles -= 1;
+
+      if (editionState.cursorIndex >= totalPerEdition) {
+        editionState = finishEditionState(editionState, totalPerEdition);
+        state = setEditionState(state, edition, editionState);
+        await saveQuranAudioDownloadState(state);
+        break;
+      }
+    }
   }
 
-  if (state.cursorIndex >= total) {
-    state = finishQuranAudioDownloadState(state, total);
-    await saveQuranAudioDownloadState(state);
-  }
+  state = { ...state, currentEdition: undefined, currentLabel: undefined };
+  await saveQuranAudioDownloadState(state);
   return { prefs: await loadQuranAudioDownloadPrefs(), state };
 }
 
 export async function kickQuranAudioAutoDownloadLoop(): Promise<void> {
   if (Platform.OS === "web" || loopRunning) return;
+  const { prefs, state } = await loadQuranAudioDownloadSnapshot();
+  if (prefs.paused || !hasPendingQuranAudioDownloads(state)) return;
+
   loopRunning = true;
   try {
     while (true) {
-      const { prefs, state } = await resumeQuranAudioDownloads({ budgetFiles: DEFAULT_CHUNK_FILES, source: "foreground" });
-      if (!prefs.enabled || prefs.paused || state.status === "complete" || state.status === "blocked" || state.status === "error") {
+      const snap = await resumeQuranAudioDownloads({ budgetFiles: DEFAULT_CHUNK_FILES, source: "foreground" });
+      const status = aggregateQuranAudioDownloadStatus(snap.prefs, snap.state);
+      if (
+        snap.prefs.paused ||
+        !hasPendingQuranAudioDownloads(snap.state) ||
+        status === "blocked" ||
+        status === "error"
+      ) {
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, LOOP_DELAY_MS));
@@ -221,49 +298,105 @@ export async function resumeQuranAudioDownloadsInBackground(): Promise<QuranAudi
   return resumeQuranAudioDownloads({ budgetFiles: BACKGROUND_CHUNK_FILES, source: "background" });
 }
 
-export async function setQuranAudioAutoDownloadEnabled(enabled: boolean): Promise<QuranAudioDownloadSnapshot> {
-  const prefs = await patchQuranAudioDownloadPrefs({ enabled, paused: enabled ? false : true });
+export async function queueReciterEditionDownload(edition: string): Promise<QuranAudioDownloadSnapshot> {
+  const trimmed = edition.trim();
+  if (!trimmed) return loadQuranAudioDownloadSnapshot();
+
   let state = await loadQuranAudioDownloadState();
-  state = { ...state, status: enabled ? "idle" : "paused" };
+  const existing = ensureEditionState(state, trimmed);
+  const totalPerEdition = quranAudioDownloadEditionAyahTotal();
+
+  if (existing.cursorIndex >= totalPerEdition && existing.status === "complete") {
+    return { prefs: await loadQuranAudioDownloadPrefs(), state };
+  }
+
+  const queuedEditions = state.queuedEditions.includes(trimmed)
+    ? state.queuedEditions
+    : [...state.queuedEditions, trimmed];
+
+  const nextEditionState: ReciterEditionDownloadState =
+    existing.status === "error"
+      ? { ...defaultReciterEditionDownloadState(), status: "idle" }
+      : { ...existing, status: "idle", lastError: undefined };
+
+  state = {
+    ...state,
+    queuedEditions,
+    editions: { ...state.editions, [trimmed]: nextEditionState },
+  };
   await saveQuranAudioDownloadState(state);
-  if (enabled) void kickQuranAudioAutoDownloadLoop();
+
+  const prefs = await patchQuranAudioDownloadPrefs({ paused: false });
+  void kickQuranAudioAutoDownloadLoop();
   return { prefs, state };
+}
+
+export async function removeReciterEditionOfflinePack(edition: string): Promise<QuranAudioDownloadSnapshot> {
+  const trimmed = edition.trim();
+  if (!trimmed) return loadQuranAudioDownloadSnapshot();
+
+  await deleteQuranAudioCacheForEdition(trimmed, quranAyahMp3Url);
+
+  let state = await loadQuranAudioDownloadState();
+  const { [trimmed]: _removed, ...restEditions } = state.editions;
+  void _removed;
+  state = {
+    ...state,
+    queuedEditions: state.queuedEditions.filter((e) => e !== trimmed),
+    editions: { ...restEditions, [trimmed]: defaultReciterEditionDownloadState() },
+    currentEdition: state.currentEdition === trimmed ? undefined : state.currentEdition,
+    currentLabel: state.currentEdition === trimmed ? undefined : state.currentLabel,
+  };
+  await saveQuranAudioDownloadState(state);
+  return { prefs: await loadQuranAudioDownloadPrefs(), state };
 }
 
 export async function setQuranAudioAllowMobileData(allowMobileData: boolean): Promise<QuranAudioDownloadSnapshot> {
   const prefs = await patchQuranAudioDownloadPrefs({ allowMobileData });
   const state = await loadQuranAudioDownloadState();
-  if (!prefs.paused && prefs.enabled) void kickQuranAudioAutoDownloadLoop();
+  if (!prefs.paused && hasPendingQuranAudioDownloads(state)) void kickQuranAudioAutoDownloadLoop();
   return { prefs, state };
 }
 
 export async function pauseQuranAudioDownloads(): Promise<QuranAudioDownloadSnapshot> {
   const prefs = await patchQuranAudioDownloadPrefs({ paused: true });
   const state = await loadQuranAudioDownloadState();
-  const next = { ...state, status: "paused" as const };
-  await saveQuranAudioDownloadState(next);
-  return { prefs, state: next };
+  return { prefs, state };
 }
 
 export async function resumeQuranAudioDownloadsFromSettings(): Promise<QuranAudioDownloadSnapshot> {
-  await patchQuranAudioDownloadPrefs({ enabled: true, paused: false });
+  await patchQuranAudioDownloadPrefs({ paused: false });
   const snap = await resumeQuranAudioDownloads({ budgetFiles: DEFAULT_CHUNK_FILES, source: "settings" });
   void kickQuranAudioAutoDownloadLoop();
   return snap;
 }
 
 export async function resetQuranAudioDownloadsAndCache(): Promise<QuranAudioDownloadSnapshot> {
-  const { deleteQuranAudioCache } = await import("./quranAudioCache");
   await deleteQuranAudioCache();
-  await patchQuranAudioDownloadPrefs({ enabled: true, paused: false });
+  await patchQuranAudioDownloadPrefs({ paused: false });
   const state = await resetQuranAudioDownloadState();
   const prefs = await loadQuranAudioDownloadPrefs();
   return { prefs, state };
 }
 
 export async function loadQuranAudioDownloadDashboard(): Promise<
-  QuranAudioDownloadSnapshot & { cacheFiles: number; cacheBytes: number }
+  QuranAudioDownloadSnapshot & {
+    cacheFiles: number;
+    cacheBytes: number;
+    aggregateStatus: ReturnType<typeof aggregateQuranAudioDownloadStatus>;
+  }
 > {
   const [snap, stats] = await Promise.all([loadQuranAudioDownloadSnapshot(), getQuranAudioCacheStats()]);
-  return { ...snap, cacheFiles: stats.files, cacheBytes: stats.bytes };
+  return {
+    ...snap,
+    cacheFiles: stats.files,
+    cacheBytes: stats.bytes,
+    aggregateStatus: aggregateQuranAudioDownloadStatus(snap.prefs, snap.state),
+  };
+}
+
+/** @deprecated per-reciter queue replaces global auto-download toggle */
+export async function setQuranAudioAutoDownloadEnabled(enabled: boolean): Promise<QuranAudioDownloadSnapshot> {
+  if (!enabled) return pauseQuranAudioDownloads();
+  return resumeQuranAudioDownloadsFromSettings();
 }

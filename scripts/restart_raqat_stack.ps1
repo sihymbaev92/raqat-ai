@@ -1,12 +1,9 @@
-# One-command Windows restart + health check for RAQAT stack.
-# Restarts platform_api (8787), optionally restarts bot_main.py, then verifies /health and /ready.
+# One-command Windows restart + health check for RAQAT platform API (8787).
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File .\scripts\restart_raqat_stack.ps1
-#   powershell -ExecutionPolicy Bypass -File .\scripts\restart_raqat_stack.ps1 -SkipBot
 #   powershell -ExecutionPolicy Bypass -File .\scripts\restart_raqat_stack.ps1 -StartRedis
 param(
-    [switch]$SkipBot,
     [switch]$StartRedis
 )
 
@@ -19,7 +16,6 @@ New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 function Test-PythonHasPsycopg {
     param([string]$PythonExe)
     if (-not (Test-Path $PythonExe)) { return $false }
-    # PS 5.1 / 7 үйлесімділігі: stderr stdout native error preference PS5.1-де жоқ.
     cmd /c """$PythonExe"" -c ""import psycopg"" >nul 2>nul"
     return ($LASTEXITCODE -eq 0)
 }
@@ -62,10 +58,6 @@ Start-Sleep -Seconds 2
 
 $sysPython = (Get-Command python -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source -First 1)
 $needsPg = (($env:DATABASE_URL + "").Trim().ToLower().StartsWith("postgres"))
-# PostgreSQL: platform_api\.venv — API/бот бір venv (psycopg + aiogram). Кей жүйелік python да psycopg
-# орнатқан болуы мүмкін, сонда ол «бірінші сәйкес кандидат» болып қалып, .venv-ке дейін тексермей кетуі
-# 2x uvicorn қатесіне әкеледі. Сондықтан PG кезінде: platform_api\.venv → repo .venv → тек соңында жүйелік python.
-# SQLite кезінде: repo .venv → platform_api\.venv → жүйелік python.
 $ApiPyCandidates = if ($needsPg) {
     @(
         (Join-Path $ApiDir ".venv\Scripts\python.exe"),
@@ -83,8 +75,6 @@ $ApiPy = $null
 foreach ($cand in $ApiPyCandidates) {
     if (-not (Test-Path $cand)) { continue }
     if ($needsPg) {
-        # .venv кандидаттарын әрқашан алдымен бағалаймыз; psycopg жоқ болса осы веткеде
-        # жүйелік python-ға өтпейміз (бос .venv / бұзылған venv мәселесін жасырып кету).
         $inVenv = $cand -like "*\.venv\Scripts\python.exe"
         if ($inVenv) {
             if (Test-PythonHasPsycopg -PythonExe $cand) { $ApiPy = $cand; break }
@@ -111,35 +101,6 @@ Start-Process -FilePath $ApiPy `
     -RedirectStandardOutput $apiOut `
     -RedirectStandardError $apiErr `
     -WindowStyle Hidden
-
-if (-not $SkipBot) {
-    Write-Host "Restarting bot_main.py ..."
-    Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
-        | Where-Object { $_.CommandLine -like "*bot_main.py*" } `
-        | ForEach-Object { try { Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop } catch {} }
-    Start-Sleep -Seconds 1
-
-    # Бот пен API бір Python қолданған дұрыс (PG режимінде psycopg бір venv-те).
-    $BotPy = $ApiPy
-    if (-not (Test-Path $BotPy)) {
-        $BotPy = Join-Path $Root ".venv\Scripts\python.exe"
-    }
-    if (-not (Test-Path $BotPy)) {
-        $BotPy = Join-Path $ApiDir ".venv\Scripts\python.exe"
-    }
-    if (Test-Path $BotPy) {
-        $botOut = Join-Path $LogDir "bot_main.out.log"
-        $botErr = Join-Path $LogDir "bot_main.err.log"
-        Start-Process -FilePath $BotPy `
-            -ArgumentList "bot_main.py" `
-            -WorkingDirectory $Root `
-            -RedirectStandardOutput $botOut `
-            -RedirectStandardError $botErr `
-            -WindowStyle Hidden
-    } else {
-        Write-Warning "Bot Python not found; bot start skipped."
-    }
-}
 
 Write-Host "Waiting for API warmup ..."
 $base = if ($env:RAQAT_PLATFORM_API_BASE) { $env:RAQAT_PLATFORM_API_BASE } else { "http://127.0.0.1:8787" }
@@ -182,11 +143,6 @@ function Write-RaqatProcessHints {
         | Where-Object { $_.CommandLine -like "*uvicorn*" })
     if ((Count-TopLevelPython -procs $uv) -gt 1) {
         Write-Warning "Multiple top-level uvicorn ($($uv.Count) total PIDs). Only one should bind :8787. Run: .\scripts\diagnostics_raqat_processes.ps1"
-    }
-    $bot = @(Get-CimInstance Win32_Process -Filter "Name='python.exe'" -ErrorAction SilentlyContinue `
-        | Where-Object { $_.CommandLine -like "*bot_main.py*" })
-    if ((Count-TopLevelPython -procs $bot) -gt 1) {
-        Write-Warning "Multiple top-level bot_main.py ($($bot.Count) total PIDs); one BOT_TOKEN => one poller (stop VPS or local). Run: .\scripts\diagnostics_raqat_processes.ps1"
     }
 }
 

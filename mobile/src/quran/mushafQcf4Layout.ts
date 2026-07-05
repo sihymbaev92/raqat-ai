@@ -121,3 +121,8 @@ export function qcf4SafeGlyphSizeForLine(args: {
   const safeByLineHeight = Math.max(1, Math.floor(safeLineHeight / (args.lineHeightScale * visualScaleY)));
   return Math.max(1, Math.min(args.rawGlyphSize, args.maxGlyphSize, safeByLineHeight));
 }
+
+/** Ayah/Quran.com: QCF4 қatarы justify арқылы созылмайды. */
+export function qcf4HatimLineJustifyContent(): "flex-start" {
+  return "flex-start";
+}

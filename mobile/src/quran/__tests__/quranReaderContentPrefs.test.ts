@@ -1,27 +1,26 @@
 import fs from "fs";
 import path from "path";
+import {
+  getQuranReaderShowMeaning,
+  getQuranReaderShowTranslit,
+} from "../../storage/quranReaderPrefs";
+import { QURAN_READER_ARABIC_ONLY } from "../quranReaderModePolicy";
 
 const quranSurahScreenSource = () =>
   fs.readFileSync(path.join(process.cwd(), "src/screens/QuranSurahScreen.tsx"), "utf8");
 
 describe("Quran reader content preferences", () => {
-  it("loads saved Arabic, transliteration, and meaning visibility prefs", () => {
-    const src = quranSurahScreenSource();
-
-    expect(src).toContain("getQuranReaderShowArabic()");
-    expect(src).toContain("getQuranReaderShowTranslit()");
-    expect(src).toContain("getQuranReaderShowMeaning()");
+  it("forces transliteration and meaning off for Quran-only Arabic policy", async () => {
+    expect(QURAN_READER_ARABIC_ONLY).toBe(true);
+    await expect(getQuranReaderShowTranslit()).resolves.toBe(false);
+    await expect(getQuranReaderShowMeaning()).resolves.toBe(false);
   });
 
-  it("persists disabling transliteration and meaning switches", () => {
+  it("QuranSurahScreen uses locked Arabic-only reader layers", () => {
     const src = quranSurahScreenSource();
-
-    expect(src).toContain("setShowReaderTranslit(value)");
-    expect(src).toContain("setQuranReaderShowTranslit(value)");
-    expect(src).toContain("setShowReaderMeaning(value)");
-    expect(src).toContain("setQuranReaderShowMeaning(value)");
-    expect(src).not.toContain("setShowReaderTranslit(true);\n      } else");
-    expect(src).not.toContain("setShowReaderMeaning(true);\n      }");
+    expect(src).toContain("quranReaderArabicOnlyLayers");
+    expect(src).not.toContain("getQuranReaderShowTranslit()");
+    expect(src).not.toContain("getQuranReaderShowMeaning()");
   });
 
   it("normalizes picked reciter before persisting it from the surah screen menu", () => {

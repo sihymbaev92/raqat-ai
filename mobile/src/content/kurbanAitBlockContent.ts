@@ -3,11 +3,11 @@ import { KAZAKH_TRADITION_EID_KURBAN_BLOCK_TITLE } from "./kazakhTraditionAnchor
 import { TRADITION_BLOCK_DEPTH } from "./kazakhTraditionBlockDepth";
 import { KURBAN_AIT_GUIDE_EPIGRAPH } from "./kurbanAitGuideContent";
 
-/** kurban-ait-dashboard-hero.png (басты бет) / kurban-ait-guide-infographic.png (толық нұсқаулық) */
+/** kurban-ait-dashboard-hero.webp (басты бет) / kurban-ait-guide-infographic.webp (толық нұсқаулық) */
 export const KURBAN_AIT_IMAGE_ASPECT = 1024 / 558;
-export const KURBAN_AIT_DASHBOARD_HERO = require("../../assets/hajj/kurban-ait-dashboard-hero.png");
+export const KURBAN_AIT_DASHBOARD_HERO = require("../../assets/hajj/kurban-ait-dashboard-hero.webp");
 export const KURBAN_AIT_DASHBOARD_HERO_ASPECT = KURBAN_AIT_IMAGE_ASPECT;
-export const KURBAN_AIT_GUIDE_INFOGRAPHIC = require("../../assets/hajj/kurban-ait-guide-infographic.png");
+export const KURBAN_AIT_GUIDE_INFOGRAPHIC = require("../../assets/hajj/kurban-ait-guide-infographic.webp");
 
 export type KurbanAitBlock = {
   title: string;
@@ -24,7 +24,7 @@ export type KurbanAitBlock = {
 
 const KURBAN_AIT_BLOCK_BASE: KurbanAitBlock = {
   title: KAZAKH_TRADITION_EID_KURBAN_BLOCK_TITLE,
-  heroImage: require("../../assets/hajj/kurban-ait-dashboard-hero.png"),
+  heroImage: require("../../assets/hajj/kurban-ait-dashboard-hero.webp"),
   heroImageFullBleed: true,
   summary:
     "Құрбан айт — шүкіршілік пен кешірім сәтін, жамаатпен құлшылықты, құрбандық арқылы Аллаға жақындық пен мұқтажға қол жеткізуді, сондай-ақ отбасы мен көршілер арасындағы ізетті бір мезгілде ұстауға шақырады. Төмендегі сурет құрбан айт қуанышын дәстүрлі дастарқан, қауымдық мереке, мешіт пен қала көрінісі арқылы бейнелейді. Мәтінде мына бағыттар қамтылған: құрбан айт намазы; құрбандық шалу әдебі; таржих тәкбірлері мен құттықтау; көршілер мен мұқтаждарға тарату; ысырапсыз айттау (үйге қонақ шақыру). Бұл мәтін оқулық сипатында: намаздың нақты уақыты, такбир реті, малдың түрі мен жасы, етті үш бөлікке бөлу сияқты фиқһтық ерекшеліктерді мешіт имамы немесе сенімді ұстазбен міндетті түрде келісіңіз.",

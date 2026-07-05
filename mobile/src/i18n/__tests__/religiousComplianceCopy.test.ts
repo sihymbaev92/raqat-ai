@@ -1,11 +1,9 @@
 import { kk } from "../kk";
 
 describe("religious compliance copy", () => {
-  it("keeps hadith screens source-bound and Hanafi/QMDB aligned", () => {
+  it("keeps hadith screens source-bound and Hanafi aligned without official org branding", () => {
     const hadithCopy = [
       kk.hadith.hub.leadUnified,
-      kk.hadith.muftyatExcerpts.lead,
-      kk.hadith.muftyatExcerpts.disclaimer,
       kk.hadith.introBody,
       kk.hadith.titleMeaning,
       kk.hadith.sourceOnlyNote,
@@ -13,15 +11,13 @@ describe("religious compliance copy", () => {
       kk.hadith.hub.boundaryNotice,
     ].join("\n");
 
-    expect(hadithCopy).toContain("ҚМДБ");
+    expect(hadithCopy).not.toMatch(/ҚМДБ|QMDB|Muftyat|Fatua/i);
     expect(hadithCopy).toContain("Ханафи");
-    expect(hadithCopy).toContain("пәтуа");
     expect(hadithCopy).toContain("үкім");
     expect(hadithCopy).toContain("дереккөз");
-    expect(hadithCopy).toContain("мақала");
-    expect(hadithCopy).toContain("Құран аудармасы");
+    expect(hadithCopy).toContain("ұстаз");
     expect(hadithCopy).toContain("AI жауабы");
-    expect(hadithCopy).toContain("пәтуа емес");
+    expect(hadithCopy).toContain("фәтуа емес");
   });
 
   it("keeps Quran meaning and tafsir copy away from unsourced fatwa use", () => {
@@ -31,7 +27,7 @@ describe("religious compliance copy", () => {
       kk.tajweedGuide.sourceSafetyNote,
     ].join("\n");
 
-    expect(quranCopy).toContain("ҚМДБ");
+    expect(quranCopy).not.toMatch(/ҚМДБ|QMDB|Muftyat|Fatua/i);
     expect(quranCopy).toContain("үкім");
     expect(quranCopy).toContain("мәзһаб");
     expect(quranCopy).toContain("ұстаз");

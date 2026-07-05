@@ -19,8 +19,8 @@ function Find-Adb {
     "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe",
     "$env:USERPROFILE\AppData\Local\Android\Sdk\platform-tools\adb.exe"
   ) | Where-Object { $_ -and (Test-Path $_) }
-  if (-not $candidates) { throw "adb табылмады" }
-  return $candidates[0]
+  if (-not $candidates -or @($candidates).Count -eq 0) { throw "adb табылмады" }
+  return @($candidates)[0]
 }
 
 $adb = Find-Adb
@@ -28,18 +28,23 @@ $pkg = "kz.raqat.app"
 $adbArgs = @()
 if ($Serial) { $adbArgs += "-s", $Serial }
 
-function Invoke-Adb {
-  param([Parameter(Mandatory)][string[]]$Cmd)
-  & $adb @adbArgs @Cmd
-  if ($LASTEXITCODE -ne 0) { throw "adb failed: $($Cmd -join ' ')" }
+function Invoke-Adb([string[]]$AdbCmd) {
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    & "$adb" @adbArgs @AdbCmd 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "adb failed: $($AdbCmd -join ' ')" }
+  } finally {
+    $ErrorActionPreference = $prev
+  }
 }
 
-Invoke-Adb -Cmd @("shell", "input", "keyevent", "KEYCODE_WAKEUP")
-try { Invoke-Adb -Cmd @("shell", "wm", "dismiss-keyguard") } catch {}
+Invoke-Adb @("shell", "input", "keyevent", "KEYCODE_WAKEUP")
+Invoke-Adb @("shell", "wm", "dismiss-keyguard") 2>$null
 Start-Sleep -Seconds 1
-Invoke-Adb -Cmd @("shell", "am", "force-stop", $pkg)
+Invoke-Adb @("shell", "am", "force-stop", $pkg)
 Start-Sleep -Seconds 1
-Invoke-Adb -Cmd @("shell", "monkey", "-p", $pkg, "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
+Invoke-Adb @("shell", "monkey", "-p", $pkg, "-c", "android.intent.category.LAUNCHER", "1") | Out-Null
 Start-Sleep -Seconds 8
 
 $routes = @(
@@ -67,13 +72,13 @@ $routes = @(
 
 $results = @()
 $logBefore = Join-Path $OutDir "_logcat-before.txt"
-Invoke-Adb -Cmd @("logcat", "-c") | Out-Null
+Invoke-Adb @("logcat", "-c") | Out-Null
 
 foreach ($r in $routes) {
   $uri = if ($r.path) { "raqat://$($r.path)" } else { "raqat://" }
   Write-Host ">> $($r.id) $($r.label) $uri"
   try {
-    Invoke-Adb -Cmd @("shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", $uri, $pkg) | Out-Null
+    Invoke-Adb @("shell", "am", "start", "-a", "android.intent.action.VIEW", "-d", $uri, $pkg) | Out-Null
   } catch {
     $results += [pscustomobject]@{ id = $r.id; label = $r.label; uri = $uri; status = "NAV_FAIL"; note = $_.Exception.Message }
     continue
@@ -81,25 +86,25 @@ foreach ($r in $routes) {
   Start-Sleep -Seconds $WaitSec
   $remote = "/sdcard/qa-$($r.id).png"
   $local = Join-Path $OutDir "$($r.id).png"
-  Invoke-Adb -Cmd @("shell", "screencap", "-p", $remote)
-  Invoke-Adb -Cmd @("pull", $remote, $local) | Out-Null
-  Invoke-Adb -Cmd @("shell", "rm", $remote) 2>$null
+  Invoke-Adb @("shell", "screencap", "-p", $remote)
+  Invoke-Adb @("pull", $remote, $local) | Out-Null
+  Invoke-Adb @("shell", "rm", $remote) 2>$null
 
-  $snippet = (& $adb @adbArgs logcat -d -t 40 2>$null | Select-String -Pattern "FATAL|AndroidRuntime|ReactNativeJS.*Error|net::ERR" | Select-Object -Last 3) -join " | "
+  $snippet = (& "$adb" @adbArgs logcat -d -t 40 2>$null | Select-String -Pattern "FATAL|AndroidRuntime|ReactNativeJS.*Error|net::ERR" | Select-Object -Last 3) -join " | "
   $status = if ($snippet) { "WARN" } else { "OK" }
   $results += [pscustomobject]@{ id = $r.id; label = $r.label; uri = $uri; status = $status; note = $snippet }
-  try { Invoke-Adb -Cmd @("logcat", "-c") | Out-Null } catch {}
+  Invoke-Adb @("logcat", "-c") | Out-Null
 }
 
 $logPath = Join-Path $OutDir "sweep-logcat-final.txt"
-& $adb @adbArgs logcat -d -t 200 | Out-File -FilePath $logPath -Encoding utf8
+& "$adb" @adbArgs logcat -d -t 200 | Out-File -FilePath $logPath -Encoding utf8
 
 $csvPath = Join-Path $OutDir "sweep-results.csv"
 $results | Export-Csv -Path $csvPath -NoTypeInformation -Encoding UTF8
 
 $mdPath = Join-Path $OutDir "SWEEP_REPORT.md"
-$device = (& $adb @adbArgs shell getprop ro.product.model).Trim()
-$api = (& $adb @adbArgs shell getprop ro.build.version.sdk).Trim()
+$device = (& "$adb" @adbArgs shell getprop ro.product.model).Trim()
+$api = (& "$adb" @adbArgs shell getprop ro.build.version.sdk).Trim()
 $lines = @(
   "# Толық қолданба QA — $((Get-Date).ToString('yyyy-MM-dd HH:mm'))",
   "",

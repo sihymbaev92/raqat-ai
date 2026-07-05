@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Намаз хабарламалары: prayer_azan_*.wav — Wikimedia Commons сапalı азан жазбалары.
+Намаз хабарламасы: prayer_azan_user_01.mp3 — қолданба иесінің жеке азан клипі.
 
-iOS custom notification ≤30s — әр клип ~29s, loudnorm + fade.
-Жаңарту: npm run fetch:azan (mobile/)
+Файлды қолмен қойыңыз: mobile/assets/sounds/prayer_azan_user_01.mp3
+(мысалы Downloads/azan_-_krasivyj_(SkySound.cc).mp3)
+
+npm run fetch:azan — тек attribution жаңарту (жүктемейді).
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import sys
-import time
 import urllib.parse
-import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -22,51 +22,18 @@ ATTRIBUTION = OUT_DIR / "AZAN_ATTRIBUTION.md"
 
 USER_AGENT = "RaqatApp/1.0 (prayer azan asset fetch; https://rahatomir.com)"
 
-# id → (Wikimedia title, wav name, mp3 release name, attribution, duration ms, start offset ms)
-AZAN_SOURCES: dict[str, tuple[str, str, str, str, int, int]] = {
-    "adhan_haramain": (
-        "File:Call to prayer by Sabah Fakhry.mp3",
-        "prayer_azan_classic.wav",
-        "prayer_azan_user_01.mp3",
-        "Call to prayer by Sabah Fakhry (Egypt) — Wikimedia Commons, CC BY-SA 4.0",
-        29_000,
-        0,
-    ),
-    "adhan_madina_clear": (
-        "File:Azan.ogg",
-        "prayer_azan_madina.wav",
-        "prayer_azan_user_02.mp3",
-        "Azan.ogg (Andrewler, 2022) — Wikimedia Commons, CC BY-SA 4.0",
-        29_000,
-        0,
-    ),
-    "adhan_makkah_live": (
-        "File:Adhan, Great Mosque of Mecca - Jan 21, 2013.webm",
-        "prayer_azan_makkah.wav",
-        "prayer_azan_user_03.mp3",
-        "Adhan, Great Mosque of Mecca (21 Jan 2013) — Wikimedia Commons, CC BY-SA 4.0",
-        29_000,
-        2_000,
-    ),
-    "adhan_soft_cc0": (
-        "File:Beautiful adhan.ogg",
-        "prayer_azan_soft.wav",
-        "prayer_azan_user_04.mp3",
-        "Beautiful adhan.ogg — Wikimedia Commons, CC0 Public Domain",
-        29_000,
-        0,
-    ),
-    "adhan_takbir_high": (
-        "File:The Adhan - Muslim Call to Prayer - Aaqib Azeez.mp3",
-        "prayer_azan_takbir.wav",
-        "prayer_azan_user_05.mp3",
-        "The Adhan by Aaqib Azeez — Atcovi, Wikimedia Commons, CC BY-SA 4.0",
-        29_000,
-        0,
-    ),
-}
+# (key, source url or Commons File:…, mp3 filename, attribution note, max_ms, start_offset_ms)
+AZAN_SOURCE = (
+    "adhan_haramain",
+    "https://archive.org/download/MadinahFajrAzan/MadinahFajrAzanBySheikhFaisalNuman.wmv",
+    "prayer_azan_user_01.mp3",
+    "Madinah Fajr Azan (Sheikh Faisal Numan) — Internet Archive, CC0 1.0",
+    48_000,
+    12_000,
+)
 
-TARGET_DBFS = -14.0
+# Жұмсақ дыбыс: Mecca клиптен төменірек нормализация + жұмсартылған компрессия.
+TARGET_DBFS = -18.0
 
 
 def commons_download_url(file_title: str) -> str:
@@ -79,91 +46,75 @@ def commons_download_url(file_title: str) -> str:
             "format": "json",
         }
     )
-    api = f"https://commons.wikimedia.org/w/api.php?{q}"
-    req = urllib.request.Request(api, headers={"User-Agent": USER_AGENT})
-    data = _json_get(req, timeout=90)
+    req = urllib.request.Request(
+        f"https://commons.wikimedia.org/w/api.php?{q}",
+        headers={"User-Agent": USER_AGENT},
+    )
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
     pages = data.get("query", {}).get("pages", {})
     for page in pages.values():
-        info = page.get("imageinfo")
-        if info and info[0].get("url"):
-            raw = info[0]["url"]
-            return raw.split("?")[0]
-    raise RuntimeError(f"No URL for {file_title}")
+        infos = page.get("imageinfo") or []
+        if infos and infos[0].get("url"):
+            return infos[0]["url"]
+    raise RuntimeError(f"No download URL for {file_title}")
 
 
-def _json_get(req: urllib.request.Request, *, timeout: float) -> dict:
-    for attempt in range(5):
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                return json.load(r)
-        except urllib.error.HTTPError as exc:
-            if exc.code == 429 and attempt < 4:
-                time.sleep(2.0 * (attempt + 1))
-                continue
-            raise
-    raise RuntimeError("commons API: max retries")
+def resolve_source_url(source: str) -> str:
+    if source.startswith("http://") or source.startswith("https://"):
+        return source
+    title = source if source.startswith("File:") else f"File:{source}"
+    return commons_download_url(title)
 
 
 def download(url: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    for attempt in range(5):
-        try:
-            with urllib.request.urlopen(req, timeout=300) as r:
-                data = r.read()
-            break
-        except urllib.error.HTTPError as exc:
-            if exc.code == 429 and attempt < 4:
-                time.sleep(2.0 * (attempt + 1))
-                continue
-            raise
-    else:
-        raise RuntimeError("download: max retries")
-    dest.write_bytes(data)
-    print(f"  downloaded {len(data):,} bytes")
+    with urllib.request.urlopen(req, timeout=300) as resp, dest.open("wb") as f:
+        f.write(resp.read())
+    print(f"  downloaded {dest.name} ({dest.stat().st_size:,} bytes)")
 
 
-def convert_to_wav(
-    src: Path,
-    dest: Path,
-    *,
-    max_duration_ms: int,
-    start_offset_ms: int = 0,
-) -> None:
+def convert_to_mp3(src: Path, dest: Path, max_duration_ms: int, start_offset_ms: int) -> None:
     import imageio_ffmpeg
     import subprocess
 
     ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
     max_s = max_duration_ms / 1000.0
     start_s = start_offset_ms / 1000.0
-    fade_out_start = max(0.0, max_s - 0.35)
     af = (
-        f"highpass=f=70,lowpass=f=15000,"
-        f"loudnorm=I={TARGET_DBFS}:TP=-1.0:LRA=8,"
-        f"afade=t=in:st=0:d=0.12,afade=t=out:st={fade_out_start:.2f}:d=0.35"
+        f"atrim=start={start_s}:duration={max_s},"
+        f"asetpts=PTS-STARTPTS,"
+        f"highpass=f=90,"
+        f"lowpass=f=11000,"
+        f"acompressor=threshold=-22dB:ratio=2.5:attack=25:release=300,"
+        f"loudnorm=I={TARGET_DBFS}:TP=-2.0:LRA=8,"
+        f"afade=t=in:st=0:d=2.8,"
+        f"afade=t=out:st={max(0, max_s - 3.2):.3f}:d=3.2"
     )
     dest.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [ffmpeg, "-y"]
-    if start_s > 0:
-        cmd.extend(["-ss", f"{start_s:.3f}"])
-    cmd.extend(
-        [
-            "-i",
-            str(src),
-            "-vn",
-            "-map",
-            "0:a:0?",
-            "-t",
-            str(max_s),
-            "-ac",
-            "1",
-            "-ar",
-            "44100",
-            "-af",
-            af,
-            str(dest),
-        ]
-    )
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-i",
+        str(src),
+        "-vn",
+        "-map",
+        "0:a:0?",
+        "-t",
+        str(max_s),
+        "-ac",
+        "1",
+        "-ar",
+        "44100",
+        "-af",
+        af,
+        "-codec:a",
+        "libmp3lame",
+        "-q:a",
+        "3",
+        str(dest),
+    ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderr, file=sys.stderr)
@@ -181,84 +132,35 @@ def md5(path: Path) -> str:
     return h.hexdigest()
 
 
-def convert_to_mp3(wav: Path, dest: Path) -> None:
-    import imageio_ffmpeg
-    import subprocess
-
-    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        ffmpeg,
-        "-y",
-        "-i",
-        str(wav),
-        "-vn",
-        "-ac",
-        "1",
-        "-ar",
-        "44100",
-        "-codec:a",
-        "libmp3lame",
-        "-q:a",
-        "3",
-        str(dest),
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(result.stderr, file=sys.stderr)
-        raise RuntimeError(f"mp3 export failed for {dest.name}")
-    print(f"  exported {dest.name} ({dest.stat().st_size:,} bytes)")
-
-
 def write_attribution() -> None:
-    lines = [
-        "# Азан дыбыстары — дереккөздер",
-        "",
-        "Жинақтағы `prayer_azan_user_*.mp3` — Wikimedia Commons (~29s клип, CC BY-SA 4.0 / CC0).",
-        "SkySound немесе лицензиясы белгісіз файлдар қолданылмайды.",
-        "",
-    ]
-    for key, (_, wav, mp3, note, dur, start) in AZAN_SOURCES.items():
-        extra = f", start {start // 1000}s" if start else ""
-        lines.append(f"- **{key}** (`{mp3}`, {dur // 1000}s{extra}): {note}")
-    lines.append("")
-    lines.append("Жаңарту: `npm run fetch:azan` (mobile/)")
-    ATTRIBUTION.write_text("\n".join(lines), encoding="utf-8")
+    text = "\n".join(
+        [
+            "# Азан дыбысы",
+            "",
+            "Жинақтағы `prayer_azan_user_01.mp3` — қолданба иесінің таңдаған жеке азан клипі.",
+            "",
+            "- **adhan_haramain** (`prayer_azan_user_01.mp3`): SkySound.cc — «Красивый азан» (пайдаланушы жіберген файл)",
+            "",
+            "Басқа azan MP3 жинақта жоқ — APK көлемі мен жадты үнемдеу үшін тек бір дыбыс.",
+            "",
+        ]
+    )
+    ATTRIBUTION.write_text(text, encoding="utf-8")
 
 
 def main() -> int:
-    tmp = OUT_DIR / "_azan_fetch_tmp"
-    tmp.mkdir(parents=True, exist_ok=True)
-    hashes: dict[str, str] = {}
-
-    print("Fetching beautiful adhan recordings from Wikimedia Commons…")
-    for key, (title, wav_name, mp3_name, _, max_ms, start_ms) in AZAN_SOURCES.items():
-        print(f"\n[{key}] {title}")
-        url = commons_download_url(title)
-        ext = Path(url).suffix or ".bin"
-        raw = tmp / f"{key}{ext}"
-        download(url, raw)
-        wav = OUT_DIR / wav_name
-        convert_to_wav(raw, wav, max_duration_ms=max_ms, start_offset_ms=start_ms)
-        mp3 = OUT_DIR / mp3_name
-        convert_to_mp3(wav, mp3)
-        hashes[key] = md5(mp3)
-        time.sleep(1.5)
-
-    uniq = set(hashes.values())
-    print(f"\nMD5 unique: {len(uniq)} / {len(hashes)}")
-    if len(uniq) != len(hashes):
-        print("ERROR: duplicate files detected", file=sys.stderr)
-        for k, h in hashes.items():
-            print(f"  {k}: {h}", file=sys.stderr)
+    mp3 = OUT_DIR / "prayer_azan_user_01.mp3"
+    if not mp3.is_file():
+        print(
+            "Missing prayer_azan_user_01.mp3 — copy your azan MP3 to:\n"
+            f"  {mp3}\n",
+            file=sys.stderr,
+        )
         return 1
-
     write_attribution()
-    import shutil
-
-    shutil.rmtree(tmp, ignore_errors=True)
-    print(f"\nDone. Attribution: {ATTRIBUTION}")
-    print("Rebuild APK / redeploy web after updating sounds.")
+    print(f"OK: {mp3.name} ({mp3.stat().st_size:,} bytes)")
+    print(f"MD5: {md5(mp3)}")
+    print(f"Attribution: {ATTRIBUTION}")
     return 0
 
 

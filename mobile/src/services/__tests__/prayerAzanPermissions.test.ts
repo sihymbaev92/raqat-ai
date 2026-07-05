@@ -59,18 +59,12 @@ describe("prayerAzanPermissions", () => {
 
   it("re-prompts on app active after cooldown when permissions stay missing", async () => {
     jest.useFakeTimers();
-    const first = ensurePrayerAzanPermissionsOnAppActive();
-    await jest.advanceTimersByTimeAsync(2000);
-    await first;
-    const second = ensurePrayerAzanPermissionsOnAppActive();
-    await jest.advanceTimersByTimeAsync(100);
-    await second;
+    await ensurePrayerAzanPermissionsOnAppActive();
+    await ensurePrayerAzanPermissionsOnAppActive();
     expect(NativeModules.PrayerWidget.requestExactAlarmPermissionIfNeeded).toHaveBeenCalledTimes(1);
 
-    await jest.advanceTimersByTimeAsync(11_000);
-    const third = ensurePrayerAzanPermissionsOnAppActive();
-    await jest.advanceTimersByTimeAsync(2000);
-    await third;
+    jest.advanceTimersByTime(11_000);
+    await ensurePrayerAzanPermissionsOnAppActive();
     expect(NativeModules.PrayerWidget.requestExactAlarmPermissionIfNeeded).toHaveBeenCalledTimes(2);
     jest.useRealTimers();
   });

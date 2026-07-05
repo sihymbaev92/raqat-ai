@@ -5,6 +5,7 @@ import {
 } from "../data/quranHafsPageFromGlobalAyah";
 import { QCF4_MUSHAF_PAGE_RANGES } from "../data/qcf4MushafPageRanges.generated";
 import { getBundledSurahAyahs } from "../services/bundledQuranReader";
+import { getBundledTajweedAyahText } from "../services/bundledQuranTajweed";
 import type { MushafBookAyah, MushafBookPageSlice } from "./mushafBookTypes";
 
 let cachedMushafPages: MushafBookPageSlice[] | null = null;
@@ -27,7 +28,12 @@ function buildMushafPagesFromQcf4Ranges(enrich: boolean): MushafBookPageSlice[] 
     for (const [surah, startAyah, endAyah] of ranges) {
       for (let ayah = startAyah; ayah <= endAyah; ayah += 1) {
         const row = enrich ? bundledAyahRow(surah, ayah) : null;
-        ayahs.push(row ?? { numberInSurah: ayah, text: "", surahNumber: surah });
+        const base = row ?? { numberInSurah: ayah, text: "", surahNumber: surah };
+        const textTajweed =
+          enrich && !(base.textTajweed ?? "").includes("[")
+            ? getBundledTajweedAyahText(surah, ayah) || undefined
+            : (base.textTajweed ?? "").trim() || undefined;
+        ayahs.push(textTajweed ? { ...base, textTajweed } : base);
       }
     }
     const mushafPageNumber = pageIndex + 1;
@@ -102,7 +108,10 @@ export function buildMushafPagesGlobal(): MushafBookPageSlice[] {
     for (let g = startG; g <= endG; g += 1) {
       const { surah, ayah } = globalAyahToRef(g);
       const row = bundledAyahRow(surah, ayah);
-      if (row) ayahs.push(row);
+      const base = row ?? { numberInSurah: ayah, text: "", surahNumber: surah };
+      const textTajweed =
+        (base.textTajweed ?? "").trim() || getBundledTajweedAyahText(surah, ayah) || undefined;
+      ayahs.push(textTajweed ? { ...base, textTajweed } : base);
     }
     pages.push({
       key: `hafs-${p}`,
@@ -110,7 +119,10 @@ export function buildMushafPagesGlobal(): MushafBookPageSlice[] {
       ayahs,
     });
   }
-  cachedMushafPages = pages;
+  const firstText = pages[0]?.ayahs[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
+  if (firstText.length > 0) {
+    cachedMushafPages = pages;
+  }
   return pages;
 }
 
@@ -132,14 +144,21 @@ export function clearMushafPagesGlobalCache(): void {
 /** Жеңіл бет аяты → bundled мәтін (web фонда жүктелгенде). */
 export function resolveMushafBookAyah(stub: MushafBookAyah): MushafBookAyah {
   const row = bundledAyahRow(stub.surahNumber, stub.numberInSurah);
-  if (!row) return stub;
+  const textTajweed =
+    (stub.textTajweed ?? "").trim() ||
+    (row?.textTajweed ?? "").trim() ||
+    getBundledTajweedAyahText(stub.surahNumber, stub.numberInSurah) ||
+    undefined;
+  if (!row) {
+    return textTajweed ? { ...stub, textTajweed } : stub;
+  }
   return {
     ...row,
     ...stub,
     text: (stub.text ?? "").trim() || row.text,
     textKk: (stub.textKk ?? "").trim() || row.textKk,
     translit: (stub.translit ?? "").trim() || row.translit,
-    textTajweed: (stub.textTajweed ?? "").trim() || row.textTajweed,
+    textTajweed,
     textTurkishPrint: (stub.textTurkishPrint ?? "").trim() || row.textTurkishPrint,
     textRu: (stub.textRu ?? "").trim() || row.textRu,
     textEn: (stub.textEn ?? "").trim() || row.textEn,

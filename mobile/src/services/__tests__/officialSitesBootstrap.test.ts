@@ -1,43 +1,36 @@
-import { pickRicherOfficialNewsFeed, shouldFetchDirectOfficialHomeFeeds } from "../officialSitesBootstrap";
-import type { DashboardNewsItem } from "../../content/dashboardNewsItems";
+import { loadOfficialHomeNewsItems } from "../officialSitesBootstrap";
+import * as officialSiteHomeFeed from "../officialSiteHomeFeed";
+import * as officialHomeFeedCache from "../../storage/officialHomeFeedCache";
 
-const sample = (id: string, imageUrl?: string): DashboardNewsItem => ({
-  id,
-  title: id,
-  subtitle: "t",
-  image: { uri: imageUrl ?? "https://example.com/icon.png" },
-  imageUrl,
-});
+jest.mock("../officialSiteHomeFeed");
+jest.mock("../../storage/officialHomeFeedCache");
 
-describe("pickRicherOfficialNewsFeed", () => {
-  it("prefers direct feed when API ok=false", () => {
-    const api = [sample("a1")];
-    const direct = [sample("d1", "https://x/a.jpg"), sample("d2", "https://x/b.jpg")];
-    const picked = pickRicherOfficialNewsFeed({ ok: false, results: [] }, api, direct);
-    expect(picked).toBe(direct);
+describe("loadOfficialHomeNewsItems", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    jest.spyOn(officialHomeFeedCache, "writeOfficialHomeFeedCache").mockResolvedValue(undefined);
   });
 
-  it("prefers feed with more images", () => {
-    const api = [sample("a1", "https://x/a.jpg"), sample("a2", "https://x/b.jpg")];
-    const direct = [sample("d1")];
-    const picked = pickRicherOfficialNewsFeed({ ok: true, results: [] }, api, direct);
-    expect(picked).toBe(api);
+  it("maps proxy/direct feeds without platform AI/KB API", async () => {
+    jest.spyOn(officialSiteHomeFeed, "fetchOfficialSiteHomeFeeds").mockResolvedValue([
+      {
+        site: "fatua",
+        sourceLabel: "Fatua",
+        title: "Test",
+        subtitle: "Sub",
+        url: "https://fatua.kz/kk/a",
+        imageUrl: "https://fatua.kz/media/a.jpg",
+      },
+    ]);
+
+    const items = await loadOfficialHomeNewsItems();
+    expect(items).toHaveLength(1);
+    expect(items[0]?.title).toBe("Test");
+    expect(officialHomeFeedCache.writeOfficialHomeFeedCache).toHaveBeenCalled();
   });
 
-  it("falls back to API when direct is empty", () => {
-    const api = [sample("a1")];
-    const picked = pickRicherOfficialNewsFeed({ ok: true, results: [] }, api, []);
-    expect(picked).toEqual(api);
-  });
-});
-
-describe("shouldFetchDirectOfficialHomeFeeds", () => {
-  it("does not fetch official sites directly on web to avoid CORS warnings", () => {
-    expect(shouldFetchDirectOfficialHomeFeeds("web")).toBe(false);
-  });
-
-  it("keeps direct official-site fallback on native", () => {
-    expect(shouldFetchDirectOfficialHomeFeeds("ios")).toBe(true);
-    expect(shouldFetchDirectOfficialHomeFeeds("android")).toBe(true);
+  it("returns empty when feed fetch fails", async () => {
+    jest.spyOn(officialSiteHomeFeed, "fetchOfficialSiteHomeFeeds").mockRejectedValue(new Error("net"));
+    await expect(loadOfficialHomeNewsItems()).resolves.toEqual([]);
   });
 });

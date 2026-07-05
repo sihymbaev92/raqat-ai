@@ -1,6 +1,8 @@
 import { Linking, NativeModules, Platform } from "react-native";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 import type { PrayerScheduleSlot } from "./prayerNotificationSchedule";
+import { rootNavigationRef } from "../navigation/rootNavigationRef";
+import type { RootStackParamList } from "../navigation/types";
 
 type PrayerWidgetNativeModule = {
   scheduleFullScreenAzanAlarms?: (json: string) => Promise<{
@@ -271,9 +273,29 @@ export async function openPrayerAzanScreen(params: {
   time?: string;
   soundId: PrayerNotifSoundId;
   salatKey?: string;
+  nativeAudio?: boolean;
 }): Promise<void> {
+  const routeParams: NonNullable<RootStackParamList["PrayerAzan"]> = {
+    label: params.label,
+    enteredTitle: params.enteredTitle ?? prayerEnteredTitleForSlot(params.label, params.salatKey),
+    time: params.time ?? "",
+    soundId: params.soundId,
+    salatKey: params.salatKey ?? "",
+    ...(params.nativeAudio ? { nativeAudio: "1" } : {}),
+  };
+
+  if (rootNavigationRef.isReady()) {
+    rootNavigationRef.navigate("PrayerAzan", routeParams);
+    return;
+  }
+
   try {
-    await Linking.openURL(prayerAzanDeepLink(params));
+    await Linking.openURL(
+      prayerAzanDeepLink({
+        ...params,
+        enteredTitle: routeParams.enteredTitle,
+      })
+    );
   } catch {
     /* Native alarm receiver also opens this deep link when the app is backgrounded. */
   }

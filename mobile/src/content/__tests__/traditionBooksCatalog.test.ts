@@ -8,8 +8,12 @@ import {
   getWisdomAuthorBooks,
   traditionBookSearchBlob,
 } from "../traditionBooksCatalog";
+import { ensureGreatWordsCatalogLoaded } from "../greatWordsCatalog";
 
 describe("traditionBooksCatalog", () => {
+  beforeAll(async () => {
+    await ensureGreatWordsCatalogLoaded();
+  });
   it("has books in all groups", () => {
     expect(TRADITION_BOOKS.length).toBeGreaterThanOrEqual(30);
     expect(getTraditionBooksByGroup("wisdom").length).toBeGreaterThanOrEqual(19);

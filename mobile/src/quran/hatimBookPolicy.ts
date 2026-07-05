@@ -1,12 +1,13 @@
-import { Platform } from "react-native";
 import type { MushafDensityId } from "../config/mushafConfig";
 import { DEFAULT_MUSHAF_DENSITY } from "../config/mushafConfig";
 import type { QuranArabicFontPresetId } from "../config/quranArabicFontPresets";
 import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
 import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
+import { ensureBundledQuranTajweedLoaded } from "../services/bundledQuranTajweed";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
-import { buildMushafPagesGlobal } from "./buildMushafPagesGlobal";
+import { buildMushafPagesGlobal, clearMushafPagesGlobalCache } from "./buildMushafPagesGlobal";
+import { loadQcf4FontMap, loadQcf4Page } from "./loadQcf4Page";
 import {
   setQuranArabicFontPreset,
   setQuranArabicScriptEdition,
@@ -20,7 +21,7 @@ import { HATIM_LOCKED_MUSHAF_TEXT_SCALE } from "./mushafTextScale";
 export const HATIM_BOOK_READING_THEME: QuranReadingThemeId = "original";
 export const HATIM_BOOK_ARABIC_FONT: QuranArabicFontPresetId = "quran_com";
 export const HATIM_BOOK_SCRIPT: QuranArabicScriptEditionId = "madinah";
-export const HATIM_BOOK_DENSITY: MushafDensityId = DEFAULT_MUSHAF_DENSITY;
+export const HATIM_BOOK_DENSITY: MushafDensityId = "tight";
 
 export function resolveHatimBookReadingTheme(
   stored?: QuranReadingThemeId | string | null
@@ -48,31 +49,44 @@ export function resolveHatimBookDensity(stored?: MushafDensityId | string | null
   return HATIM_BOOK_DENSITY;
 }
 
-/** APK: QCF4/CDN жоқ — bundled Unicode text-hafs + expo-fonts. */
+/**
+ * Text-hafs fallback — тек EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS=1.
+ * Әдепкі: native/web бірдей QCF4 Madinah (Ayah/Quran.com сияқты 15 жол).
+ */
 export function hatimBookUsesBundledTextHafsOffline(): boolean {
-  return Platform.OS !== "web";
+  return (
+    typeof process !== "undefined" &&
+    process.env?.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS === "1"
+  );
 }
 
 let preloadPromise: Promise<void> | null = null;
-let preloadDone = false;
 
-/** Хатым тізімі/604 — мәтін APK-дан; желі/CDN қажет емес. */
+/** Хатым: bundled мәтін + QCF4 бірінші беттер (CDN/FileSystem cache). */
 export async function preloadHatimOfflineAssets(): Promise<void> {
-  if (preloadDone) return;
   if (preloadPromise) return preloadPromise;
   preloadPromise = (async () => {
-    await Promise.all([loadQuranBookFonts().catch(() => {}), ensureBundledQuranReaderLoaded()]);
+    await Promise.all([
+      loadQuranBookFonts().catch(() => {}),
+      ensureBundledQuranReaderLoaded(),
+      ensureBundledQuranTajweedLoaded(),
+    ]);
+    clearMushafPagesGlobalCache();
     buildMushafPagesGlobal();
-    preloadDone = true;
+    if (!hatimBookUsesBundledTextHafsOffline()) {
+      void Promise.all([
+        loadQcf4FontMap().catch(() => null),
+        loadQcf4Page(1).catch(() => null),
+        loadQcf4Page(2).catch(() => null),
+      ]);
+    }
   })().finally(() => {
     preloadPromise = null;
   });
   return preloadPromise;
 }
 
-/** Тесттер үшін preload кэшін тазалау. */
 export function resetHatimOfflinePreloadCache(): void {
-  preloadDone = false;
   preloadPromise = null;
 }
 

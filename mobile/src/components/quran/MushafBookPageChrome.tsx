@@ -11,7 +11,7 @@ type Props = {
   styles: MushafBookPageStyles;
 };
 
-/** Хатым жоғарғы жол: сол — джуз, оң — бет (text-hafs fallback). */
+/** Хатым жоғарғы жол: сол — джуз, оң — бет (Quran.com референс). */
 export function MushafBookPageChrome({
   primarySurah,
   primaryAyah,

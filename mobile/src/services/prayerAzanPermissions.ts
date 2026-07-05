@@ -1,10 +1,11 @@
 import { Linking, NativeModules, Platform } from "react-native";
 import { getNotifEnabled } from "../storage/prefs";
 import {
-  getFullScreenAzanAlarmDiagnostics,
-  requestNotificationPermissions,
   reschedulePrayerNotificationsFromCache,
+  requestNotificationPermissions,
 } from "./prayerNotifications";
+import { getFullScreenAzanAlarmDiagnostics } from "./prayerFullScreenAzan";
+import { ensureOemPowerSetupForAzan, getOemPowerDiagnostics } from "./prayerOemBatterySetup";
 
 type PrayerWidgetAzanPermModule = {
   requestExactAlarmPermissionIfNeeded?: () => Promise<boolean>;
@@ -21,8 +22,12 @@ export type PrayerAzanPermissionStatus = {
   notificationsGranted: boolean;
   exactAlarmGranted: boolean;
   fullScreenIntentGranted: boolean;
+  batteryOptimizationIgnored: boolean;
+  oemNeedsBackgroundSetup: boolean;
   openedExactAlarmScreen: boolean;
   openedFullScreenScreen: boolean;
+  openedBatteryWhitelistScreen: boolean;
+  openedOemBackgroundScreen: boolean;
 };
 
 let lastPermissionPromptAt = 0;
@@ -49,15 +54,19 @@ export async function arePrayerAzanPermissionsSatisfied(): Promise<boolean> {
   const { status } = await N.getPermissionsAsync();
   if (status !== "granted") return false;
   if (Platform.OS !== "android") return true;
-  const flags = await readAndroidAzanPermissionFlags();
-  return flags.exactAlarmGranted && flags.fullScreenIntentGranted;
+  const [flags, oem] = await Promise.all([readAndroidAzanPermissionFlags(), getOemPowerDiagnostics()]);
+  if (!flags.exactAlarmGranted || !flags.fullScreenIntentGranted) return false;
+  if (oem.batteryOptimizationIgnored === false) return false;
+  return true;
 }
 
 /**
  * Азан үшін барлық рұқсаттарды автоматты сұрайды:
- * 1) хабарлама (жүйелік диалог)
- * 2) дәл уақыт алармы (Android 12+ жүйе экраны)
- * 3) full-screen intent (Android 14+ жүйе экраны)
+ * 1) хабарлама
+ * 2) дәл уақыт алармы (Android 12+)
+ * 3) full-screen intent (Android 14+)
+ * 4) батарея whitelist (Samsung/Xiaomi фон)
+ * 5) OEM autostart / фон экраны
  */
 export async function ensurePrayerAzanPermissions(opts?: {
   openAndroidSystemScreens?: boolean;
@@ -74,6 +83,10 @@ export async function ensurePrayerAzanPermissions(opts?: {
 
   let openedExactAlarmScreen = false;
   let openedFullScreenScreen = false;
+  let openedBatteryWhitelistScreen = false;
+  let openedOemBackgroundScreen = false;
+  let batteryOptimizationIgnored = true;
+  let oemNeedsBackgroundSetup = false;
 
   if (Platform.OS === "android" && openAndroidSystemScreens) {
     if (!exactAlarmGranted && typeof prayerWidgetModule()?.requestExactAlarmPermissionIfNeeded === "function") {
@@ -98,6 +111,16 @@ export async function ensurePrayerAzanPermissions(opts?: {
       }
       fullScreenIntentGranted = (await readAndroidAzanPermissionFlags()).fullScreenIntentGranted;
     }
+
+    const oem = await ensureOemPowerSetupForAzan({ openSystemScreens: true });
+    batteryOptimizationIgnored = oem.batteryOptimizationIgnored;
+    oemNeedsBackgroundSetup = oem.oemNeedsBackgroundSetup;
+    openedBatteryWhitelistScreen = oem.openedBatteryWhitelistScreen;
+    openedOemBackgroundScreen = oem.openedOemBackgroundScreen;
+  } else if (Platform.OS === "android") {
+    const oem = await getOemPowerDiagnostics();
+    batteryOptimizationIgnored = oem.batteryOptimizationIgnored !== false;
+    oemNeedsBackgroundSetup = oem.oemNeedsBackgroundSetup === true;
   }
 
   if (!notificationsGranted && Platform.OS === "android") {
@@ -116,8 +139,12 @@ export async function ensurePrayerAzanPermissions(opts?: {
     notificationsGranted,
     exactAlarmGranted,
     fullScreenIntentGranted,
+    batteryOptimizationIgnored,
+    oemNeedsBackgroundSetup,
     openedExactAlarmScreen,
     openedFullScreenScreen,
+    openedBatteryWhitelistScreen,
+    openedOemBackgroundScreen,
   };
 }
 
@@ -134,10 +161,15 @@ export async function ensurePrayerAzanPermissionsOnAppActive(): Promise<void> {
   if (now - lastPermissionPromptAt < PERMISSION_PROMPT_COOLDOWN_MS) return;
 
   if (Platform.OS === "android") {
-    const flags = await readAndroidAzanPermissionFlags();
+    const [flags, oem] = await Promise.all([readAndroidAzanPermissionFlags(), getOemPowerDiagnostics()]);
     const N = await import("expo-notifications").catch(() => null);
     const notifStatus = N ? (await N.getPermissionsAsync()).status : "granted";
-    if (notifStatus === "granted" && flags.exactAlarmGranted && flags.fullScreenIntentGranted) {
+    if (
+      notifStatus === "granted" &&
+      flags.exactAlarmGranted &&
+      flags.fullScreenIntentGranted &&
+      oem.batteryOptimizationIgnored !== false
+    ) {
       return;
     }
   }

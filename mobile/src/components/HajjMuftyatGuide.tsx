@@ -7,7 +7,9 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "./GuideAutoTranslateBanner";
-import { KaabaLiveModal } from "./KaabaLiveModal";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MoreStackParamList } from "../navigation/types";
 import { guideThumbFitContain } from "../utils/guideLightboxFit";
 import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { RasterImage } from "../ui/RasterImage";
@@ -297,14 +299,14 @@ export function HajjMuftyatGuide() {
   const talbiyahWidth = Platform.OS === "web" ? Math.min(contentWidth, 580) : contentWidth;
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const sections = useMemo(() => hajjSectionsInBookOrder(), []);
+  const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [officialBookOpen, setOfficialBookOpen] = useState(false);
-  const [kaabaLiveOpen, setKaabaLiveOpen] = useState(false);
   const { tr, translated } = useKkAutoTranslator();
 
   const toggle = (id: string) => setOpen((cur) => ({ ...cur, [id]: !cur[id] }));
   const openKaabaLive = () => {
-    setKaabaLiveOpen(true);
+    navigation.navigate("MakkahLive");
   };
 
   return (
@@ -417,15 +419,6 @@ export function HajjMuftyatGuide() {
           <MaterialIcons name="open-in-new" size={18} color={colors.accent} />
         </Pressable>
       </View>
-      <KaabaLiveModal
-        visible={kaabaLiveOpen}
-        onClose={() => setKaabaLiveOpen(false)}
-        colors={colors}
-        title={tr("Қағба — тікелей эфир")}
-        soundOnLabel={tr("Дауысты қосу")}
-        soundOffLabel={tr("Дауысты өшіру")}
-        closeLabel={tr("Жабу")}
-      />
     </ScrollView>
   );
 }

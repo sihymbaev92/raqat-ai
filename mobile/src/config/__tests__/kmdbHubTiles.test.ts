@@ -1,18 +1,17 @@
-import { getKmdbHubTiles } from "../kmdbHubTiles";
+import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../officialIslamicSources";
+import {
+  getKmdbHubPrimaryRowKeys,
+  getKmdbHubSecondaryTiles,
+  getKmdbHubTiles,
+} from "../kmdbHubTiles";
+import { officialIslamicSourceHomeUrl } from "../officialIslamicSources";
 
 describe("kmdbHubTiles", () => {
-  it("keeps only AI question-answer and zakat calculator tiles", () => {
-    const tiles = getKmdbHubTiles();
-    const screens = tiles.map((tile) => tile.screen);
-
-    expect(screens).toEqual(["ImamAI", "ZakatCalculator"]);
-  });
-
-  it("keeps every tile labeled and described", () => {
-    for (const tile of getKmdbHubTiles()) {
-      expect(tile.label.trim().length).toBeGreaterThan(2);
-      expect(tile.subtitle.trim().length).toBeGreaterThan(8);
-      expect(tile.image).toBeTruthy();
-    }
+  it("exposes fatua, mosques and muftyat hub tabs", () => {
+    expect(getKmdbHubPrimaryRowKeys()).toEqual(["fatua", "mosques", "muftyat"]);
+    expect(getKmdbHubSecondaryTiles()).toEqual([]);
+    expect(getKmdbHubTiles().map((t) => t.key)).toEqual(["ai", "zakat"]);
+    expect(officialIslamicSourceHomeUrl("fatua")).toBe(FATUA_KK_HOME_URL);
+    expect(officialIslamicSourceHomeUrl("muftyat")).toBe(MUFTYAT_KK_HOME_URL);
   });
 });

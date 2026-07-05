@@ -2,13 +2,13 @@ import { Platform } from "react-native";
 import { navigateToMoreStackScreen } from "../navigation/navigateToMoreStack";
 
 const CATEGORY_ID = "raqat_quick_actions_v1";
-const ACTION_OPEN_AI = "open_raqat_ai";
+const ACTION_OPEN_KNOWLEDGE = "open_knowledge_portal";
 
 let removeListener: (() => void) | null = null;
 
 function handleQuickAction(actionId?: string) {
-  if (actionId !== ACTION_OPEN_AI) return;
-  navigateToMoreStackScreen("ImamAI");
+  if (actionId !== ACTION_OPEN_KNOWLEDGE) return;
+  navigateToMoreStackScreen("OfficialKnowledgePortal");
 }
 
 export async function initNotificationQuickActions(): Promise<void> {
@@ -16,8 +16,8 @@ export async function initNotificationQuickActions(): Promise<void> {
   const Notifications = await import("expo-notifications");
   await Notifications.setNotificationCategoryAsync(CATEGORY_ID, [
     {
-      identifier: ACTION_OPEN_AI,
-      buttonTitle: "RAQAT · көмекші",
+      identifier: ACTION_OPEN_KNOWLEDGE,
+      buttonTitle: "Фетуа іздеу",
       options: {
         opensAppToForeground: true,
       },

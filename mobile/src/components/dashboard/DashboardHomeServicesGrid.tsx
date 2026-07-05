@@ -16,6 +16,7 @@ type Props = {
   colors: ThemeColors;
   isDark: boolean;
   onPress: (key: DashboardHomeServiceKey) => void;
+  onPressIn?: (key: DashboardHomeServiceKey) => void;
 };
 
 /** Үлкен кісілерге оңай басылатын ірі тайлдар: 3 баған. */
@@ -37,7 +38,12 @@ function chunkGridRows<T>(items: readonly T[], cols: number): T[][] {
   return rows;
 }
 
-export const DashboardHomeServicesGrid = memo(function DashboardHomeServicesGrid({ colors, isDark, onPress }: Props) {
+export const DashboardHomeServicesGrid = memo(function DashboardHomeServicesGrid({
+  colors,
+  isDark,
+  onPress,
+  onPressIn,
+}: Props) {
   const locale = useAppLocale();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const gridRows = useMemo(() => chunkGridRows(getDashboardHomeServices(), COLS), [locale]);
@@ -86,6 +92,7 @@ export const DashboardHomeServicesGrid = memo(function DashboardHomeServicesGrid
                 key={item.key}
                 href={webHref}
                 oyuBackdrop={false}
+                onPressIn={() => onPressIn?.(item.key)}
                 onPress={() => onPress(item.key)}
                 style={({ pressed }) => [
                   styles.tile,
