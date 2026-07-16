@@ -1,10 +1,10 @@
 import { magneticDeclinationEastDeg } from "../qiblaDeclinationApprox";
 
 describe("magneticDeclinationEastDeg", () => {
-  it("Қазақстан аймағында шығыс деклинация оң мәнге жақын", () => {
+  it("Қазақстан аймағында шығыс деклинация ~5° (WMM2025)", () => {
     const d = magneticDeclinationEastDeg(43.2, 76.9);
-    expect(d).toBeGreaterThan(6);
-    expect(d).toBeLessThan(14);
+    expect(d).toBeGreaterThan(3);
+    expect(d).toBeLessThan(8);
   });
 
   it("Нью-Йоркта батыс деклинация (теріс)", () => {

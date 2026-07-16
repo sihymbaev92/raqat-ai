@@ -8,8 +8,10 @@ import { SettingsQuranHub } from "../components/settings/SettingsQuranHub";
 import { SettingsContentDataSection } from "../components/settings/SettingsContentDataSection";
 import { useContentDataSettings } from "../hooks/useContentDataSettings";
 import { makeSettingsScreenShell } from "./settings/settingsScreenShell";
+import { useAppLocale } from "../i18n/runtime";
 
 export function QuranSettingsScreen() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const shell = makeSettingsScreenShell(colors);

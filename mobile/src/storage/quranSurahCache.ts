@@ -1,5 +1,5 @@
 import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
-import { ensureBundledQuranReaderLoaded, getBundledSurahAyahs } from "../services/bundledQuranReader";
+import { ensureBundledQuranReaderLoaded, getBundledKkTextForAyah, getBundledSurahAyahs } from "../services/bundledQuranReader";
 import { pickPreferredTranslit } from "../utils/quranTranslitDisplay";
 import {
   loadSurahAyahsOverlay,
@@ -50,6 +50,29 @@ export type CachedAyah = {
  * Таңдалған тілге сәйкес аят мағынасы. Аударма жүктелмеген болса — қазақшаға қайтады.
  * Араб тілінде (ar) бөлек мағына жоқ — экранда араб мәтінінің өзі тұрады.
  */
+export function quranAyahMeaningForSurah(
+  surahNumber: number,
+  item: Pick<
+    CachedAyah,
+    | "numberInSurah"
+    | "textKk"
+    | "textRu"
+    | "textEn"
+    | "textTr"
+    | "textUz"
+    | "textKy"
+    | "textZh"
+    | "textFa"
+    | "textId"
+    | "textMs"
+    | "textHi"
+    | "textKu"
+  >,
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+): string {
+  return quranAyahMeaningForLocale({ ...item, surahNumber }, locale);
+}
+
 export function quranAyahMeaningForLocale(
   item: Pick<
     CachedAyah,
@@ -73,9 +96,11 @@ export function quranAyahMeaningForLocale(
   const bundled = () => {
     const surah = "surahNumber" in item ? item.surahNumber : undefined;
     const ayah = "numberInSurah" in item ? item.numberInSurah : undefined;
-    return typeof surah === "number" && typeof ayah === "number"
-      ? getBundledQuranAyahTranslation(surah, ayah, locale)
-      : "";
+    if (typeof surah !== "number" || typeof ayah !== "number") return "";
+    if (locale === "kk") {
+      return getBundledKkTextForAyah(surah, ayah) ?? "";
+    }
+    return getBundledQuranAyahTranslation(surah, ayah, locale);
   };
   switch (locale) {
     case "ru":
@@ -103,7 +128,7 @@ export function quranAyahMeaningForLocale(
     case "ar":
       return "";
     default:
-      return pick(item.textKk);
+      return pick(item.textKk) || bundled();
   }
 }
 

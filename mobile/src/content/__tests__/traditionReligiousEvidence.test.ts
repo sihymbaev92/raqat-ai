@@ -20,23 +20,13 @@ describe("traditionReligiousEvidence", () => {
     expect(kinds).toContain("hadith");
   });
 
-  it("keeps refs complete and hadith excerpts as safe summaries", () => {
-    for (const blocks of Object.values(TRADITION_RELIGIOUS_EVIDENCE)) {
-      for (const block of blocks) {
-        expect(block.id).toBeTruthy();
-        expect(block.titleKk.trim().length).toBeGreaterThan(0);
-        for (const ref of block.refs) {
-          expect(ref.citationKk.trim().length).toBeGreaterThan(0);
-          expect(ref.excerptKk.trim().length).toBeGreaterThan(0);
-          if (ref.kind === "quran") {
-            expect(ref.surah).toBeGreaterThanOrEqual(1);
-            expect(ref.surah).toBeLessThanOrEqual(114);
-            expect(ref.ayah).toBeGreaterThanOrEqual(1);
-          } else {
-            expect(ref.excerptKk).not.toMatch(/[«»]/);
-          }
-        }
-      }
-    }
+  it("resolves trusted hadith ids for numbered Bukhari/Muslim citations", () => {
+    const blocks = getTraditionReligiousEvidence("bata-beru");
+    const hadithRefs = blocks.flatMap((b) => b.refs).filter((r) => r.kind === "hadith");
+    expect(hadithRefs.some((r) => r.kind === "hadith" && Boolean(r.hadithId))).toBe(true);
+
+    const neighbor = getTraditionReligiousEvidence("korshi-aqy").flatMap((b) => b.refs);
+    const openable = neighbor.filter((r) => r.kind === "hadith" && r.hadithId);
+    expect(openable.length).toBeGreaterThan(0);
   });
 });

@@ -40,7 +40,7 @@ export const DUAS_MENZIKIR: DuasMenzikirSection[] = [
   {
     categoryTitle: "V. Зікір, тәубе және салауат",
     label: "V. Зікір және тәубе",
-    hint: "Истигфар, ризалық, кешірім",
+    hint: "Истигфар, ризалық, кешірім, сәләуәт",
   },
   {
     categoryTitle: "VI. Қажылық, умра және Қағба",

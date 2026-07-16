@@ -6,6 +6,7 @@ import { RasterImage } from "@/ui/RasterImage";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { PlatformIslamicKbArticle } from "../../services/platformApiClient";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   item: PlatformIslamicKbArticle;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function KbArticleCard({ item, colors, onPress, onOpenSite }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const imageUrl = (item.image_url ?? "").trim();
 

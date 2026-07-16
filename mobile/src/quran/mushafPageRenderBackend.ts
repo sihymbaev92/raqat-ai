@@ -49,8 +49,14 @@ export function mushafBookPageRenderBackend(
 
 export function mushafBookEffectiveRenderBackend(
   readingThemeId?: QuranReadingThemeId | null,
-  opts?: { showTajweedColors?: boolean; arabicScriptEdition?: string | null }
+  opts?: {
+    showTajweedColors?: boolean;
+    arabicScriptEdition?: string | null;
+    /** Офлайн / QCF4 қаріп кэші жоқ — APK bundled Unicode. */
+    forceTextHafs?: boolean;
+  }
 ): MushafPageRenderBackend {
+  if (opts?.forceTextHafs) return "text-hafs";
   /** Тәжуид: Sajda сияқты QCF4 мұсаф (сөз glyph) — Unicode Text span емес. */
   return mushafBookPageRenderBackend(readingThemeId);
 }

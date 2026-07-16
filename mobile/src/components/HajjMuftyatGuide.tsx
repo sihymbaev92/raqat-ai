@@ -5,6 +5,7 @@ import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "./GuideAutoTranslateBanner";
 import { useNavigation } from "@react-navigation/native";
@@ -201,6 +202,7 @@ function HajjJourneyRoadmap({
   colors: ThemeColors;
   tr: (text: string) => string;
 }) {
+  const t = useI18n();
   const styles = useMemo(() => makeJourneyStyles(colors), [colors]);
   const groups = useMemo(() => buildHajjJourneyGroups(), []);
   const [openPhase, setOpenPhase] = useState<HajjJourneyPhaseId | null>(null);
@@ -213,9 +215,9 @@ function HajjJourneyRoadmap({
           <MaterialIcons name="route" size={20} color={colors.accent} />
         </View>
         <View style={styles.headText}>
-          <Text style={styles.title}>{tr("Қажылық жол картасы")}</Text>
+          <Text style={styles.title}>{t.features.hajjRoadmapTitle}</Text>
           <Text style={styles.lead}>
-            {tr("Дайындықтан бастап умра, негізгі қажылық күндері және сапардан кейінгі амалдар бір ретпен берілді.")}
+            {t.features.hajjRoadmapLead}
           </Text>
         </View>
       </View>
@@ -233,7 +235,7 @@ function HajjJourneyRoadmap({
                 }}
                 accessibilityRole="button"
                 accessibilityState={{ expanded }}
-                accessibilityLabel={`${tr(group.title)} — ${expanded ? "жабу" : "ашу"}`}
+                accessibilityLabel={`${tr(group.title)} — ${expanded ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
                 style={({ pressed }) => [styles.phaseHead, expanded && styles.phaseHeadOpen, pressed && { opacity: 0.92 }]}
               >
                 <View style={styles.phaseIcon}>
@@ -261,7 +263,7 @@ function HajjJourneyRoadmap({
                           onPress={() => setOpenSection((cur) => (cur === section.title ? null : section.title))}
                           accessibilityRole="button"
                           accessibilityState={{ expanded: sectionOpen }}
-                          accessibilityLabel={`${tr(section.title)} — ${sectionOpen ? "жабу" : "ашу"}`}
+                          accessibilityLabel={`${tr(section.title)} — ${sectionOpen ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
                           style={({ pressed }) => [styles.sectionHead, pressed && { opacity: 0.92 }]}
                         >
                           <View style={styles.sectionBullet} />
@@ -303,6 +305,7 @@ export function HajjMuftyatGuide() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [officialBookOpen, setOfficialBookOpen] = useState(false);
   const { tr, translated } = useKkAutoTranslator();
+  const t = useI18n();
 
   const toggle = (id: string) => setOpen((cur) => ({ ...cur, [id]: !cur[id] }));
   const openKaabaLive = () => {
@@ -324,14 +327,14 @@ export function HajjMuftyatGuide() {
         style={({ pressed }) => [styles.kaabaLiveBtn, pressed && { opacity: 0.92 }]}
         onPress={openKaabaLive}
         accessibilityRole="button"
-        accessibilityLabel={tr("Қағба онлайн — тікелей эфир")}
+        accessibilityLabel={t.features.hajjKaabaOnlineA11y}
       >
         <View style={styles.kaabaLiveIcon}>
           <MaterialIcons name="live-tv" size={20} color="#fff" />
         </View>
         <View style={styles.kaabaLiveTextCol}>
-          <Text style={styles.kaabaLiveTitle} numberOfLines={1}>{tr("Қағба онлайн")}</Text>
-          <Text style={styles.kaabaLiveSub} numberOfLines={1}>{tr("Тікелей эфир · Харам")}</Text>
+          <Text style={styles.kaabaLiveTitle} numberOfLines={1}>{t.features.hajjKaabaOnlineTitle}</Text>
+          <Text style={styles.kaabaLiveSub} numberOfLines={1}>{t.features.hajjKaabaOnlineLive}</Text>
         </View>
         <View style={styles.kaabaLiveDot} />
         <Text style={styles.kaabaLiveLiveTxt}>LIVE</Text>
@@ -341,23 +344,23 @@ export function HajjMuftyatGuide() {
 
       <HajjJourneyRoadmap colors={colors} tr={tr} />
 
-      <Text style={styles.sectionLabel}>{tr("Толық дерек")}</Text>
+      <Text style={styles.sectionLabel}>{t.features.hajjFullDataLabel}</Text>
       <View style={styles.officialBookPanel}>
         <Pressable
           oyuBackdrop={false}
           onPress={() => setOfficialBookOpen((cur) => !cur)}
           accessibilityRole="button"
           accessibilityState={{ expanded: officialBookOpen }}
-          accessibilityLabel={`${tr("ҚМДБ ресми кітабы")} — ${officialBookOpen ? "жабу" : "ашу"}`}
+          accessibilityLabel={`${t.features.hajjOfficialBookTitle} — ${officialBookOpen ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
           style={({ pressed }) => [styles.officialBookHead, pressed && { opacity: 0.92 }]}
         >
           <View style={styles.officialBookIcon}>
             <MaterialIcons name="menu-book" size={20} color={colors.accent} />
           </View>
           <View style={styles.officialBookText}>
-            <Text style={styles.officialBookTitle}>{tr("ҚМДБ ресми кітабы")}</Text>
+            <Text style={styles.officialBookTitle}>{t.features.hajjOfficialBookTitle}</Text>
             <Text style={styles.officialBookLead} numberOfLines={1}>
-              {tr("Толық мәтін")} · {sections.length} {tr("бөлім")}
+              {t.features.hajjFullTextLabel} · {sections.length} {t.features.hajjSectionUnit}
             </Text>
           </View>
           <MaterialIcons
@@ -396,8 +399,9 @@ export function HajjMuftyatGuide() {
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
       <View style={styles.footer}>
         <Text style={styles.compactHint}>
-          {tr("Бөлімді басыңыз — мәтін ретімен ашылады.")}
+          {t.features.hajjTapSectionHint}
         </Text>
+        <Text style={styles.compactHint}>{kk.features.hajjScanCdnHint}</Text>
         <Pressable
           oyuBackdrop={false}
           style={({ pressed }) => [styles.sourceRow, pressed && { opacity: 0.92 }]}

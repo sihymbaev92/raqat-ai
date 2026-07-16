@@ -40,6 +40,7 @@ import { openTraditionBook } from "../utils/openTraditionBook";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 
 import type { MoreStackParamList } from "../navigation/types";
+import { useAppLocale } from "../i18n/runtime";
 
 
 
@@ -95,6 +96,7 @@ function catalogSectionTitle(id: CatalogBookSectionId): string {
 
 
 export function KazakhTraditionBooksScreen({ route }: Props) {
+  useAppLocale();
   const { isDark } = useAppTheme();
   const palette = useMemo(() => getTraditionKazakhPalette(isDark), [isDark]);
   const styles = useMemo(() => makeStyles(palette), [palette]);

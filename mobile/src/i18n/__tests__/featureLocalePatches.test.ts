@@ -1,10 +1,10 @@
 import { kk } from "../kk";
 import { setCurrentLocale, type AppLocale } from "../runtime";
 
-const PRIMARY_LOCALES: Exclude<AppLocale, "kk">[] = ["ru", "en", "ky", "uz", "tr"];
+const PRIMARY_LOCALES: Exclude<AppLocale, "kk">[] = ["ru", "en", "ky", "uz", "tr", "ar"];
 
-/** Kazakh-specific Cyrillic letters rarely used in ru/en/ky/uz UI copy. */
-const KAZAKH_ONLY_LETTERS = /[ғқңөұүһіҒҚҢӨҰҮҺІ]/;
+/** Letters unique to Kazakh (not used in standard Kyrgyz Cyrillic). */
+const KAZAKH_ONLY_LETTERS = /[әғұһіӘҒҰҺІ]/;
 
 type LocaleKeyProbe = { label: string; read: () => string };
 
@@ -48,6 +48,11 @@ const LOCALE_EXPECTED_SNIPPETS: Partial<Record<Exclude<AppLocale, "kk">, Record<
     "tasbih.bleTitle": /Elektronik/i,
     "quran.tajweedModeLabel": /Tecvid/i,
     "hadith.meaningLabel": /Anlamı/,
+  },
+  ar: {
+    "tasbih.bleTitle": /عداد|إلكتروني/,
+    "quran.tajweedModeLabel": /تجويد/,
+    "hadith.meaningLabel": /المعنى/,
   },
 };
 

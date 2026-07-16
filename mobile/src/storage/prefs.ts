@@ -25,12 +25,16 @@ const K = {
   qiblaMotionMode: "raqat_qibla_motion_mode_v1",
   /** GPS/Wi‑Fi арқылы қала, ауа райы, құбыла автоматты жаңарту */
   prayerLocationAuto: "raqat_prayer_location_auto_v1",
+  cityLat: "raqat_city_lat_v1",
+  cityLon: "raqat_city_lon_v1",
 } as const;
 
 export type QiblaMotionMode = "balanced" | "fast";
 
-export type TasbihGoalMode = "33" | "99" | "default";
+export type TasbihGoalMode = "33" | "100" | "infinite";
 export type PrayerSourceMode = "calc" | "mosque";
+
+export type CityLocationMode = "auto" | "manual";
 
 export type SavedCity = { city: string; country: string };
 
@@ -74,6 +78,26 @@ export async function getPrayerLocationAutoEnabled(): Promise<boolean> {
 
 export async function setPrayerLocationAutoEnabled(on: boolean): Promise<void> {
   await AsyncStorage.setItem(K.prayerLocationAuto, on ? "1" : "0");
+}
+
+export async function getCityLocationMode(): Promise<CityLocationMode> {
+  return (await getPrayerLocationAutoEnabled()) ? "auto" : "manual";
+}
+
+export async function setSelectedCityCoords(lat: number, lon: number): Promise<void> {
+  await AsyncStorage.multiSet([
+    [K.cityLat, String(lat)],
+    [K.cityLon, String(lon)],
+  ]);
+}
+
+export async function getSelectedCityCoords(): Promise<{ lat: number; lon: number } | null> {
+  const latRaw = await AsyncStorage.getItem(K.cityLat);
+  const lonRaw = await AsyncStorage.getItem(K.cityLon);
+  const lat = latRaw != null ? Number(latRaw) : NaN;
+  const lon = lonRaw != null ? Number(lonRaw) : NaN;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return { lat, lon };
 }
 
 export async function getSavedCities(): Promise<SavedCity[]> {
@@ -235,14 +259,12 @@ export async function setPrayerMosqueShiftMin(shiftMin: number): Promise<void> {
 
 export async function getQiblaMotionMode(): Promise<QiblaMotionMode> {
   const v = await AsyncStorage.getItem(K.qiblaMotionMode);
-  if (v === "fast") {
-    await AsyncStorage.setItem(K.qiblaMotionMode, "balanced");
-  }
+  if (v === "fast" || v === "balanced") return v;
   return "balanced";
 }
 
 export async function setQiblaMotionMode(mode: QiblaMotionMode): Promise<void> {
-  await AsyncStorage.setItem(K.qiblaMotionMode, mode === "fast" ? "balanced" : mode);
+  await AsyncStorage.setItem(K.qiblaMotionMode, mode);
 }
 
 export async function getTasbihPrefs(): Promise<{
@@ -256,7 +278,11 @@ export async function getTasbihPrefs(): Promise<{
   const n = idRaw ? parseInt(idRaw, 10) : NaN;
   const dhikrId = Number.isFinite(n) ? n : null;
   const goalMode: TasbihGoalMode =
-    goalRaw === "33" || goalRaw === "99" || goalRaw === "default" ? goalRaw : "default";
+    goalRaw === "33"
+      ? "33"
+      : goalRaw === "100" || goalRaw === "99"
+        ? "100"
+        : "infinite";
   const c = countRaw ? parseInt(countRaw, 10) : 0;
   const count = Number.isFinite(c) && c >= 0 ? c : 0;
   return { dhikrId, goalMode, count };

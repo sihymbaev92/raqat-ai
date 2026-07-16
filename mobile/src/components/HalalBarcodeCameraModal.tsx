@@ -115,7 +115,7 @@ export function HalalBarcodeCameraModal({
     if (photoBusy || !cameraRef.current) return;
     setPhotoBusy(true);
     try {
-      const shot = await cameraRef.current.takePictureAsync({
+      const shot = await cameraRef.current.takePicture({
         quality: 0.85,
         skipProcessing: Platform.OS === "android",
       });
@@ -239,7 +239,7 @@ export function HalalBarcodeCameraModal({
         ) : ready ? (
           <View style={{ flex: 1 }}>
             <CameraView
-              ref={cameraRef}
+              ref={cameraRef as React.Ref<CameraView>}
               style={{ flex: 1 }}
               facing="back"
               barcodeScannerSettings={{ barcodeTypes: HALAL_BARCODE_TYPES }}

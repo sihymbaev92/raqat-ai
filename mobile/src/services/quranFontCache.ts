@@ -75,7 +75,7 @@ async function downloadFontToPath(remoteUrls: string[], cachePath: string): Prom
 
   if (await hasUsableFontFile(cachePath)) {
     const hit = await getInfoAsync(cachePath);
-    return { uri: cachePath, bytes: hit.size ?? 0, alreadyCached: true };
+    return { uri: cachePath, bytes: hit.exists && "size" in hit ? hit.size ?? 0 : 0, alreadyCached: true };
   }
 
   await ensureQuranFontCacheDirs();

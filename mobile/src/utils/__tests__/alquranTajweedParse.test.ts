@@ -87,4 +87,10 @@ describe("tajweedRuleToColorGroup", () => {
     expect(tajweedRuleToColorGroup("o")).toBe("madd");
     expect(tajweedRuleToColorGroup("n")).toBe("madd");
   });
+
+  it("groups idgham separately from ghunnah", () => {
+    expect(tajweedRuleToColorGroup("g")).toBe("ghunnahIkhfa");
+    expect(tajweedRuleToColorGroup("a")).toBe("idgham");
+    expect(tajweedRuleToColorGroup("u")).toBe("idgham");
+  });
 });

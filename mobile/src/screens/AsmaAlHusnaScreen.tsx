@@ -14,6 +14,7 @@ import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import { getAsmaChapters } from "../content/asmaChapters";
+import { useAppLocale } from "../i18n/runtime";
 
 type AsmaRow = { n: number; ar: string; kk: string };
 
@@ -29,6 +30,7 @@ function loadNames(): AsmaRow[] {
 }
 
 export function AsmaAlHusnaScreen() {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const { tr, translated } = useKkAutoTranslator();
   const rows = useMemo(() => loadNames(), []);

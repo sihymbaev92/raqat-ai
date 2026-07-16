@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-HTTP API хосттарын `mobile/android/.../network_security_config.xml` ішіне қосады
-(release APK cleartext allowlist).
+HTTP API хосттарын `mobile/android/app/src/debug/res/xml/network_security_config.xml`
+ішіне қосады (debug APK cleartext allowlist; release main/res — HTTPS-only).
 
 1) `RAQAT_ANDROID_CLEARTEXT_HOSTS` — үтірмен бөлінген хосттар: алдымен орта айнымалы, әйтпесе .env.
 2) Әйтпесе `EXPO_PUBLIC_RAQAT_API_BASE` — орта, түбір `/ .env` / `mobile/.env` / `mobile/.env.production` (релиз хосты жиі соңғыда), тек `http://` hostname.
@@ -134,7 +134,7 @@ def main() -> int:
         / "android"
         / "app"
         / "src"
-        / "main"
+        / "debug"
         / "res"
         / "xml"
         / "network_security_config.xml"

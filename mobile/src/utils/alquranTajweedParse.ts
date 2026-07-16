@@ -3,6 +3,8 @@
  * (мысалы `[g[`, `[n[`, `[h:1[`) — түс бойынша оқу үшін сегменттерге бөлу.
  * @see https://alquran.cloud/tajweed-guide
  */
+import { tajweedStdColor, type TajweedStdColorKey } from "../content/tajweedColorPalette";
+
 export type TajweedRuleKey =
   | "h"
   | "l"
@@ -113,7 +115,7 @@ export function tajweedColoredRuns(taggedText: string): TajweedColoredRun[] {
   const merged: TajweedColoredRun[] = [];
   for (const run of runs) {
     const prev = merged[merged.length - 1];
-    if (prev && prev.rule === run.rule) {
+    if (prev && prev.rule != null && prev.rule === run.rule) {
       prev.text += run.text;
       continue;
     }
@@ -160,7 +162,10 @@ export function tajweedWholeWordRules(taggedText: string | null | undefined): Ar
     const visibleRule = meaningful.find(
       (part) => part.rule && part.rule !== "h" && part.rule !== "l" && part.rule !== "s"
     )?.rule;
-    out.push(visibleRule);
+    const helperRule = meaningful.find(
+      (part) => part.rule === "h" || part.rule === "l" || part.rule === "s"
+    )?.rule;
+    out.push(visibleRule ?? helperRule);
     parts = [];
   };
 
@@ -217,7 +222,12 @@ export function tajweedRuleForWordGlyph(
   const perWord = tajweedRulesPerWordChar(taggedText);
   const chars = perWord[wordIndex];
   if (!chars?.length) return tajweedWholeWordRules(taggedText ?? "")[wordIndex];
-  return chars[glyphIndexInWord];
+  const idx = Math.min(Math.max(0, glyphIndexInWord), chars.length - 1);
+  if (chars[idx]) return chars[idx];
+  for (let i = idx - 1; i >= 0; i -= 1) {
+    if (chars[i]) return chars[i];
+  }
+  return undefined;
 }
 
 /** Бір сөз ішіндегі әріптерді тәжуид ережесі бойынша қысқа runs-қа біріктіреді. */
@@ -265,8 +275,16 @@ export function tajweedWordHasPerLetterColoring(
   return !(tagged.length === normalized.length && new Set(tagged).size === 1);
 }
 
-/** Түсті топтар: легенда үшін (Sajda-style топтау) */
-export type TajweedColorGroup = "madd" | "qalqalah" | "ghunnahIkhfa" | "silent" | "hamzaWasl" | "lamShamsi" | "other";
+/** Түсті топтар: легенда үшін (4 халықаралық түс + сұр көмекші). */
+export type TajweedColorGroup =
+  | "madd"
+  | "qalqalah"
+  | "ghunnahIkhfa"
+  | "idgham"
+  | "silent"
+  | "hamzaWasl"
+  | "lamShamsi"
+  | "other";
 
 export function tajweedRuleToColorGroup(rule: TajweedRuleKey): TajweedColorGroup {
   switch (rule) {
@@ -280,13 +298,14 @@ export function tajweedRuleToColorGroup(rule: TajweedRuleKey): TajweedColorGroup
     case "g":
     case "f":
     case "c":
-    case "w":
     case "i":
+      return "ghunnahIkhfa";
     case "a":
     case "u":
+    case "w":
     case "d":
     case "b":
-      return "ghunnahIkhfa";
+      return "idgham";
     case "s":
       return "silent";
     case "h":
@@ -298,39 +317,25 @@ export function tajweedRuleToColorGroup(rule: TajweedRuleKey): TajweedColorGroup
   }
 }
 
-export function tajweedColorForGroup(group: TajweedColorGroup, isDark: boolean): string {
-  if (isDark) {
-    switch (group) {
-      case "madd":
-        return "#fdba74";
-      case "qalqalah":
-        return "#7dd3fc";
-      case "ghunnahIkhfa":
-        return "#6ee7b7";
-      case "silent":
-        return "#b6bcc6";
-      case "hamzaWasl":
-        return "#c4c4c8";
-      case "lamShamsi":
-        return "#67e8f9";
-      default:
-        return "#f0f0f3";
-    }
-  }
+function groupToStdKey(group: TajweedColorGroup): TajweedStdColorKey {
   switch (group) {
     case "madd":
-      return "#ea580c";
+      return "madd";
     case "qalqalah":
-      return "#2563eb";
+      return "qalqalah";
     case "ghunnahIkhfa":
-      return "#16a34a";
+      return "ghunnahIkhfa";
+    case "idgham":
+      return "idgham";
     case "silent":
-      return "#5f6b7a";
     case "hamzaWasl":
-      return "#5c6370";
     case "lamShamsi":
-      return "#0284c7";
+    case "other":
     default:
-      return "#27272a";
+      return "neutral";
   }
+}
+
+export function tajweedColorForGroup(group: TajweedColorGroup, isDark: boolean): string {
+  return tajweedStdColor(groupToStdKey(group), isDark);
 }

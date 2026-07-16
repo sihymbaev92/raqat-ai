@@ -35,12 +35,12 @@ export const QURAN_RU_KULIEV_EDITION = "ru.kuliev-audio";
 export const QURAN_EN_WALK_EDITION = "en.walk";
 /** Түркия — Дианет вақфы аудармасы (CDN 128 kbps). */
 export const QURAN_TR_DIYANET_EDITION = "tr.vakfi-audio";
-/** Қырғызстан — Хакимов (аудио жақында). */
+/** Қырғызстан — Хакимов (аудио әзірше жоқ — picker-де көрсетілмейді). */
 export const QURAN_KY_HAKIMOV_AUDIO_EDITION = "ky.hakimov-audio";
-/** Өзбекстан — Rowwad аудармасы (аудио жақында). */
+/** Өзбекстан — Rowwad аудармасы (аудио әзірше жоқ — picker-де көрсетілмейді). */
 export const QURAN_UZ_RWWAD_AUDIO_EDITION = "uz.rwwad-audio";
 
-/** 5 елдің аударма дауысы — өз тілінде оқылу. */
+/** Қолжетімді аударма дауыстары ғана (шала «жақында» stub жоқ). */
 export const QURAN_TRANSLATION_RECITER_OPTIONS: QuranReciterOption[] = [
   {
     edition: QURAN_KK_HALIFAH_ALTAI_EDITION,
@@ -64,20 +64,6 @@ export const QURAN_TRANSLATION_RECITER_OPTIONS: QuranReciterOption[] = [
     audioAvailable: true,
   },
   {
-    edition: QURAN_KY_HAKIMOV_AUDIO_EDITION,
-    labelKk: "Шамсиддин Хакимов — қырғызша аударма",
-    group: "ky",
-    kind: "translation",
-    audioAvailable: false,
-  },
-  {
-    edition: QURAN_UZ_RWWAD_AUDIO_EDITION,
-    labelKk: "Rowwad — өзбекше аударма",
-    group: "uz",
-    kind: "translation",
-    audioAvailable: false,
-  },
-  {
     edition: QURAN_TR_DIYANET_EDITION,
     labelKk: "Дианет вақфы — түрікше аударма",
     group: "uz",
@@ -93,21 +79,20 @@ const ARABIC_RECITER_OPTIONS: QuranReciterOption[] = [
   { edition: QURAN_ALAFASY_EDITION, labelKk: "Мишари Рашид әл-Афаси", group: "ar", kind: "arabic", audioAvailable: true },
 ];
 
-/** Қари тізімі: алдымен 5 елдің аударма дауысы, кейін араб қарилары. */
+/** Қари тізімі: алдымен аударма дауысы, кейін араб қарилары. */
 export const QURAN_RECITER_OPTIONS: QuranReciterOption[] = [
   ...QURAN_TRANSLATION_RECITER_OPTIONS,
   ...ARABIC_RECITER_OPTIONS,
 ];
 
-/** Түрікше аудио өзбек тобына қосылған — топ реті 5 елге сәйкес. */
-export const QURAN_RECITER_GROUP_ORDER: QuranReciterGroup[] = ["kk", "ru", "en", "ky", "uz", "ar"];
+export const QURAN_RECITER_GROUP_ORDER: QuranReciterGroup[] = ["kk", "ru", "en", "uz", "ar"];
 
 export const QURAN_RECITER_GROUP_LABELS_KK: Record<QuranReciterGroup, string> = {
   kk: "Қазақстан — қазақша аударма",
   ru: "Ресей — орысша аударма",
   en: "Ағылшынша аударма",
   ky: "Қырғызстан — қырғызша аударма",
-  uz: "Өзбекстан / түрікше аударма",
+  uz: "Түрікше аударма",
   ar: "Араб қарилары (тәжуид)",
 };
 
@@ -128,7 +113,7 @@ export function findQuranReciterOption(edition: string): QuranReciterOption | un
 
 export function isQuranReciterAudioAvailable(edition: string): boolean {
   const opt = findQuranReciterOption(edition);
-  return opt?.audioAvailable !== false;
+  return opt?.audioAvailable === true;
 }
 
 export function isQuranTranslationReciterEdition(edition: string): boolean {
@@ -148,7 +133,10 @@ const LOCALE_DEFAULT_RECITER: Partial<Record<AppLocale, string>> = {
 export function defaultReciterEditionForAppLocale(locale: AppLocale): string {
   const pick = LOCALE_DEFAULT_RECITER[locale];
   if (pick && isQuranReciterAudioAvailable(pick)) return pick;
-  if (pick) return pick;
+  // Қырғызша т.б. аудио әзір жоқ — қолжетімді қазақша аударма дауысына.
+  if (isQuranReciterAudioAvailable(QURAN_KK_HALIFAH_ALTAI_EDITION)) {
+    return QURAN_KK_HALIFAH_ALTAI_EDITION;
+  }
   return DEFAULT_QURAN_RECITER_EDITION;
 }
 
@@ -157,5 +145,11 @@ export function normalizeReciterEdition(raw: string | null | undefined): string 
   if (!s) return DEFAULT_QURAN_RECITER_EDITION;
   if (s === QURAN_ABDULRAHMAN_MOSSAD_EDITION) return QURAN_HUSARY_EDITION;
   if (s === QURAN_MAHER_MUAIQLY_EDITION) return QURAN_ALAFASY_EDITION;
-  return QURAN_RECITER_OPTIONS.some((o) => o.edition === s) ? s : DEFAULT_QURAN_RECITER_EDITION;
+  if (!QURAN_RECITER_OPTIONS.some((o) => o.edition === s)) return DEFAULT_QURAN_RECITER_EDITION;
+  if (!isQuranReciterAudioAvailable(s)) {
+    return isQuranReciterAudioAvailable(QURAN_KK_HALIFAH_ALTAI_EDITION)
+      ? QURAN_KK_HALIFAH_ALTAI_EDITION
+      : DEFAULT_QURAN_RECITER_EDITION;
+  }
+  return s;
 }

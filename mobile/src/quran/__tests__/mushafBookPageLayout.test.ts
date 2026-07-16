@@ -46,6 +46,27 @@ describe("computeMushafBookPageBox", () => {
     expect(pageWidth / pageHeight).toBeCloseTo(382.68 / 547.09, 2);
   });
 
+  it("fillViewport uses full pager width (no 520 desktop cap)", () => {
+    const pager = 820;
+    const viewport = 360;
+    const { pageWidth, pageHeight } = computeMushafBookPageBox(pager, viewport, 0, true, {
+      fillViewport: true,
+      horizontalSafeInset: 10,
+    });
+    expect(pageWidth).toBe(pager - 20);
+    expect(pageHeight).toBe(viewport - MUSHAF_BOOK_PAGE_EDGE_INSET);
+  });
+
+  it("landscape phone fills width even without fillViewport", () => {
+    const pager = 800;
+    const viewport = 360;
+    const { pageWidth } = computeMushafBookPageBox(pager, viewport, 0, true, {
+      horizontalSafeInset: 10,
+    });
+    expect(pageWidth).toBe(pager - 20);
+    expect(pageWidth).toBeGreaterThan(MUSHAF_BOOK_MAX_PAGE_WIDTH);
+  });
+
   it("keeps a safe full width without overflowing narrow hatim screens", () => {
     const viewport = 520;
     const pad = 24;

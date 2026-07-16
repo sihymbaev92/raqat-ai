@@ -1,7 +1,21 @@
+import {
+  HATIM_UNIFIED_AYAH_MARKER_FONT_SIZE,
+  HATIM_UNIFIED_AYAH_MARKER_HEIGHT,
+} from "./mushafTextScale";
+
 export const QCF4_AYAH_MARKER_BLUE = "#1D6FB8";
 export const QCF4_AYAH_MARKER_FACE = "#EAF2FB";
 export const QCF4_AYAH_MARKER_NUMBER_LIGHT = "#111111";
 export const QCF4_AYAH_MARKER_NUMBER_DARK = "#FFFFFF";
+
+/** Хатым: аят нөмірі эмблемасы — бет/жолға тәуелді емес, бірдей px. */
+export function hatimUnifiedAyahMarkerHeight(): number {
+  return HATIM_UNIFIED_AYAH_MARKER_HEIGHT;
+}
+
+export function hatimUnifiedAyahMarkerFontSize(): number {
+  return HATIM_UNIFIED_AYAH_MARKER_FONT_SIZE;
+}
 
 export function qcf4AyahMarkerHeight(lineHeight: number, glyphLineHeight: number): number {
   const safeLineHeight = Number.isFinite(lineHeight) ? lineHeight : 0;

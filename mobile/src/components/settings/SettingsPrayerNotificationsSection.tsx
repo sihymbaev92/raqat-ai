@@ -16,10 +16,10 @@ import { PRAYER_NOTIF_SOUND_UI_ORDER, type PrayerNotifSoundId } from "../../stor
 import {
   openAndroidBatteryOptimizationSettings,
   openAndroidExactAlarmSettings,
-  openAndroidFullScreenIntentSettings,
   type PrayerNotificationDiagnostics,
 } from "../../services/prayerNotifications";
 import { scheduleTestAzanAlarmForQa } from "../../services/prayerFullScreenAzan";
+import { useAppLocale } from "../../i18n/runtime";
 
 export type PrayerNotifWarn = "permission" | "schedule" | null;
 
@@ -50,6 +50,7 @@ export function SettingsPrayerNotificationsSection({
   onIftarChange,
   onPrayerSoundIdChange,
 }: Props) {
+  useAppLocale();
   const ui = makeSettingsStyles(colors);
   const styles = makeNotifStyles(colors);
   const [azanQaBusy, setAzanQaBusy] = useState(false);
@@ -64,7 +65,6 @@ export function SettingsPrayerNotificationsSection({
     if (result.ok) {
       const permBits = [
         result.exactAlarmPermissionGranted === false ? "exact alarm жабық" : null,
-        result.fullScreenIntentPermissionGranted === false ? "full-screen жабық" : null,
       ].filter(Boolean);
       setAzanQaMessage(
         permBits.length
@@ -146,10 +146,6 @@ export function SettingsPrayerNotificationsSection({
                 <Text style={styles.diagnosticLine}>
                   Exact alarm: {formatPermissionFlag(diagnostics.nativeAzanExactAlarmPermissionGranted)}
                 </Text>
-                <Text style={styles.diagnosticLine}>
-                  Full-screen intent:{" "}
-                  {formatPermissionFlag(diagnostics.nativeAzanFullScreenIntentPermissionGranted)}
-                </Text>
               </>
             ) : null}
             <Text style={styles.diagnosticLine}>
@@ -200,16 +196,6 @@ export function SettingsPrayerNotificationsSection({
                 accessibilityLabel={kk.settings.notifOpenSystemSettings}
               >
                 <Text style={styles.warnLinkTxt}>{kk.settings.notifOpenSystemSettings}</Text>
-              </Pressable>
-            ) : null}
-            {Number(Platform.Version) >= 34 ? (
-              <Pressable
-                onPress={() => void openAndroidFullScreenIntentSettings()}
-                style={({ pressed }) => [styles.warnLinkBtn, pressed && { opacity: 0.88 }]}
-                accessibilityRole="button"
-                accessibilityLabel={kk.settings.prayerAzanOpenFullScreenSettings}
-              >
-                <Text style={styles.warnLinkTxt}>{kk.settings.prayerAzanOpenFullScreenSettings}</Text>
               </Pressable>
             ) : null}
             <Pressable
@@ -281,7 +267,6 @@ export function SettingsPrayerNotificationsSection({
         <Switch value={iftar} onValueChange={onIftarChange} />
       </View>
       <Text style={styles.hint}>{kk.prayer.iftarHint}</Text>
-      {Platform.OS === "android" ? <Text style={ui.hint}>{kk.settings.androidPrayerWidgetHint}</Text> : null}
     </SettingsSection>
   );
 }

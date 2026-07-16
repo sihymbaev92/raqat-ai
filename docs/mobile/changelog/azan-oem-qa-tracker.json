@@ -1,0 +1,11 @@
+{
+  "schema": "azan-oem-3day-v1",
+  "updated_at": "2026-07-16T00:00:00.000Z",
+  "target_oems": ["samsung", "xiaomi", "huawei"],
+  "days": 3,
+  "runs": [],
+  "instructions": {
+    "kk": "Әр күнде әр OEM телефонын USB қосып: npm run qa:azan:oem -- -Day 1|2|3. Samsung/Xiaomi/Huawei үшін жүйе баптауларында full-screen intent + battery whitelist тексеріңіз.",
+    "script": "mobile/scripts/azan-oem-3day-qa.ps1"
+  }
+}

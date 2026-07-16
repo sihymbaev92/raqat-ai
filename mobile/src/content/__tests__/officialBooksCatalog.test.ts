@@ -4,10 +4,12 @@ import {
 } from "../officialBooksCatalog";
 
 describe("officialBooksCatalog", () => {
-  it("keeps catalog metadata without surfacing removed in-app book screens", () => {
+  it("exposes synced catalog metadata and Fatua PDF books", () => {
     const meta = getOfficialBooksCatalogMeta();
     expect(meta.syncedAt).toBeTruthy();
-    expect(getOfficialBooksBySite("fatua")).toEqual([]);
-    expect(getOfficialBooksBySite("muftyat")).toEqual([]);
+    const fatua = getOfficialBooksBySite("fatua");
+    expect(fatua.length).toBeGreaterThan(0);
+    expect(fatua[0].action.kind).toBe("screen");
+    expect(fatua[0].badge).toBe("PDF");
   });
 });

@@ -55,8 +55,14 @@ export function orderRowsFromNextSalat<T extends { key: string; time: string }>(
   return [...rows.slice(idx), ...rows.slice(0, idx)];
 }
 
+/** UI тізімінде көрсетілетін жол: уақыты өткен болса жасырылады. */
+function isUpcomingDisplayRow<T extends { key: string; time: string }>(row: T, nowM: number): boolean {
+  if (!row.time?.trim()) return false;
+  return parseMinutes(row.time) > nowM;
+}
+
 /**
- * UI: келесі намаз жолағының астындағы тізім (күн шығусыз, келесі намаз қайталанбайды).
+ * UI: келесі намаз жолағының астындағы тізім (келесі парыз намаз қайталанбайды; күн шығу әлі алда болса көрсетіледі).
  * Бүгінгі кесте өткен болса — ертеңгі кесте.
  */
 export function displayPrayerRowsFromNext<T extends { key: string; time: string }>(
@@ -72,17 +78,21 @@ export function displayPrayerRowsFromNext<T extends { key: string; time: string 
   const source = useTomorrow ? tomorrowRows! : rows;
   const ordered = orderRowsFromNextSalat(source, useTomorrow ? null : tomorrowRows, now);
   const next = nextSalatRow(rows, tomorrowRows, now);
-  if (!next) return ordered.filter((r) => r.key !== "sun" && r.time?.trim());
+  if (!next) return ordered.filter((r) => isUpcomingDisplayRow(r, nowM));
 
   const nextIdx = ordered.findIndex((r) => r.key === next.key);
   if (nextIdx < 0) {
     return ordered.filter((r) => {
-      if (r.key === "sun" || r.key === next.key) return false;
-      return Boolean(r.time?.trim());
+      if (r.key === next.key) return false;
+      return isUpcomingDisplayRow(r, nowM);
     });
   }
 
-  return ordered.slice(nextIdx + 1).filter((r) => r.key !== "sun" && r.time?.trim());
+  const passedSalatBeforeNext = salat.some(
+    (r) => r.key !== next.key && parseMinutes(r.time) <= nowM
+  );
+  const tail = passedSalatBeforeNext ? ordered.slice(nextIdx) : ordered.slice(nextIdx + 1);
+  return tail.filter((r) => isUpcomingDisplayRow(r, nowM));
 }
 
 /** 0..1 — қазіргі сәт алдыңғы намаз уақытынан келесіне дейінгі аралықта қай жерде */

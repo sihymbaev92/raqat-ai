@@ -1,29 +1,44 @@
 import { kk } from "../kk";
 import { setCurrentLocale, type AppLocale } from "../runtime";
 
-const PRIMARY_LOCALES: AppLocale[] = ["kk", "ru", "en", "ky", "uz"];
+const PRIMARY_LOCALES: AppLocale[] = ["kk", "ru", "en", "ky", "uz", "tr", "ar"];
 
 /** UI copy that must resolve to non-empty, locale-appropriate strings (not Kazakh fallback). */
 const PATCHED_STRING_KEYS: Array<{ label: string; read: () => string }> = [
   { label: "navigation.savedTab.emptyTitle", read: () => kk.navigation.savedTab.emptyTitle },
   { label: "navigation.savedTab.openHatim", read: () => kk.navigation.savedTab.openHatim },
+  { label: "navigation.savedTab.open", read: () => kk.navigation.savedTab.open },
+  { label: "navigation.savedTab.continue", read: () => kk.navigation.savedTab.continue },
+  { label: "navigation.telegramInfo.openBot", read: () => kk.navigation.telegramInfo.openBot },
+  { label: "features.traditionGuide.articlesTitle", read: () => kk.features.traditionGuide.articlesTitle },
+  { label: "features.traditionGuide.favoritesTitle", read: () => kk.features.traditionGuide.favoritesTitle },
+  { label: "features.traditionGuide.originTitle", read: () => kk.features.traditionGuide.originTitle },
+  { label: "features.hajjRoadmapTitle", read: () => kk.features.hajjRoadmapTitle },
+  { label: "features.kaabaLiveTitle", read: () => kk.features.kaabaLiveTitle },
+  { label: "hadith.hub.searchPlaceholderExamples", read: () => kk.hadith.hub.searchPlaceholderExamples },
+  { label: "hadith.hub.emptySearch", read: () => kk.hadith.hub.emptySearch },
   { label: "hadith.hub.searchPlaceholderShort", read: () => kk.hadith.hub.searchPlaceholderShort },
   { label: "hadith.hub.moreHadithSearchHint", read: () => kk.hadith.hub.moreHadithSearchHint },
   { label: "hadith.arabicOriginalLabel", read: () => kk.hadith.arabicOriginalLabel },
   { label: "features.traditionGuide.elderReadBtn", read: () => kk.features.traditionGuide.elderReadBtn },
   { label: "features.traditionGuide.emptySearch", read: () => kk.features.traditionGuide.emptySearch },
   { label: "namazGuide.studyMapTitle", read: () => kk.namazGuide.studyMapTitle },
+  { label: "namazGuide.fivePrayersTitle", read: () => kk.namazGuide.fivePrayersTitle },
   { label: "namazGuide.studyNamazCardSub", read: () => kk.namazGuide.studyNamazCardSub },
+  { label: "tajweedGuide.chaptersTitle", read: () => kk.tajweedGuide.chaptersTitle },
+  { label: "seerah.lastLessonLabel", read: () => kk.seerah.lastLessonLabel },
   { label: "settings.nativeAzanExactAlarmWarning", read: () => kk.settings.nativeAzanExactAlarmWarning },
   { label: "settings.accountSection", read: () => kk.settings.accountSection },
 ];
 
 /** Known Kazakh-only substrings that should not appear when another locale is active. */
 const KK_ONLY_MARKERS: Partial<Record<Exclude<AppLocale, "kk">, RegExp[]>> = {
-  ru: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Үлкендерге ыңғайлы/],
-  en: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Оқу картасы/],
-  ky: [/Әзірге сақталған/, /Таңдаулы хадистер/],
-  uz: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Намаз оқулығы/],
+  ru: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Үлкендерге ыңғайлы/, /Қажылық жол картасы/, /Хатымды ашу/],
+  en: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Оқу картасы/, /Қажылық жол картасы/],
+  ky: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Қажылық жол картасы/],
+  uz: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Намаз оқулығы/, /Қажылық жол картасы/],
+  tr: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Намаз оқулығы/, /Қажылық жол картасы/],
+  ar: [/Әзірге сақталған/, /Таңдаулы хадистер/, /Намаз оқулығы/, /Қажылық жол картасы/],
 };
 
 /** Latin letters inside Cyrillic UI words (e.g. azan, kadam, ubada). Brand/API tokens allowed separately. */
@@ -46,11 +61,11 @@ describe("five-language manual locale patches", () => {
     await setCurrentLocale(locale);
     for (const key of PATCHED_STRING_KEYS) {
       const value = key.read();
-      expect(value?.trim?.(), key.label).toBeTruthy();
+      expect(Boolean(value?.trim?.())).toBe(true);
     }
   });
 
-  it.each(["ru", "en", "ky", "uz"] as const)(
+  it.each(["ru", "en", "ky", "uz", "tr", "ar"] as const)(
     "locale %s does not leave Kazakh-only markers on patched keys",
     async (locale) => {
       await setCurrentLocale(locale);
@@ -92,6 +107,8 @@ describe("five-language manual locale patches", () => {
     expect(samples.en).toMatch(/More 5/);
     expect(samples.ky).toMatch(/Дагы 5/);
     expect(samples.uz).toMatch(/Yana 5/);
+    expect(samples.tr).toMatch(/Daha 5/);
+    expect(samples.ar).toMatch(/المزيد 5|5 /);
   });
 
   it("ky/ru/kk patched strings avoid Latin letters inside Cyrillic words", async () => {
@@ -103,7 +120,7 @@ describe("five-language manual locale patches", () => {
         for (const word of words) {
           if (ALLOWED_LATIN_FRAGMENTS.test(word.replace(/[«».,:;!?()—\-]/g, ""))) continue;
           if (/^[A-Za-z0-9.+:/\-]+$/.test(word)) continue;
-          expect(word, `${locale}: ${value}`).not.toMatch(MIXED_SCRIPT_IN_WORD);
+          expect(word).not.toMatch(MIXED_SCRIPT_IN_WORD);
         }
       }
     }
@@ -112,8 +129,8 @@ describe("five-language manual locale patches", () => {
   it("ky azan dua meaning uses Cyrillic-only Kyrgyz words", async () => {
     await setCurrentLocale("ky");
     const meaning = kk.prayer.azanDuaTextBlock.meaning;
-    expect(meaning).toMatch(/уада[ғг]ан/);
+    expect(meaning).toMatch(/убада|уада[ғг]ан/);
     expect(meaning).not.toMatch(/[a-z][а-я]/i);
-    expect(meaning).toMatch(/бузбайсың/);
+    expect(meaning).toMatch(/васила/);
   });
 });

@@ -60,7 +60,7 @@ describe("mushafPageRenderBackend", () => {
     delete process.env.EXPO_PUBLIC_MUSHAF_PAGE_BACKEND;
     delete process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS;
     expect(mushafBookPageRenderBackend("original")).toBe("qcf4");
-    expect(mushafBookPageRenderBackend("muftyat")).toBe("text-hafs");
+    expect(mushafBookPageRenderBackend("muftyat")).toBe("qcf4");
     process.env.EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS = "1";
     expect(mushafBookPageRenderBackend("original")).toBe("text-hafs");
   });

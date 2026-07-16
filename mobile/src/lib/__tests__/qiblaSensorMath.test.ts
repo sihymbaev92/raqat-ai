@@ -2,6 +2,7 @@ import {
   azimuthRadFromRotationMatrix9,
   headingDegFlatMagnetometer,
   headingDegFromGravityMagnetic,
+  remapRotationMatrixAxisXAxisZ,
   rotationMatrix9FromGravityMagnetic,
 } from "../qiblaSensorMath";
 
@@ -30,10 +31,23 @@ describe("qiblaSensorMath", () => {
     expect(Math.abs(az)).toBeLessThan(Math.PI);
   });
 
-  test("free-fall gravity returns null matrix", () => {
-    const g = { x: 0, y: 0, z: 0 };
-    const m = { x: 20, y: 10, z: -30 };
-    expect(rotationMatrix9FromGravityMagnetic(g, m)).toBeNull();
-    expect(headingDegFromGravityMagnetic(g, m)).toBeNull();
+  test("upright portrait: remapped heading stays finite", () => {
+    /** Телефон тік: gravity ≈ +Y */
+    const gravity = { x: 0, y: 9.81, z: 0 };
+    const mag = { x: 0, y: 0, z: -40 };
+    const fused = headingDegFromGravityMagnetic(gravity, mag);
+    expect(fused).not.toBeNull();
+    expect(fused).toBeGreaterThanOrEqual(0);
+    expect(fused).toBeLessThan(360);
+  });
+
+  test("remap AXIS_X/AXIS_Z matches AOSP column swap for flat identity-like row", () => {
+    const inR = new Float32Array([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+    const out = remapRotationMatrixAxisXAxisZ(inR);
+    expect(out).not.toBeNull();
+    /** out row0: [1, 0, 0] → col0 from in col0, col1 = -in col2 = 0, col2 = in col1 = 0 */
+    expect(out![0]).toBe(1);
+    expect(out![1]).toBeCloseTo(0);
+    expect(out![2]).toBeCloseTo(0);
   });
 });

@@ -56,10 +56,12 @@ export function computeMushafTypography(
     default: undefined,
   });
   const arabAyahFont = quranArabicAyahTextMetrics(presetForMetrics, arabicLineFontFamily);
-  const scale = clampMushafTextScale(mushafTextScale);
+  const scale = opts?.bookMushaf === true ? mushafTextScale : clampMushafTextScale(mushafTextScale);
   const bookScaleBoost = qcomBook ? 1 : opts?.bookMushaf === true ? 1.04 : 1;
-  /** Хатым compact: 604 бет бір экранға сiyу — line-height сәл тығыздау. */
-  const lineHeightFactor = qcomBook ? QURAN_HATIM_COMPACT_LINE_HEIGHT_FACTOR : densityLayout.arabLineHeightFactor;
+  /** Хатым compact: 604 бет бір экранға сiyу — line-height кем дегенде 1.8× (харакат кесілмеуі). */
+  const lineHeightFactor = qcomBook
+    ? Math.max(QURAN_HATIM_COMPACT_LINE_HEIGHT_FACTOR, 1.8)
+    : densityLayout.arabLineHeightFactor;
   const mushafArabSize =
     typeof arabAyahFont.fontSize === "number"
       ? Math.round(arabAyahFont.fontSize * 1.02 * scale * bookScaleBoost)

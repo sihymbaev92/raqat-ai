@@ -10,6 +10,7 @@ import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { getValidAccessToken } from "../storage/authTokens";
 import { fetchPlatformAiKbStatus, type PlatformAiKbStatus } from "../services/platformApiClient";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
+import { useAppLocale } from "../i18n/runtime";
 
 const INTRO_EXPANDED_KEY = "raqat_ai_kb_intro_expanded_v1";
 
@@ -32,6 +33,7 @@ function formatKbStatusLine(status: PlatformAiKbStatus | null, loading: boolean)
 }
 
 export function RaqatKbStatusBar({ colors, apiBase, refreshKey = 0 }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const kbOnlyClient = isRaqatAiKbOnlyClient();
   const [status, setStatus] = useState<PlatformAiKbStatus | null>(null);

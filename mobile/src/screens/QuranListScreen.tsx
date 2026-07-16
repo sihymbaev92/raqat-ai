@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppLocale, getCurrentLocale } from "../i18n/runtime";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -8,10 +9,10 @@ import {
   RefreshControl
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
-import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { MoreStackParamList } from "../navigation/types";
@@ -20,6 +21,7 @@ import {
   saveQuranListCache,
   parseSurahsFromApiJson,
   parseSurahsFromPlatformIndex,
+  offlineBundledSurahList,
   type CachedSurah,
 } from "../storage/quranListCache";
 import { getRaqatApiBase, isRaqatApiOnlyMode } from "../config/raqatApiBase";
@@ -27,6 +29,10 @@ import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { fetchQuranSurahs } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
+import {
+  ensureBundledSurahListLoaded,
+  getBundledSurahList,
+} from "../services/bundledQuranReader";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
 import { QURAN_JUZ_STARTS, juzForSurahAyah, type QuranJuzStart } from "../data/quranJuzBoundaries";
 import {
@@ -40,10 +46,14 @@ import {
 } from "../components/quran/QuranSurahListRow";
 import type { ThemeColors } from "../theme/colors";
 import { QuranContinueReadingCard } from "../components/quran/QuranContinueReadingCard";
+import { HatimAyahWordSearchSheet } from "../components/quran/HatimAyahWordSearchSheet";
+import { HatimSurahSearchSheet } from "../components/quran/HatimSurahSearchSheet";
 import { useQuranContinueReading } from "../quran/useQuranContinueReading";
 import { navigateToHatim } from "../navigation/navigateToMoreStack";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { prefetchQuranAyahSearch } from "../quran/searchQuranAyahs";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "QuranList">;
@@ -63,15 +73,16 @@ function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
 const SURAH_API = "https://api.alquran.cloud/v1/surah";
 
 export function QuranListScreen({ navigation }: Props) {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { tr } = useKkAutoTranslator();
-  const [list, setList] = useState<CachedSurah[]>([]);
+  const [list, setList] = useState<CachedSurah[]>(() => offlineBundledSurahList());
   const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [fromCache, setFromCache] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [mode, setMode] = useState<"surah" | "juz">("surah");
+  const [surahSearchOpen, setSurahSearchOpen] = useState(false);
+  const [wordSearchOpen, setWordSearchOpen] = useState(false);
   const { continueRead, streakDays } = useQuranContinueReading();
   const remoteRequestSeqRef = useRef(0);
   const refreshSeqRef = useRef(0);
@@ -79,6 +90,7 @@ export function QuranListScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       void loadQuranBookFonts().catch(() => {});
+      void prefetchQuranAyahSearch(getCurrentLocale());
     }, [])
   );
 
@@ -98,7 +110,6 @@ export function QuranListScreen({ navigation }: Props) {
         const arr = parseSurahsFromPlatformIndex(data);
         if (arr?.length) {
           setList(arr);
-          setFromCache(false);
           setErr(null);
           await saveQuranListCache(arr);
           return true;
@@ -110,13 +121,12 @@ export function QuranListScreen({ navigation }: Props) {
       throw new Error(kk.quran.apiOnlyRequired);
     }
     if (apiOnly) throw new Error(kk.quran.apiOnlyRequired);
-    const r = await fetch(SURAH_API);
+    const r = await fetchWithTimeout(SURAH_API, { timeoutMs: 14_000 });
     const j = await r.json();
     if (!isCurrentRequest()) return false;
     const arr = parseSurahsFromApiJson(j);
     if (!arr?.length) return false;
     setList(arr);
-    setFromCache(false);
     setErr(null);
     await saveQuranListCache(arr);
     return true;
@@ -126,12 +136,23 @@ export function QuranListScreen({ navigation }: Props) {
     let alive = true;
     (async () => {
       let hadCached = false;
+
+      try {
+        await ensureBundledSurahListLoaded();
+        const bundled = getBundledSurahList();
+        if (alive && bundled?.length) {
+          hadCached = true;
+          setList(bundled);
+          setErr(null);
+        }
+      } catch {
+        /* APK asset жоқ — sync stub қалды */
+      }
+
       const cached = await loadQuranListCache();
       if (alive && cached?.list?.length) {
         hadCached = true;
         setList(cached.list);
-        setFromCache(true);
-        setLoading(false);
       }
 
       /**
@@ -149,9 +170,7 @@ export function QuranListScreen({ navigation }: Props) {
         if (afterSeed?.list?.length) {
           hadCached = true;
           setList(afterSeed.list);
-          setFromCache(true);
           setErr(null);
-          setLoading(false);
         }
       };
 
@@ -165,18 +184,15 @@ export function QuranListScreen({ navigation }: Props) {
       try {
         await fetchRemote();
       } catch (e) {
-        if (alive && !hadCached) {
+        if (alive && !hadCached && !list.length) {
           const again = await loadQuranListCache();
           if (again?.list?.length) {
             setList(again.list);
-            setFromCache(true);
             setErr(null);
           } else {
             setErr(e instanceof Error ? e.message : kk.quran.listError);
           }
         }
-      } finally {
-        if (alive) setLoading(false);
       }
     })();
     return () => {
@@ -228,14 +244,29 @@ export function QuranListScreen({ navigation }: Props) {
     [navigation]
   );
 
-  if (loading && !list.length) {
-    return (
-      <View style={styles.center}>
-        <RaqatOrnamentSpinner size={52} />
-        <Text style={styles.muted}>{tr(kk.quran.loading)}</Text>
-      </View>
-    );
-  }
+  const onAyahWordSearchPick = useCallback(
+    (surah: number, ayah: number) => {
+      openQuranReaderAt(surah, ayah);
+    },
+    [openQuranReaderAt]
+  );
+
+  const surahSearchRows = useMemo(
+    () =>
+      list.map((s) => ({
+        number: s.number,
+        name: surahDisplayTitle(s.number, s.englishName),
+        ayahCount: s.numberOfAyahs ?? 0,
+      })),
+    [list]
+  );
+
+  const onSurahSearchPick = useCallback(
+    (surahNumber: number) => {
+      openQuranReaderAt(surahNumber);
+    },
+    [openQuranReaderAt]
+  );
 
   if (err && !list.length) {
     return (
@@ -247,6 +278,7 @@ export function QuranListScreen({ navigation }: Props) {
   }
 
   return (
+    <>
     <FlatList
       style={styles.root}
       data={listRows}
@@ -323,7 +355,38 @@ export function QuranListScreen({ navigation }: Props) {
               style={styles.continueRowMargin}
             />
           ) : null}
-          {fromCache ? <Text style={styles.cacheBanner}>{tr(kk.common.fromCache)}</Text> : null}
+          <View style={styles.searchActionsRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.wordSearchBtn,
+                styles.searchActionBtnSurah,
+                pressed && { opacity: 0.9 },
+              ]}
+              onPress={() => setSurahSearchOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={tr(kk.hatim.searchBtnA11y)}
+            >
+              <MaterialIcons name="search" size={18} color={colors.accent} />
+              <Text style={styles.wordSearchBtnTextSurah} numberOfLines={1}>
+                {tr(kk.hatim.searchQuickAction)}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.wordSearchBtn,
+                styles.searchActionBtnTopic,
+                pressed && { opacity: 0.9 },
+              ]}
+              onPress={() => setWordSearchOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={tr(kk.quran.topicAyahsQuickActionA11y)}
+            >
+              <MaterialIcons name="menu-book" size={18} color={colors.accent} />
+              <Text style={styles.wordSearchBtnText} numberOfLines={2}>
+                {tr(kk.quran.topicAyahsQuickAction)}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       }
       renderItem={({ item }) => {
@@ -370,6 +433,22 @@ export function QuranListScreen({ navigation }: Props) {
         );
       }}
     />
+    <HatimSurahSearchSheet
+      visible={surahSearchOpen}
+      colors={colors}
+      isDark={isDark}
+      rows={surahSearchRows}
+      onClose={() => setSurahSearchOpen(false)}
+      onPick={onSurahSearchPick}
+    />
+    <HatimAyahWordSearchSheet
+      visible={wordSearchOpen}
+      colors={colors}
+      isDark={isDark}
+      onClose={() => setWordSearchOpen(false)}
+      onOpenAyah={onAyahWordSearchPick}
+    />
+    </>
   );
 }
 
@@ -437,15 +516,56 @@ function makeStyles(colors: ThemeColors, screenBg: string) {
     hatimTitle: { color: uiText, fontSize: 16, fontWeight: "700" },
     hatimSub: { color: uiMuted, fontSize: 12, marginTop: 2 },
     hatimChev: { color: uiMuted, fontSize: 22, fontWeight: "200" },
-    cacheBanner: {
+    searchActionsRow: {
+      flexDirection: "row",
+      alignItems: "stretch",
+      gap: 8,
+      marginBottom: 10,
+    },
+    searchActionBtnSurah: {
+      flexGrow: 0,
+      flexShrink: 0,
+      marginBottom: 0,
+      minHeight: 44,
+      maxWidth: "38%",
+      paddingHorizontal: 8,
+    },
+    searchActionBtnTopic: {
+      flex: 1,
+      marginBottom: 0,
+      minHeight: 44,
+      paddingHorizontal: 12,
+      justifyContent: "flex-start",
+    },
+    wordSearchBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+      marginBottom: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      backgroundColor: uiCard,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    wordSearchBtnTextSurah: {
+      flexShrink: 1,
       color: colors.accent,
       fontSize: 12,
-      marginBottom: 10,
-      padding: 10,
-      backgroundColor: uiCard,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: uiBorder,
+      lineHeight: 16,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    wordSearchBtnText: {
+      flex: 1,
+      flexShrink: 1,
+      color: colors.accent,
+      fontSize: 12,
+      lineHeight: 16,
+      fontWeight: "800",
+      textAlign: "left",
     },
     center: {
       flex: 1,

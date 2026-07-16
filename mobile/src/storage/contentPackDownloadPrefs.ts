@@ -43,7 +43,7 @@ export type ContentPackSnapshot = {
 
 const DEFAULT_PREFS: ContentPackDownloadPrefs = {
   allowMobileData: false,
-  autoDownloadOnWifi: true,
+  autoDownloadOnWifi: false,
 };
 
 function defaultPackState(totalFiles: number, status: ContentPackDownloadStatus = "idle"): ContentPackState {
@@ -172,17 +172,27 @@ async function canDownloadNow(allowMobileData: boolean): Promise<{ ok: true } | 
   }
 }
 
-let downloadInflight: Promise<ContentPackSnapshot> | null = null;
+const downloadInflightByPack = new Map<ContentPackId, Promise<ContentPackSnapshot>>();
 
-export async function downloadContentPack(packId: ContentPackId): Promise<ContentPackSnapshot> {
+export type DownloadContentPackOptions = {
+  /** Тіл ауыстыру сияқты критиктік pack — Wi‑Fi күтпестен мобильді дерекпен жүктеу. */
+  forceAllowMobileData?: boolean;
+};
+
+export async function downloadContentPack(
+  packId: ContentPackId,
+  opts?: DownloadContentPackOptions
+): Promise<ContentPackSnapshot> {
   const def = contentPackById(packId);
   if (def.bundledInApk) return loadContentPackSnapshot();
 
-  if (downloadInflight) return downloadInflight;
+  const existing = downloadInflightByPack.get(packId);
+  if (existing) return existing;
 
-  downloadInflight = (async () => {
+  const task = (async () => {
     const prefs = await loadContentPackPrefs();
-    const gate = await canDownloadNow(prefs.allowMobileData);
+    const allowMobile = Boolean(opts?.forceAllowMobileData) || prefs.allowMobileData;
+    const gate = await canDownloadNow(allowMobile);
     let state = await loadPackState(packId);
     if (!gate.ok) {
       state = { ...state, status: "blocked", lastError: gate.reason };
@@ -221,10 +231,11 @@ export async function downloadContentPack(packId: ContentPackId): Promise<Conten
     return loadContentPackSnapshot();
   })();
 
+  downloadInflightByPack.set(packId, task);
   try {
-    return await downloadInflight;
+    return await task;
   } finally {
-    downloadInflight = null;
+    downloadInflightByPack.delete(packId);
   }
 }
 

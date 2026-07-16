@@ -42,8 +42,8 @@ export type ComputeLauncherHubMetricsOpts = {
 export const DASHBOARD_PRAYER_OPEN_PX = 0;
 /** Launcher ашық: «келесі намаз» header (қала + хижра + strip + progress). */
 export const DASHBOARD_PRAYER_LAUNCHER_HEADER_PX = 98;
-/** Басты бет: толық намаз кестесі (meta + 6 жол + green strip). */
-export const DASHBOARD_PRAYER_RESERVE_PX = 278;
+/** Басты бет: намаз summary (ені толық · биіктігі ~5:2) + жаңалық блоктары (px). */
+export const DASHBOARD_PRAYER_RESERVE_PX = 188;
 export const DASHBOARD_NEWS_RESERVE_PX = 172;
 const SCROLL_CHROME_PX = 10;
 /** Жабық launcher root биіктігі резерві — grid/open layout тұрақты (px). */

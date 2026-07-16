@@ -263,33 +263,13 @@ export function kmdbHubWebTabExtraPageInject(tabId: KmdbHubWebTabId): string | u
 
 
 export function kmdbHubWebTabSitePresentation(
-
-
-
   tabId: KmdbHubWebTabId,
-
-
-
   windowWidth?: number
-
-
-
 ): "mobile" | "desktop" {
-
-
-
   if (tabId !== "muftyat") return "mobile";
-
-
-
-  if (windowWidth != null && windowWidth < 520) return "mobile";
-
-
-
-  return "desktop";
-
-
-
+  // Тек үлкен планшетте desktop — телефонда жеңіл мобильді бет (жылдам жүктеу).
+  if (windowWidth != null && windowWidth >= 900) return "desktop";
+  return "mobile";
 }
 
 

@@ -13,7 +13,7 @@ class PrayerAzanQaReceiver : BroadcastReceiver() {
     val result = PrayerAzanAlarmScheduler.scheduleTestAlarm(context.applicationContext, delay)
     Log.i(
       TAG,
-      "Scheduled QA azan in ${delay}s count=${result.scheduledCount} exact=${result.exactAlarmPermissionGranted} fsi=${result.fullScreenIntentPermissionGranted}"
+      "Scheduled QA azan in ${delay}s count=${result.scheduledCount} exact=${result.exactAlarmPermissionGranted}"
     )
   }
 

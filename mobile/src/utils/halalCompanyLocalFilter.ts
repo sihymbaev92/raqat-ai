@@ -36,25 +36,42 @@ export type HalalLocalCompanyFilterOpts = {
   centerLon: number | null;
   radiusKm: number;
   cityTokens?: string[];
+  /** GPS жоқ кезде бірден көрсетілетін шек */
+  fallbackLimit?: number;
 };
 
-/** GPS радиус + қала атауы бойынша жергілікті мекемелер. */
+const DEFAULT_FALLBACK_LIMIT = 80;
+
+/** GPS радиус + бір қаладағы мекемелер (мекенжай бойынша). GPS жоқ — бірден fallback тізім. */
 export function filterHalalCompaniesLocal(
   items: HalalDamuCompanyCard[],
   opts: HalalLocalCompanyFilterOpts
 ): HalalCompanyWithDistance[] {
   const pool = dedupeHalalCompanyCards(items.filter(isHalalCatalogEstablishment));
-  const { centerLat, centerLon, radiusKm, cityTokens = [] } = opts;
+  const { centerLat, centerLon, radiusKm, cityTokens = [], fallbackLimit = DEFAULT_FALLBACK_LIMIT } = opts;
 
   if (centerLat != null && centerLon != null && Number.isFinite(centerLat) && Number.isFinite(centerLon)) {
-    const within = filterHalalCompaniesWithinRadius(pool, centerLat, centerLon, radiusKm * 1000);
+    const within = filterHalalCompaniesWithinRadius(pool, centerLat, centerLon, radiusKm * 1000, {
+      allowCityApprox: true,
+    });
     if (within.length > 0) return within;
+
+    // Қала орталығынан 5 км тыс болса да — сол қала мекенжайлыларын көрсету.
+    if (cityTokens.length > 0) {
+      const byCity = pool.filter((c) => matchesCityTokens(c.address, cityTokens));
+      if (byCity.length > 0) {
+        return byCity.map((c) => ({ ...c, distanceM: 0 }));
+      }
+    }
   }
 
   if (cityTokens.length > 0) {
     const byCity = pool.filter((c) => matchesCityTokens(c.address, cityTokens));
-    return byCity.map((c) => ({ ...c, distanceM: 0 }));
+    if (byCity.length > 0) {
+      return byCity.map((c) => ({ ...c, distanceM: 0 }));
+    }
   }
 
-  return [];
+  // GPS әлі жоқ — каталогты бірден көрсету (кейін радиус бойынша қайта сұрыпталады).
+  return pool.slice(0, Math.max(1, fallbackLimit)).map((c) => ({ ...c, distanceM: 0 }));
 }

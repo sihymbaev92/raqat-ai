@@ -16,6 +16,7 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 import {
   OFFICIAL_SITE_NO_CACHE_HEADERS,
   OFFICIAL_SITE_SW_CACHE_PURGE_INJECT,
@@ -31,6 +32,7 @@ import {
   shouldStayInOfficialSiteWebView,
   type OfficialSitePresentation,
 } from "./embeddedOfficialSiteNavigation";
+import { SECURE_ANDROID_WEBVIEW_PROPS } from "./webviewAndroidSecurity";
 
 function viewportInjectFor(presentation: OfficialSitePresentation): string {
   return presentation === "desktop"
@@ -67,8 +69,6 @@ type Props = {
   userAgentTag?: string;
   /** muftyat.kz — desktop UA + pinch-zoom (намаз жолағы, izdeu). */
   sitePresentation?: OfficialSitePresentation;
-  /** @deprecated sitePresentation қолданыңыз */
-  injectMobileViewport?: boolean;
   /** Экранға қайта оралғанда сайтты қайта жүктеу (әдепкі: false — кэш жылдам). */
   refreshOnFocus?: boolean;
   /** Жүктелгеннен кейін DOM-ға қосымша JS. */
@@ -87,18 +87,20 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       title,
       allowedHosts,
       userAgentTag = "RaqatOfficialSite/1",
-      sitePresentation: sitePresentationProp,
-      injectMobileViewport = true,
+      sitePresentation: sitePresentationProp = "mobile",
       refreshOnFocus = false,
       extraPageInject,
     },
     ref
   ) {
-    const sitePresentation: OfficialSitePresentation =
-      sitePresentationProp ?? (injectMobileViewport ? "mobile" : "desktop");
+    useAppLocale();
+    const sitePresentation: OfficialSitePresentation = sitePresentationProp;
     const webRef = useRef<WebViewType>(null);
     const focusBootRef = useRef(true);
     const reloadGenRef = useRef(0);
+    const mainFrameUrlRef = useRef(url);
+    const entryUrlRef = useRef(url);
+    const pendingStuckClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [sessionToken, setSessionToken] = useState(0);
     const [forceFreshLoad, setForceFreshLoad] = useState(false);
     const [webLoading, setWebLoading] = useState(true);
@@ -107,12 +109,29 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
     const [historyCanGoBack, setHistoryCanGoBack] = useState(false);
     const [spaCanGoBack, setSpaCanGoBack] = useState(false);
 
+    useEffect(() => {
+      entryUrlRef.current = url;
+      setHistoryCanGoBack(false);
+      setSpaCanGoBack(false);
+    }, [url, sessionToken]);
+
+    useEffect(
+      () => () => {
+        if (pendingStuckClearRef.current) clearTimeout(pendingStuckClearRef.current);
+      },
+      []
+    );
+
     const resolvedUrl = useMemo(() => {
       if (forceFreshLoad && sessionToken > 0) {
         return withEmbeddedSiteCacheBust(url, sessionToken);
       }
       return url;
     }, [url, sessionToken, forceFreshLoad]);
+
+    useEffect(() => {
+      mainFrameUrlRef.current = resolvedUrl;
+    }, [resolvedUrl]);
 
     const webSource = useMemo(() => {
       if (forceFreshLoad) {
@@ -184,8 +203,16 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       });
     }, [bumpSession]);
 
+    /** Pull-to-refresh — кэшпен жеңіл қайта жүктеу (толық тазалау тек header refresh). */
     const softReloadPage = useCallback(() => {
-      hardReloadHome();
+      setWebError(null);
+      setWebLoading(true);
+      setPullRefreshing(true);
+      try {
+        webRef.current?.reload();
+      } catch {
+        hardReloadHome();
+      }
     }, [hardReloadHome]);
 
     useFocusEffect(
@@ -199,21 +226,41 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       }, [refreshOnFocus, isWeb, hardReloadHome])
     );
 
+    const clearStaleBackFlags = useCallback(() => {
+      setSpaCanGoBack(false);
+      setHistoryCanGoBack(false);
+    }, []);
+
     const goBackInWebView = useCallback(() => {
+      const urlBefore = mainFrameUrlRef.current;
       if (spaCanGoBack) {
-        webRef.current?.injectJavaScript(`(function(){try{history.back();}catch(e){}})();true;`);
-        return;
+        webRef.current?.injectJavaScript(
+          `(function(){try{
+            var h=window.__raqatSpaHistory;
+            if(h&&h.index>0){h.index-=1;}
+            history.back();
+            if(window.ReactNativeWebView&&h){
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type:"raqat-spa-nav",url:location.href,index:h.index,canGoBack:h.index>0
+              }));
+            }
+          }catch(e){}})();true;`
+        );
+      } else if (historyCanGoBack) {
+        webRef.current?.goBack();
       }
-      webRef.current?.goBack();
-    }, [spaCanGoBack]);
+      if (pendingStuckClearRef.current) clearTimeout(pendingStuckClearRef.current);
+      // history.back() істемесе / URL өзгермесе — келесі «артқа» экранды жабуы үшін жалауларды өшіру.
+      pendingStuckClearRef.current = setTimeout(() => {
+        pendingStuckClearRef.current = null;
+        if (mainFrameUrlRef.current === urlBefore) {
+          clearStaleBackFlags();
+        }
+      }, 420);
+    }, [spaCanGoBack, historyCanGoBack, clearStaleBackFlags]);
 
     const canGoBackInWebView = useCallback(() => {
-      try {
-        if (webRef.current?.canGoBack()) return true;
-      } catch {
-        /* web ref әлі дайын емес */
-      }
-      return historyCanGoBack || spaCanGoBack;
+      return spaCanGoBack || historyCanGoBack;
     }, [historyCanGoBack, spaCanGoBack]);
 
     useImperativeHandle(
@@ -231,14 +278,61 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       setPullRefreshing(false);
     }, []);
 
+    /** Бірінші бояудан кейін спиннерді жасыру — толық onLoadEnd күтпейді. */
+    const onLoadProgress = useCallback(
+      (event: { nativeEvent: { progress: number } }) => {
+        if (event.nativeEvent.progress >= 0.35) {
+          setWebLoading(false);
+        }
+      },
+      []
+    );
+
+    useEffect(() => {
+      if (!webLoading) return undefined;
+      const t = setTimeout(() => setWebLoading(false), 2200);
+      return () => clearTimeout(t);
+    }, [webLoading, sessionToken, resolvedUrl]);
+
     const markError = useCallback(() => {
       setWebLoading(false);
       setPullRefreshing(false);
       setWebError(kk.common.embeddedSiteError);
     }, []);
 
+    const onHttpError = useCallback(
+      (event: { nativeEvent: { statusCode: number; url?: string } }) => {
+        const statusCode = event.nativeEvent.statusCode;
+        if (statusCode < 400) return;
+        const failUrl = (event.nativeEvent.url ?? "").trim();
+        const mainUrl = mainFrameUrlRef.current.trim();
+        if (failUrl && mainUrl) {
+          try {
+            const failHost = new URL(failUrl).hostname;
+            const mainHost = new URL(mainUrl).hostname;
+            if (failHost !== mainHost) return;
+            const failPath = new URL(failUrl).pathname.replace(/\/+$/, "");
+            const mainPath = new URL(mainUrl).pathname.replace(/\/+$/, "") || "/";
+            if (failPath !== mainPath && !failPath.startsWith(mainPath)) return;
+          } catch {
+            /* URL parse */
+          }
+        }
+        markError();
+      },
+      [markError]
+    );
+
     const onNavigationStateChange = useCallback((nav: WebViewNavigation) => {
-      setHistoryCanGoBack(Boolean(nav.canGoBack));
+      if (nav.url) mainFrameUrlRef.current = nav.url;
+      const entry = (entryUrlRef.current || "").replace(/\/+$/, "");
+      const cur = (nav.url || "").replace(/\/+$/, "");
+      const atEntry =
+        !!entry &&
+        !!cur &&
+        (cur === entry || cur.startsWith(`${entry}?`) || cur.startsWith(`${entry}#`));
+      // Басты беттегі redirect/hash — canGoBack true қалмасын.
+      setHistoryCanGoBack(Boolean(nav.canGoBack) && !atEntry);
     }, []);
 
     const onWebMessage = useCallback((event: { nativeEvent: { data: string } }) => {
@@ -246,8 +340,10 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
         const payload = JSON.parse(event.nativeEvent.data) as {
           type?: string;
           canGoBack?: boolean;
+          url?: string;
         };
         if (payload.type === "raqat-spa-nav") {
+          if (payload.url) mainFrameUrlRef.current = payload.url;
           setSpaCanGoBack(Boolean(payload.canGoBack));
         }
       } catch {
@@ -333,16 +429,14 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
             thirdPartyCookiesEnabled={Platform.OS === "android"}
             cacheEnabled={!forceFreshLoad}
             cacheMode={forceFreshLoad ? "LOAD_NO_CACHE" : "LOAD_DEFAULT"}
-            mixedContentMode="always"
+            {...SECURE_ANDROID_WEBVIEW_PROPS}
             allowsInlineMediaPlayback
             mediaPlaybackRequiresUserAction={false}
             allowsFullscreenVideo
-            setSupportMultipleWindows={false}
             nestedScrollEnabled
             androidLayerType="hardware"
             pullToRefreshEnabled
-            refreshing={pullRefreshing}
-            onRefresh={softReloadPage}
+            {...({ onRefresh: softReloadPage } as { onRefresh?: () => void })}
             onShouldStartLoadWithRequest={shouldStartLoad}
             onNavigationStateChange={onNavigationStateChange}
             onMessage={onWebMessage}
@@ -352,19 +446,15 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
               applyPageInject();
               finishLoad();
             }}
+            onLoadProgress={onLoadProgress}
             onError={markError}
-            onHttpError={markError}
+            onHttpError={onHttpError}
             onRenderProcessGone={() => {
               markError();
               return true;
             }}
             onContentProcessDidTerminate={markError}
-            startInLoadingState
-            renderLoading={() => (
-              <View style={styles.loadingWrap}>
-                <RaqatOrnamentSpinner size={48} />
-              </View>
-            )}
+            startInLoadingState={false}
           />
         )}
         {webLoading && !webError ? (
@@ -376,7 +466,3 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
     );
   }
 );
-
-/** @deprecated OfficialSiteFullWebView қолданыңыз */
-export const HalalDamuFullSiteWebView = OfficialSiteFullWebView;
-export type HalalDamuFullSiteWebViewHandle = OfficialSiteFullWebViewHandle;

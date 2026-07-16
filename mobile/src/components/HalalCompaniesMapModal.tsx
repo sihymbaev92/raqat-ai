@@ -9,8 +9,15 @@ import type { ThemeColors } from "../theme/colors";
 import { modalSafeAreaInsets } from "../theme/modalSafeArea";
 import {
   fetchHalalDamuCompanyMapMarkers,
+  prefetchHalalDamuCompanyMapMarkers,
   type HalalDamuMapMarker,
 } from "../api/halalDamuWp";
+import { halalMapClusterChunkMs, halalMapMarkerCap } from "../utils/halalPerformanceProfile";
+import { resolveInstantHalalCompanyMapMarkers } from "../utils/halalMapBootstrap";
+import {
+  SECURE_ANDROID_WEBVIEW_PROPS,
+  SECURE_HTML_WEBVIEW_ORIGIN_WHITELIST,
+} from "./webviewAndroidSecurity";
 
 export type HalalCompaniesMapModalStrings = {
   title: string;
@@ -30,9 +37,10 @@ type Props = {
   colors: ThemeColors;
 };
 
-const MAX_MAP_MARKERS = 600;
+const MAX_MAP_MARKERS = halalMapMarkerCap();
 
 function buildLeafletHtml(points: HalalDamuMapMarker[], openDetailLabel: string): string {
+  const { chunkInterval, chunkDelay } = halalMapClusterChunkMs();
   const payload = JSON.stringify(
     points.map((p) => ({
       id: p.id,
@@ -95,8 +103,8 @@ function buildLeafletHtml(points: HalalDamuMapMarker[], openDetailLabel: string)
         }).addTo(map);
         var group = L.markerClusterGroup({
           chunkedLoading: true,
-          chunkInterval: 80,
-          chunkDelay: 35,
+          chunkInterval: ${chunkInterval},
+          chunkDelay: ${chunkDelay},
           maxClusterRadius: 56
         });
         pts.slice(0, ${MAX_MAP_MARKERS}).forEach(function (p) {
@@ -164,42 +172,69 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
   const [err, setErr] = useState<string | null>(null);
   const [markers, setMarkers] = useState<HalalDamuMapMarker[]>([]);
   const [html, setHtml] = useState<string | null>(null);
+  const [mapPainted, setMapPainted] = useState(false);
   const isWeb = Platform.OS === "web";
   const modalInsets = modalSafeAreaInsets(insets);
 
-  const showLoading = visible && phase !== "ready" && phase !== "err";
+  const showMapShell = visible && phase === "ready" && !!html && markers.length > 0;
+  const showBlockingLoader = visible && !showMapShell && phase !== "err";
+
+  const applyMarkers = useCallback(
+    (next: HalalDamuMapMarker[]) => {
+      const capped = next.slice(0, MAX_MAP_MARKERS);
+      if (!capped.length) return false;
+      setMarkers(capped);
+      setHtml(buildLeafletHtml(capped, strings.openDetail));
+      setPhase("ready");
+      setErr(null);
+      setMapPainted(false);
+      return true;
+    },
+    [strings.openDetail]
+  );
 
   useEffect(() => {
     if (!visible) {
       setPhase("idle");
       setErr(null);
+      setMapPainted(false);
       return;
     }
+
+    prefetchHalalDamuCompanyMapMarkers();
+
+    const instant = resolveInstantHalalCompanyMapMarkers();
+    if (instant.length > 0) {
+      applyMarkers(instant);
+    } else {
+      setPhase("loading");
+      setErr(null);
+    }
+
     let cancelled = false;
-    setPhase("loading");
-    setErr(null);
-    setHtml(null);
-    (async () => {
-      const { markers: m, error, withCoords } = await fetchHalalDamuCompanyMapMarkers();
+    void fetchHalalDamuCompanyMapMarkers().then(({ markers: apiMarkers, error, withCoords }) => {
       if (cancelled) return;
+      if (apiMarkers.length > 0) {
+        applyMarkers(apiMarkers);
+        return;
+      }
+      if (instant.length > 0) return;
       if (error) {
         setErr(strings.error);
         setPhase("err");
         return;
       }
-      const cappedMarkers = m.slice(0, MAX_MAP_MARKERS);
-      setMarkers(cappedMarkers);
       if (withCoords === 0) {
+        setMarkers([]);
+        setHtml(null);
         setPhase("ready");
-        return;
       }
-      setHtml(buildLeafletHtml(cappedMarkers, strings.openDetail));
-      setPhase("ready");
-    })();
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [visible]);
+  }, [visible, applyMarkers, strings.error]);
 
   const handleBridgeMessage = useCallback(
     (raw: string) => {
@@ -208,6 +243,10 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
         if (d?.type === "mapJsErr") {
           setErr(strings.error + (d.msg ? ` (${d.msg})` : ""));
           setPhase("err");
+          return;
+        }
+        if (d?.type === "mapReady") {
+          setMapPainted(true);
           return;
         }
         if (d?.type === "pick" && typeof d.id === "number") {
@@ -264,6 +303,12 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
         center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
         hint: { marginTop: 12, fontSize: 14, lineHeight: 21, color: colors.muted, textAlign: "center" },
         map: { flex: 1 },
+        mapOverlay: {
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.bg,
+          gap: 10,
+        },
         foot: {
           paddingHorizontal: 14,
           paddingVertical: 10,
@@ -290,7 +335,7 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
           </Pressable>
         </View>
 
-        {showLoading ? (
+        {showBlockingLoader ? (
           <View style={styles.center}>
             <RaqatOrnamentSpinner size={48} />
             <Text style={styles.hint}>{strings.loading}</Text>
@@ -305,36 +350,41 @@ export function HalalCompaniesMapModal({ visible, onClose, onSelectCompanyId, st
             <MaterialIcons name="map" size={44} color={colors.muted} />
             <Text style={styles.hint}>{strings.empty}</Text>
           </View>
-        ) : phase === "ready" && html ? (
-          isWeb ? (
-            <View style={styles.map}>
-              {createElement("iframe", {
+        ) : showMapShell && html ? (
+          <View style={styles.map}>
+            {isWeb ? (
+              createElement("iframe", {
                 title: strings.title,
                 srcDoc: html,
                 sandbox: "allow-scripts allow-same-origin",
                 style: { flex: 1, width: "100%", height: "100%", border: "none" },
-              })}
-            </View>
-          ) : (
-            <WebView
-              style={styles.map}
-              originWhitelist={["*"]}
-              source={{ html, baseUrl: "https://unpkg.com/" }}
-              onMessage={onMsg}
-              javaScriptEnabled
-              domStorageEnabled
-              mixedContentMode="always"
-              setSupportMultipleWindows={false}
-              allowsBackForwardNavigationGestures={false}
-              setBuiltInZoomControls
-              nestedScrollEnabled
-              cacheEnabled
-              onError={() => {
-                setErr(strings.error);
-                setPhase("err");
-              }}
-            />
-          )
+              })
+            ) : (
+              <WebView
+                style={styles.map}
+                originWhitelist={[...SECURE_HTML_WEBVIEW_ORIGIN_WHITELIST]}
+                source={{ html, baseUrl: "https://unpkg.com/" }}
+                onMessage={onMsg}
+                javaScriptEnabled
+                domStorageEnabled
+                {...SECURE_ANDROID_WEBVIEW_PROPS}
+                allowsBackForwardNavigationGestures={false}
+                setBuiltInZoomControls
+                nestedScrollEnabled
+                cacheEnabled
+                onError={() => {
+                  setErr(strings.error);
+                  setPhase("err");
+                }}
+              />
+            )}
+            {!mapPainted ? (
+              <View style={[StyleSheet.absoluteFillObject, styles.mapOverlay]}>
+                <RaqatOrnamentSpinner size={40} />
+                <Text style={styles.hint}>{strings.loading}</Text>
+              </View>
+            ) : null}
+          </View>
         ) : (
           <View style={styles.center} />
         )}

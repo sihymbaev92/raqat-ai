@@ -6,6 +6,7 @@ import { getKurbanAitDashboardTopics } from "../content/kurbanAitDashboardTopics
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { ThemeColors } from "../theme/colors";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -23,6 +24,7 @@ export function KurbanAitTopicsPanel({
   showOpenFullGuide = false,
   onOpenFullGuide,
 }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const topics = useMemo(() => getKurbanAitDashboardTopics(), []);
   const { tr } = useKkAutoTranslator();

@@ -4,7 +4,17 @@ import { resolveQuranReadingTheme, type QuranReadingThemeId } from "../theme/qur
 import type { MushafTypographyMetrics } from "./mushafTypography";
 import { QURAN_BOOK_FONT_FACE } from "../fonts/quranBookFonts";
 import { quranArabicNoClipTextStyle } from "./quranArabicNoClipTextStyle";
-import { QURAN_AYAH_LINE_HEIGHT_FACTOR, QURAN_SCREEN_HORIZONTAL_PADDING } from "./quranResponsiveLayout";
+import {
+  HATIM_UNIFIED_ARABIC_FONT_SIZE,
+  HATIM_UNIFIED_ARABIC_LINE_HEIGHT,
+} from "./mushafTextScale";
+import { HATIM_PAGE_HORIZONTAL_SAFE_INSET, QURAN_SCREEN_HORIZONTAL_PADDING } from "./quranResponsiveLayout";
+
+export type MushafBookPageResponsive = {
+  quranContainerPadH: number;
+  quranTextFontSize: number;
+  quranTextLineHeight: number;
+};
 
 const QCOM_SURAH_TITLE_FONT = Platform.select({
   web: {
@@ -25,7 +35,8 @@ export function makeMushafBookPageStyles(
   colors: ThemeColors,
   isDark: boolean,
   metrics: MushafTypographyMetrics,
-  readingThemeId: QuranReadingThemeId
+  readingThemeId: QuranReadingThemeId,
+  responsive?: MushafBookPageResponsive
 ) {
   const theme = resolveQuranReadingTheme(readingThemeId);
   const qcomBook = theme.minimalPageChrome;
@@ -42,16 +53,20 @@ export function makeMushafBookPageStyles(
     mushafBismLh,
   } = metrics;
   const mushafPageInk = metrics.mushafPageInk;
-  const qcomArabSize = qcomBook && mushafArabSize ? Math.min(mushafArabSize, 28) : mushafArabSize;
-  const qcomArabLineHeight =
-    qcomBook && qcomArabSize
-      ? Math.max(44, Math.round(qcomArabSize * QURAN_AYAH_LINE_HEIGHT_FACTOR))
-      : mushafArabLineHeight;
+  const qcomArabSize =
+    responsive?.quranTextFontSize ??
+    (qcomBook ? HATIM_UNIFIED_ARABIC_FONT_SIZE : mushafArabSize);
+  const quranPadH = responsive?.quranContainerPadH ?? (qcomBook ? 0 : QURAN_SCREEN_HORIZONTAL_PADDING);
+  const qcomArabLineHeightResolved =
+    responsive?.quranTextLineHeight ??
+    (qcomBook
+      ? HATIM_UNIFIED_ARABIC_LINE_HEIGHT
+      : mushafArabLineHeight);
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: uiBg },
-    pagerHost: { flex: 1, minHeight: 0, backgroundColor: uiBg, direction: "ltr" },
-    pageShell: { flex: 1, minHeight: 0, overflow: "hidden" },
+    pagerHost: { flex: 1, minHeight: 0, backgroundColor: uiBg, direction: "ltr", overflow: "visible" },
+    pageShell: { flex: 1, minHeight: 0, overflow: qcomBook ? "visible" : "hidden" },
     center: {
       flex: 1,
       justifyContent: "center",
@@ -61,14 +76,30 @@ export function makeMushafBookPageStyles(
     },
     muted: { color: uiMuted, marginTop: 12 },
     pad: { flex: 1, minHeight: 0, backgroundColor: theme.pageFace },
+    /** Хатым: парақ сырғытқыш ішіндегі ең ішкі контейнер — 5px шет, ортаға туралау. */
+    mushafPageInner: {
+      width: "100%",
+      flex: 1,
+      alignSelf: "stretch",
+      alignItems: "center",
+      paddingHorizontal: HATIM_PAGE_HORIZONTAL_SAFE_INSET,
+      overflow: "visible",
+    },
+    quranContainer: {
+      width: "100%",
+      paddingHorizontal: quranPadH,
+      alignSelf: "center",
+      overflow: "visible",
+    },
     mushafListPad: {
-      paddingHorizontal: QURAN_SCREEN_HORIZONTAL_PADDING,
+      paddingHorizontal: qcomBook ? 0 : quranPadH,
       paddingTop: qcomBook ? 10 : 6,
       paddingBottom: qcomBook ? 8 : 0,
     },
     mushafArabicCentered: {
       alignSelf: "stretch",
       alignItems: "center",
+      overflow: "visible",
     },
     pageChromeRow: {
       flexDirection: "row",
@@ -77,7 +108,7 @@ export function makeMushafBookPageStyles(
       alignSelf: "stretch",
       width: "100%",
       marginBottom: qcomBook ? 12 : 10,
-      paddingHorizontal: qcomBook ? QURAN_SCREEN_HORIZONTAL_PADDING : 16,
+      paddingHorizontal: qcomBook ? quranPadH : 16,
       paddingTop: qcomBook ? 8 : 0,
     },
     pageChromeSurah: {
@@ -148,8 +179,8 @@ export function makeMushafBookPageStyles(
       color: mushafPageInk,
       textAlign: "center",
       writingDirection: "rtl",
-      fontSize: mushafBismFont,
-      lineHeight: mushafBismLh,
+      fontSize: qcomBook ? HATIM_UNIFIED_ARABIC_FONT_SIZE : mushafBismFont,
+      lineHeight: qcomBook ? HATIM_UNIFIED_ARABIC_LINE_HEIGHT : mushafBismLh,
     }),
     mushafBismillahBannerTxt: {
       fontWeight: "500",
@@ -157,13 +188,20 @@ export function makeMushafBookPageStyles(
     mushafAyahTxt: quranArabicNoClipTextStyle({
       color: mushafPageInk,
       writingDirection: "rtl",
-      textAlign: "right",
+      textAlign: responsive ? "justify" : "right",
+      overflow: "visible",
       ...arabAyahFont,
       ...(qcomArabSize ? { fontSize: qcomArabSize } : null),
-      ...(qcomArabLineHeight ? { lineHeight: qcomArabLineHeight } : null),
+      ...(qcomArabLineHeightResolved ? { lineHeight: qcomArabLineHeightResolved } : null),
       letterSpacing: 0,
       ...(qcomBook && Platform.OS === "android" ? { textAlignVertical: "center" as const } : null),
     }, { compact: qcomBook }),
+    quranText: {
+      fontSize: qcomArabSize ?? 26,
+      lineHeight: qcomArabLineHeightResolved ?? 52,
+      textAlign: "justify",
+      writingDirection: "rtl",
+    },
     mushafAyahSectionCaption: {
       marginTop: 4,
       marginBottom: 2,
@@ -232,10 +270,24 @@ export function makeMushafBookPageStyles(
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      gap: 8,
     },
     topBarTitle: { color: uiText, fontSize: 15, fontWeight: "800", flexShrink: 0 },
     topBarMeta: { color: uiMuted, fontSize: 12, fontWeight: "700" },
     topBarRight: { flex: 1, minWidth: 0, alignItems: "flex-end" },
+    topBarActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      flexShrink: 0,
+    },
+    topBarBtn: {
+      width: 40,
+      height: 40,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 12,
+    },
     topBarSurahTitle: { color: uiText, fontSize: 15, fontWeight: "800", textAlign: "right" },
     topBarSurahArabic: {
       marginTop: 1,

@@ -1,10 +1,14 @@
+jest.mock("react-native-webview", () => ({
+  WebView: "WebView",
+}));
+
 import {
   OFFICIAL_SITE_NO_CACHE_HEADERS,
   OFFICIAL_SITE_SW_CACHE_PURGE_INJECT,
   clearOfficialSiteWebCache,
-} from "./officialSiteWebViewReload";
-import { withEmbeddedSiteCacheBust } from "./EmbeddedSiteWebView";
-import { OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT } from "./embeddedOfficialSiteNavigation";
+} from "../officialSiteWebViewReload";
+import { withEmbeddedSiteCacheBust } from "../EmbeddedSiteWebView";
+import { OFFICIAL_SITE_MOBILE_VIEWPORT_INJECT } from "../embeddedOfficialSiteNavigation";
 
 describe("officialSiteWebViewReload", () => {
   it("withEmbeddedSiteCacheBust adds unique query params", () => {

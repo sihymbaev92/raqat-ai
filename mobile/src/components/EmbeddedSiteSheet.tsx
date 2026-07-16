@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { modalSafeAreaInsets } from "../theme/modalSafeArea";
-import { EmbeddedSiteWebView, shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally } from "./EmbeddedSiteWebView";
+import { EmbeddedSiteWebView, shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally, withEmbeddedSiteCacheBust } from "./EmbeddedSiteWebView";
+import { useAppLocale } from "../i18n/runtime";
 
-export { shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally };
+export { shouldLoadEmbeddedSiteUrl, shouldOpenEmbeddedSiteUrlExternally, withEmbeddedSiteCacheBust };
 
 type Props = {
   visible: boolean;
@@ -24,6 +25,7 @@ type Props = {
  * HTML көшірмесіз — тікелей URL жүктеледі.
  */
 export function EmbeddedSiteSheet({ visible, url, onClose, colors, title }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
   const styles = useMemo(
@@ -67,6 +69,14 @@ export function EmbeddedSiteSheet({ visible, url, onClose, colors, title }: Prop
       setReloadKey((k) => k + 1);
     }
   }, [visible, url]);
+
+  useEffect(() => {
+    if (!visible || !url) return;
+    if (!shouldLoadEmbeddedSiteUrl(url)) {
+      void Linking.openURL(url).catch(() => {});
+      onClose();
+    }
+  }, [visible, url, onClose]);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>

@@ -8,10 +8,12 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { MoreStackParamList } from "../navigation/types";
 import { getAuthorById, getEntryById } from "../content/greatWordsCatalog";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KazakhGreatWordsEntry">;
 
 export function KazakhGreatWordsEntryScreen({ route, navigation }: Props) {
+  useAppLocale();
   const { entryId } = route.params;
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);

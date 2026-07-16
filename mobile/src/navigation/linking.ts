@@ -139,11 +139,11 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           },
           Seerah: "seerah",
           Duas: "extra-duas",
+          CommunityDua: "community-dua",
           TelegramInfo: "telegram",
           Settings: "more-settings",
           PrayerSettings: "prayer-settings",
           QuranSettings: "quran-settings",
-          SiriShortcutHelp: "siri-shortcuts",
           Hatim: "hatim",
           HatimSettings: "hatim/settings",
           QuranMushafBook: {

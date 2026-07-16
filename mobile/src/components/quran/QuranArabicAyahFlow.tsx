@@ -2,10 +2,13 @@ import React from "react";
 import { Text, View, type TextStyle, type ViewStyle } from "react-native";
 import { quranArabicNoClipTextStyle } from "../../quran/quranArabicNoClipTextStyle";
 import {
+  HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE,
   QURAN_HATIM_COMPACT_MIN_FONT,
   QURAN_HATIM_COMPACT_PADDING_H,
   QURAN_HATIM_COMPACT_PADDING_V,
   QURAN_SCREEN_HORIZONTAL_PADDING,
+  hatimAyahAutoFitTextProps,
+  hatimAyahAutoFitTextStyle,
   quranContinuousAyahSegmentStyle,
   quranContinuousFlowStyle,
   quranInlineAyahTextStyle,
@@ -144,16 +147,26 @@ export function QuranArabicFlowSegment({ segmentRef, onSegmentLayout, style, chi
 type InlineTextProps = {
   metrics: QuranArabicFlowMetrics;
   highlightStyle?: TextStyle;
+  /** Хатым бір бет: бір жол + adjustsFontSizeToFit. */
+  hatimAutoFit?: boolean;
   children: React.ReactNode;
 };
 
 /** Inline араб `<Text>` — wrap + RTL, тәжуид span-дары ішінде еркін ағады. */
-export function QuranArabicFlowInlineText({ metrics, highlightStyle, children }: InlineTextProps) {
-  const textStyle = highlightStyle
-    ? quranInlineAyahTextStyle(metrics.fontSize, metrics.lineHeight, highlightStyle)
-    : metrics.inlineTextStyle;
+export function QuranArabicFlowInlineText({
+  metrics,
+  highlightStyle,
+  hatimAutoFit = false,
+  children,
+}: InlineTextProps) {
+  const fitFontSize = hatimAutoFit ? HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE : metrics.fontSize;
+  const baseStyle = highlightStyle
+    ? quranInlineAyahTextStyle(fitFontSize, metrics.lineHeight, highlightStyle)
+    : { ...metrics.inlineTextStyle, fontSize: fitFontSize };
+  const textStyle = hatimAutoFit ? [baseStyle, hatimAyahAutoFitTextStyle(fitFontSize)] : baseStyle;
+  const fitProps = hatimAutoFit ? hatimAyahAutoFitTextProps() : null;
   return (
-    <Text style={textStyle} suppressHighlighting>
+    <Text style={textStyle} {...(fitProps ?? {})} suppressHighlighting>
       {children}
     </Text>
   );

@@ -2,6 +2,7 @@ import { Platform } from "react-native";
 import { rootNavigationRef } from "../navigation/rootNavigationRef";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 import { openPrayerAzanScreen } from "./prayerFullScreenAzan";
+import { isPrayerNotificationIdentifier } from "./prayerNotificationSchedule";
 
 type PrayerAzanNotificationData = {
   raqatType?: string;
@@ -21,11 +22,11 @@ function parsePrayerAzanData(raw: unknown): PrayerAzanNotificationData | null {
 
 async function routePrayerAzanNotification(data: PrayerAzanNotificationData): Promise<void> {
   await openPrayerAzanScreen({
-    label: data.label,
+    label: data.label ?? "Намаз",
     enteredTitle: data.enteredTitle,
     time: data.timeShort,
     salatKey: data.salatKey,
-    soundId: (data.soundId as PrayerNotifSoundId | undefined) ?? undefined,
+    soundId: (data.soundId as PrayerNotifSoundId | undefined) ?? "adhan_haramain",
   });
 }
 
@@ -48,5 +49,18 @@ export async function initPrayerNotificationTapRouting(): Promise<void> {
 
   Notifications.addNotificationResponseReceivedListener((response) => {
     handle(response);
+  });
+
+  /** Қолданба ашық кезде: push көрсетпей, азан экранын бірден ашу. */
+  Notifications.addNotificationReceivedListener((notification) => {
+    const id = notification.request.identifier;
+    const data = parsePrayerAzanData(notification.request.content.data);
+    if (!data && !(id && isPrayerNotificationIdentifier(id))) return;
+    if (data) {
+      void routePrayerAzanNotification(data);
+    }
+    if (id) {
+      void Notifications.dismissNotificationAsync(id).catch(() => {});
+    }
   });
 }

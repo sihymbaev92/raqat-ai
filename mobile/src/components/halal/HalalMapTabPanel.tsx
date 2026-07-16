@@ -4,6 +4,7 @@ import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function HalalMapTabPanel({ colors, companyCount, onOpenMap }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (

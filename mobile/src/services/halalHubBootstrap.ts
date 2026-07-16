@@ -7,6 +7,8 @@ import {
 } from "../api/halalDamuWp";
 import { hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getHalalCompaniesBundledCards, ensureHalalCompaniesSnapshotLoaded, hydrateHalalCompaniesSnapshotFromCdn } from "./halalCompaniesSnapshot";
+import { prefetchHalalProductsSeedIndex } from "./halalProductsSeedKz";
+import { warmHalalCompanyMapMarkers } from "../utils/halalMapBootstrap";
 
 /** Тізім/карта: WP логотип enrich жоқ — ашылу жылдам. */
 export const HALAL_HUB_LIST_OPTS = { skipMediaEnrich: true as const };
@@ -27,9 +29,14 @@ export function prefetchHalalDamuHub(): Promise<void> {
     try {
       await ensureHalalCompaniesSnapshotLoaded();
       seedHalalCompaniesBulkFromBundled();
-      await purgeHalalDamuOversizedDiskCaches();
-      await hydrateRaqatApiBaseOverride();
-      await hydrateHalalCompaniesSnapshotFromCdn();
+      prefetchHalalProductsSeedIndex();
+      warmHalalCompanyMapMarkers();
+      // Параллель: диск тазалау + API база + CDN — бірінші тізімді күттірмейді.
+      await Promise.all([
+        purgeHalalDamuOversizedDiskCaches().catch(() => undefined),
+        hydrateRaqatApiBaseOverride().catch(() => undefined),
+        hydrateHalalCompaniesSnapshotFromCdn().catch(() => undefined),
+      ]);
       seedHalalCompaniesBulkFromBundled();
       await fetchHalalDamuCompaniesCatalog({ page: 1, ...HALAL_HUB_LIST_OPTS });
     } catch {

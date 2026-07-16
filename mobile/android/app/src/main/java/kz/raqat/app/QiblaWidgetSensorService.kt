@@ -130,7 +130,7 @@ class QiblaWidgetSensorService : Service(), SensorEventListener {
 
       when (event.sensor.type) {
 
-        Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GAME_ROTATION_VECTOR -> headingFromRotation(event.values)
+        Sensor.TYPE_ROTATION_VECTOR -> headingFromRotation(event.values)
 
         Sensor.TYPE_ACCELEROMETER -> {
 
@@ -169,21 +169,7 @@ class QiblaWidgetSensorService : Service(), SensorEventListener {
 
 
   private fun headingFromRotation(values: FloatArray): Float? {
-
-    val rot = FloatArray(9)
-
-    val orient = FloatArray(3)
-
-    SensorManager.getRotationMatrixFromVector(rot, values)
-
-    SensorManager.getOrientation(rot, orient)
-
-    var az = Math.toDegrees(orient[0].toDouble()).toFloat()
-
-    az = (az + 360f) % 360f
-
-    return if (az.isFinite()) az else null
-
+    return QiblaWidgetHelper.headingFromRotationVector(values)
   }
 
 
@@ -211,8 +197,6 @@ class QiblaWidgetSensorService : Service(), SensorEventListener {
     rotationSensor =
 
       sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-
-        ?: sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
 
     if (rotationSensor != null) {
 
@@ -405,7 +389,7 @@ class QiblaWidgetSensorService : Service(), SensorEventListener {
 
     private const val NOTIFICATION_ID = 90422
 
-    private const val PUSH_INTERVAL_MS = 120L
+    private const val PUSH_INTERVAL_MS = 80L
 
     private const val MIN_DEG_DELTA = 0.45f
 

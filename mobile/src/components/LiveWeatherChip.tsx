@@ -17,6 +17,7 @@ import type { OpenMeteoCurrent } from "../services/openMeteoCurrent";
 import { wmoCodeToWeatherEmoji } from "../services/openMeteoCurrent";
 import { weatherThemeForHero, weatherThemeForWmo } from "../theme/weatherTheme";
 import { BRAND_FONT_FACE } from "../fonts/brandFont";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   weatherSnap: OpenMeteoCurrent | null;
@@ -76,6 +77,7 @@ export function LiveWeatherChip({
   size = "default",
   labelStyle,
 }: Props) {
+  useAppLocale();
   const pulse = useSharedValue(1);
   const sway = useSharedValue(0);
   const floatY = useSharedValue(0);

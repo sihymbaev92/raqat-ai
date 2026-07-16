@@ -15,6 +15,7 @@ import { getHalalDamuUrl } from "../config/halalDamuUrl";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { parseLatLngFromMapServiceUrl } from "../lib/halalDamuMapLinkGeo";
 import { filterHalalCompaniesWithinRadius } from "../utils/halalGeoFilter";
+import { halalBarcodeLookupKeys, normalizeHalalBarcodeDigits } from "../utils/halalBarcodeLookup";
 import { dedupeHalalCompanyCards } from "../utils/halalInstantSearch";
 
 const FETCH_TIMEOUT_MS = 25_000;
@@ -355,6 +356,15 @@ export function enrichHalalCompanyCardsFromBulkCache(
 }
 
 const wpCompanyThumbMemory = new Map<number, string>();
+const WP_THUMB_CACHE_MAX = 200;
+
+function rememberWpCompanyThumb(id: number, thumb: string): void {
+  if (wpCompanyThumbMemory.size >= WP_THUMB_CACHE_MAX) {
+    const oldest = wpCompanyThumbMemory.keys().next().value;
+    if (oldest != null) wpCompanyThumbMemory.delete(oldest);
+  }
+  wpCompanyThumbMemory.set(id, thumb);
+}
 
 async function halalFetchWpCompanyThumbUrl(id: number): Promise<string | null> {
   if (!id) return null;
@@ -366,7 +376,7 @@ async function halalFetchWpCompanyThumbUrl(id: number): Promise<string | null> {
     if (!r.ok) return null;
     const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
     const thumb = halalDamuFeaturedThumbFromWpCompany(data);
-    if (thumb) wpCompanyThumbMemory.set(id, thumb);
+    if (thumb) rememberWpCompanyThumb(id, thumb);
     return thumb;
   } catch {
     return null;
@@ -866,9 +876,9 @@ function halalFilterCompaniesClient(
     opts.radius != null &&
     opts.radius > 0
   ) {
-    out = filterHalalCompaniesWithinRadius(out, opts.lat, opts.lon, opts.radius).map(
-      ({ distanceM: _d, ...c }) => c
-    );
+    out = filterHalalCompaniesWithinRadius(out, opts.lat, opts.lon, opts.radius, {
+      allowCityApprox: true,
+    }).map(({ distanceM: _d, ...c }) => c);
   }
   return out;
 }
@@ -1382,28 +1392,24 @@ function parseAdditiveItem(raw: Record<string, unknown>): HalalDamuAdditiveItem 
 }
 
 function parseProductListPayload(data: Record<string, unknown>): HalalDamuProductItem[] {
-  const itemsRaw = data.items;
-  if (!Array.isArray(itemsRaw)) return [];
-  return itemsRaw
-    .map((it) => parseProductItem(it as Record<string, unknown>))
-    .filter((x) => x.title.length > 0 && x.title !== "—");
+  const candidates = [data.items, data.products, data.data];
+  for (const itemsRaw of candidates) {
+    if (!Array.isArray(itemsRaw) || itemsRaw.length === 0) continue;
+    const parsed = itemsRaw
+      .map((it) => parseProductItem(it as Record<string, unknown>))
+      .filter((x) => x.title.length > 0 && x.title !== "—");
+    if (parsed.length > 0) return parsed;
+  }
+  return [];
 }
 
-/** Штрихкод бойынша өнімдер (дерек halaldamu.kz). */
-export async function fetchHalalDamuProductsByBarcode(
-  barcode: string,
-  opts?: HalalDamuProductQuery
+async function fetchHalalBotProductsList(
+  qs: URLSearchParams,
+  timeoutMs: number = FETCH_TIMEOUT_MS
 ): Promise<{ items: HalalDamuProductItem[]; error?: string; meta?: HalalDamuListMeta }> {
-  const digits = (barcode || "").replace(/\D/g, "");
-  if (digits.length < 4 && (barcode || "").trim().length < 4) return { items: [] };
-  const q = digits.length >= 4 ? digits : (barcode || "").trim();
-  const qs = new URLSearchParams();
-  qs.set("barcode", q);
-  halalAppendProductQueryParams(qs, opts);
   if (!qs.has("per_page")) qs.set("per_page", "30");
-  const url = `${halalApiRoot()}/halal-bot/v1/products?${qs.toString()}`;
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
+    const r = await halalDamuFetchGet(`halal-bot/v1/products?${qs.toString()}`, timeoutMs);
     if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
     const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
     if (!data.success) return { items: [], error: "api" };
@@ -1411,6 +1417,50 @@ export async function fetchHalalDamuProductsByBarcode(
   } catch {
     return { items: [], error: "network" };
   }
+}
+
+/** Штрихкод бойынша өнімдер (дерек halaldamu.kz). */
+export async function fetchHalalDamuProductsByBarcode(
+  barcode: string,
+  opts?: HalalDamuProductQuery
+): Promise<{ items: HalalDamuProductItem[]; error?: string; meta?: HalalDamuListMeta }> {
+  const trimmed = (barcode || "").trim();
+  const digits = normalizeHalalBarcodeDigits(trimmed);
+  if (digits.length < 4 && trimmed.length < 4) return { items: [] };
+
+  const variants = halalBarcodeLookupKeys(digits.length >= 4 ? digits : trimmed);
+  const seen = new Set<string>();
+  const merged: HalalDamuProductItem[] = [];
+  let lastError: string | undefined;
+
+  for (const variant of variants) {
+    const qs = new URLSearchParams();
+    qs.set("barcode", variant);
+    halalAppendProductQueryParams(qs, opts);
+    const res = await fetchHalalBotProductsList(qs);
+    if (res.error) lastError = res.error;
+    for (const item of res.items) {
+      const key = `${item.barcode ?? ""}|${item.id}|${item.title}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(item);
+    }
+    if (merged.length > 0) return { items: merged, meta: res.meta };
+  }
+
+  const searchQs = new URLSearchParams();
+  searchQs.set("search", digits.length >= 4 ? digits : trimmed);
+  halalAppendProductQueryParams(searchQs, opts);
+  const searchRes = await fetchHalalBotProductsList(searchQs);
+  if (searchRes.error) lastError = searchRes.error;
+  for (const item of searchRes.items) {
+    const key = `${item.barcode ?? ""}|${item.id}|${item.title}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+
+  return { items: merged, error: merged.length ? undefined : lastError, meta: searchRes.meta };
 }
 
 function halalCompanySlugFromUrl(url: string): string | null {
@@ -1475,18 +1525,8 @@ export async function fetchHalalDamuProductsBrowse(
 ): Promise<{ items: HalalDamuProductItem[]; error?: string; meta?: HalalDamuListMeta }> {
   const qs = new URLSearchParams();
   halalAppendProductQueryParams(qs, opts);
-  if (!qs.has("per_page")) qs.set("per_page", "30");
   if (!qs.has("page")) qs.set("page", "1");
-  const url = `${halalApiRoot()}/halal-bot/v1/products?${qs.toString()}`;
-  try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
-    if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
-    const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
-    if (!data.success) return { items: [], error: "api" };
-    return { items: parseProductListPayload(data), meta: parseListMeta(data) };
-  } catch {
-    return { items: [], error: "network" };
-  }
+  return fetchHalalBotProductsList(qs);
 }
 
 export async function searchHalalDamuProducts(
@@ -1498,17 +1538,7 @@ export async function searchHalalDamuProducts(
   const qs = new URLSearchParams();
   if (q.length >= 2) qs.set("search", q);
   halalAppendProductQueryParams(qs, opts);
-  if (!qs.has("per_page")) qs.set("per_page", "30");
-  const url = `${halalApiRoot()}/halal-bot/v1/products?${qs.toString()}`;
-  try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
-    if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
-    const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
-    if (!data.success) return { items: [], error: "api" };
-    return { items: parseProductListPayload(data), meta: parseListMeta(data) };
-  } catch {
-    return { items: [], error: "network" };
-  }
+  return fetchHalalBotProductsList(qs);
 }
 
 /** Ұйым идентификаторы бойынша өнімдер тізімі (search жоқ). */
@@ -1565,6 +1595,29 @@ const MAP_MARKERS_CACHE_V = 2;
 /** Кэшті тазалау (мысалы, тест немесе күшті жаңарту). */
 export function clearHalalDamuMapMarkersCache(): void {
   mapMarkersCache = null;
+}
+
+/** Синхрон — API кэші дайын болса маркерлер (карта лезде ашу). */
+export function peekHalalDamuCompanyMapMarkersCache(): HalalDamuMapMarker[] | null {
+  if (mapMarkersCache?.v === MAP_MARKERS_CACHE_V && mapMarkersCache.markers.length > 0) {
+    return mapMarkersCache.markers;
+  }
+  return null;
+}
+
+let mapMarkersPrefetchInflight: Promise<void> | null = null;
+
+/** Карта табы / Halal hub — API маркерлерін фонда алдын ала жүктеу. */
+export function prefetchHalalDamuCompanyMapMarkers(): void {
+  if (mapMarkersCache?.v === MAP_MARKERS_CACHE_V) return;
+  if (!mapMarkersPrefetchInflight) {
+    mapMarkersPrefetchInflight = fetchHalalDamuCompanyMapMarkers()
+      .then(() => undefined)
+      .catch(() => undefined)
+      .finally(() => {
+        mapMarkersPrefetchInflight = null;
+      });
+  }
 }
 
 /**
@@ -1661,40 +1714,64 @@ export function halalDamuCompanyWebUrl(card: { id: number; slug?: string | null 
   return `${origin}/?company_id=${card.id}`;
 }
 
-/** Қолданба орналасуы бойынша жақын ұйымдар (halal-bot: lat, lon, radius метр). */
+/** Қолданба орналасуы бойынша жақын ұйымдар.
+ * Ескерту: halaldamu lat/lon/radius серверде іс жүзінде елемейді (барлық каталог қайтады).
+ * Сондықтан негізгі жол — жергілікті бандл/кэш + клиент радиусы (қала мекенжайы шамамен).
+ */
 export async function fetchHalalDamuCompaniesNearby(
   lat: number,
   lon: number,
-  radiusKm: number = 25,
+  radiusKm: number = 5,
   opts?: Omit<HalalDamuCompanyFetchOpts, "lat" | "lon" | "radius">
 ): Promise<{ items: HalalDamuCompanyCard[]; error?: string; meta?: HalalDamuListMeta }> {
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return { items: [] };
   const radiusM = Math.min(80, Math.max(1, radiusKm)) * 1000;
-  const perPage = Math.min(100, Math.max(1, Math.floor(opts?.perPage ?? 10)));
-  const qs = new URLSearchParams();
-  qs.set("lat", String(lat));
-  qs.set("lon", String(lon));
-  qs.set("radius", String(radiusM));
-  halalAppendCompanyQueryParams(qs, { ...opts, perPage, page: 1 }, "server");
-  if (!qs.has("per_page")) qs.set("per_page", String(perPage));
-  const url = `${halalApiRoot()}/halal-bot/v1/companies?${qs.toString()}`;
+
+  seedHalalCompaniesBulkFromBundled();
+  const bulk = companiesBulkMemory?.items ?? [];
+  const fromBulk = filterHalalCompaniesWithinRadius(bulk, lat, lon, radiusM, {
+    allowCityApprox: true,
+  }).map(({ distanceM: _d, ...c }) => c);
+
+  // Желі: қысқа таймаут — толық 3.8k dump күтпейміз; сәтті болса координат/map_link байытамыз.
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" }, FETCH_TIMEOUT_MS);
-    if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
-    const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
-    if (!data.success) return { items: [], error: "api" };
-    const itemsRaw = data.items;
-    if (!Array.isArray(itemsRaw)) return { items: [], error: "invalid_json" };
-    const parsed = itemsRaw.map((it) => parseCompanyCard(it as Record<string, unknown>)).filter((x) => x.id > 0);
-    const filtered = halalFilterCompaniesClient(parsed, {
-      ...opts,
-      lat,
-      lon,
-      radius: radiusM,
-    });
-    const items = await halalEnrichCompanyListItems(filtered.slice(0, perPage), opts?.skipMediaEnrich ?? true);
-    return { items, meta: parseListMeta(data) };
+    const perPage = Math.min(100, Math.max(1, Math.floor(opts?.perPage ?? 40)));
+    const qs = new URLSearchParams();
+    qs.set("lat", String(lat));
+    qs.set("lon", String(lon));
+    qs.set("radius", String(radiusM));
+    halalAppendCompanyQueryParams(qs, { ...opts, perPage, page: 1 }, "server");
+    if (!qs.has("per_page")) qs.set("per_page", String(perPage));
+    const url = `${halalApiRoot()}/halal-bot/v1/companies?${qs.toString()}`;
+    const r = await fetchWithTimeout(url, { method: "GET" }, 8_000);
+    if (r.ok) {
+      const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
+      if (data.success && Array.isArray(data.items)) {
+        const parsed = data.items
+          .slice(0, 400)
+          .map((it) => parseCompanyCard(it as Record<string, unknown>))
+          .filter((x) => x.id > 0);
+        const enriched = enrichHalalCompanyCardsFromBulkCache(parsed);
+        const fromApi = filterHalalCompaniesWithinRadius(enriched, lat, lon, radiusM, {
+          allowCityApprox: true,
+        }).map(({ distanceM: _d, ...c }) => c);
+        const merged = dedupeHalalCompanyCards([...fromApi, ...fromBulk]);
+        const items = await halalEnrichCompanyListItems(merged.slice(0, 120), opts?.skipMediaEnrich ?? true);
+        return {
+          items,
+          meta: { totalItems: merged.length, totalPages: 1, page: 1, perPage: items.length },
+        };
+      }
+    }
   } catch {
-    return { items: [], error: "network" };
+    /* офлайн / баяу API — bulk жеткілікті */
   }
+
+  if (fromBulk.length > 0) {
+    return {
+      items: fromBulk.slice(0, 120),
+      meta: { totalItems: fromBulk.length, totalPages: 1, page: 1, perPage: Math.min(120, fromBulk.length) },
+    };
+  }
+  return { items: [], error: "empty" };
 }

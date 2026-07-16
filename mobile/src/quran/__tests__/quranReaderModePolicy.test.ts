@@ -3,18 +3,25 @@ import path from "path";
 import {
   HATIM_MUSHAF_ARABIC_ONLY,
   QURAN_READER_ARABIC_ONLY,
-  quranReaderArabicOnlyLayers,
+  hatimMushafReaderLayers,
+  shouldRenderSingleMushafBookPage,
 } from "../quranReaderModePolicy";
 
 describe("quranReaderModePolicy", () => {
   it("locks Hatim mushaf to Arabic-only one-page layers", () => {
     expect(QURAN_READER_ARABIC_ONLY).toBe(true);
     expect(HATIM_MUSHAF_ARABIC_ONLY).toBe(true);
-    expect(quranReaderArabicOnlyLayers()).toEqual({
+    expect(hatimMushafReaderLayers()).toEqual({
       showReaderArabic: true,
       showReaderTranslit: false,
       showReaderMeaning: false,
     });
+  });
+
+  it("renders single mushaf page on web and native pan-pager", () => {
+    expect(shouldRenderSingleMushafBookPage("web")).toBe(true);
+    expect(shouldRenderSingleMushafBookPage("android")).toBe(true);
+    expect(shouldRenderSingleMushafBookPage("ios")).toBe(true);
   });
 
   it("QuranMushafBookScreen uses Hatim locked reader layers", () => {

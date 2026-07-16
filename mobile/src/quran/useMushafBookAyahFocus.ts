@@ -8,6 +8,21 @@ import { loadHatimResume } from "../storage/hatimProgress";
 
 const FOCUS_HIGHLIGHT_MS = 5200;
 
+export type MushafBookResumeRouteOpts = {
+  continuousMushaf?: boolean;
+  focusSurah?: number;
+  focusAyah?: number;
+  initialPage?: number;
+};
+
+/** Хатым resume тек толық 604-беттік оқуға, маршрутта нақты фокус жоқ кезде жүктеледі. */
+export function mushafBookShouldResumeFromStorage(opts: MushafBookResumeRouteOpts): boolean {
+  if (!opts.continuousMushaf) return false;
+  if (opts.focusSurah != null || opts.focusAyah != null) return false;
+  if (opts.initialPage != null) return false;
+  return true;
+}
+
 export type UseMushafBookAyahFocusOpts = {
   continuousMushaf?: boolean;
   focusSurah?: number;
@@ -89,8 +104,15 @@ export function useMushafBookAyahFocus(opts: UseMushafBookAyahFocusOpts): {
   );
 
   useEffect(() => {
-    if (!continuousMushaf || bootFocusRef.current || loading || !pages.length) return;
-    if (focusSurah != null || focusAyah != null || initialPage != null) {
+    if (bootFocusRef.current || loading || !pages.length) return;
+    if (
+      !mushafBookShouldResumeFromStorage({
+        continuousMushaf,
+        focusSurah,
+        focusAyah,
+        initialPage,
+      })
+    ) {
       bootFocusRef.current = true;
       return;
     }

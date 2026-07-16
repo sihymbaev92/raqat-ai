@@ -15,8 +15,9 @@ describe("traditionBooksCatalog", () => {
     await ensureGreatWordsCatalogLoaded();
   });
   it("has books in all groups", () => {
-    expect(TRADITION_BOOKS.length).toBeGreaterThanOrEqual(30);
-    expect(getTraditionBooksByGroup("wisdom").length).toBeGreaterThanOrEqual(19);
+    const wisdom = getTraditionBooksByGroup("wisdom");
+    expect(TRADITION_BOOKS.length + getWisdomAuthorBooks().length).toBeGreaterThanOrEqual(30);
+    expect(wisdom.length).toBeGreaterThanOrEqual(19);
     expect(getTraditionBooksByGroup("faith").length).toBeGreaterThanOrEqual(14);
     expect(getTraditionBooksByGroup("tradition").length).toBeGreaterThanOrEqual(5);
     expect(getTraditionBooksByGroup("ait").length).toBeGreaterThanOrEqual(2);

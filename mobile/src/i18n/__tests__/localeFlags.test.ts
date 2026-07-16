@@ -6,6 +6,9 @@ describe("localeFlags", () => {
     expect(appLocaleFlag("ru")).toBe("🇷🇺");
     expect(appLocaleFlag("en")).toBe("🇬🇧");
     expect(appLocaleFlag("ky")).toBe("🇰🇬");
+    expect(appLocaleFlag("uz")).toBe("🇺🇿");
+    expect(appLocaleFlag("tr")).toBe("🇹🇷");
+    expect(appLocaleFlag("ar")).toBe("🇸🇦");
   });
 
   it("prefixes labels with flags", () => {

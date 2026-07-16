@@ -31,12 +31,3 @@ export function getKmdbHubTiles(): KmdbHubTileDef[] {
     },
   ];
 }
-
-/** @deprecated KmdbHubScreen енді табтар арқылы fatua/muftyat/meshit */
-export function getKmdbHubPrimaryRowKeys(): readonly ["fatua", "mosques", "muftyat"] {
-  return ["fatua", "mosques", "muftyat"];
-}
-
-export function getKmdbHubSecondaryTiles(): readonly [] {
-  return [];
-}

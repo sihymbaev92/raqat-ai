@@ -1,5 +1,5 @@
 import abaiKaraSoz from "../../../assets/bundled/abai-kara-soz-full.json";
-import { getEntriesByAuthorId } from "../greatWordsCatalog";
+import { getEntriesByAuthorId, ensureGreatWordsCatalogLoaded } from "../greatWordsCatalog";
 
 describe("abaiKaraSozFull", () => {
   it("contains all 45 Kara Soz with non-empty text", () => {
@@ -13,7 +13,8 @@ describe("abaiKaraSozFull", () => {
     }
   });
 
-  it("great-words catalog exposes 45 sorted Abai Kara Soz entries", () => {
+  it("great-words catalog exposes 45 sorted Abai Kara Soz entries", async () => {
+    await ensureGreatWordsCatalogLoaded();
     const abai = getEntriesByAuthorId("abai");
     const kara = abai.filter((e) => e.karaSozNumber != null);
     expect(kara).toHaveLength(45);

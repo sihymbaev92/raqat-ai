@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppLocale } from "../../i18n/runtime";
 import {
+  FlatList,
   Image,
   Keyboard,
   Modal,
@@ -15,14 +17,14 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import * as Location from "expo-location";
 import * as Linking from "expo-linking";
 import { Pressable } from "@/ui/Pressable";
-import { searchNearbyMosques } from "../../data/mosques2gisCatalog";
+import { mosqueCatalogCount, searchNearbyMosquesAsync } from "../../data/mosques2gisCatalog";
 import { mosqueDetailForMosque } from "../../data/mosqueDetailsEnrichment";
 import { kk } from "../../i18n/kk";
 import type { ThemeColors } from "../../theme/colors";
 import { NEARBY_INSTITUTIONS_MAX } from "../../utils/halalInstantSearch";
 import { formatMosqueDistanceKm, type Mosque2GisWithDistance } from "../../utils/mosqueGeoFilter";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
-import { ScreenFitScrollView } from "../ScreenFit";
+import { runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
 
 const RADIUS_OPTIONS_KM = [5, 10] as const;
 const RENDER_LIMIT = 40;
@@ -51,7 +53,9 @@ function mosqueConfidenceLabel(confidence: "verified" | "partial" | "map_only" |
 }
 
 export function NearbyMosquesPanel({ active, colors }: Props) {
+  useAppLocale();
   const searchInputRef = useRef<TextInput>(null);
+  const loadGenRef = useRef(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mosqueRows, setMosqueRows] = useState<Mosque2GisWithDistance[]>([]);
@@ -93,10 +97,12 @@ export function NearbyMosquesPanel({ active, colors }: Props) {
 
   const loadNearby = useCallback(async () => {
     dismissKeyboard();
+    const gen = ++loadGenRef.current;
     setBusy(true);
     setErr(null);
     try {
       const perm = await Location.requestForegroundPermissionsAsync();
+      if (gen !== loadGenRef.current) return;
       if (perm.status !== "granted") {
         setErr(kk.features.halalNearbyPermDenied);
         setMosqueRows([]);
@@ -105,44 +111,100 @@ export function NearbyMosquesPanel({ active, colors }: Props) {
       }
       const cachedPos = await Location.getLastKnownPositionAsync({
         maxAge: LAST_KNOWN_LOCATION_MAX_AGE_MS,
-        requiredAccuracy: 5000,
+        requiredAccuracy: 8000,
       });
+      if (gen !== loadGenRef.current) return;
+      let latitude: number;
+      let longitude: number;
+      if (cachedPos) {
+        latitude = cachedPos.coords.latitude;
+        longitude = cachedPos.coords.longitude;
+        // Алдымен соңғы координатамен тізімді көрсет — GPS күтпейді.
+        const quickRows = await searchNearbyMosquesAsync(
+          latitude,
+          longitude,
+          radiusKm * 1000,
+          "",
+          NEARBY_INSTITUTIONS_MAX
+        );
+        if (gen !== loadGenRef.current) return;
+        if (mosqueCatalogCount() === 0) {
+          setErr(kk.features.halalNearbyMosqueCatalogMissing);
+          setMosqueRows([]);
+          setLoadedOnce(false);
+          return;
+        }
+        setMosqueRows(quickRows);
+        setLoadedOnce(true);
+        setBusy(false);
+        if (quickRows.length === 0) setErr(kk.features.halalNearbyMosqueEmpty);
+      }
       const pos =
         cachedPos ??
         (await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         }));
-      const { latitude, longitude } = pos.coords;
+      if (gen !== loadGenRef.current) return;
+      latitude = pos.coords.latitude;
+      longitude = pos.coords.longitude;
       const radiusM = radiusKm * 1000;
-      const q = searchText.trim();
-      const rows = searchNearbyMosques(latitude, longitude, radiusM, q, NEARBY_INSTITUTIONS_MAX);
+      const rows = await searchNearbyMosquesAsync(latitude, longitude, radiusM, "", NEARBY_INSTITUTIONS_MAX);
+      if (gen !== loadGenRef.current) return;
+      if (mosqueCatalogCount() === 0) {
+        setErr(kk.features.halalNearbyMosqueCatalogMissing);
+        setMosqueRows([]);
+        setLoadedOnce(false);
+        return;
+      }
       setMosqueRows(rows);
       setLoadedOnce(true);
-      if (rows.length === 0) {
-        setErr(q.length > 0 ? kk.features.halalNearbyFilterEmpty : kk.features.halalNearbyMosqueEmpty);
-      }
+      setErr(rows.length === 0 ? kk.features.halalNearbyMosqueEmpty : null);
     } catch {
+      if (gen !== loadGenRef.current) return;
       setErr(kk.features.halalHubNetworkErr);
       setMosqueRows([]);
       setLoadedOnce(false);
     } finally {
-      setBusy(false);
+      if (gen === loadGenRef.current) setBusy(false);
     }
-  }, [dismissKeyboard, radiusKm, searchText]);
+  }, [dismissKeyboard, radiusKm]);
 
   useEffect(() => {
     if (!active) return;
-    void loadNearby();
+    void runWhenHeavyWorkAllowed().then(() => loadNearby());
   }, [active, radiusKm, loadNearby]);
 
-  return (
-    <>
-      <ScreenFitScrollView
-        style={styles.root}
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
+  const renderMosqueRow = useCallback(
+    ({ item }: { item: Mosque2GisWithDistance }) => (
+      <Pressable
+        onPress={() => {
+          dismissKeyboard();
+          setSelectedMosque(item);
+        }}
+        style={({ pressed }) => [styles.miniRow, pressed && { opacity: 0.92 }]}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.name}, ${formatMosqueDistanceKm(item.distanceM)}`}
       >
+        <MaterialCommunityIcons name="mosque" size={22} color={colors.accent} style={{ marginTop: 2 }} />
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.miniTitle, { color: colors.text }]} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <Text style={[styles.miniSub, { color: colors.muted }]} numberOfLines={2}>
+            {[item.address, item.regionName, formatMosqueDistanceKm(item.distanceM)].filter(Boolean).join(" · ")}
+          </Text>
+        </View>
+        <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
+      </Pressable>
+    ),
+    [colors.accent, colors.muted, colors.text, dismissKeyboard]
+  );
+
+  const mosqueKeyExtractor = useCallback((item: Mosque2GisWithDistance) => `kmdb-mosque-${item.id}`, []);
+
+  const listHeader = useMemo(
+    () => (
+      <>
         <View style={[styles.headCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
           <View style={styles.headRow}>
             <MaterialCommunityIcons name="mosque" size={24} color={colors.accent} />
@@ -247,38 +309,46 @@ export function NearbyMosquesPanel({ active, colors }: Props) {
           ) : null}
         </View>
 
-        {displayedMosques.length > 0 ? (
-          <View style={[styles.listCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-            {displayedMosques.map((m) => (
-              <Pressable
-                key={`kmdb-mosque-${m.id}`}
-                onPress={() => {
-                  dismissKeyboard();
-                  setSelectedMosque(m);
-                }}
-                style={({ pressed }) => [styles.miniRow, pressed && { opacity: 0.92 }]}
-                accessibilityRole="button"
-                accessibilityLabel={`${m.name}, ${formatMosqueDistanceKm(m.distanceM)}`}
-              >
-                <MaterialCommunityIcons name="mosque" size={22} color={colors.accent} style={{ marginTop: 2 }} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.miniTitle, { color: colors.text }]} numberOfLines={2}>
-                    {m.name}
-                  </Text>
-                  <Text style={[styles.miniSub, { color: colors.muted }]} numberOfLines={2}>
-                    {[m.address, m.regionName, formatMosqueDistanceKm(m.distanceM)].filter(Boolean).join(" · ")}
-                  </Text>
-                </View>
-                <MaterialIcons name="chevron-right" size={22} color={colors.muted} />
-              </Pressable>
-            ))}
-          </View>
-        ) : null}
-
         {loadedOnce && mosqueRows.length > 0 && displayedMosques.length === 0 ? (
           <Text style={[styles.err, { color: colors.muted }]}>{kk.features.halalNearbyFilterEmpty}</Text>
         ) : null}
-      </ScreenFitScrollView>
+      </>
+    ),
+    [
+      busy,
+      colors,
+      dismissKeyboard,
+      displayedMosques.length,
+      err,
+      loadNearby,
+      loadedOnce,
+      mosqueRows.length,
+      radiusKm,
+      searchText,
+    ]
+  );
+
+  return (
+    <>
+      <FlatList
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        data={displayedMosques}
+        keyExtractor={mosqueKeyExtractor}
+        renderItem={renderMosqueRow}
+        ListHeaderComponent={listHeader}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        initialNumToRender={10}
+        maxToRenderPerBatch={12}
+        windowSize={7}
+        removeClippedSubviews={Platform.OS === "android"}
+        ListEmptyComponent={
+          loadedOnce && mosqueRows.length === 0 && !busy ? (
+            <Text style={[styles.err, { color: colors.muted }]}>{kk.features.halalNearbyMosqueEmpty}</Text>
+          ) : null
+        }
+      />
 
       <Modal
         visible={selectedMosque != null}

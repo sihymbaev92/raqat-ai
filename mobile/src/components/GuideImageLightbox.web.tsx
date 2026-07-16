@@ -27,6 +27,7 @@ import { RasterImage } from "@/ui/RasterImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   source: ImageSourcePropType;
@@ -62,6 +63,7 @@ export function GuideImageLightbox({
   maxThumbHeightRatio = 0.48,
   thumbResizeMultiplier,
 }: Props) {
+  useAppLocale();
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();

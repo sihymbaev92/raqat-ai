@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 import {
   TAJWEED_LEGEND_SECTIONS,
   TAJWEED_RULES_CATALOG,
@@ -41,6 +42,7 @@ function RuleLine({
 }
 
 export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Props) {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const metaByRule = useMemo(

@@ -31,6 +31,8 @@ import { ScreenFitProvider, useScreenFitMetrics, webViewportClampStyle } from ".
 
 const APP_STATE_SYNC_COOLDOWN_MS = 60_000;
 const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 1_800;
+/** Рұқсаттар UI дайын болғаннан кейін бірден — баптауға кірмей. */
+const FIRST_LAUNCH_PERMISSIONS_DELAY_MS = 600;
 
 function reportBackgroundJobError(label: string, error: unknown): void {
   if (__DEV__) {
@@ -90,11 +92,6 @@ export default function App() {
       try {
         await hydrateRaqatApiBaseOverride();
         await hydrateLocale();
-        await import("./src/fonts/brandFont").then((m) => m.loadBrandFont()).catch(() => {});
-        /** Boot: тек сүре тізімі (~30 KB RAM). Uthmani — Хатым/Құран экранында lazy. */
-        await import("./src/services/bundledQuranSeed")
-          .then((m) => m.seedBundledQuranCachesIfNeeded({ skipInteractionDefer: true }))
-          .catch(() => {});
       } catch (e) {
         console.error("boot hydrate failed", e);
       } finally {
@@ -107,78 +104,24 @@ export default function App() {
       }
 
       runAfterInteractions(() => {
+        void import("./src/fonts/brandFont")
+          .then((m) => m.loadBrandFont())
+          .catch(() => {});
+        void import("./src/services/bundledQuranSeed")
+          .then((m) => m.seedBundledQuranCachesIfNeeded())
+          .catch(() => {});
+
         void import("./src/services/notificationQuickActions")
           .then((m) => m.initNotificationQuickActions())
           .catch((e) => reportBackgroundJobError("notificationQuickActions", e));
 
-        // Non-critical network warmups should not compete with first paint/navigation.
-        setTimeout(() => {
-          void import("./src/data/mosques2gisCatalog")
-            .then((m) => m.ensureMosques2gisCatalogLoaded())
-            .catch((e) => reportBackgroundJobError("mosquesCatalogPreload", e));
-          void import("./src/services/halalHubBootstrap")
-            .then((m) => m.prefetchHalalDamuHub())
-            .catch((e) => reportBackgroundJobError("halalHubBootstrap", e));
-          void import("./src/content/scrapedHadithMuftyat")
-            .then((m) => m.ensureScrapedHadithMuftyatLoaded())
-            .catch((e) => reportBackgroundJobError("scrapedHadithPreload", e));
-          void import("./src/content/extractedHadithMuftyat")
-            .then((m) => m.ensureExtractedHadithMuftyatLoaded())
-            .catch((e) => reportBackgroundJobError("extractedHadithPreload", e));
-          void import("./src/content/greatWordsCatalog")
-            .then((m) => m.ensureGreatWordsCatalogLoaded())
-            .catch((e) => reportBackgroundJobError("greatWordsPreload", e));
-          void import("./src/components/officialSiteWebViewReload")
-            .then((m) => m.prefetchOfficialSiteWebPages())
-            .catch((e) => reportBackgroundJobError("officialSiteWebPrefetch", e));
-          void import("./src/services/hubScreenWarmup")
-            .then((m) => m.warmHotHubScreens())
-            .catch((e) => reportBackgroundJobError("hubScreenWarmup", e));
-        }, 800);
-        setTimeout(() => {
-          void import("./src/services/officialSitesBootstrap")
-            .then((m) => m.prefetchOfficialHomeNewsFeed())
-            .catch((e) => reportBackgroundJobError("officialSitesBootstrap", e));
-        }, 4000);
-
-        setTimeout(() => {
-          void import("./src/services/contentPackManager")
-            .then((m) => m.scheduleContentPackAutoDownload())
-            .catch((e) => reportBackgroundJobError("contentPackAutoDownload", e));
-        }, 5_200);
+        void import("./src/services/prayerNotificationTap")
+          .then((m) => m.initPrayerNotificationTapRouting())
+          .catch((e) => reportBackgroundJobError("prayerNotificationTap", e));
 
         if (Platform.OS !== "web") {
-          void import("./src/quran/hatimBookPolicy")
-            .then((m) => m.preloadHatimOfflineAssets())
-            .catch((e) => reportBackgroundJobError("hatimOfflinePreload", e));
-        }
-
-        setTimeout(() => {
-          void (async () => {
-            if (Platform.OS === "web") return;
-
-            const [
-              { reschedulePrayerNotificationsFromCache },
-              { ensurePrayerNotificationBackgroundTask },
-              { ensureQuranAudioBackgroundTask },
-              { maybeKickQuranAudioAutoDownloadLoop },
-              { syncAndroidPrayerWidgetFromStorage },
-            ] = await Promise.all([
-              import("./src/services/prayerNotifications"),
-              import("./src/services/prayerNotificationBackgroundTask"),
-              import("./src/services/quranAudioBackgroundTask"),
-              import("./src/services/quranAudioDownloadManager"),
-              import("./src/storage/prayerCache"),
-            ]);
-
-            await Promise.allSettled([
-              reschedulePrayerNotificationsFromCache(),
-              ensurePrayerNotificationBackgroundTask(),
-              ensureQuranAudioBackgroundTask(),
-              syncAndroidPrayerWidgetFromStorage(),
-            ]);
-            void maybeKickQuranAudioAutoDownloadLoop();
-
+          // Орнатқаннан кейін бірден: орын + хабарлама + батарея + азан рұқсаттары.
+          setTimeout(() => {
             void import("./src/storage/prefs")
               .then(async (prefs) => {
                 if (await prefs.getFirstLaunchPermissionsBurstDone()) return;
@@ -189,6 +132,40 @@ export default function App() {
                 await prefs.setFirstLaunchPermissionsBurstDone();
               })
               .catch((e) => reportBackgroundJobError("firstLaunchPermissions", e));
+          }, FIRST_LAUNCH_PERMISSIONS_DELAY_MS);
+        }
+
+        if (Platform.OS === "web") {
+          void import("./src/services/registerWebHatimOffline")
+            .then((m) => m.registerWebHatimOfflineServiceWorker())
+            .catch((e) => reportBackgroundJobError("webHatimOfflineSw", e));
+        }
+
+        setTimeout(() => {
+          void import("./src/services/slimAssetPrefetch")
+            .then((m) => m.prefetchSlimBundledAssetsOnWifi())
+            .catch(() => {});
+          void (async () => {
+            if (Platform.OS === "web") return;
+
+            const [
+              { reschedulePrayerNotificationsFromCache },
+              { ensurePrayerNotificationBackgroundTask },
+              { ensureQuranAudioBackgroundTask },
+              { syncNativePrayerWidgetFromStorage },
+            ] = await Promise.all([
+              import("./src/services/prayerNotifications"),
+              import("./src/services/prayerNotificationBackgroundTask"),
+              import("./src/services/quranAudioBackgroundTask"),
+              import("./src/storage/prayerCache"),
+            ]);
+
+            await Promise.allSettled([
+              reschedulePrayerNotificationsFromCache(),
+              ensurePrayerNotificationBackgroundTask(),
+              ensureQuranAudioBackgroundTask(),
+              syncNativePrayerWidgetFromStorage(),
+            ]);
           })().catch((e) => reportBackgroundJobError("postBootNativeWarmup", e));
         }, POST_BOOT_NATIVE_WARMUP_DELAY_MS);
       });
@@ -215,8 +192,8 @@ export default function App() {
         const [
           { refreshPrayerCacheIfCalendarStale },
           { reschedulePrayerNotificationsFromCache },
-          { syncAndroidPrayerWidgetFromStorage },
-          { maybeKickQuranAudioAutoDownloadLoop, resumeQuranAudioDownloadsInBackground },
+          { syncNativePrayerWidgetFromStorage },
+          { resumeQuranAudioDownloadsInBackground },
         ] = await Promise.all([
           import("./src/services/prayerDaySelfHeal"),
           import("./src/services/prayerNotifications"),
@@ -226,16 +203,21 @@ export default function App() {
         if (leavingForeground) {
           await refreshPrayerCacheIfCalendarStale();
           await resumeQuranAudioDownloadsInBackground();
+          void import("./src/services/appMemoryRelease")
+            .then((m) => m.releaseAppHeavyMemory())
+            .catch((e) => reportBackgroundJobError("appMemoryRelease", e));
         }
         if (next === "active") {
-          void maybeKickQuranAudioAutoDownloadLoop();
           void import("./src/services/prayerAzanPermissions")
             .then((m) => m.ensurePrayerAzanPermissionsOnAppActive())
             .catch((e) => reportBackgroundJobError("prayerAzanPermissions", e));
+          void import("./src/services/accountSync")
+            .then((m) => m.syncAccountDataWithServerBidirectional())
+            .catch((e) => reportBackgroundJobError("accountSync", e));
         }
         await Promise.allSettled([
           reschedulePrayerNotificationsFromCache(),
-          syncAndroidPrayerWidgetFromStorage(),
+          syncNativePrayerWidgetFromStorage(),
         ]);
       })().catch((e) => reportBackgroundJobError("appStateSync", e));
     });

@@ -31,6 +31,8 @@ const inflight = new Map<string, Promise<unknown>>();
 const APK_JSON_ASSET_MODULES: Partial<Record<BundledJsonName, number>> = {
   "surah-list-api.json": require("../../assets/bundled/surah-list-api.json"),
   "quran-uthmani-full.json": require("../../assets/bundled/quran-uthmani-full.json"),
+  "quran-kk-from-db.json": require("../../assets/bundled/quran-kk-from-db.json"),
+  "mosques-2gis-kz.json": require("../../assets/bundled/mosques-2gis-kz.json"),
 };
 
 export class BundledJsonMissingError extends Error {
@@ -104,15 +106,9 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
     case "quran-tajweed-offline.json":
       return { version: 1, surahs: { "1": { "1": "test [h:1[x]" } } };
     case "great-words-catalog.json":
-      return { version: 1, authors: [], entries: [] };
+      return testRequire("../../assets/bundled/great-words-catalog.json");
     case "abai-kara-soz-full.json":
       return [];
-    case "scraped-hadith-muftyat.json":
-      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
-    case "extracted-hadith-muftyat.json":
-      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
-    case "external-hadith-kk.json":
-      return { version: 1, sourceOrg: "test", licenseNote: "", itemCount: 0, items: [] };
     case "hadith-from-db-seed.json":
       return { books: [], hadiths: [] };
     case "halal-companies-snapshot.json":
@@ -219,6 +215,13 @@ function isValidApkBundledPayload(name: BundledJsonName, data: unknown): boolean
     const text = surahs[0]?.ayahs?.[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
     return text.length > 0;
   }
+  if (name === "quran-kk-from-db.json") {
+    const surahs = (data as { data?: { surahs?: Array<{ ayahs?: Array<{ text_kk?: string }> }> } })?.data
+      ?.surahs;
+    if (!Array.isArray(surahs) || surahs.length < 114) return false;
+    const kk = surahs[0]?.ayahs?.[0]?.text_kk?.replace(/^\uFEFF/, "").trim() ?? "";
+    return kk.length > 0;
+  }
   if (name === "surah-list-api.json") {
     const rows = (data as { data?: unknown[] })?.data;
     return Array.isArray(rows) && rows.length >= 114;
@@ -267,7 +270,6 @@ async function resolveJson<T>(name: BundledJsonName, opts?: { optional?: boolean
     }
 
     if (isRemoteBundledJson(name)) {
-      if (opts?.optional) return null;
       try {
         const data = await downloadBundledJsonToCache<T>(name);
         return data;

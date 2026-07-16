@@ -57,9 +57,10 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 10,
-      paddingHorizontal: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
       borderRadius: 10,
+      minHeight: 44,
     },
     chipOn: {
       backgroundColor: colors.accentSurface,
@@ -67,10 +68,11 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.accent,
     },
     txt: {
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: "700",
       color: colors.muted,
       textAlign: "center",
+      lineHeight: 14,
     },
     txtOn: {
       color: colors.accent,

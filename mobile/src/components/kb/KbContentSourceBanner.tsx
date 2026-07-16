@@ -5,6 +5,7 @@ import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { KbArticlesFeedSource } from "../../services/kbArticlesFeed";
 import { kbFeedSourceLabel } from "../../services/kbArticlesFeed";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -13,6 +14,7 @@ type Props = {
 };
 
 export function KbContentSourceBanner({ colors, source, cacheAgeMs }: Props) {
+  useAppLocale();
   const styles = makeStyles(colors);
   const isOffline = source === "seed" || source === "cache";
   const icon = isOffline ? "offline-pin" : "cloud-download";

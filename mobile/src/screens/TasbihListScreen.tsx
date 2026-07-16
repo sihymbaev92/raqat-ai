@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -11,12 +12,13 @@ import { DHIKR_CHAPTERS } from "../content/dhikrChapters";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TasbihStackParamList } from "../navigation/types";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
-import { loadDhikrItems, effectiveGoalForItem } from "./tasbihShared";
+import { loadDhikrItems } from "./tasbihShared";
 import { pickBestTranslit } from "../utils/translitKk";
 
 type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihList">;
 
 export function TasbihListScreen({ navigation }: Props) {
+  useAppLocale();
   const items = useMemo(() => loadDhikrItems(), []);
   const { colors, isDark } = useAppTheme();
   useTabHomeBackHeader(navigation, colors);
@@ -60,9 +62,8 @@ export function TasbihListScreen({ navigation }: Props) {
     ids.map((id) => {
       const d = items.find((i) => i.id === id);
       if (!d) return null;
-      const g = effectiveGoalForItem(d, null);
       const c = dhikrCounts[id] ?? 0;
-      const show = `${c} / ${g}`;
+      const show = String(c);
       const translit = pickBestTranslit(d.textAr || "", d.translitKk);
       return (
         <View key={id} style={styles.listRowWrap}>

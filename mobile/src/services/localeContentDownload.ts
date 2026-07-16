@@ -1,10 +1,17 @@
 import { Platform } from "react-native";
 import { localeContentPackIds } from "../config/localeContentPacks";
 import type { AppLocale } from "../i18n/runtime";
-import { applyLocale, getCurrentLocale } from "../i18n/runtime";
-import { ensureOfflineAutoTranslationsLoaded } from "./offlineAutoTranslations";
-import { prefetchBundledQuranReader, releaseBundledQuranReaderMemory } from "./bundledQuranReader";
-import { prefetchBundledQuranTranslations, releaseBundledQuranTranslationsMemory } from "./quranOfflineTranslations";
+import {
+  getCurrentLocale,
+  invalidateOfflineLocaleTreeCache,
+  reapplyCurrentLocale,
+} from "../i18n/runtime";
+import {
+  areOfflineAutoTranslationsReady,
+  ensureOfflineAutoTranslationsLoaded,
+} from "./offlineAutoTranslations";
+import { releaseBundledQuranReaderMemory } from "./bundledQuranReader";
+import { releaseBundledQuranTranslationsMemory } from "./quranOfflineTranslations";
 import { canDownloadOverNetwork } from "./networkDownloadGate";
 import {
   downloadContentPack,
@@ -16,22 +23,56 @@ let localeDownloadInflight: Promise<void> | null = null;
 let localeDownloadTarget: AppLocale | null = null;
 
 async function refreshQuranCachesAfterLocalePacks(locale: AppLocale): Promise<void> {
+  /** Prefetch жасамау — келесі Quran ашылғанда lazy load (RAM). */
   releaseBundledQuranReaderMemory({ keepSurahList: true });
-  void prefetchBundledQuranReader();
   if (locale !== "kk" && locale !== "ar") {
     releaseBundledQuranTranslationsMemory();
-    void prefetchBundledQuranTranslations();
   }
 }
 
 async function refreshUiLocaleAfterI18nPack(locale: AppLocale): Promise<void> {
   if (locale === "kk") return;
   try {
-    await ensureOfflineAutoTranslationsLoaded();
-    applyLocale(locale);
+    const target = locale as import("./offlineAutoTranslations").OfflineAutoTranslateTarget;
+    await ensureOfflineAutoTranslationsLoaded(target);
+    if (!areOfflineAutoTranslationsReady()) return;
+    invalidateOfflineLocaleTreeCache(locale);
+    if (getCurrentLocale() === locale) {
+      reapplyCurrentLocale();
+    }
   } catch {
     /* LOCALE_PATCHES fallback */
   }
+}
+
+/**
+ * UI сөздігін жүктеу (тіл ауыстыру / hydrate).
+ * Мобильді дерекпен де рұқсат — тіл таңдау пайдаланушы әрекеті.
+ */
+export async function ensureI18nOfflineDictionary(locale: AppLocale): Promise<boolean> {
+  if (locale === "kk" || Platform.OS === "web") {
+    await ensureOfflineAutoTranslationsLoaded().catch(() => {});
+    return areOfflineAutoTranslationsReady() || locale === "kk";
+  }
+
+  const target = locale as import("./offlineAutoTranslations").OfflineAutoTranslateTarget;
+  await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
+  if (areOfflineAutoTranslationsReady()) {
+    invalidateOfflineLocaleTreeCache(locale);
+    return true;
+  }
+
+  try {
+    if (!(await isContentPackReady("i18n-offline"))) {
+      await downloadContentPack("i18n-offline", { forceAllowMobileData: true });
+    }
+  } catch {
+    /* offline / CDN */
+  }
+
+  await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
+  invalidateOfflineLocaleTreeCache(locale);
+  return areOfflineAutoTranslationsReady();
 }
 
 /** Таңдалған тілдің аударма + транслит pack-терін жүктейді (желі бар болса). */
@@ -40,9 +81,16 @@ export async function downloadLocaleContentPacks(locale: AppLocale): Promise<voi
   for (const packId of packIds) {
     if (await isContentPackReady(packId)) continue;
     const prefs = await loadContentPackPrefs();
-    const gate = await canDownloadOverNetwork(prefs.allowMobileData);
-    if (!gate.ok) return;
-    await downloadContentPack(packId);
+    const forceMobile = packId === "i18n-offline";
+    const gate = await canDownloadOverNetwork(forceMobile || prefs.allowMobileData);
+    if (!gate.ok) {
+      if (packId === "i18n-offline") {
+        /** Тіл UI үшін соңғы әрекет — force. */
+        await downloadContentPack(packId, { forceAllowMobileData: true });
+      }
+      continue;
+    }
+    await downloadContentPack(packId, forceMobile ? { forceAllowMobileData: true } : undefined);
   }
   await refreshQuranCachesAfterLocalePacks(locale);
   await refreshUiLocaleAfterI18nPack(locale);
@@ -54,7 +102,16 @@ export function scheduleLocaleContentDownload(locale?: AppLocale): void {
   if (localeDownloadInflight && localeDownloadTarget === target) return;
   localeDownloadTarget = target;
   setTimeout(() => {
-    localeDownloadInflight = downloadLocaleContentPacks(target)
+    localeDownloadInflight = (async () => {
+      /** Алдымен i18n UI сөздігі — Quran pack-терін күтпей. */
+      if (target !== "kk") {
+        await ensureI18nOfflineDictionary(target);
+        if (getCurrentLocale() === target && areOfflineAutoTranslationsReady()) {
+          reapplyCurrentLocale();
+        }
+      }
+      await downloadLocaleContentPacks(target);
+    })()
       .catch(() => {})
       .finally(() => {
         localeDownloadInflight = null;
@@ -65,9 +122,16 @@ export function scheduleLocaleContentDownload(locale?: AppLocale): void {
 /** Boot: тек сақталған тіл pack-тері (барлық pack емес). */
 export async function maybeAutoDownloadLocaleContentPacksOnBoot(locale: AppLocale): Promise<void> {
   if (Platform.OS === "web") return;
+  if (locale !== "kk") {
+    /** Тіл сақталған болса — i18n pack міндетті (prefs-қа қарамастан). */
+    await ensureI18nOfflineDictionary(locale);
+    if (getCurrentLocale() === locale && areOfflineAutoTranslationsReady()) {
+      reapplyCurrentLocale();
+    }
+  }
   const prefs = await loadContentPackPrefs();
-  if (!prefs.autoDownloadOnWifi) return;
-  const gate = await canDownloadOverNetwork(prefs.allowMobileData);
-  if (!gate.ok) return;
+  if (!prefs.autoDownloadOnWifi && locale === "kk") return;
+  const gate = await canDownloadOverNetwork(prefs.allowMobileData || locale !== "kk");
+  if (!gate.ok && locale === "kk") return;
   scheduleLocaleContentDownload(locale);
 }

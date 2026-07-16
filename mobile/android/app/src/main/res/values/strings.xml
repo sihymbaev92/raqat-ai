@@ -27,7 +27,7 @@
   <string name="widget_prayer_five_dual_description">Бес парыз намаз — екі баған</string>
 
   <string name="widget_prayer_home_strip_label">Намаз</string>
-  <string name="widget_prayer_home_strip_description">Басты экрандағы сияқты: 5 намаз, келесі намаз санағы, құбыла</string>
+  <string name="widget_prayer_home_strip_description">Басты экран: 5 намаз, келесі намаз санағы, қара фон</string>
 
   <string name="widget_qibla_a11y">Құбыла</string>
   <string name="widget_city_a11y">Қала</string>

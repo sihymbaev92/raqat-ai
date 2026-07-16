@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -7,13 +8,14 @@ import { RasterImage } from "@/ui/RasterImage";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { openOfficialSiteInApp } from "../config/officialSiteProxy";
 import type { MoreStackParamList } from "../navigation/types";
 import { InformationalToolBanner } from "../components/InformationalToolBanner";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KbArticleDetail">;
 
-export function KbArticleDetailScreen({ route }: Props) {
+export function KbArticleDetailScreen({ route, navigation }: Props) {
+  useAppLocale();
   const { article } = route.params;
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -40,7 +42,7 @@ export function KbArticleDetailScreen({ route }: Props) {
 
       {article.url ? (
         <Pressable
-          onPress={() => openOfficialSiteExternally(article.url)}
+          onPress={() => openOfficialSiteInApp(article.url, navigation)}
           style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.92 }]}
           accessibilityRole="link"
           accessibilityLabel={kk.knowledgePortal.openFullOnSiteA11y(article.title)}

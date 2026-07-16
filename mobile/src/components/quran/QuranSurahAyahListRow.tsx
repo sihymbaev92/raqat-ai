@@ -16,6 +16,7 @@ import { AyahArabicKaraokeText } from "./AyahArabicKaraokeText";
 import { buildQuranArabicFlowMetrics, QuranArabicFlowRoot } from "./QuranArabicAyahFlow";
 import { quranSurahArabicWrapStyle } from "../../quran/quranResponsiveLayout";
 import { kk } from "../../i18n/kk";
+import { useAppLocale, type AppLocale } from "../../i18n/runtime";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import {
@@ -24,7 +25,6 @@ import {
   type CachedAyah,
 } from "../../storage/quranSurahCache";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
-import type { AppLocale } from "../../i18n/runtime";
 
 export type QuranSurahAyahListRowStyles = {
   ayahRow: ViewStyle;
@@ -84,8 +84,9 @@ function QuranSurahAyahListRowInner({
   onPlay,
   onLongPress,
 }: Props) {
+  useAppLocale();
   const ayahN = item.numberInSurah;
-  const kkLine = quranAyahMeaningForLocale(item, locale);
+  const kkLine = quranAyahMeaningForLocale({ ...item, surahNumber }, locale);
   const kirilRead = useMemo(
     () =>
       getQuranTranslitOverride(surahNumber, ayahN) ??

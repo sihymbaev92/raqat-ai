@@ -1,60 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  Modal,
-  StyleSheet,
-  TextInput,
-  Platform,
-  ScrollView
-} from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import * as Google from "expo-auth-session/providers/google";
 import * as AppleAuthentication from "expo-apple-authentication";
 import * as WebBrowser from "expo-web-browser";
-import * as Clipboard from "expo-clipboard";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getExpoExtra } from "../config/expoExtra";
-import {
-  postAuthLinkCodeMint,
-  postAuthLogin,
-  postAuthOauthApple,
-  postAuthOauthGoogle,
-  postAuthPhoneStart,
-  postAuthPhoneVerify,
-  type AuthLoginResponse,
-} from "../services/platformApiClient";
-import {
-  saveLoginTokens,
-  clearLoginTokens,
-  getStoredAccessToken,
-  getStoredPlatformUserId,
-} from "../storage/authTokens";
-import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
+import { postAuthOauthApple, postAuthOauthGoogle, type AuthLoginResponse } from "../services/platformApiClient";
+import { saveLoginTokens } from "../storage/authTokens";
+import { syncAccountDataWithServerBidirectional } from "../services/accountSync";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
-import type { HomeTabCompositeNavigation } from "../navigation/types";
-import { navigateToAppSettings } from "../navigation/navigateToSettings";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 WebBrowser.maybeCompleteAuthSession();
-
-type Props = {
-  visible: boolean;
-  onClose: () => void;
-  navigation: HomeTabCompositeNavigation;
-};
-
-function normalizePhoneInput(raw: string): string {
-  let t = raw.trim().replace(/\s/g, "");
-  if (!t) return t;
-  if (!t.startsWith("+")) {
-    if (t.startsWith("8") && t.length >= 10) t = `+7${t.slice(1)}`;
-    else if (/^\d+$/.test(t)) t = `+${t}`;
-  }
-  return t;
-}
 
 function apiErrorMessage(body: unknown): string | null {
   if (!body || typeof body !== "object") return null;
@@ -81,7 +42,7 @@ async function applyAuthSuccess(r: AuthLoginResponse): Promise<boolean> {
     expires_in: r.expires_in,
     platform_user_id: r.platform_user_id,
   });
-  await syncHatimWithServerBidirectional();
+  await syncAccountDataWithServerBidirectional();
   return true;
 }
 
@@ -111,6 +72,7 @@ function GoogleSignInWithRequest({
     androidClientId?: string;
   };
 }) {
+  useAppLocale();
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest(cfg);
   const successRef = useRef(onSuccess);
   successRef.current = onSuccess;
@@ -277,407 +239,8 @@ export function AppleSignInButton({
   );
 }
 
-export function AccountLoginModal({ visible, onClose, navigation }: Props) {
-  const { colors } = useAppTheme();
-  const styles = makeStyles(colors);
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [challengeId, setChallengeId] = useState<string | null>(null);
-  const [user, setUser] = useState("");
-  const [pass, setPass] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [pid, setPid] = useState<string | null>(null);
-  const [showAdmin, setShowAdmin] = useState(false);
-  const [linkCode, setLinkCode] = useState<string | null>(null);
-  const [linkCodeTtl, setLinkCodeTtl] = useState<number | null>(null);
-
-  const loadPid = useCallback(async () => {
-    setPid(await getStoredPlatformUserId());
-  }, []);
-
-  useEffect(() => {
-    if (visible) void loadPid();
-  }, [visible, loadPid]);
-
-  const afterLoginOk = useCallback(async () => {
-    setMsg(kk.account.loginOk);
-    setPid(await getStoredPlatformUserId());
-    setOtp("");
-    setChallengeId(null);
-    setPass("");
-  }, []);
-
-  const onSendOtp = async () => {
-    const base = getRaqatApiBase();
-    if (!base) {
-      setMsg(kk.account.apiMissing);
-      return;
-    }
-    const p = normalizePhoneInput(phone);
-    setBusy(true);
-    setMsg(null);
-    try {
-      const r = await postAuthPhoneStart(base, p);
-      if (r.status === 503) {
-        setMsg(kk.account.phoneSmsUnavailable);
-        setChallengeId(null);
-        return;
-      }
-      if (!r.ok || !r.challenge_id) {
-        setMsg(apiErrorMessage(r) ?? kk.account.loginFail);
-        setChallengeId(null);
-        return;
-      }
-      setChallengeId(r.challenge_id);
-      if (r.dev_otp) {
-        setMsg(`Dev: код ${r.dev_otp}`);
-      } else {
-        setMsg("SMS жіберілді (кодты енгізіңіз).");
-      }
-    } catch {
-      setMsg(kk.account.loginFail);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onVerifyPhone = async () => {
-    const base = getRaqatApiBase();
-    if (!base || !challengeId) {
-      setMsg(challengeId ? kk.account.apiMissing : "Алдымен код алыңыз.");
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      const r = await postAuthPhoneVerify(base, challengeId, otp);
-      if (await applyAuthSuccess(r)) {
-        await afterLoginOk();
-      } else {
-        setMsg(apiErrorMessage(r) ?? kk.account.loginFail);
-      }
-    } catch {
-      setMsg(kk.account.loginFail);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onAdminLogin = async () => {
-    const base = getRaqatApiBase();
-    if (!base) {
-      setMsg(kk.account.apiMissing);
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      const r = await postAuthLogin(base, user, pass);
-      if (await applyAuthSuccess(r)) {
-        await afterLoginOk();
-      } else {
-        setMsg(kk.account.loginFail);
-      }
-    } catch {
-      setMsg(kk.account.loginFail);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onLogout = async () => {
-    setBusy(true);
-    try {
-      await clearLoginTokens();
-      setPid(null);
-      setLinkCode(null);
-      setLinkCodeTtl(null);
-      setMsg(kk.account.loggedOut);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onMintTelegramLinkCode = async () => {
-    const base = getRaqatApiBase();
-    const access = await getStoredAccessToken();
-    if (!base) {
-      setMsg(kk.account.apiMissing);
-      return;
-    }
-    if (!access) {
-      setMsg(kk.account.telegramLinkNeedLogin);
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      const r = await postAuthLinkCodeMint(base, access);
-      if (r.ok && r.code) {
-        setLinkCode(r.code);
-        setLinkCodeTtl(typeof r.expires_in === "number" ? r.expires_in : 600);
-        setMsg(kk.account.telegramLinkCodeReady);
-        return;
-      }
-      setMsg(apiErrorMessage(r) ?? kk.account.telegramLinkCodeFail);
-    } catch {
-      setMsg(kk.account.telegramLinkCodeFail);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const onCopyLinkCode = async () => {
-    if (!linkCode) return;
-    await Clipboard.setStringAsync(linkCode);
-    setMsg(kk.account.telegramLinkCodeCopied);
-  };
-
-  const goSettings = () => {
-    onClose();
-    navigateToAppSettings(navigation);
-  };
-  const showGoogle = isGoogleSignInConfigured();
-  const showApple = Platform.OS === "ios";
-  const showPasswordLogin = __DEV__;
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <Text style={styles.title}>{kk.account.title}</Text>
-            {pid ? (
-              <Text style={styles.pid}>
-                {kk.account.userId}: {pid}
-              </Text>
-            ) : (
-              <Text style={styles.hint}>{kk.account.guestHint}</Text>
-            )}
-
-            <Text style={styles.section}>{kk.account.phoneE164}</Text>
-            <TextInput
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoComplete="tel"
-              style={styles.input}
-              placeholder={kk.account.phonePlaceholder}
-              placeholderTextColor={colors.muted}
-              editable={!busy}
-            />
-            <View style={styles.row}>
-              <Pressable
-                style={[styles.secondary, styles.rowBtn, busy && { opacity: 0.7 }]}
-                onPress={() => void onSendOtp()}
-                disabled={busy}
-              >
-                <Text style={styles.secondaryTxt}>{kk.account.sendOtp}</Text>
-              </Pressable>
-            </View>
-
-            <Text style={styles.section}>{kk.account.otpCode}</Text>
-            <TextInput
-              value={otp}
-              onChangeText={setOtp}
-              keyboardType="number-pad"
-              maxLength={8}
-              style={styles.input}
-              placeholder={kk.account.otpPlaceholder}
-              placeholderTextColor={colors.muted}
-              editable={!busy}
-            />
-            <Pressable
-              style={[styles.primary, busy && { opacity: 0.7 }]}
-              onPress={() => void onVerifyPhone()}
-              disabled={busy || !challengeId}
-            >
-              {busy ? (
-                <RaqatOrnamentSpinner size={24} />
-              ) : (
-                <Text style={styles.primaryTxt}>{kk.account.verifyPhone}</Text>
-              )}
-            </Pressable>
-
-            {showGoogle || showApple ? (
-              <>
-                <Text style={styles.divider}>— {kk.common.or} —</Text>
-
-                {showGoogle ? (
-                  <GoogleSignInBlock
-                    busy={busy}
-                    onError={setMsg}
-                    onSuccess={() => void afterLoginOk()}
-                  />
-                ) : null}
-
-                <AppleSignInButton
-                  busy={busy}
-                  onError={setMsg}
-                  onSuccess={() => void afterLoginOk()}
-                />
-              </>
-            ) : null}
-
-            {pid ? (
-              <>
-                <Text style={styles.section}>{kk.account.telegramLinkTitle}</Text>
-                <Text style={styles.hint}>{kk.account.telegramLinkHint}</Text>
-                {linkCode ? (
-                  <View style={styles.linkCodeBox}>
-                    <Text style={styles.linkCodeDigits}>{linkCode}</Text>
-                    {linkCodeTtl ? (
-                      <Text style={styles.linkCodeTtl}>
-                        {kk.account.telegramLinkExpires.replace("{sec}", String(linkCodeTtl))}
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : null}
-                <View style={styles.row}>
-                  <Pressable
-                    style={[styles.secondary, styles.rowBtn, busy && { opacity: 0.7 }]}
-                    onPress={() => void onMintTelegramLinkCode()}
-                    disabled={busy}
-                  >
-                    <Text style={styles.secondaryTxt}>{kk.account.telegramLinkGetCode}</Text>
-                  </Pressable>
-                  {linkCode ? (
-                    <Pressable
-                      style={[styles.secondary, styles.rowBtn, busy && { opacity: 0.7 }]}
-                      onPress={() => void onCopyLinkCode()}
-                      disabled={busy}
-                    >
-                      <Text style={styles.secondaryTxt}>{kk.account.telegramLinkCopy}</Text>
-                    </Pressable>
-                  ) : null}
-                </View>
-              </>
-            ) : null}
-
-            {msg ? <Text style={styles.msg}>{msg}</Text> : null}
-
-            {showPasswordLogin ? (
-              <Pressable style={styles.expand} onPress={() => setShowAdmin((v) => !v)}>
-                <Text style={styles.expandTxt}>
-                  {showAdmin ? kk.account.collapseAdminLogin : kk.account.expandAdminLogin}
-                </Text>
-              </Pressable>
-            ) : null}
-
-            {showPasswordLogin && showAdmin ? (
-              <>
-                <Text style={styles.label}>{kk.account.username}</Text>
-                <TextInput
-                  value={user}
-                  onChangeText={setUser}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  style={styles.input}
-                  placeholderTextColor={colors.muted}
-                  editable={!busy}
-                />
-                <Text style={styles.label}>{kk.account.password}</Text>
-                <TextInput
-                  value={pass}
-                  onChangeText={setPass}
-                  secureTextEntry
-                  style={styles.input}
-                  placeholderTextColor={colors.muted}
-                  editable={!busy}
-                />
-                <Pressable
-                  style={[styles.primary, busy && { opacity: 0.7 }]}
-                  onPress={() => void onAdminLogin()}
-                  disabled={busy || !user.trim() || !pass}
-                >
-                  {busy ? (
-                    <RaqatOrnamentSpinner size={24} />
-                  ) : (
-                    <Text style={styles.primaryTxt}>{kk.account.signIn}</Text>
-                  )}
-                </Pressable>
-              </>
-            ) : null}
-
-            {pid ? (
-              <Pressable style={styles.secondary} onPress={() => void onLogout()} disabled={busy}>
-                <Text style={styles.secondaryTxt}>{kk.account.signOut}</Text>
-              </Pressable>
-            ) : null}
-
-            <Pressable style={styles.secondary} onPress={goSettings}>
-              <Text style={styles.secondaryTxt}>{kk.settings.title}</Text>
-            </Pressable>
-
-            <Pressable style={styles.close} onPress={onClose}>
-              <Text style={styles.closeTxt}>{kk.common.cancel}</Text>
-            </Pressable>
-          </ScrollView>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    backdrop: {
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.45)",
-      justifyContent: "flex-end",
-    },
-    sheet: {
-      maxHeight: "92%",
-      backgroundColor: colors.card,
-      borderTopLeftRadius: 16,
-      borderTopRightRadius: 16,
-      padding: 20,
-      paddingBottom: Platform.OS === "ios" ? 28 : 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    title: { fontSize: 18, fontWeight: "800", color: colors.text, marginBottom: 8 },
-    pid: { color: colors.accent, fontSize: 12, marginBottom: 8 },
-    hint: { color: colors.muted, fontSize: 13, marginBottom: 12, lineHeight: 18 },
-    section: { color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 6, marginTop: 4 },
-    label: { color: colors.muted, fontSize: 12, fontWeight: "700", marginBottom: 6 },
-    input: {
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: Platform.OS === "ios" ? 12 : 10,
-      color: colors.text,
-      marginBottom: 10,
-      backgroundColor: colors.bg,
-    },
-    row: { flexDirection: "row", gap: 8 },
-    rowBtn: { flex: 1, marginTop: 0, marginBottom: 8 },
-    msg: { color: colors.accent, fontSize: 13, marginBottom: 10, marginTop: 6 },
-    primary: {
-      backgroundColor: colors.accent,
-      borderRadius: 12,
-      paddingVertical: 14,
-      alignItems: "center",
-      marginTop: 4,
-    },
-    primaryTxt: { color: "#fff", fontWeight: "800", fontSize: 16 },
-    secondary: {
-      marginTop: 10,
-      paddingVertical: 12,
-      alignItems: "center",
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    secondaryTxt: { color: colors.text, fontWeight: "700" },
-    divider: {
-      textAlign: "center",
-      color: colors.muted,
-      fontSize: 12,
-      marginVertical: 14,
-    },
     oauthBtn: {
       borderRadius: 12,
       paddingVertical: 14,
@@ -694,26 +257,5 @@ function makeStyles(colors: ThemeColors) {
     oauthApple: { backgroundColor: "#000" },
     oauthBtnTxt: { color: "#1a1a1a", fontWeight: "800", fontSize: 15 },
     oauthBtnTxtDark: { color: "#fff", fontWeight: "800", fontSize: 15 },
-    oauthHint: { color: colors.muted, fontSize: 11, marginTop: 6, textAlign: "center", paddingHorizontal: 8 },
-    expand: { marginTop: 6, paddingVertical: 8 },
-    expandTxt: { color: colors.muted, fontWeight: "600", textAlign: "center", fontSize: 13 },
-    close: { marginTop: 14, alignItems: "center", paddingVertical: 8 },
-    closeTxt: { color: colors.muted, fontWeight: "600" },
-    linkCodeBox: {
-      alignItems: "center",
-      paddingVertical: 12,
-      marginBottom: 8,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.bg,
-    },
-    linkCodeDigits: {
-      fontSize: 32,
-      fontWeight: "800",
-      letterSpacing: 8,
-      color: colors.accent,
-    },
-    linkCodeTtl: { marginTop: 6, fontSize: 12, color: colors.muted },
   });
 }

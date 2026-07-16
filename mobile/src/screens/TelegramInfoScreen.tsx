@@ -6,8 +6,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import type { MoreStackParamList } from "../navigation/types";
 import { IMAM_AI_ASSISTANT_KK } from "../i18n/kk";
-import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
-import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
+import { useI18n } from "../i18n/useI18n";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "TelegramInfo">;
@@ -18,30 +17,27 @@ const BOT = "https://t.me/my_islamic_ai_bot";
 export function TelegramInfoScreen({ navigation }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { tr, translated } = useKkAutoTranslator();
+  const t = useI18n();
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.h1}>{tr("Telegram бот")}</Text>
+      <Text style={styles.h1}>{t.navigation.telegramInfo.title}</Text>
       <Text style={styles.p}>
-        {tr(
-          "Құран іздеу, хадис, тәжуид, хатым, намаз бөлімі, дәрет, құбыла, тәсбих, дауыспен командалар"
-        )}{" "}
-        {IMAM_AI_ASSISTANT_KK} — {tr("толық жинағы ботта.")}
+        {t.navigation.telegramInfo.featuresLine}{" "}
+        {IMAM_AI_ASSISTANT_KK} — {t.navigation.telegramInfo.botCollectionSuffix}
       </Text>
       <Text style={styles.p}>
-        {tr("Мобильді қосымша офлайн кеш, хабарламалар және Құран мәтінімен толықтырылады.")}
+        {t.navigation.telegramInfo.mobileExtra}
       </Text>
       <Pressable
         style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
         onPress={() => Linking.openURL(BOT)}
       >
-        <Text style={styles.btnText}>{tr("Ботты ашу")}</Text>
+        <Text style={styles.btnText}>{t.navigation.telegramInfo.openBot}</Text>
       </Pressable>
       <Pressable onPress={() => navigation.goBack()}>
-        <Text style={styles.back}>← {tr("Артқа")}</Text>
+        <Text style={styles.back}>← {t.common.back}</Text>
       </Pressable>
-      <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </ScrollView>
   );
 }

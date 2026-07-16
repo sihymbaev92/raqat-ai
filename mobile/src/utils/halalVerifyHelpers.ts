@@ -83,10 +83,18 @@ export function fastSeedProductsForQuery(query: string, status?: string): HalalD
   const q = query.trim();
   if (q.length < 2) return [];
   const digits = q.replace(/\D/g, "");
-  const seed = mergeHalalProductItems(
-    digits.length >= 8 ? lookupHalalProductsSeedByBarcode(digits) : [],
-    searchHalalProductsSeed(digits || q, INSTANT_HALAL_SEARCH_LIMIT),
-  );
+  const barcodeHits = digits.length >= 4 ? lookupHalalProductsSeedByBarcode(digits) : [];
+  const textHits =
+    digits.length >= 4 && digits.length === q.replace(/\s/g, "").length
+      ? []
+      : searchHalalProductsSeed(digits || q, INSTANT_HALAL_SEARCH_LIMIT);
+  const seed = mergeHalalProductItems(barcodeHits, textHits);
   const s = status?.trim().toLowerCase();
-  return s ? seed.filter((p) => (p.certificateStatus ?? "").toLowerCase() === s) : seed;
+  if (!s) return seed;
+  return seed.filter(
+    (p) =>
+      p.fromRaqatSeed === true ||
+      p.verificationStatus === "raqat_reference" ||
+      (p.certificateStatus ?? "").toLowerCase() === s
+  );
 }

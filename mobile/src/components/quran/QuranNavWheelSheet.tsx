@@ -26,6 +26,7 @@ import {
   type QuranNavCoords,
 } from "../../quran/quranNavPickerCoords";
 import { modalSheetBottomPadding } from "../../utils/modalSheetInsets";
+import { useAppLocale } from "../../i18n/runtime";
 
 const ITEM_H = 44;
 const WHEEL_ROWS = 5;
@@ -169,6 +170,7 @@ export function QuranNavWheelSheet({
   onClose,
   onApply,
 }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const sheetBottomPad = modalSheetBottomPadding(insets);
   const juzPageOnly = columns === "juz-page";

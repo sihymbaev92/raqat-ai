@@ -8,7 +8,11 @@ export function quranTranslationAttributionForLocale(locale: AppLocale): string 
     case "ru":
       return "Перевод смысла: Эльмир Кулиев";
     case "en":
-      return "Meaning: Erlan Alimuly (Kazakh translation)";
+      return "Meaning: Sahih International";
+    case "ky":
+      return "Meaning: Hakimov (КМДБ)";
+    case "uz":
+      return "Meaning: Sodik (QMDB)";
     default:
       return "Meaning: Erlan Alimuly (Kazakh translation)";
   }

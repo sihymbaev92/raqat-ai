@@ -1,5 +1,5 @@
-import React, { useLayoutEffect, useMemo } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -8,21 +8,38 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { MoreStackParamList } from "../navigation/types";
 import { getAuthorById, getDisplayEntriesByAuthorId, type GreatWordsEntry } from "../content/greatWordsCatalog";
+import { useGreatWordsCatalogReady } from "../content/useGreatWordsCatalogReady";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KazakhGreatWordsAuthor">;
 
 export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
+  useAppLocale();
   const { authorId } = route.params;
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { tr, translated } = useKkAutoTranslator();
   const g = kk.features.greatWordsGuide;
-  const author = getAuthorById(authorId);
-  const entries = useMemo(() => getDisplayEntriesByAuthorId(authorId), [authorId]);
+  const { ready: catalogReady, loading: catalogLoading } = useGreatWordsCatalogReady();
+  const [catalogTick, setCatalogTick] = useState(0);
+  useEffect(() => {
+    if (catalogReady) setCatalogTick((n) => n + 1);
+  }, [catalogReady]);
+  const author = useMemo(() => getAuthorById(authorId), [authorId, catalogTick]);
+  const entries = useMemo(() => getDisplayEntriesByAuthorId(authorId), [authorId, catalogTick]);
 
   useLayoutEffect(() => {
     navigation.setOptions({ title: author?.name ?? g.authorWorksTitle });
   }, [navigation, author?.name, g.authorWorksTitle]);
+
+  if (catalogLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.accent} />
+        <Text style={styles.muted}>{tr(g.loadingCatalog)}</Text>
+      </View>
+    );
+  }
 
   if (!author) {
     return (
@@ -76,34 +93,24 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
-    center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
-    muted: { color: colors.muted, fontSize: 15 },
-    header: {
-      padding: 16,
-      paddingBottom: 8,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    name: { fontSize: 20, fontWeight: "900", color: colors.text },
-    period: { fontSize: 12, color: colors.accent, fontWeight: "800", marginTop: 4 },
-    bio: { fontSize: 13, lineHeight: 20, color: colors.muted, marginTop: 10 },
-    count: { fontSize: 12, fontWeight: "700", color: colors.text, marginTop: 10 },
-    listPad: { padding: 16, paddingBottom: 40 },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", gap: 10, padding: 24 },
+    muted: { fontSize: 15, color: colors.muted, textAlign: "center" },
+    header: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8 },
+    name: { fontSize: 22, fontWeight: "900", color: colors.text },
+    period: { fontSize: 13, color: colors.muted, marginTop: 4 },
+    bio: { fontSize: 14, lineHeight: 21, color: colors.text, marginTop: 10 },
+    count: { fontSize: 13, fontWeight: "700", color: colors.accent, marginTop: 10 },
+    listPad: { paddingHorizontal: 16, paddingBottom: 24 },
     row: {
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 14,
-      marginBottom: 8,
       gap: 8,
+      paddingVertical: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
-    rowTitle: { flex: 1, fontSize: 15, fontWeight: "700", color: colors.text },
-    rowSub: { fontSize: 11, fontWeight: "800", color: colors.accent },
-    rowChev: { fontSize: 20, color: colors.muted, fontWeight: "200" },
+    rowTitle: { flex: 1, fontSize: 16, fontWeight: "800", color: colors.text },
+    rowSub: { fontSize: 12, color: colors.muted },
+    rowChev: { fontSize: 22, color: colors.muted },
   });
 }

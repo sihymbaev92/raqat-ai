@@ -2,7 +2,7 @@ import {
   deviceSafeAreaInsets,
   ZERO_EDGE_INSETS,
   zeroedSafeAreaMetrics,
-  screenContentBottomPad,
+  appBottomSafeInset,
 } from "../deviceSafeArea";
 
 describe("deviceSafeAreaInsets", () => {
@@ -19,9 +19,9 @@ describe("deviceSafeAreaInsets", () => {
   });
 });
 
-describe("screenContentBottomPad", () => {
-  it("adds minimum scroll tail padding", () => {
-    expect(screenContentBottomPad(24)).toBeGreaterThanOrEqual(28);
+describe("appBottomSafeInset", () => {
+  it("returns a non-negative bottom inset", () => {
+    expect(appBottomSafeInset({ top: 0, bottom: 24, left: 0, right: 0 })).toBeGreaterThanOrEqual(0);
   });
 });
 

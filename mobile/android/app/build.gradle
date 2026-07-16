@@ -108,8 +108,8 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // app.config.js android.versionCode + expo.version (синхрон ұстаңыз)
-        versionCode 10
-        versionName "1.1.0"
+        versionCode 11
+        versionName "1.1.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
@@ -138,7 +138,21 @@ android {
             signingConfig signingConfigs.debug
         }
         release {
-            // Play: `android/keystore.properties` + JKS. Жоқ болса, әлі де debug кілті (ішткі APK үшін ғана).
+            // Play: `android/keystore.properties` + JKS.
+            // Debug кілтімен release — тек ішкі QA; Play/сыртқы таратуға жарамсыз.
+            if (!hasPlayReleaseKeystore) {
+                def allowDebugSign = (findProperty('raqat.allowDebugReleaseSign') ?: 'true').toBoolean()
+                if (!allowDebugSign) {
+                    throw new GradleException(
+                        "Release keystore required (android/keystore.properties). " +
+                        "Or pass -Praqat.allowDebugReleaseSign=true for internal QA only."
+                    )
+                }
+                logger.warn(
+                    "SECURITY: release APK is signed with the DEBUG keystore. " +
+                    "Do not publish this build. Add android/keystore.properties for Play."
+                )
+            }
             signingConfig hasPlayReleaseKeystore ? signingConfigs.release : signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
@@ -171,7 +185,7 @@ android {
 
 tasks.register("copyPrayerAzanRawResources", Copy) {
     doFirst {
-        def expected = ["prayer_azan_user_01.mp3"]
+        def expected = ["prayer_azan_user_01.mp3", "prayer_azan_dua_01.mp3"]
         def missing = expected.findAll { !file("$projectRoot/assets/sounds/$it").isFile() }
         if (!missing.isEmpty()) {
             throw new GradleException(
@@ -182,6 +196,7 @@ tasks.register("copyPrayerAzanRawResources", Copy) {
     }
     from("$projectRoot/assets/sounds") {
         include "prayer_azan_user_*.mp3"
+        include "prayer_azan_dua_*.mp3"
     }
     into("$generatedPrayerAzanResDir/raw")
 }

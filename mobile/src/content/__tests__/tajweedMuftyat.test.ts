@@ -17,7 +17,11 @@ describe("tajweedMuftyat", () => {
     expect(TAJWEED_MUFTYAT_PAGES[0].page).toBe(1);
     expect(TAJWEED_MUFTYAT_PAGES[103].page).toBe(104);
     for (const p of TAJWEED_MUFTYAT_PAGES) {
-      expect(p.source).toBeTruthy();
+      expect(p.source).toEqual(
+        expect.objectContaining({
+          uri: expect.stringMatching(/\/muftyat\/page-\d{3}\.jpg$/),
+        })
+      );
     }
   });
 

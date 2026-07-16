@@ -126,7 +126,19 @@ if (-not (Test-Path $networkSecurity)) {
 }
 $networkSecurityText = Get-Content $networkSecurity -Raw
 if ($networkSecurityText -match 'cleartextTrafficPermitted\s*=\s*"true"') {
-  Fail "Play release network security config ішінде cleartextTrafficPermitted=true бар. Release HTTPS-only болуы керек."
+  $cleartextBlocks = [regex]::Matches(
+    $networkSecurityText,
+    '<domain-config[^>]*cleartextTrafficPermitted\s*=\s*"true"[^>]*>.*?</domain-config>',
+    [System.Text.RegularExpressions.RegexOptions]::Singleline
+  )
+  foreach ($block in $cleartextBlocks) {
+    if ($block.Value -notmatch 'live\.net\.sa') {
+      Fail ("Play release network security config contains unauthorized cleartext domain-config:`n{0}`nOnly live.net.sa (Kaaba HLS) is allowed in release." -f $block.Value)
+    }
+  }
+  if ($cleartextBlocks.Count -eq 0) {
+    Fail "Play release network security config ішінде cleartextTrafficPermitted=true бар. Release HTTPS-only болуы керек."
+  }
 }
 Write-Host "Network security: HTTPS-only OK"
 
@@ -147,5 +159,38 @@ Write-Host ""
 Write-Host "Upload target:"
 Write-Host "Play Console -> Testing -> Internal testing -> Create release -> upload app-release.aab"
 Write-Host "Data safety/privacy declarations: docs/RELEASE_1MIN_CHECKLIST.md"
+
+# APK size budget (warn gate — blocks handoff when APK is present)
+$apkCandidates = @(
+  (Join-Path $mobileDir "android\app\build\outputs\apk\release\app-release.apk"),
+  (Join-Path $mobileDir "raqat-release-latest.apk")
+)
+$apkFile = $apkCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ($apkFile) {
+  $apkMb = (Get-Item $apkFile).Length / 1MB
+  $budgetJson = Join-Path $mobileDir "src\config\releaseFocusBudgets.ts"
+  $apkWarnMb = 145
+  $apkTargetMb = 80
+  if (Test-Path $budgetJson) {
+    $budgetText = Get-Content $budgetJson -Raw
+    if ($budgetText -match 'apkWarnMb:\s*(\d+)') {
+      $apkWarnMb = [int]$Matches[1]
+    }
+    if ($budgetText -match 'apkTargetMb:\s*(\d+)') {
+      $apkTargetMb = [int]$Matches[1]
+    }
+  }
+  Write-Host ("APK size: {0:N2} MB (target {1} MB, warn {2} MB)" -f $apkMb, $apkTargetMb, $apkWarnMb)
+  if ($apkMb -gt $apkTargetMb) {
+    Write-Warning ("APK size {0:N2} MB exceeds freeze target {1} MB — prune assets or use npm run build:apk." -f $apkMb, $apkTargetMb)
+  }
+  if ($apkMb -gt $apkWarnMb) {
+    Fail ("APK size {0:N2} MB exceeds budget warn gate {1} MB. Prune assets or split bundles before Play handoff." -f $apkMb, $apkWarnMb)
+  }
+  Write-Host "APK size budget: OK"
+} else {
+  Write-Warning "Release APK not found — skipped APK size budget check. Build with `npm run build:apk` for full gate."
+}
+
 Write-Host "OK: local Play readiness passed"
 

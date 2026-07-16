@@ -35,6 +35,7 @@ import {
   type HadithLetterSection,
 } from "../utils/hadithLetterSections";
 import { resolveHadithGradeText } from "../content/hadithGrade";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "HadithList">;
@@ -227,6 +228,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       backgroundColor: "transparent",
       overflow: "hidden",
     },
+    badgeMuted: { fontStyle: "italic", opacity: 0.88 },
     preview: { color: text, fontSize: 14, marginTop: 8, lineHeight: 20 },
     previewAr: {
       fontSize: 12,
@@ -357,6 +359,9 @@ const HadithRow = memo(function HadithRow({
       <View style={styles.badgesRow}>
         <Text style={styles.badge}>{kk.hadith.sourceBadge(item.collectionNameKk || "—")}</Text>
         <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
+        {item.sourceOnly ? (
+          <Text style={[styles.badge, styles.badgeMuted]}>{kk.hadith.corpusArabicOnlyBadge}</Text>
+        ) : null}
       </View>
       <Text
         style={styles.preview}
@@ -369,6 +374,7 @@ const HadithRow = memo(function HadithRow({
 });
 
 export function HadithListScreen({ navigation }: Props) {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const [corpus, setCorpus] = useState<HadithCorpus | null>(null);
   /** Бөлу аяқталғанша тізім дерегі null болуы мүмкін (синхрон useMemo орнына). */

@@ -3,6 +3,11 @@ import { BackHandler, Platform } from "react-native";
 import type { NavigationProp, ParamListBase } from "@react-navigation/native";
 import { useHardwareBackPress } from "./useHardwareBackPress";
 
+/** @internal test / legacy alias */
+export function popMoreStackScreen(navigation: NavigationProp<ParamListBase>): boolean {
+  return popMoreStackOnly(navigation);
+}
+
 function popMoreStackOnly(navigation: NavigationProp<ParamListBase>): boolean {
   const state = navigation.getState();
   const canPopInnerStack = (state.index ?? 0) > 0;

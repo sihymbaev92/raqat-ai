@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 import {
   getHajjTourAgencies,
   type HajjTourAgency,
@@ -101,6 +102,7 @@ function AgencyRow({
 }
 
 export function HajjTourAgenciesPanel({ colors, tr }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makePanelStyles(colors), [colors]);
   const agencies = useMemo(() => getHajjTourAgencies(), []);
   const [expanded, setExpanded] = useState(false);

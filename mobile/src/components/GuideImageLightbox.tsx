@@ -22,6 +22,7 @@ import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetA
 import { ZoomableImageContent } from "./zoom/ZoomableImageContent";
 import { kk } from "../i18n/kk";
 import { modalSafeAreaInsets } from "../theme/modalSafeArea";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   source: ImageSourcePropType;
@@ -68,6 +69,7 @@ export function GuideImageLightbox({
   maxThumbHeightRatio = 0.48,
   thumbResizeMultiplier,
 }: Props) {
+  useAppLocale();
   const [open, setOpen] = useState(false);
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);

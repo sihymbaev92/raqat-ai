@@ -5,7 +5,7 @@ import { TRADITION_TOPICS } from "../traditionTopicsCatalog";
 import { SEERAH_LESSONS, SEERAH_PHASES, seerahOfflineCharCount } from "../seerahCurriculum";
 import { SEERAH_LESSON_COUNT } from "../../config/seerahVideos";
 import { GUIDANCE_DEPTH_MINIMUMS } from "../moduleContentDepth";
-import { getKmdbHadithExcerptItems } from "../kmdbHadithExcerptCatalog";
+import { getKzTrustedHadithItems } from "../kzTrustedHadithCatalog";
 import { loadDhikrItems } from "../../screens/tasbihShared";
 
 describe("module content depth parity", () => {
@@ -46,6 +46,12 @@ describe("module content depth parity", () => {
     /* eslint-enable @typescript-eslint/no-require-imports */
     expect(asma.length).toBeGreaterThanOrEqual(mins.asma.names);
 
-    expect(getKmdbHadithExcerptItems().length).toBeGreaterThanOrEqual(mins.hadith.items);
+    const hadiths = getKzTrustedHadithItems();
+    expect(hadiths.length).toBeGreaterThanOrEqual(mins.hadith.items);
+    for (const h of hadiths) {
+      expect(h.arabic.trim().length).toBeGreaterThan(10);
+      expect(h.textKk.trim().length).toBeGreaterThan(20);
+      expect(h.sourceCitationKk.trim().length).toBeGreaterThan(5);
+    }
   });
 });

@@ -1,13 +1,19 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { CompositeNavigationProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { HalalHubWebTabId } from "../config/halalHubWebTabs";
+import type { KmdbHubWebTabId } from "../config/kmdbHubWebTabs";
 import type { OfficialIslamicSourceId } from "../config/officialIslamicSources";
 import type { PlatformIslamicKbArticle } from "../services/platformApiClient";
 
 export type MoreStackParamList = {
   /** Мазмұн тізімі (басты бет тайлдары өзгермейді). */
   ContentHub: undefined;
-  KmdbHub: undefined;
+  KmdbHub:
+    | {
+        initialTab?: KmdbHubWebTabId;
+      }
+    | undefined;
   Seerah: undefined;
   QuranList: undefined;
   QuranSurah: {
@@ -23,14 +29,21 @@ export type MoreStackParamList = {
     hatimOpenReaderPrefs?: boolean;
   };
   Duas: undefined;
+  /** Платформадағы ортақ дұғалар · әмин */
+  CommunityDua: undefined;
   TelegramInfo: undefined;
-  /** iOS: Siri + Жарлықтар арқылы қолданбаны дауыспен ашу нұсқауы */
-  SiriShortcutHelp: undefined;
   Settings: undefined;
   PrayerSettings: undefined;
   QuranSettings: undefined;
   Hatim: undefined;
   HatimSettings: undefined;
+  /** Офлайн 114 сүре — assets/quran_tajweed.json (Flutter QuranSurahListScreen). */
+  HatimTajweedList: undefined;
+  HatimTajweedSurah: {
+    surahNumber: number;
+    englishName?: string;
+    arabicName?: string;
+  };
   /** Hafs 604-беттік хатым мұсаф (Madinah layout metadata). */
   QuranMushafBook:
     | {
@@ -42,10 +55,15 @@ export type MoreStackParamList = {
       }
     | undefined;
   Hajj: undefined;
-  /** Мекке тікелей эфир (YouTube live — Flutter MakkahLiveScreen эквиваленті). */
+  /** Қағба тікелей эфир (HD HLS). */
   MakkahLive: undefined;
   ZakatCalculator: undefined;
-  Halal: undefined;
+  Halal:
+    | {
+        initialTab?: HalalHubWebTabId;
+        siteUrl?: string;
+      }
+    | undefined;
   ImamAI:
     | undefined
     | {

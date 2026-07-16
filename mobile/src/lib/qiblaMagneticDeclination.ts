@@ -1,6 +1,5 @@
 import { Platform } from "react-native";
 import { magneticDeclinationEastDeg } from "./qiblaDeclinationApprox";
-import { canUseNativeDeviceHeading } from "./qiblaNativeDeviceHeading";
 
 type PrayerWidgetDeclModule = {
   getMagneticDeclinationEastDeg?: (lat: number, lng: number) => Promise<number>;
@@ -10,9 +9,9 @@ const PrayerWidget = require("react-native").NativeModules.PrayerWidget as Praye
 
 /** Android: WMM (GeomagneticField); басқа платформалар: IDW approximate. */
 export async function resolveMagneticDeclinationEastDeg(lat: number, lng: number): Promise<number> {
-  if (Platform.OS === "android" && canUseNativeDeviceHeading()) {
+  if (Platform.OS === "android" && typeof PrayerWidget?.getMagneticDeclinationEastDeg === "function") {
     try {
-      const decl = await PrayerWidget?.getMagneticDeclinationEastDeg?.(lat, lng);
+      const decl = await PrayerWidget.getMagneticDeclinationEastDeg(lat, lng);
       if (typeof decl === "number" && Number.isFinite(decl)) {
         return decl;
       }

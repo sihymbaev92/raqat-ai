@@ -1,9 +1,14 @@
 /**
- * Серверде `RAQAT_CONTENT_READ_SECRET` орнатылғанда GET /quran|/hadith|/metadata
- * үшін `X-Raqat-Content-Secret` қажет. Мән жинақтау кезінде: `EXPO_PUBLIC_RAQAT_CONTENT_SECRET`
- * (`mobile/.env`) — сервердегі құпиямен бірдей болуы керек.
+ * Серверде `RAQAT_CONTENT_READ_SECRET` болса GET /quran|/hadith|/metadata
+ * үшін `X-Raqat-Content-Secret` қажет.
+ *
+ * Release APK-қа құпия енгізілмейді (reverse-engineer). Продта контент
+ * офлайн пакет / JWT арқылы; құпия тек `__DEV__` жинақта оқылады.
  */
 export function getRaqatContentReadSecret(): string | undefined {
+  if (typeof __DEV__ === "undefined" || !__DEV__) {
+    return undefined;
+  }
   const raw =
     typeof process !== "undefined" && process.env?.EXPO_PUBLIC_RAQAT_CONTENT_SECRET
       ? String(process.env.EXPO_PUBLIC_RAQAT_CONTENT_SECRET)

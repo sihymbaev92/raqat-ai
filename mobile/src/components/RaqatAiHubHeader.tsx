@@ -5,6 +5,7 @@ import type { ThemeColors } from "../theme/colors";
 import { menuIconAssets } from "../theme/menuIconAssets";
 import { HubScreenHero } from "./HubScreenHero";
 import { IMAM_AI_TAGLINE_KK } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -13,6 +14,7 @@ type Props = {
 
 /** RAQAT AI экранының жоғарғы бөлімі — тек hero (логотип, тақырып, тегтер). */
 export function RaqatAiHubHeader({ colors, isDark }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(), []);
 
   return (

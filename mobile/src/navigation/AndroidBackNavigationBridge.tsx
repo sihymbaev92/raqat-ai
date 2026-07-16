@@ -4,12 +4,14 @@ import { CommonActions } from "@react-navigation/native";
 import { rootNavigationRef } from "./rootNavigationRef";
 import { resolveAndroidBackNavigation } from "./resolveAndroidBackNavigation";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 /**
  * Android жүйелік «артқа» — NavigationContainer fallback.
  * Экрандағы useHardwareBackPress алдымен іске қосылады (LIFO); мұнда nested/tab артқа + Home-да шығуды блоктау.
  */
 export function AndroidBackNavigationBridge() {
+  useAppLocale();
   const homeBackAtRef = useRef(0);
 
   useEffect(() => {

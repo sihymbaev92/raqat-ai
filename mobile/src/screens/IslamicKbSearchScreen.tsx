@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import {
   View,
   Text,
@@ -22,10 +23,11 @@ import { beginLatestRequest } from "../utils/latestRequestGuard";
 import { loadKbArticlesFeed } from "../services/kbArticlesFeed";
 import { KbArticleCard } from "../components/kb/KbArticleCard";
 import { KbContentSourceBanner } from "../components/kb/KbContentSourceBanner";
-import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { openOfficialSiteInApp } from "../config/officialSiteProxy";
 import { InformationalToolBanner } from "../components/InformationalToolBanner";
 
 export function IslamicKbSearchScreen() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
@@ -80,7 +82,7 @@ export function IslamicKbSearchScreen() {
         item={item}
         colors={colors}
         onPress={() => navigation.navigate("KbArticleDetail", { article: item })}
-        onOpenSite={item.url ? () => openOfficialSiteExternally(item.url) : undefined}
+        onOpenSite={item.url ? () => openOfficialSiteInApp(item.url, navigation) : undefined}
       />
     ),
     [colors, navigation]

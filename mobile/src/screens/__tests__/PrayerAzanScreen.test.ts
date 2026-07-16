@@ -34,11 +34,44 @@ describe("PrayerAzanScreen", () => {
     expect(shouldAutoStartPrayerAzanAudio(true, "adhan_haramain")).toBe(false);
   });
 
+  it("closePrayerAzanScreen finishes delivery and resets navigation when back is unavailable", () => {
+    jest.resetModules();
+    const finishAzanDelivery = jest.fn();
+    jest.doMock("../../services/prayerFullScreenAzan", () => {
+      const actual = jest.requireActual("../../services/prayerFullScreenAzan") as typeof import("../../services/prayerFullScreenAzan");
+      return {
+        ...actual,
+        finishAzanDelivery,
+      };
+    });
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { closePrayerAzanScreen } = require("../PrayerAzanScreen") as typeof import("../PrayerAzanScreen");
+
+    const reset = jest.fn();
+    const goBack = jest.fn();
+    closePrayerAzanScreen({
+      canGoBack: () => false,
+      goBack,
+      reset,
+    } as never);
+
+    expect(finishAzanDelivery).toHaveBeenCalled();
+    expect(reset).toHaveBeenCalledWith({
+      index: 0,
+      routes: [{ name: "Main", params: { screen: "Home" } }],
+    });
+    expect(goBack).not.toHaveBeenCalled();
+  });
+
   it("uses the exact prayer name in the azan screen heading", async () => {
+    jest.resetModules();
     jest.doMock("../../utils/previewPrayerNotifSound", () => ({
       canPreviewPrayerNotifSound: jest.fn((id: string) => id !== "off"),
       previewPrayerNotifSound: jest.fn(async () => undefined),
       stopPreviewPrayerNotifSound: jest.fn(async () => undefined),
+      playAzanDuaAudio: jest.fn(async () => undefined),
+      getPreviewAzanPlaybackStatus: jest.fn(async () => null),
+      getPreviewAzanDuaPlaybackStatus: jest.fn(async () => null),
     }));
 
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -61,8 +94,10 @@ describe("PrayerAzanScreen", () => {
     const regular = buildAzanTextBlocks("asr");
     expect(regular[0]?.translit).toBe("Аллаһу әкбар");
     expect(regular.at(-1)?.id).toBe("azan-dua");
-    expect(regular.at(-1)?.arabic).toContain("إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ");
-    expect(regular.at(-1)?.meaning).toContain("уәдеңнен таймайсың");
+    expect(regular.at(-1)?.arabic).toContain("مَقَامًا مَحْمُودًا");
+    expect(regular.at(-1)?.arabic).not.toContain("إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ");
+    expect(regular.at(-1)?.meaning).toContain("Махмуд шыңына");
+    expect(regular.at(-1)?.meaning).not.toContain("Шүкір");
 
     const fajr = buildAzanTextBlocks("fajr");
     expect(fajr.some((x) => x.id === "fajr-extra")).toBe(true);
@@ -86,6 +121,44 @@ describe("PrayerAzanScreen", () => {
     expect(schedule[regular.findIndex((x) => x.id === "azan-dua")]).toBeGreaterThanOrEqual(120_000);
   });
 
+  it("closes azan screen after azan and dua fully finish", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { shouldClosePrayerAzanAfterFullPlayback } = require("../PrayerAzanScreen") as typeof import("../PrayerAzanScreen");
+
+    expect(
+      shouldClosePrayerAzanAfterFullPlayback({
+        stopped: false,
+        soundOff: false,
+        duaStarted: true,
+        sessionFullyFinished: true,
+        duaJsFullyFinished: false,
+        duaStatusPlaying: false,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldClosePrayerAzanAfterFullPlayback({
+        stopped: false,
+        soundOff: false,
+        duaStarted: true,
+        sessionFullyFinished: false,
+        duaJsFullyFinished: true,
+        duaStatusPlaying: false,
+      })
+    ).toBe(true);
+
+    expect(
+      shouldClosePrayerAzanAfterFullPlayback({
+        stopped: false,
+        soundOff: false,
+        duaStarted: false,
+        sessionFullyFinished: false,
+        duaJsFullyFinished: false,
+        duaStatusPlaying: false,
+      })
+    ).toBe(false);
+  });
+
   it("localizes azan text for Russian and English app languages", async () => {
     jest.doMock("../../utils/previewPrayerNotifSound", () => ({
       canPreviewPrayerNotifSound: jest.fn((id: string) => id !== "off"),
@@ -100,11 +173,11 @@ describe("PrayerAzanScreen", () => {
 
     await runtime.setCurrentLocale("ru");
     expect(screen.buildAzanTextBlocks("asr")[0]?.meaning).toBe("Аллах Велик.");
-    expect(screen.buildAzanTextBlocks("asr").at(-1)?.meaning).toContain("не нарушаешь обещания");
+    expect(screen.buildAzanTextBlocks("asr").at(-1)?.meaning).toContain("восхваляемое место");
 
     await runtime.setCurrentLocale("en");
     expect(screen.buildAzanTextBlocks("asr")[0]?.meaning).toBe("Allah is the Greatest.");
-    expect(screen.buildAzanTextBlocks("asr").at(-1)?.meaning).toContain("do not break Your promise");
+    expect(screen.buildAzanTextBlocks("asr").at(-1)?.meaning).toContain("praised station");
 
     await runtime.setCurrentLocale("kk");
   });

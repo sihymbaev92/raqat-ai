@@ -1,10 +1,15 @@
 /**
  * Құранның ауыр JSON деректері — runtime CDN + FileSystem кэш (Metro бандлда емес).
  */
+import { Platform } from "react-native";
 import type { CachedAyah } from "../storage/quranSurahCache";
-import type { CachedSurah } from "../storage/quranListCache";
 import { parseSurahsFromApiJson } from "../storage/quranListCache";
 import { hasCyrillicScript } from "../utils/quranTranslitDisplay";
+import {
+  ensureBundledSurahListLoaded,
+  releaseBundledSurahListMemory,
+  setBundledSurahList,
+} from "./bundledQuranSurahList";
 import {
   loadBundledJson,
   releaseBundledJsonMemory,
@@ -18,26 +23,34 @@ type SurahBundle = {
 
 type KkAyah = { numberInSurah: number; text_kk: string; translit?: string };
 
-let listCache: CachedSurah[] | null = null;
 let ayahsBySurah: Map<number, CachedAyah[]> | null = null;
 let kkBySurah: Map<number, Map<number, string>> | null = null;
 let bookTranslitBySurah: Map<number, Map<number, string>> | null = null;
 let loadPromise: Promise<void> | null = null;
-let surahListPromise: Promise<void> | null = null;
 
 function buildMapsFromBundles(
   surahListBundle: unknown,
   fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
-  translitBundle: { data?: { surahs?: SurahBundle[] } },
+  _translitBundle: { data?: { surahs?: SurahBundle[] } },
   kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
 ): void {
-  listCache = parseSurahsFromApiJson(surahListBundle);
+  buildMapsFromBundlesSync(
+    surahListBundle,
+    fullQuranBundle,
+    _translitBundle,
+    kkFromDbBundle
+  );
+}
 
-  const trBySurah = new Map<number, Map<number, string>>();
-  for (const ts of translitBundle?.data?.surahs ?? []) {
-    const m = new Map<number, string>();
-    for (const a of ts.ayahs ?? []) m.set(a.numberInSurah, a.text);
-    trBySurah.set(ts.number, m);
+function buildMapsFromBundlesSync(
+  surahListBundle: unknown,
+  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
+  _translitBundle: { data?: { surahs?: SurahBundle[] } },
+  kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
+): void {
+  if (surahListBundle != null) {
+    const parsed = parseSurahsFromApiJson(surahListBundle);
+    if (parsed?.length) setBundledSurahList(parsed);
   }
 
   kkBySurah = new Map();
@@ -57,17 +70,13 @@ function buildMapsFromBundles(
 
   ayahsBySurah = new Map();
   for (const s of fullQuranBundle?.data?.surahs ?? []) {
-    const trMap = trBySurah.get(s.number);
     const kkMap = kkBySurah.get(s.number);
     const dbTrMap = bookTranslitBySurah.get(s.number);
     const ayahs: CachedAyah[] = (s.ayahs ?? []).map((a) => {
       const trDb = dbTrMap?.get(a.numberInSurah);
-      const trEn = (trMap?.get(a.numberInSurah) ?? "").trim();
       const trDbStr = (trDb ?? "").trim();
-      const tr =
-        (trDbStr && hasCyrillicScript(trDbStr) ? trDbStr : "") ||
-        trEn ||
-        (trDbStr && !hasCyrillicScript(trDbStr) ? trDbStr : "");
+      // Тек кирилл (кітаптық) — латын EN-ді сақтамаймыз; экран арабтан KK генерациялайды.
+      const tr = trDbStr && hasCyrillicScript(trDbStr) ? trDbStr : "";
       const kkTxt = kkMap?.get(a.numberInSurah);
       return {
         numberInSurah: a.numberInSurah,
@@ -80,19 +89,84 @@ function buildMapsFromBundles(
   }
 }
 
+async function buildMapsFromBundlesAsync(
+  surahListBundle: unknown,
+  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
+  translitBundle: { data?: { surahs?: SurahBundle[] } },
+  kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
+): Promise<void> {
+  if (surahListBundle != null) {
+    const parsed = parseSurahsFromApiJson(surahListBundle);
+    if (parsed?.length) setBundledSurahList(parsed);
+  }
+
+  kkBySurah = new Map();
+  bookTranslitBySurah = new Map();
+  for (const ks of kkFromDbBundle?.data?.surahs ?? []) {
+    const m = new Map<number, string>();
+    const trm = new Map<number, string>();
+    for (const a of ks.ayahs ?? []) {
+      const t = (a.text_kk ?? "").trim();
+      if (t) m.set(a.numberInSurah, t);
+      const tr = (a.translit ?? "").trim();
+      if (tr) trm.set(a.numberInSurah, tr);
+    }
+    if (m.size) kkBySurah.set(ks.number, m);
+    if (trm.size) bookTranslitBySurah.set(ks.number, trm);
+  }
+
+  ayahsBySurah = new Map();
+  const surahs = fullQuranBundle?.data?.surahs ?? [];
+  for (let i = 0; i < surahs.length; i += 1) {
+    const s = surahs[i]!;
+    const kkMap = kkBySurah.get(s.number);
+    const dbTrMap = bookTranslitBySurah.get(s.number);
+    const ayahs: CachedAyah[] = (s.ayahs ?? []).map((a) => {
+      const trDb = dbTrMap?.get(a.numberInSurah);
+      const trDbStr = (trDb ?? "").trim();
+      const tr = trDbStr && hasCyrillicScript(trDbStr) ? trDbStr : "";
+      const kkTxt = kkMap?.get(a.numberInSurah);
+      return {
+        numberInSurah: a.numberInSurah,
+        text: a.text,
+        ...(tr ? { translit: tr } : {}),
+        ...(kkTxt ? { textKk: kkTxt } : {}),
+      };
+    });
+    if (ayahs.length) ayahsBySurah.set(s.number, ayahs);
+    if (i > 0 && i % 8 === 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    }
+  }
+  void translitBundle;
+}
+
+function apkUsesBundledJsonLoader(): boolean {
+  return Platform.OS !== "web" && process.env.NODE_ENV !== "test";
+}
+
 async function loadBundlesAsync(): Promise<void> {
-  if (ayahsBySurah) return;
-  const [surahListBundle, fullQuranBundle, translitBundle, kkFromDbBundle] = await Promise.all([
-    loadBundledJson("surah-list-api.json"),
+  const kkReady = Boolean(kkBySurah && kkBySurah.size > 0);
+  if (ayahsBySurah && kkReady) return;
+
+  const [fullQuranBundle, translitBundle, kkFromDbBundle] = await Promise.all([
     loadBundledJson("quran-uthmani-full.json"),
     tryLoadBundledJson("quran-en-transliteration-full.json"),
-    tryLoadBundledJson("quran-kk-from-db.json"),
+    loadBundledJson("quran-kk-from-db.json"),
   ]);
-  buildMapsFromBundles(
+
+  let surahListBundle: unknown = null;
+  if (apkUsesBundledJsonLoader()) {
+    await ensureBundledSurahListLoaded();
+  } else {
+    surahListBundle = await loadBundledJson("surah-list-api.json");
+  }
+
+  await buildMapsFromBundlesAsync(
     surahListBundle,
     fullQuranBundle as { data?: { surahs?: SurahBundle[] } },
     (translitBundle ?? { data: { surahs: [] } }) as { data?: { surahs?: SurahBundle[] } },
-    (kkFromDbBundle ?? { data: { surahs: [] } }) as {
+    kkFromDbBundle as {
       data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> };
     }
   );
@@ -101,33 +175,23 @@ async function loadBundlesAsync(): Promise<void> {
   releaseBundledJsonMemory("quran-kk-from-db.json");
 }
 
-async function loadSurahListOnlyAsync(): Promise<void> {
-  if (listCache?.length) return;
-  const surahListBundle = await loadBundledJson("surah-list-api.json");
-  listCache = parseSurahsFromApiJson(surahListBundle);
-}
+export { ensureBundledSurahListLoaded, getBundledSurahList } from "./bundledQuranSurahList";
 
-/** Құран бандлдары жадқа түскенше күтеді. */
+/** Құран бандлдары жадқа түскенше күтеді. KK пакет кейін келсе — қайта біріктіреді. */
 export async function ensureBundledQuranReaderLoaded(): Promise<void> {
-  if (ayahsBySurah) return;
-  if (!loadPromise) loadPromise = loadBundlesAsync();
+  const kkReady = Boolean(kkBySurah && kkBySurah.size > 0);
+  if (ayahsBySurah && kkReady) return;
+  if (!loadPromise || (ayahsBySurah && !kkReady)) {
+    loadPromise = loadBundlesAsync().finally(() => {
+      /* keep resolved promise if maps ok; allow retry if KK still empty */
+      if (!kkBySurah?.size) loadPromise = null;
+    });
+  }
   try {
     await loadPromise;
   } catch {
     loadPromise = null;
     throw new Error("bundled quran load failed");
-  }
-}
-
-/** Тек сүрелер тізімі. Толық Құран JSON-дарын boot/list кезінде парстемейді. */
-export async function ensureBundledSurahListLoaded(): Promise<void> {
-  if (listCache?.length) return;
-  if (!surahListPromise) surahListPromise = loadSurahListOnlyAsync();
-  try {
-    await surahListPromise;
-  } catch {
-    surahListPromise = null;
-    throw new Error("bundled quran surah list load failed");
   }
 }
 
@@ -140,11 +204,6 @@ export function prefetchBundledQuranReader(): Promise<void> {
   return ensureBundledQuranReaderLoaded().catch(() => {});
 }
 
-/** Сүрелер тізімі (runtime кэш). */
-export function getBundledSurahList(): CachedSurah[] | null {
-  return listCache?.length ? listCache : null;
-}
-
 /** Бір сүре аяттары (runtime кэш). */
 export function getBundledSurahAyahs(surahNumber: number): CachedAyah[] | null {
   const rows = ayahsBySurah?.get(surahNumber);
@@ -155,12 +214,88 @@ export function getBundledKkTextForAyah(surahNumber: number, ayahNumber: number)
   return kkBySurah?.get(surahNumber)?.get(ayahNumber)?.trim() || undefined;
 }
 
+/** Офлайн KK аударма іздеу (reader cache, quran-kk-from-db жүктелгенде). */
+export function searchBundledKkAyahs(
+  query: string,
+  limit = 60
+): Array<{ surah: number; ayah: number; meaning: string }> {
+  const needle = query.toLowerCase().normalize("NFKC").trim();
+  if (needle.length < 2 || !kkBySurah?.size) return [];
+
+  const cap = Math.max(1, Math.min(limit, 120));
+  const hits: Array<{ surah: number; ayah: number; meaning: string }> = [];
+
+  for (const [surahNumber, ayahMap] of kkBySurah) {
+    for (const [ayahNumber, text] of ayahMap) {
+      const meaning = text.trim();
+      if (!meaning) continue;
+      if (!meaning.toLowerCase().normalize("NFKC").includes(needle)) continue;
+      hits.push({ surah: surahNumber, ayah: ayahNumber, meaning });
+      if (hits.length >= cap) return hits;
+    }
+  }
+
+  return hits;
+}
+
+/** Офлайн араб мәтін бойынша іздеу (uthmani bundle жүктелгенде). */
+export function searchBundledArabicAyahs(
+  query: string,
+  limit = 60
+): Array<{ surah: number; ayah: number; meaning: string }> {
+  const needle = query.trim();
+  if (needle.length < 2 || !ayahsBySurah?.size) return [];
+
+  const cap = Math.max(1, Math.min(limit, 120));
+  const hits: Array<{ surah: number; ayah: number; meaning: string }> = [];
+
+  for (const [surahNumber, rows] of ayahsBySurah) {
+    for (const row of rows) {
+      const text = (row.text ?? "").trim();
+      if (!text || !text.includes(needle)) continue;
+      hits.push({ surah: surahNumber, ayah: row.numberInSurah, meaning: text });
+      if (hits.length >= cap) return hits;
+    }
+  }
+
+  return hits;
+}
+
 export function getBundledBookTranslitForAyah(
   surahNumber: number,
   ayahNumber: number
 ): string | undefined {
   const tr = bookTranslitBySurah?.get(surahNumber)?.get(ayahNumber)?.trim();
   return tr && hasCyrillicScript(tr) ? tr : undefined;
+}
+
+export function isBundledKkReaderReady(): boolean {
+  return Boolean(kkBySurah && kkBySurah.size > 0);
+}
+
+/** KK іздеу индексі — reader кэшінен (қосарлы JSON жүктемей). */
+export function collectBundledKkSearchRows(): Array<{
+  surah: number;
+  ayah: number;
+  meaning: string;
+  translit: string;
+}> {
+  if (!kkBySurah?.size) return [];
+  const rows: Array<{ surah: number; ayah: number; meaning: string; translit: string }> = [];
+  for (const [surahNumber, ayahMap] of kkBySurah) {
+    const trMap = bookTranslitBySurah?.get(surahNumber);
+    for (const [ayahNumber, meaning] of ayahMap) {
+      const text = meaning.trim();
+      if (!text) continue;
+      rows.push({
+        surah: surahNumber,
+        ayah: ayahNumber,
+        meaning: text,
+        translit: (trMap?.get(ayahNumber) ?? "").trim(),
+      });
+    }
+  }
+  return rows;
 }
 
 /**
@@ -170,9 +305,7 @@ export function getBundledBookTranslitForAyah(
 export function releaseBundledQuranReaderMemory(opts?: { keepSurahList?: boolean }): void {
   const keepSurahList = opts?.keepSurahList ?? true;
   if (!keepSurahList) {
-    listCache = null;
-    surahListPromise = null;
-    releaseBundledJsonMemory("surah-list-api.json");
+    releaseBundledSurahListMemory();
   }
   ayahsBySurah = null;
   kkBySurah = null;

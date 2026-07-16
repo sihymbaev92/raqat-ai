@@ -6,6 +6,7 @@ type ExpoNotificationMock = {
   getAllScheduledNotificationsAsync: jest.Mock;
   cancelScheduledNotificationAsync: jest.Mock;
   getPermissionsAsync: jest.Mock;
+  requestPermissionsAsync: jest.Mock;
 };
 
 const samplePrayerTimes: PrayerTimesResult = {
@@ -68,6 +69,11 @@ async function loadPrayerNotificationsWithNative(
 
   jest.doMock("../../api/prayerTimes", () => ({
     applyPrayerTimeShift: (pt: PrayerTimesResult) => pt,
+    fetchPrayerTimesForLocation: jest.fn(async (city: string, country: string) => ({
+      ...samplePrayerTimes,
+      city,
+      country,
+    })),
     fetchPrayerTimesForLocationForDate: jest.fn(async () => samplePrayerTimes),
     isPrayerTimesResultForLocalToday: jest.fn(() => true),
   }));
@@ -83,8 +89,10 @@ async function loadPrayerNotificationsWithNative(
     PRAYER_NOTIF_SALAT_KEYS: ["fajr", "dhuhr", "asr", "maghrib", "isha"],
   }));
 
+  const savePrayerCache = jest.fn(async () => undefined);
   jest.doMock("../../storage/prayerCache", () => ({
     loadPrayerCache: jest.fn(async () => opts.cachedPrayer ?? null),
+    savePrayerCache,
   }));
   jest.doMock("../hatimReminderNotifications", () => ({
     syncHatimReminderSchedule: jest.fn(async () => undefined),
@@ -139,7 +147,7 @@ describe("Android prayer azan scheduling", () => {
     expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it("falls back to Expo notifications when native scheduling reports zero alarms", async () => {
+  it("falls back to Expo prayer notifications when native scheduling reports zero alarms", async () => {
     const nativeSchedule = jest.fn(async () => ({ scheduledCount: 0, identifiers: [] }));
     const { reschedulePrayerNotifications, notifications } =
       await loadPrayerNotificationsWithNative(nativeSchedule);
@@ -154,7 +162,7 @@ describe("Android prayer azan scheduling", () => {
     expect(notifications.scheduleNotificationAsync).toHaveBeenCalled();
   });
 
-  it("falls back to Expo notifications when the native module is missing", async () => {
+  it("falls back to Expo prayer notifications when the native module is missing", async () => {
     const { reschedulePrayerNotifications, notifications } =
       await loadPrayerNotificationsWithNative(undefined);
 
@@ -167,7 +175,7 @@ describe("Android prayer azan scheduling", () => {
     expect(notifications.scheduleNotificationAsync).toHaveBeenCalled();
   });
 
-  it("falls back to Expo notifications when native scheduling throws", async () => {
+  it("falls back to Expo prayer notifications when native scheduling throws", async () => {
     const nativeSchedule = jest.fn(() => {
       throw new Error("native exact alarm unavailable");
     });
@@ -214,9 +222,13 @@ describe("Android prayer azan scheduling", () => {
     expect(nativeCancel).not.toHaveBeenCalled();
   });
 
-  it("does not reschedule stale cached prayer notifications for the previous city", async () => {
-    const { reschedulePrayerNotificationsFromCache, notifications } =
-      await loadPrayerNotificationsWithNative(undefined, {
+  it("refetches and reschedules when selected city differs from prayer cache", async () => {
+    const nativeSchedule = jest.fn(async (json: string) => ({
+      scheduledCount: JSON.parse(json).length,
+      identifiers: JSON.parse(json).map((slot: { identifier: string }) => slot.identifier),
+    }));
+    const { reschedulePrayerNotificationsFromCache, nativeCancel } =
+      await loadPrayerNotificationsWithNative(nativeSchedule, {
         cachedPrayer: { ...samplePrayerTimes, city: "Алматы" },
         selectedCity: { city: "Астана", country: "Kazakhstan" },
         scheduledNotificationIds: ["raqat-prayer-v2-20260609-dhuhr"],
@@ -224,9 +236,7 @@ describe("Android prayer azan scheduling", () => {
 
     await reschedulePrayerNotificationsFromCache();
 
-    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
-    expect(notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith(
-      "raqat-prayer-v2-20260609-dhuhr"
-    );
+    expect(nativeCancel).not.toHaveBeenCalled();
+    expect(nativeSchedule).toHaveBeenCalled();
   });
 });

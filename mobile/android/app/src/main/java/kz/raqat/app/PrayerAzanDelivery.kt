@@ -1,9 +1,7 @@
 package kz.raqat.app
 
-import android.app.Notification
-import android.app.NotificationChannel
+import android.app.ActivityOptions
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -14,10 +12,20 @@ import android.os.PowerManager
 import android.util.Log
 import java.net.URLEncoder
 
-/** Shared azan delivery: fullScreenIntent + MainActivity deep link → PrayerAzanScreen (RN). */
+/**
+ * Азан жеткізу: тікелей MainActivity → PrayerAzanScreen (құлыптаулы/ашық бірдей).
+ */
 object PrayerAzanDelivery {
-  private const val AZAN_CHANNEL_ID = "raqat_native_azan_v2"
   private const val TAG = "PrayerAzanDelivery"
+  /** Ескі FSI хабарландыруы — жаңа нұсқада жарияланбайды, тек тазалау үшін. */
+  private const val LEGACY_FSI_NOTIFICATION_ID = 904224
+
+  /** MainActivity құлып экраны flag-тары — тек осы extras бар intent. */
+  const val EXTRA_AZAN_TRUSTED = "kz.raqat.app.AZAN_TRUSTED"
+
+  /** Intent flags — Activity API 29+ атаулары кей SDK-да жоқ болуы мүмкін. */
+  private const val FLAG_SHOW_WHEN_LOCKED = 0x00080000
+  private const val FLAG_TURN_SCREEN_ON = 0x00200000
 
   fun azanActivityIntent(
     context: Context,
@@ -30,41 +38,24 @@ object PrayerAzanDelivery {
     val uri = Uri.parse(
       "imamai://azan?label=${enc(label)}&enteredTitle=${enc(enteredTitle)}&time=${enc(time)}&soundId=${enc(soundId)}&salatKey=${enc(salatKey)}&nativeAudio=1"
     )
+    var launchFlags =
+      Intent.FLAG_ACTIVITY_NEW_TASK or
+        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+        Intent.FLAG_ACTIVITY_NO_USER_ACTION or
+        Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      launchFlags = launchFlags or FLAG_SHOW_WHEN_LOCKED or FLAG_TURN_SCREEN_ON
+    }
     return Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java).apply {
-      flags =
-        Intent.FLAG_ACTIVITY_NEW_TASK or
-          Intent.FLAG_ACTIVITY_CLEAR_TOP or
-          Intent.FLAG_ACTIVITY_SINGLE_TOP or
-          Intent.FLAG_ACTIVITY_NO_USER_ACTION or
-          Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+      putExtra(EXTRA_AZAN_TRUSTED, true)
+      flags = launchFlags
     }
   }
+
+  private val AZAN_LAUNCH_RETRY_MS = longArrayOf(0L, 400L, 1_000L, 2_000L, 4_000L, 8_000L, 15_000L)
 
   fun tryStartAzanActivity(
-    context: Context,
-    label: String,
-    enteredTitle: String,
-    time: String,
-    soundId: String,
-    salatKey: String,
-    retryAfterMs: Long = 450L
-  ) {
-    val app = context.applicationContext
-    val launch = {
-      try {
-        app.startActivity(azanActivityIntent(app, label, enteredTitle, time, soundId, salatKey))
-        Log.i(TAG, "Started azan activity for $salatKey")
-      } catch (t: Throwable) {
-        Log.w(TAG, "Unable to start azan activity for $salatKey", t)
-      }
-    }
-    launch()
-    if (retryAfterMs > 0L) {
-      Handler(Looper.getMainLooper()).postDelayed({ launch() }, retryAfterMs)
-    }
-  }
-
-  fun showAzanNotification(
     context: Context,
     label: String,
     enteredTitle: String,
@@ -73,49 +64,83 @@ object PrayerAzanDelivery {
     salatKey: String
   ) {
     val app = context.applicationContext
-    val mgr = app.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
-    ensureChannel(mgr)
-    val activityIntent = azanActivityIntent(app, label, enteredTitle, time, soundId, salatKey)
-    val contentIntent = PendingIntent.getActivity(
-      app,
-      stableNotificationId("content-$salatKey-$time"),
-      activityIntent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val fullScreenIntent = PendingIntent.getActivity(
-      app,
-      stableNotificationId("full-$salatKey-$time"),
-      activityIntent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
-    val body = if (time.isBlank()) "Азан мәтіні · ашу үшін басыңыз" else "$time · Азан мәтіні"
-    val builder =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        Notification.Builder(app, AZAN_CHANNEL_ID)
-      } else {
-        @Suppress("DEPRECATION")
-        Notification.Builder(app)
-      }
-    val notification = builder
-      .setSmallIcon(R.drawable.notification_icon)
-      .setContentTitle(enteredTitle)
-      .setContentText(body)
-      .setContentIntent(contentIntent)
-      .setFullScreenIntent(fullScreenIntent, true)
-      .setCategory(Notification.CATEGORY_ALARM)
-      .setPriority(Notification.PRIORITY_MAX)
-      .setVisibility(Notification.VISIBILITY_PUBLIC)
-      .setAutoCancel(true)
-      .setOngoing(false)
-      .setShowWhen(true)
-      .setWhen(System.currentTimeMillis())
-      .setSound(null)
-      .build()
-
+    val intent = azanActivityIntent(app, label, enteredTitle, time, soundId, salatKey)
     try {
-      mgr.notify(stableNotificationId("azan-$salatKey-$time"), notification)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        val opts =
+          ActivityOptions.makeBasic().apply {
+            setPendingIntentBackgroundActivityStartMode(
+              ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+          }
+        context.startActivity(intent, opts.toBundle())
+      } else {
+        context.startActivity(intent)
+      }
+      Log.i(TAG, "Started azan activity for $salatKey")
     } catch (t: Throwable) {
-      Log.w(TAG, "Unable to show azan notification for $salatKey", t)
+      Log.w(TAG, "Unable to start azan activity for $salatKey", t)
+    }
+  }
+
+  /** Фон/құлып экраны: бірнеше рет қайталау — экран әрқашан ашылуы керек. */
+  fun scheduleAzanActivityLaunches(
+    context: Context,
+    label: String,
+    enteredTitle: String,
+    time: String,
+    soundId: String,
+    salatKey: String
+  ) {
+    val handler = Handler(Looper.getMainLooper())
+    for (delay in AZAN_LAUNCH_RETRY_MS) {
+      handler.postDelayed(
+        { tryStartAzanActivity(context, label, enteredTitle, time, soundId, salatKey) },
+        delay
+      )
+    }
+  }
+
+  fun clearFullScreenAzanLaunch(context: Context) {
+    clearLegacyFullScreenNotification(context)
+  }
+
+  private fun clearLegacyFullScreenNotification(context: Context) {
+    try {
+      val mgr = context.applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      mgr.cancel(LEGACY_FSI_NOTIFICATION_ID)
+    } catch (_: Throwable) {
+      /* best effort */
+    }
+  }
+
+  /** Намаз уақытында азан экраны ашылады (құлыптаулы телефонда да). */
+  fun deliverAzan(
+    context: Context,
+    label: String,
+    enteredTitle: String,
+    time: String,
+    soundId: String,
+    salatKey: String
+  ) {
+    val app = context.applicationContext
+    PrayerAzanActiveSession.active = true
+    val wakeLock = acquireAzanWakeLock(app)
+    try {
+      if (soundId != "off") {
+        PrayerAzanNativePlayer.play(app, soundId)
+      }
+      scheduleAzanActivityLaunches(context, label, enteredTitle, time, soundId, salatKey)
+      clearLegacyFullScreenNotification(app)
+      PrayerLegacyNotificationCleaner.clearRepeatedly(app)
+    } finally {
+      Handler(Looper.getMainLooper()).postDelayed({
+        try {
+          if (wakeLock?.isHeld == true) wakeLock.release()
+        } catch (_: Throwable) {
+          /* best effort */
+        }
+      }, 8_000L)
     }
   }
 
@@ -127,7 +152,7 @@ object PrayerAzanDelivery {
         "raqat:PrayerAzanWake"
       ).apply {
         setReferenceCounted(false)
-        acquire(15_000L)
+        acquire(3 * 60 * 1000L)
       }
     } catch (t: Throwable) {
       Log.w(TAG, "Unable to acquire azan wake lock", t)
@@ -144,46 +169,21 @@ object PrayerAzanDelivery {
     soundId: String,
     salatKey: String
   ) {
-    val app = context.applicationContext
-    val wakeLock = acquireAzanWakeLock(app)
-    try {
-      if (soundId != "off") {
-        PrayerAzanNativePlayer.play(app, soundId)
-      }
-      showAzanNotification(app, label, enteredTitle, time, soundId, salatKey)
-      tryStartAzanActivity(app, label, enteredTitle, time, soundId, salatKey)
-    } finally {
-      Handler(Looper.getMainLooper()).postDelayed({
-        try {
-          if (wakeLock?.isHeld == true) wakeLock.release()
-        } catch (_: Throwable) {
-          /* best effort */
-        }
-      }, 2800L)
-    }
+    deliverAzan(context, label, enteredTitle, time, soundId, salatKey)
   }
 
-  private fun ensureChannel(mgr: NotificationManager) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-    val channel = NotificationChannel(
-      AZAN_CHANNEL_ID,
-      "Азан",
-      NotificationManager.IMPORTANCE_HIGH
-    ).apply {
-      description = "Намаз уақыты кіргенде азан экранын автоматты көрсету"
-      setSound(null, null)
-      enableVibration(true)
-      vibrationPattern = longArrayOf(0, 280, 180, 280)
-      lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-      setBypassDnd(true)
+  fun dismissAzanDelivery(context: Context) {
+    val app = context.applicationContext
+    try {
+      PrayerAzanDeliveryService.stopRunning(app)
+    } catch (_: Throwable) {
+      /* best effort */
     }
-    mgr.createNotificationChannel(channel)
+    clearLegacyFullScreenNotification(app)
+    PrayerAzanNativePlayer.stop()
+    PrayerAzanActiveSession.active = false
+    PrayerLegacyNotificationCleaner.clear(app)
   }
 
   private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
-
-  private fun stableNotificationId(value: String): Int {
-    val raw = value.hashCode()
-    return if (raw == Int.MIN_VALUE) 904221 else kotlin.math.abs(raw)
-  }
 }

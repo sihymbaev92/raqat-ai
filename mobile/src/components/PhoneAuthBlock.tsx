@@ -15,10 +15,11 @@ import {
   type AuthLoginResponse,
 } from "../services/platformApiClient";
 import { saveLoginTokens } from "../storage/authTokens";
-import { syncHatimWithServerBidirectional } from "../storage/hatimProgress";
+import { syncAccountDataWithServerBidirectional } from "../services/accountSync";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 function normalizePhoneInput(raw: string): string {
   let t = raw.trim().replace(/\s/g, "");
@@ -55,7 +56,7 @@ async function applyAuthSuccess(r: AuthLoginResponse): Promise<boolean> {
     expires_in: r.expires_in,
     platform_user_id: r.platform_user_id,
   });
-  await syncHatimWithServerBidirectional();
+  await syncAccountDataWithServerBidirectional();
   return true;
 }
 
@@ -72,6 +73,7 @@ type Props = {
  * Телефон + SMS код (серверде аккаунт байланыстырылады; Gmail/Apple сияқты).
  */
 export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError, compact }: Props) {
+  useAppLocale();
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
   const [phone, setPhone] = useState("");

@@ -4,6 +4,7 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { parseHajjMuftyatDisplaySegments } from "../content/hajjMuftyatDisplay";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   text: string;
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export function HajjMuftyatPageText({ text, colors }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const segments = useMemo(() => parseHajjMuftyatDisplaySegments(text), [text]);
   const { tr } = useKkAutoTranslator();

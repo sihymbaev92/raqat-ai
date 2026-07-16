@@ -1,4 +1,8 @@
-import { Platform, type TextStyle, type ViewStyle } from "react-native";
+import { Platform, type TextProps, type TextStyle, type ViewStyle } from "react-native";
+import { fitSingleLineTextProps } from "../theme/textLayoutGuard";
+
+/** Хатым парағы: экран жиегінен дәл 5px қауіпсіз шет. */
+export const HATIM_PAGE_HORIZONTAL_SAFE_INSET = 5;
 
 /** Экран жиегінен минималды бос орын (≥16px). */
 export const QURAN_AYAH_MIN_HORIZONTAL_PADDING = 20;
@@ -6,6 +10,9 @@ export const QURAN_SCREEN_HORIZONTAL_PADDING = 20;
 export const QURAN_SCREEN_VERTICAL_PADDING = 16;
 export const QURAN_HATIM_COMPACT_LINE_HEIGHT_FACTOR = 1.62;
 export const QURAN_HATIM_COMPACT_MIN_FONT = 18;
+/** Хатым бір жолдық авто-fit: базалық қаріп (экран еніне сыймаса кішірейеді). */
+export const HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE = 32;
+export const HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE = 0.5;
 export const QURAN_HATIM_COMPACT_PADDING_H = QURAN_AYAH_MIN_HORIZONTAL_PADDING;
 export const QURAN_HATIM_COMPACT_PADDING_V = 10;
 /** Сүре оқу (scroll): жайлы line-height. */
@@ -126,6 +133,31 @@ export function quranContinuousFlowStyle(): ViewStyle {
     alignContent: "flex-start",
     justifyContent: "flex-start",
     overflow: "visible" as const,
+  };
+}
+
+/** Хатым: бір аят — бір жол, сыймаса 50%-ға дейін кішірейеді (iOS/Android adjustsFontSizeToFit). */
+export function hatimAyahAutoFitTextProps(): Pick<
+  TextProps,
+  | "numberOfLines"
+  | "maxFontSizeMultiplier"
+  | "adjustsFontSizeToFit"
+  | "minimumFontScale"
+  | "allowFontScaling"
+> {
+  return fitSingleLineTextProps({
+    numberOfLines: 1,
+    adjustsFontSizeToFit: true,
+    minimumFontScale: HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE,
+  });
+}
+
+export function hatimAyahAutoFitTextStyle(
+  fontSize = HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE
+): Pick<TextStyle, "fontSize" | "width"> {
+  return {
+    fontSize,
+    width: "100%",
   };
 }
 

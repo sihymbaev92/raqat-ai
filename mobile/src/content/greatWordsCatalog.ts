@@ -55,6 +55,11 @@ export async function ensureGreatWordsCatalogLoaded(): Promise<GreatWordsCatalog
   return loadPromise;
 }
 
+export function releaseGreatWordsCatalogMemory(): void {
+  catalogCache = EMPTY_CATALOG;
+  loadPromise = null;
+}
+
 const MERGED_TOPIC_ID_PREFIX = "merged-topic:";
 const MERGED_AUTHOR_TOPIC_ID_PREFIX = "merged-author-topic:";
 

@@ -10,39 +10,27 @@ export type BundledJsonName =
   | "offline-auto-translations-core.json"
   | "great-words-catalog.json"
   | "abai-kara-soz-full.json"
-  | "scraped-hadith-muftyat.json"
-  | "extracted-hadith-muftyat.json"
-  | "external-hadith-kk.json"
   | "hadith-from-db-seed.json"
   | "halal-companies-snapshot.json"
   | "mosques-2gis-kz.json";
 
-/** APK-та әрқашан (хатым Arabic core). */
+/** APK-та әрқашан (хатым Arabic + қазақша мағына/транскрипция). */
 export const APK_BUNDLED_JSON: readonly BundledJsonName[] = [
   "surah-list-api.json",
   "quran-uthmani-full.json",
+  "quran-kk-from-db.json",
+  "mosques-2gis-kz.json",
 ] as const;
 
 /** Орнатудан кейін CDN/cache арқылы жүктеледі. */
 export const REMOTE_BUNDLED_JSON: readonly BundledJsonName[] = [
   "quran-en-transliteration-full.json",
-  "quran-kk-from-db.json",
   "quran-translations-offline.json",
   "offline-auto-translations-core.json",
   "quran-tajweed-offline.json",
-  "scraped-hadith-muftyat.json",
-  "extracted-hadith-muftyat.json",
-  "external-hadith-kk.json",
   "hadith-from-db-seed.json",
   "great-words-catalog.json",
   "halal-companies-snapshot.json",
-  "mosques-2gis-kz.json",
-] as const;
-
-/** @deprecated APK_BUNDLED_JSON + REMOTE_BUNDLED_JSON */
-export const RUNTIME_BUNDLED_JSON: readonly BundledJsonName[] = [
-  ...APK_BUNDLED_JSON,
-  ...REMOTE_BUNDLED_JSON,
 ] as const;
 
 const REMOTE_SET = new Set<BundledJsonName>(REMOTE_BUNDLED_JSON);

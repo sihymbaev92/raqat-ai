@@ -25,6 +25,7 @@ import {
 import type { AyahMarkerRecord } from "../../storage/quranAyahMarkers";
 import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSurahCache";
 import { mushafBookEffectiveRenderBackend } from "../../quran/mushafPageRenderBackend";
+import { shouldHatimUseTextHafsOffline } from "../../quran/mushafOfflineBackend";
 import type { MushafAyahMapFile } from "../../quran/mushafAyahMap";
 import { MushafBookPageWebp } from "./MushafBookPageWebp";
 import { MushafBookPageSvg } from "./MushafBookPageSvg";
@@ -106,6 +107,18 @@ type Props = {
 
 /** Hafs 604: backend — text-hafs | svg | webp | qcf4 (native/web бір маршрут). */
 export function MushafBookPageScroll(props: Props) {
+  const [forceTextHafs, setForceTextHafs] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void shouldHatimUseTextHafsOffline().then((useTextHafs) => {
+      if (alive) setForceTextHafs(useTextHafs);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   if (props.arabicScriptEdition !== "madinah") {
     return <MushafBookPageTextHafs {...props} />;
   }
@@ -113,6 +126,7 @@ export function MushafBookPageScroll(props: Props) {
   const backend = mushafBookEffectiveRenderBackend(props.readingThemeId, {
     showTajweedColors: props.showTajweedColors,
     arabicScriptEdition: props.arabicScriptEdition,
+    forceTextHafs,
   });
 
   if (backend === "webp" || backend === "svg" || backend === "qcf4") {

@@ -7,6 +7,15 @@ const EXTERNAL_SCHEME_RE =
 export const HALAL_DAMU_WEBVIEW_HOSTS = ["halaldamu.kz"] as const;
 /** Muftyat ішіндегі fatua.kz сілтемелері қолданба ішінде қалады. */
 export const MUFTYAT_WEBVIEW_HOSTS = ["muftyat.kz", "fatua.kz"] as const;
+/** Fatua ресми сайты (жеке allowlist). */
+export const FATUA_WEBVIEW_HOSTS = ["fatua.kz"] as const;
+
+/** EmbeddedSiteSheet / AI сілтемелері — тек ресми host allowlist. */
+export const DEFAULT_EMBEDDED_SITE_HOSTS = [
+  ...HALAL_DAMU_WEBVIEW_HOSTS,
+  ...MUFTYAT_WEBVIEW_HOSTS,
+  "rahatomir.com",
+] as const;
 
 export const OFFICIAL_SITE_DESKTOP_CHROME_BASE =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
@@ -65,7 +74,9 @@ export function shouldStayInOfficialSiteWebView(
   allowedHosts: readonly string[]
 ): boolean {
   const u = (rawUrl ?? "").trim();
-  if (!u || /^(?:about:blank|javascript:)/i.test(u)) return true;
+  if (!u || /^about:blank/i.test(u)) return true;
+  /** javascript: — WebView XSS векторы; ешқашан іште қалдырмау. */
+  if (/^javascript:/i.test(u)) return false;
   if (EXTERNAL_SCHEME_RE.test(u)) return false;
   try {
     const parsed = new URL(u);
@@ -197,7 +208,7 @@ export const OFFICIAL_SITE_SPA_HISTORY_INJECT = `
         type: "raqat-spa-nav",
         url: location.href,
         index: h.index,
-        canGoBack: h.index > 0 || history.length > 1
+        canGoBack: h.index > 0
       })
     );
   }
@@ -224,12 +235,18 @@ export const OFFICIAL_SITE_SPA_HISTORY_INJECT = `
   };
   window.addEventListener("popstate", function () {
     var h = window.__raqatSpaHistory;
-    var idx = h.stack.lastIndexOf(location.href);
-    if (idx >= 0) h.index = idx;
-    else {
+    var url = location.href;
+    var idx = h.stack.lastIndexOf(url);
+    if (idx >= 0) {
+      h.index = idx;
+      h.stack = h.stack.slice(0, idx + 1);
+    } else if (h.index > 0) {
+      h.index -= 1;
+      h.stack[h.index] = url;
       h.stack = h.stack.slice(0, h.index + 1);
-      h.stack.push(location.href);
-      h.index = h.stack.length - 1;
+    } else {
+      h.stack = [url];
+      h.index = 0;
     }
     post();
   });

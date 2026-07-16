@@ -8,6 +8,7 @@ import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
 import { qiblaAlignHint } from "../lib/qiblaHints";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -19,6 +20,7 @@ type Props = {
 
 /** Құбыла көрсеткісі — намаз hero ортасы немесе шапка. */
 export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "default" }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const [cameraOpen, setCameraOpen] = useState(false);
   const { bearing, resumeHeadingSubscription } = useQiblaStable();

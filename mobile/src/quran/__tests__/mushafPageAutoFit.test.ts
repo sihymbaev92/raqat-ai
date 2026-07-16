@@ -6,7 +6,7 @@ import {
 describe("mushafPageAutoFit", () => {
   it("computes min fit scale from hatim font floor", () => {
     expect(mushafPageMinFitScale(22)).toBeCloseTo(18 / 22, 2);
-    expect(mushafPageMinFitScale(30)).toBeGreaterThanOrEqual(0.62);
+    expect(mushafPageMinFitScale(30)).toBeGreaterThanOrEqual(0.5);
   });
 
   it("shrinks scale when content exceeds viewport", () => {

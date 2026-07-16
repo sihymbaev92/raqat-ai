@@ -32,12 +32,14 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
     val app = context.applicationContext
     Handler(Looper.getMainLooper()).post {
       try {
-        PrayerAzanDeliveryService.start(app, label, enteredTitle, time, soundId, salatKey)
+        PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
       } catch (t: Throwable) {
-        Log.w(TAG, "Delivery service failed; using inline fallback for $salatKey", t)
-        PrayerAzanDelivery.startInlineFallback(app, label, enteredTitle, time, soundId, salatKey)
+        Log.w(TAG, "Azan delivery failed for $salatKey", t)
       } finally {
-        Handler(Looper.getMainLooper()).postDelayed({ pendingResult.finish() }, 1200L)
+        Handler(Looper.getMainLooper()).postDelayed(
+          { pendingResult.finish() },
+          ALARM_RECEIVER_FINISH_DELAY_MS
+        )
       }
     }
   }
@@ -49,5 +51,7 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
   companion object {
     private const val TAG = "PrayerAzanAlarm"
     private const val MAX_LATE_AZAN_MS = 5 * 60 * 1000L
+    /** WakeLock + activity launch алынғанша. */
+    const val ALARM_RECEIVER_FINISH_DELAY_MS = 4_000L
   }
 }

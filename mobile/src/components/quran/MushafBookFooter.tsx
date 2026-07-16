@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useAppLocale } from "../../i18n/runtime";
 import { StyleSheet, Text, View } from "react-native";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
@@ -15,8 +16,9 @@ type Props = {
   readingThemeId?: import("../../theme/quranComReadingTheme").QuranReadingThemeId | null;
 };
 
-/** Мұсаф бетінің төменгі жолы — тек хизб (бет нөмірі жоқ). */
+/** Мұсаф бетінің төменгі жолы — хизб (сүре басы) және бет нөмірі. */
 export function MushafBookFooter({
+  page,
   pageA11y,
   colors,
   isDark,
@@ -25,6 +27,7 @@ export function MushafBookFooter({
   surahStartsOnPage = false,
   readingThemeId,
 }: Props) {
+  useAppLocale();
   const theme = resolveQuranReadingTheme(readingThemeId);
   const qcom = Boolean(bookMushaf && theme.minimalPageChrome);
   const styles = useMemo(
@@ -32,15 +35,23 @@ export function MushafBookFooter({
     [theme, qcom, surahStartsOnPage]
   );
   const showHizbRow = qcom && surahStartsOnPage && hizb != null && hizb > 0;
+  const showPageRow = qcom && page != null && page > 0;
 
-  if (!showHizbRow) return null;
+  if (!showHizbRow && !showPageRow) return null;
 
   return (
     <View style={styles.root} accessibilityRole="text" accessibilityLabel={pageA11y}>
       <View style={styles.pillRow}>
-        <View style={styles.pillSingle}>
-          <Text style={styles.pillHizb}>{kk.quran.mushafFooterHizbQcom(hizb)}</Text>
-        </View>
+        {showHizbRow ? (
+          <View style={styles.pillSingle}>
+            <Text style={styles.pillHizb}>{kk.quran.mushafFooterHizbQcom(hizb)}</Text>
+          </View>
+        ) : null}
+        {showPageRow ? (
+          <View style={styles.pillSingle}>
+            <Text style={styles.pillPage}>{kk.quran.mushafChromePage(page!)}</Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );

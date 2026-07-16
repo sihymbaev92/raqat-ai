@@ -1,7 +1,7 @@
 import type { NavigationState } from "@react-navigation/native";
 
 /**
- * App.tsx: NavigationContainer onStateChange / onReady — дауыспен global FAB көрінуін есептеу үшін.
+ * App.tsx: NavigationContainer onStateChange / onReady — құбыла сенсорлары үшін.
  */
 let _rootState: NavigationState | undefined;
 let _ready = false;

@@ -26,6 +26,8 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { FATUA_KZ_LABEL_KK, kk, MUFTYAT_KZ_LABEL_KK } from "../i18n/kk";
 import { FATUA_KK_HOME_URL } from "../config/officialIslamicSources";
+import { openOfficialSiteInApp } from "../config/officialSiteProxy";
+import { warmOfficialSiteUrl } from "../services/hubScreenWarmup";
 import { useAppLocale } from "../i18n/runtime";
 import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { RaqatAiHubHeader } from "../components/RaqatAiHubHeader";
@@ -961,7 +963,8 @@ export function RaqatAIChatScreen() {
         <View style={styles.heroDisclaimerTextCol}>
           <Text style={styles.heroDisclaimerText}>{kk.aiChat.heroDisclaimer}</Text>
           <Pressable
-            onPress={() => void Linking.openURL(FATUA_KZ_HOME_URL)}
+            onPressIn={() => warmOfficialSiteUrl(FATUA_KK_HOME_URL)}
+            onPress={() => openOfficialSiteInApp(FATUA_KK_HOME_URL, navigation)}
             style={({ pressed }) => [styles.heroDisclaimerLink, pressed && { opacity: 0.85 }]}
             accessibilityRole="link"
             accessibilityLabel={kk.aiChat.heroDisclaimerFatuaLink}

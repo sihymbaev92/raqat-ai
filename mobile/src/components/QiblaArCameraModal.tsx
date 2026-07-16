@@ -3,6 +3,7 @@ import { Modal } from "react-native";
 import { QiblaArCameraView } from "./QiblaArCameraView";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   visible: boolean;
@@ -12,6 +13,7 @@ type Props = {
 
 /** Басты бет шапкасы: ұзақ басу — алдыңғы камера + құбыла AR. */
 export function QiblaArCameraModal({ visible, colors, onClose }: Props) {
+  useAppLocale();
   if (!visible) return null;
 
   return (

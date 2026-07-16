@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, Platform, Image, Animated, Easing } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  Image,
+  ImageBackground,
+  Animated,
+  Easing,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
 import { BlurView } from "expo-blur";
@@ -14,6 +23,12 @@ import { prayerVisual, shortPrayerName } from "./CompactPrayerTimesRow";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { cityLabelKkForApiName } from "../constants/kzCities";
+import { resolvePrayerHeroBackground } from "../config/dashboardPrayerHero";
+import { PrayerHeroDaylightOverlay } from "./PrayerHeroDaylightOverlay";
+import {
+  prayerDaylightPhaseFor,
+  prayerDaylightTimesFromRows,
+} from "../theme/prayerHeroDaylight";
 import {
   secondsUntilNextSalat,
   formatSecondsAsHms,
@@ -69,17 +84,17 @@ function heroWeatherGradientFor(weatherSnap: OpenMeteoCurrent | null): [string, 
   const motion = heroWeatherMotionFor(weatherSnap);
   switch (motion) {
     case "sun":
-      return ["rgba(255, 183, 77, 0.18)", "rgba(18, 132, 142, 0.1)", "rgba(12, 74, 92, 0.18)"];
+      return ["rgba(255, 183, 77, 0.08)", "rgba(18, 132, 142, 0.04)", "rgba(12, 74, 92, 0.08)"];
     case "night":
-      return ["rgba(25, 34, 80, 0.22)", "rgba(8, 23, 51, 0.16)", "rgba(4, 12, 30, 0.24)"];
+      return ["rgba(25, 34, 80, 0.10)", "rgba(8, 23, 51, 0.06)", "rgba(4, 12, 30, 0.10)"];
     case "rain":
-      return ["rgba(9, 35, 61, 0.32)", "rgba(19, 86, 108, 0.18)", "rgba(4, 28, 45, 0.28)"];
+      return ["rgba(9, 35, 61, 0.12)", "rgba(19, 86, 108, 0.06)", "rgba(4, 28, 45, 0.10)"];
     case "snow":
-      return ["rgba(178, 226, 255, 0.22)", "rgba(56, 139, 169, 0.12)", "rgba(15, 67, 90, 0.22)"];
+      return ["rgba(178, 226, 255, 0.08)", "rgba(56, 139, 169, 0.04)", "rgba(15, 67, 90, 0.08)"];
     case "storm":
-      return ["rgba(47, 31, 82, 0.34)", "rgba(15, 40, 73, 0.24)", "rgba(5, 16, 36, 0.34)"];
+      return ["rgba(47, 31, 82, 0.12)", "rgba(15, 40, 73, 0.08)", "rgba(5, 16, 36, 0.12)"];
     default:
-      return ["rgba(28, 81, 96, 0.2)", "rgba(22, 101, 119, 0.1)", "rgba(11, 62, 78, 0.2)"];
+      return ["rgba(28, 81, 96, 0.08)", "rgba(22, 101, 119, 0.04)", "rgba(11, 62, 78, 0.08)"];
   }
 }
 
@@ -458,7 +473,36 @@ function timelineStateForRow(
   return "upcoming";
 }
 
-export function DashboardPrayerWidget({
+function PrayerCountdownHms({
+  rows,
+  tomorrowRows = null,
+  pending = false,
+  style,
+  maxFontSizeMultiplier = 1.12,
+}: {
+  rows: PrayerRow[];
+  tomorrowRows?: PrayerRow[] | null;
+  pending?: boolean;
+  style?: object;
+  maxFontSizeMultiplier?: number;
+}) {
+  const [tick, setTick] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setTick(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const text =
+    !rows.length && pending
+      ? "—"
+      : formatSecondsAsHms(secondsUntilNextSalat(rows, tick, tomorrowRows));
+  return (
+    <Text style={style} numberOfLines={1} maxFontSizeMultiplier={maxFontSizeMultiplier}>
+      {text}
+    </Text>
+  );
+}
+
+function DashboardPrayerWidget({
   colors,
   isDark,
   rows,
@@ -482,9 +526,8 @@ export function DashboardPrayerWidget({
 }: Props) {
   const locale = useAppLocale();
   const styles = useMemo(() => makeStyles(compact, colors), [compact, colors]);
+  /** Кесте/прогресс — сирек; HMS — жеке 1s child. */
   const [now, setNow] = useState(() => new Date());
-  const secLeft = secondsUntilNextSalat(rows, now, tomorrowRows);
-  const hms = formatSecondsAsHms(secLeft);
   const nextResolved = next ?? nextSalatRow(rows, tomorrowRows, now);
   const leftName = nextResolved ? shortPrayerName(nextResolved.key) : "—";
   const salatTimes = useMemo(
@@ -513,53 +556,44 @@ export function DashboardPrayerWidget({
       <Text style={styles.greenStripLeft} numberOfLines={1}>
         {leftName} · {nextTimeLine}
       </Text>
-      <Text style={styles.greenStripRight} numberOfLines={1} maxFontSizeMultiplier={1.12}>
-        {!rows.length && pending ? "—" : hms}
-      </Text>
+      <PrayerCountdownHms
+        rows={rows}
+        tomorrowRows={tomorrowRows}
+        pending={pending}
+        style={styles.greenStripRight}
+      />
     </View>
   ) : null;
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
+    const id = setInterval(() => setNow(new Date()), 15_000);
+    return () => clearInterval(id);
   }, []);
+
+  const heroPhase = useMemo(
+    () => prayerDaylightPhaseFor(prayerDaylightTimesFromRows(rows), now),
+    [rows, now]
+  );
+  const heroBg = useMemo(
+    () => resolvePrayerHeroBackground(heroPhase, "dashboardNext"),
+    [heroPhase]
+  );
 
   if (homeMockup) {
     const stripRows = HOME_MOCKUP_STRIP_KEYS.map((k) => rows.find((r) => r.key === k)).filter(
       (r): r is PrayerRow => Boolean(r?.time?.trim())
     );
     const mockupCityKk = cityLabel.trim() ? cityLabelKkForApiName(cityLabel.trim()) : "";
-    const mockupWeatherMotion = heroWeatherMotionFor(weatherSnap);
-    const mockupWeatherGradient = heroWeatherGradientFor(weatherSnap);
     const mockupBody = (
-      <View style={styles.mockupShell}>
-        {Platform.OS === "ios" ? (
-          <BlurView
-            pointerEvents="none"
-            tint="dark"
-            intensity={10}
-            style={StyleSheet.absoluteFill}
-          />
-        ) : null}
-        <LinearGradient
-          pointerEvents="none"
-          colors={mockupWeatherGradient}
-          locations={[0, 0.48, 1]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={StyleSheet.absoluteFill}
-        />
-        <View
-          style={[
-            styles.mockupTint,
-            mockupWeatherMotion === "snow" && styles.mockupTintSnow,
-            mockupWeatherMotion === "sun" && styles.mockupTintSun,
-            mockupWeatherMotion === "rain" && styles.mockupTintRain,
-            mockupWeatherMotion === "storm" && styles.mockupTintStorm,
-          ]}
-          pointerEvents="none"
-        />
-        <HeroWeatherEffects motion={mockupWeatherMotion} styles={styles} />
+      <ImageBackground
+        source={heroBg}
+        style={styles.mockupShell}
+        imageStyle={styles.mockupShellImage}
+        resizeMode="cover"
+        resizeMethod={Platform.OS === "android" ? "resize" : undefined}
+        accessibilityIgnoresInvertColors
+      >
+        <PrayerHeroDaylightOverlay rows={rows} />
         <View style={styles.mockupInner}>
           <View style={styles.mockupMetaRow} pointerEvents="box-none">
             <View style={styles.mockupMetaLeft}>
@@ -602,7 +636,7 @@ export function DashboardPrayerWidget({
             accessibilityRole="timer"
             accessibilityLabel={kk.dashboard.nextPrayerCountdownA11y(
               nextSalatLabelForA11y,
-              !rows.length && pending ? "—" : hms
+              approxLeft
             )}
           >
             <View style={styles.mockupNextLeft}>
@@ -622,9 +656,12 @@ export function DashboardPrayerWidget({
               {pending && !rows.length ? (
                 <RaqatOrnamentSpinner size={22} />
               ) : (
-                <Text style={styles.mockupNextHms} numberOfLines={1} maxFontSizeMultiplier={1.12}>
-                  {hms}
-                </Text>
+                <PrayerCountdownHms
+                  rows={rows}
+                  tomorrowRows={tomorrowRows}
+                  pending={pending}
+                  style={styles.mockupNextHms}
+                />
               )}
             </View>
           </View>
@@ -679,7 +716,7 @@ export function DashboardPrayerWidget({
             <RaqatOrnamentSpinner size={28} />
           </View>
         ) : null}
-      </View>
+      </ImageBackground>
     );
 
     if (onPress) {
@@ -688,13 +725,17 @@ export function DashboardPrayerWidget({
           onPress={onPress}
           accessibilityRole="button"
           accessibilityLabel={kk.dashboard.openPrayerDetailA11y}
-          style={({ pressed }) => [styles.cardWrap, pressed && { opacity: 0.97 }]}
+          style={({ pressed }) => [
+            styles.cardWrap,
+            styles.cardWrapHeroFill,
+            pressed && { opacity: 0.97 },
+          ]}
         >
           {mockupBody}
         </Pressable>
       );
     }
-    return <View style={styles.cardWrap}>{mockupBody}</View>;
+    return <View style={[styles.cardWrap, styles.cardWrapHeroFill]}>{mockupBody}</View>;
   }
 
   if (launcherHeader) {
@@ -743,7 +784,7 @@ export function DashboardPrayerWidget({
             accessibilityRole="timer"
             accessibilityLabel={kk.dashboard.nextPrayerCountdownA11y(
               nextSalatLabelForA11y,
-              !rows.length && pending ? "—" : hms
+              approxLeft
             )}
           >
             <View style={styles.launcherStripLeftCol}>
@@ -755,9 +796,12 @@ export function DashboardPrayerWidget({
               </Text>
             </View>
             <View style={styles.launcherStripRightCol}>
-              <Text style={styles.greenStripRight} numberOfLines={1} maxFontSizeMultiplier={1.12}>
-                {!rows.length && pending ? "—" : hms}
-              </Text>
+              <PrayerCountdownHms
+                rows={rows}
+                tomorrowRows={tomorrowRows}
+                pending={pending}
+                style={styles.greenStripRight}
+              />
               {!pending && rows.length ? (
                 <Text style={styles.launcherStripApprox} numberOfLines={1}>
                   {approxLeft}
@@ -878,7 +922,7 @@ export function DashboardPrayerWidget({
             accessibilityRole="timer"
             accessibilityLabel={kk.dashboard.nextPrayerCountdownA11y(
               nextSalatLabelForA11y,
-              !rows.length && pending ? "—" : hms
+              approxLeft
             )}
           >
             {pending && !rows.length ? (
@@ -893,14 +937,13 @@ export function DashboardPrayerWidget({
                         : shortPrayerName(nextResolved.key)
                       : kk.dashboard.nextPrayer}
                   </Text>
-                  <Text
+                  <PrayerCountdownHms
+                    rows={rows}
+                    tomorrowRows={tomorrowRows}
+                    pending={pending}
                     style={styles.topCountdownHms}
-                    numberOfLines={1}
                     maxFontSizeMultiplier={1.08}
-                    allowFontScaling
-                  >
-                    {hms}
-                  </Text>
+                  />
                 </View>
                 <Text style={styles.topCountdownApprox} numberOfLines={1} maxFontSizeMultiplier={1.1}>
                   {approxLeft}
@@ -1017,6 +1060,9 @@ export function DashboardPrayerWidget({
   return <View style={styles.cardWrap}>{body}</View>;
 }
 
+const MemoDashboardPrayerWidget = React.memo(DashboardPrayerWidget);
+export { MemoDashboardPrayerWidget as DashboardPrayerWidget };
+
 function makeStyles(compact: boolean, colors: ThemeColors) {
   const padX = compact ? 12 : 14;
   const padTop = compact ? 6 : 12;
@@ -1039,6 +1085,11 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     /** Сыртқы Pressable/ImageBackground тасымалдағанда көлеңке сыртта */
     cardWrap: {
       marginBottom: 0,
+    },
+    /** Басты бет: ImageBackground aspectRatio биіктігін толық толтыру */
+    cardWrapHeroFill: {
+      flex: 1,
+      alignSelf: "stretch",
     },
     glassShell: {
       borderRadius: 0,
@@ -1457,38 +1508,44 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       borderRadius: 16,
       overflow: "hidden",
       position: "relative",
+      flex: 1,
       minHeight: 104,
-      backgroundColor: "rgba(7, 32, 36, 0.08)",
+      backgroundColor: "#0a1520",
+    },
+    mockupShellImage: {
+      borderRadius: 16,
     },
     mockupTint: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(8, 32, 38, 0.14)",
+      backgroundColor: "rgba(8, 32, 38, 0.04)",
     },
     mockupTintSun: {
-      backgroundColor: "rgba(70, 91, 30, 0.08)",
+      backgroundColor: "rgba(70, 91, 30, 0.03)",
     },
     mockupTintSnow: {
-      backgroundColor: "rgba(9, 57, 74, 0.12)",
+      backgroundColor: "rgba(9, 57, 74, 0.05)",
     },
     mockupTintRain: {
-      backgroundColor: "rgba(4, 23, 38, 0.24)",
+      backgroundColor: "rgba(4, 23, 38, 0.08)",
     },
     mockupTintStorm: {
-      backgroundColor: "rgba(4, 12, 31, 0.32)",
+      backgroundColor: "rgba(4, 12, 31, 0.10)",
     },
     mockupInner: {
       position: "relative",
+      flex: 1,
+      justifyContent: "space-between",
       paddingHorizontal: 10,
-      paddingTop: 1,
+      paddingTop: 4,
       paddingBottom: 4,
-      gap: 1,
+      gap: 2,
     },
     mockupMetaRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       position: "relative",
-      minHeight: 34,
+      minHeight: 28,
       marginTop: -1,
       marginBottom: -1,
       zIndex: 2,

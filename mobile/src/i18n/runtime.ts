@@ -1,11 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
+import { I18nManager } from "react-native";
 import { kk } from "./kk";
-import { PRAYER_AZAN_PATCH_KY, PRAYER_AZAN_PATCH_UZ } from "./azanLocalePatches";
 import {
+  PRAYER_AZAN_PATCH_AR,
+  PRAYER_AZAN_PATCH_KY,
+  PRAYER_AZAN_PATCH_TR,
+  PRAYER_AZAN_PATCH_UZ,
+} from "./azanLocalePatches";
+import { CRITICAL_UI_LOCALE_PATCHES } from "./criticalUiLocalePatches";
+import { FEATURE_LOCALE_PATCHES } from "./featureLocalePatches";
+import { CORE_SCREEN_LOCALE_PATCHES } from "./localePatchesCoreScreens";
+import { EXTENDED_LOCALE_PATCHES } from "./localePatchesExtended";
+import {
+  areOfflineAutoTranslationsReady,
   ensureOfflineAutoTranslationsLoaded,
   getOfflineAutoTranslation,
-  releaseOfflineAutoTranslationsMemory,
+  hasOfflineAutoTranslationLocale,
+  pruneOfflineAutoTranslationsToLocale,
   type OfflineAutoTranslateTarget,
 } from "../services/offlineAutoTranslations";
 
@@ -26,11 +38,22 @@ export type AppLocale =
   | "hi"
   | "ku";
 
-export const APP_LOCALE_OPTIONS: readonly { id: AppLocale; label: string; nativeLabel: string }[] = [
-  { id: "kk", label: "Қазақша", nativeLabel: "Қазақша" },
-  { id: "ru", label: "Русский", nativeLabel: "Русский" },
-  { id: "en", label: "English", nativeLabel: "English" },
-  { id: "ky", label: "Кыргызча", nativeLabel: "Кыргызча" },
+export type AppLocaleOption = {
+  id: AppLocale;
+  label: string;
+  nativeLabel: string;
+  flagIso: string;
+  subtitle?: string;
+};
+
+export const APP_LOCALE_OPTIONS: readonly AppLocaleOption[] = [
+  { id: "kk", label: "Қазақша", nativeLabel: "Қазақша", flagIso: "KZ" },
+  { id: "ru", label: "Русский", nativeLabel: "Русский", flagIso: "RU" },
+  { id: "en", label: "English", nativeLabel: "English", flagIso: "GB" },
+  { id: "ky", label: "Кыргызча", nativeLabel: "Кыргызча", flagIso: "KG" },
+  { id: "uz", label: "Oʻzbekcha", nativeLabel: "Oʻzbekcha", flagIso: "UZ" },
+  { id: "tr", label: "Türkçe", nativeLabel: "Türkçe", flagIso: "TR" },
+  { id: "ar", label: "العربية", nativeLabel: "العربية", flagIso: "SA" },
 ];
 
 const APP_LOCALE_IDS = new Set<AppLocale>(APP_LOCALE_OPTIONS.map((opt) => opt.id));
@@ -93,8 +116,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubSectionWorship: "Поклонение",
       contentHubSectionKnowledge: "Знания и источники",
       contentHubSectionCommunity: "Дополнительные инструменты",
-      siriShortcutHelpTitle: "Siri и команды",
-      siriShortcutHubTile: "Siri и команды",
     },
     dashboard: {
       greeting: "Ассаляму алейкум",
@@ -213,11 +234,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       azanDuaTextBlock: {
         id: "azan-dua",
         arabic:
-          "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+          "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
         translit:
-          "Аллахумма рабба хазихи-д-да'вати-т-таммати ва-с-саляти-ль-ка'имати, ати Мухаммадан аль-василата ва-ль-фадилата, ваб'асху макамам-махмуданил-лязи ва'адтах, иннака ля тухлифу-ль-ми'ад.",
+          "Аллахумма рабба хазихи-д-да'вати-т-таммати ва-с-саляти-ль-ка'имати, ати Мухаммадан аль-василата ва-ль-фадилата вад-даражатар-рафи'а. Ваб'асху макамам-махмуданил-лязи ва'адтах. Иннака ля тухлифул-ми'ад.",
         meaning:
-          "О Аллах, Господь этого совершенного призыва и совершаемой молитвы! Даруй Мухаммаду василя и достоинство, и возведи его на достохвальное место, которое Ты обещал. Воистину, Ты не нарушаешь обещания.",
+          "О Аллах, Господь этого полного азана и совершаемой молитвы! Даруй Мухаммаду василя, достоинство и высокую степень! Возведи его на обещанное Тобой «восхваляемое место». Ты не нарушаешь Своего обещания.",
       },
     },
     aiChat: {
@@ -322,7 +343,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       colorPaletteTitle: "Акцентный цвет",
       colorPaletteHint: "Цвет кнопок и значков.",
       accountSection: "Аккаунт",
-      accountSectionSub: "Вход синхронизирует историю и прогресс.",
+      accountSectionSub: "Вход синхронизирует хатм, закладки Корана и прогресс.",
       sectionLinks: "Разделы",
       sectionSupport: "Поддержка",
       headerSettingsA11y: "Настройки",
@@ -388,8 +409,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubSectionWorship: "Worship",
       contentHubSectionKnowledge: "Knowledge and sources",
       contentHubSectionCommunity: "Additional tools",
-      siriShortcutHelpTitle: "Siri and Shortcuts",
-      siriShortcutHubTile: "Siri and Shortcuts",
     },
     dashboard: {
       greeting: "Assalamu alaikum",
@@ -508,11 +527,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       azanDuaTextBlock: {
         id: "azan-dua",
         arabic:
-          "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+          "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
         translit:
-          "Allahumma rabba hadhihi-d-da'watit-tammati was-salatil-qa'imah, ati Muhammadan al-wasilata wal-fadilah, wab'athhu maqamam mahmudan alladhi wa'adtah, innaka la tukhliful-mi'ad.",
+          "Allahumma rabba hadhihi-d-da'watit-tammati was-salatil-qa'imah, ati Muhammadan al-wasilata wal-fadilah wad-darajatar-rafi'ah. Wab'athhu maqamam mahmudan alladhi wa'adtah. Innaka la tukhliful-mi'ad.",
         meaning:
-          "O Allah, Lord of this perfect call and established prayer, grant Muhammad al-Wasilah and virtue, and raise him to the praised station You promised him. Indeed, You do not break Your promise.",
+          "O Allah, Lord of this complete adhan and the prayer being established! Grant Muhammad the wasilah, virtue and the high rank. Raise him to the praised station You promised. You never break Your promise.",
       },
     },
     aiChat: {
@@ -617,7 +636,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       colorPaletteTitle: "Accent color",
       colorPaletteHint: "Color for buttons and badges.",
       accountSection: "Account",
-      accountSectionSub: "Sign in to sync history and progress.",
+      accountSectionSub: "Sign in to sync hatim, Quran bookmarks and progress.",
       sectionLinks: "Sections",
       sectionSupport: "Support",
       headerSettingsA11y: "Settings",
@@ -657,8 +676,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubTitle: "Меню",
       contentHubSub: "Башкы бет күнүмдүк өзөктү кармайт: намаз, Куран жана халал. Кошумча билим жана куралдар ушул жерде.",
       contentHubSectionWorship: "Ибадат", contentHubSectionKnowledge: "Билим жана булактар",
-      contentHubSectionCommunity: "Кошумча куралдар", siriShortcutHelpTitle: "Siri жана буйруктар",
-      siriShortcutHubTile: "Siri жана буйруктар",
+      contentHubSectionCommunity: "Кошумча куралдар",
     },
     dashboard: {
       greeting: "Ассалаому алейкум", heroTagline: "Намаз убактысы, Куран, дуба жана билим — бир колдонмодо",
@@ -675,8 +693,9 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "Намаз убактысы", city: "Шаар", country: "Өлкө", refresh: "Жаңылоо", fajr: "Багымдат",
       sunrise: "Күн чыгуу", dhuhr: "Бешим", asr: "Аср", maghrib: "Шам", isha: "Куптан",
       fajrShort: "Багымдат", sunriseShort: "Күн", dhuhrShort: "Бешим", asrShort: "Аср",
-      maghribShort: "Шам", ishaShort: "Куптан", notifications: "Билдирүүлөр",
+      maghribShort: "Шам", ishaShort: "Куптан",       notifications: "Билдирүүлөр",
       ...PRAYER_AZAN_PATCH_KY,
+      azanTextBlocks: PRAYER_AZAN_PATCH_KY.azanTextBlocks.map((b) => ({ ...b })),
     },
     aiChat: {
       kbShelfSourceLabel: "Булак",
@@ -761,7 +780,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "RAHAT OMIR'ga xush kelibsiz",
       step1:
         "Ilovada namoz vaqti, Qur'on, xatm, duolar, qibla, hadislar va diniy darsliklar bor. Qibla va namoz vaqti to'g'ri ishlashi uchun joylashuv ruxsati kerak bo'lishi mumkin. Shahar, bildirishnomalar va boshqa sozlamalarni keyinroq «Sozlamalar» bo'limida o'zgartirishingiz mumkin.",
-      start: "Tushundim", languageTitle: "Тіл · Til · Language",
+      start: "Tushundim", languageTitle: "Ilova tili",
       languageHint: "Ilova tilini tanlang. Keyin sozlamalarda o'zgartirish mumkin.",
     },
     tabs: {
@@ -775,8 +794,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubTitle: "Menyu",
       contentHubSub: "Bosh ekran kundalik asosni saqlaydi: namoz, Qur'on va halol. Qo'shimcha bilim va vositalar shu yerda.",
       contentHubSectionWorship: "Ibodat", contentHubSectionKnowledge: "Bilim va manbalar",
-      contentHubSectionCommunity: "Qo'shimcha vositalar", siriShortcutHelpTitle: "Siri va buyruqlar",
-      siriShortcutHubTile: "Siri va buyruqlar",
+      contentHubSectionCommunity: "Qo'shimcha vositalar",
     },
     dashboard: {
       greeting: "Assalomu alaykum", heroTagline: "Namoz vaqti, Qur'on, duolar va bilim — bitta ilovada",
@@ -793,6 +811,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "Namoz vaqti", city: "Shahar", country: "Davlat", refresh: "Yangilash", fajr: "Bomdod",
       sunrise: "Quyosh chiqishi", dhuhr: "Peshin", asr: "Asr", maghrib: "Shom", isha: "Xufton", notifications: "Bildirishnomalar",
       ...PRAYER_AZAN_PATCH_UZ,
+      azanTextBlocks: PRAYER_AZAN_PATCH_UZ.azanTextBlocks.map((b) => ({ ...b })),
     },
     namazGuide: { shortTitle: "Namoz", screenTitle: "Namoz darsligi" },
     asma: {
@@ -851,7 +870,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "RAHAT OMIR'e hoş geldiniz",
       step1:
         "Uygulamada namaz vakitleri, Kur'an, hatim, dualar, kıble, hadisler ve dini rehberler bulunur. Kıble ve namaz vakitlerinin doğru çalışması için konum izni gerekebilir. Şehir, bildirimler ve diğer ayarları daha sonra «Ayarlar» bölümünden değiştirebilirsiniz.",
-      start: "Anladım", languageTitle: "Тіл · Dil · Language",
+      start: "Anladım", languageTitle: "Uygulama dili",
       languageHint: "Uygulama dilini seçin. Daha sonra ayarlardan değiştirebilirsiniz.",
     },
     tabs: {
@@ -865,8 +884,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubTitle: "Menü",
       contentHubSub: "Ana ekran günlük çekirdeği tutar: namaz, Kur'an ve helal. Ek bilgi ve araçlar burada.",
       contentHubSectionWorship: "İbadet", contentHubSectionKnowledge: "Bilgi ve kaynaklar",
-      contentHubSectionCommunity: "Ek araçlar", siriShortcutHelpTitle: "Siri ve Kısayollar",
-      siriShortcutHubTile: "Siri ve Kısayollar",
+      contentHubSectionCommunity: "Ek araçlar",
     },
     dashboard: {
       greeting: "Esselamü aleyküm", heroTagline: "Namaz vakitleri, Kur'an, dualar ve bilgi — tek uygulamada",
@@ -882,6 +900,8 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     prayer: {
       title: "Namaz vakitleri", city: "Şehir", country: "Ülke", refresh: "Yenile", fajr: "İmsak",
       sunrise: "Güneş", dhuhr: "Öğle", asr: "İkindi", maghrib: "Akşam", isha: "Yatsı", notifications: "Bildirimler",
+      ...PRAYER_AZAN_PATCH_TR,
+      azanTextBlocks: PRAYER_AZAN_PATCH_TR.azanTextBlocks.map((b) => ({ ...b })),
     },
     namazGuide: { shortTitle: "Namaz", screenTitle: "Namaz rehberi" },
     asma: {
@@ -940,7 +960,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "مرحبًا بك في RAHAT OMIR",
       step1:
         "يحتوي التطبيق على مواقيت الصلاة والقرآن والختمة والأدعية والقبلة والأحاديث والكتب الدينية. قد يلزم إذن الموقع لكي تعمل القبلة ومواقيت الصلاة بشكل صحيح. يمكنك تغيير المدينة والإشعارات والإعدادات الأخرى لاحقًا في «الإعدادات».",
-      start: "فهمت", languageTitle: "Тіл · اللغة · Language",
+      start: "فهمت", languageTitle: "لغة التطبيق",
       languageHint: "اختر لغة التطبيق. يمكنك تغييرها لاحقًا في الإعدادات.",
     },
     tabs: {
@@ -954,8 +974,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       contentHubTitle: "القائمة",
       contentHubSub: "تبقى الشاشة الرئيسية للجوهر اليومي: الصلاة والقرآن والحلال. المعرفة والأدوات الإضافية هنا.",
       contentHubSectionWorship: "العبادة", contentHubSectionKnowledge: "المعرفة والمصادر",
-      contentHubSectionCommunity: "أدوات إضافية", siriShortcutHelpTitle: "Siri والاختصارات",
-      siriShortcutHubTile: "Siri والاختصارات",
+      contentHubSectionCommunity: "أدوات إضافية",
     },
     dashboard: {
       greeting: "السلام عليكم", heroTagline: "مواقيت الصلاة والقرآن والأدعية والعلم في تطبيق واحد",
@@ -971,6 +990,8 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     prayer: {
       title: "مواقيت الصلاة", city: "المدينة", country: "الدولة", refresh: "تحديث", fajr: "الفجر",
       sunrise: "الشروق", dhuhr: "الظهر", asr: "العصر", maghrib: "المغرب", isha: "العشاء", notifications: "الإشعارات",
+      ...PRAYER_AZAN_PATCH_AR,
+      azanTextBlocks: PRAYER_AZAN_PATCH_AR.azanTextBlocks.map((b) => ({ ...b })),
     },
     namazGuide: { shortTitle: "الصلاة", screenTitle: "دليل الصلاة" },
     asma: {
@@ -1070,37 +1091,89 @@ function buildOfflineLocaleTree(obj: unknown, target: OfflineAutoTranslateTarget
   return out;
 }
 
-function getOfflineLocalePatch(target: Exclude<AppLocale, "kk">): Record<string, unknown> {
-  if (!offlineLocaleTreeCache[target]) {
-    offlineLocaleTreeCache[target] = buildOfflineLocaleTree(
-      KK_BASELINE,
-      target as OfflineAutoTranslateTarget
-    );
-    releaseOfflineAutoTranslationsMemory();
+/** Сөздік кейін жүктелсе — бос/қазақша ағашты қайта құру үшін. */
+export function invalidateOfflineLocaleTreeCache(target?: Exclude<AppLocale, "kk">): void {
+  if (target) {
+    delete offlineLocaleTreeCache[target];
+    return;
   }
-  return offlineLocaleTreeCache[target] as Record<string, unknown>;
+  for (const key of Object.keys(offlineLocaleTreeCache) as Array<Exclude<AppLocale, "kk">>) {
+    delete offlineLocaleTreeCache[key];
+  }
+}
+
+function getOfflineLocalePatch(target: Exclude<AppLocale, "kk">): Record<string, unknown> {
+  if (!hasOfflineAutoTranslationLocale(target as OfflineAutoTranslateTarget)) {
+    /** Сөздік жоқ/басқа тілге қысқарған — толық ағашты араламау. */
+    return {};
+  }
+  const cached = offlineLocaleTreeCache[target];
+  if (cached) {
+    return cached as Record<string, unknown>;
+  }
+  const tree = buildOfflineLocaleTree(KK_BASELINE, target as OfflineAutoTranslateTarget);
+  offlineLocaleTreeCache[target] = tree;
+  return tree as Record<string, unknown>;
 }
 
 function normalizeLocale(raw: string | null | undefined): AppLocale {
   return raw && APP_LOCALE_IDS.has(raw as AppLocale) ? (raw as AppLocale) : "kk";
 }
 
-function applyLocale(next: AppLocale): void {
+function syncAppLayoutDirection(locale: AppLocale): void {
+  const wantRtl = locale === "ar";
+  try {
+    I18nManager.allowRTL(true);
+    if (I18nManager.isRTL !== wantRtl) {
+      I18nManager.forceRTL(wantRtl);
+    }
+  } catch {
+    /* ignore — web / test */
+  }
+}
+
+function mergeManualLocalePatches(target: Exclude<AppLocale, "kk">): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  const core = (CORE_SCREEN_LOCALE_PATCHES as Record<string, unknown>)[target];
+  const extended = (EXTENDED_LOCALE_PATCHES as Record<string, unknown>)[target];
+  const feature = (FEATURE_LOCALE_PATCHES as Record<string, unknown>)[target];
+  const critical = (CRITICAL_UI_LOCALE_PATCHES as Record<string, unknown>)[target];
+  if (core) applyIntoTarget(merged, core as Record<string, unknown>);
+  if (extended) applyIntoTarget(merged, extended as Record<string, unknown>);
+  if (feature) applyIntoTarget(merged, feature as Record<string, unknown>);
+  if (critical) applyIntoTarget(merged, critical as Record<string, unknown>);
+  applyIntoTarget(merged, LOCALE_PATCHES[target] as Record<string, unknown>);
+  return merged;
+}
+
+export function applyLocale(next: AppLocale): void {
   applyIntoTarget(
     kk as unknown as Record<string, unknown>,
     KK_BASELINE as unknown as Record<string, unknown>
   );
   if (next !== "kk") {
+    for (const key of Object.keys(offlineLocaleTreeCache) as Array<Exclude<AppLocale, "kk">>) {
+      if (key !== next) delete offlineLocaleTreeCache[key];
+    }
     applyIntoTarget(
       kk as unknown as Record<string, unknown>,
       getOfflineLocalePatch(next)
     );
     applyIntoTarget(
       kk as unknown as Record<string, unknown>,
-      LOCALE_PATCHES[next] as Record<string, unknown>
+      mergeManualLocalePatches(next)
     );
+  } else {
+    invalidateOfflineLocaleTreeCache();
   }
   currentLocale = next;
+  syncAppLayoutDirection(next);
+}
+
+/** Pack жүктелгеннен кейін ағымдағы тілді қайта қолдану + UI жаңарту. */
+export function reapplyCurrentLocale(): void {
+  applyLocale(currentLocale);
+  emitLocaleChange();
 }
 
 function emitLocaleChange(): void {
@@ -1114,7 +1187,17 @@ export function getCurrentLocale(): AppLocale {
 export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
   const next = normalizeLocale(nextRaw);
   if (next !== "kk") {
-    await ensureOfflineAutoTranslationsLoaded();
+    const target = next as OfflineAutoTranslateTarget;
+    if (process.env.NODE_ENV === "test") {
+      await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
+      if (areOfflineAutoTranslationsReady()) {
+        pruneOfflineAutoTranslationsToLocale(target);
+        invalidateOfflineLocaleTreeCache(next);
+      }
+    } else if (hasOfflineAutoTranslationLocale(target)) {
+      pruneOfflineAutoTranslationsToLocale(target);
+      invalidateOfflineLocaleTreeCache(next);
+    }
   }
   applyLocale(next);
   emitLocaleChange();
@@ -1122,6 +1205,15 @@ export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
     await AsyncStorage.setItem(LOCALE_KEY, next);
   } catch {
     /* ignore */
+  }
+  if (next !== "kk" && process.env.NODE_ENV !== "test") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
+      m.scheduleLocaleContentDownload(next);
+    } catch {
+      /* ignore */
+    }
   }
 }
 
@@ -1136,6 +1228,7 @@ export function useAppLocale(): AppLocale {
 
 /**
  * Бут кезінде сақталған тілді оқып, негізгі `kk` мәтін объектісіне тиісті patch енгіземіз.
+ * CDN/36MB сөздікті күтпейміз — алдымен manual patches, сөздік фонға.
  */
 export async function hydrateLocale(): Promise<AppLocale> {
   let next: AppLocale = "kk";
@@ -1145,9 +1238,21 @@ export async function hydrateLocale(): Promise<AppLocale> {
     /* ignore */
   }
   if (next !== "kk") {
-    await ensureOfflineAutoTranslationsLoaded();
+    if (hasOfflineAutoTranslationLocale(next as OfflineAutoTranslateTarget)) {
+      pruneOfflineAutoTranslationsToLocale(next as OfflineAutoTranslateTarget);
+      invalidateOfflineLocaleTreeCache(next);
+    }
   }
   applyLocale(next);
   emitLocaleChange();
+  if (next !== "kk" && process.env.NODE_ENV !== "test") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
+      m.scheduleLocaleContentDownload(next);
+    } catch {
+      /* ignore */
+    }
+  }
   return next;
 }

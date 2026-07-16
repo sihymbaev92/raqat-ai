@@ -7,6 +7,7 @@ import { useAppTheme } from "../../theme/ThemeContext";
 import { kk } from "../../i18n/kk";
 import { HalalFilterChipRow, type HalalFilterChip } from "../HalalFilterChipRow";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
+import { useAppLocale } from "../../i18n/runtime";
 
 export type HalalCheckFlowPhase = null | "registry";
 
@@ -35,6 +36,7 @@ export function HalalVerifyHub({
   onOpenBarcode,
   onSubmitBarcode,
 }: Props) {
+  useAppLocale();
   const { isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const isWeb = Platform.OS === "web";

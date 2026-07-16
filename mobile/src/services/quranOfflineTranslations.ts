@@ -47,6 +47,7 @@ const OFFLINE_TRANSLATION_LOCALES = Object.keys(FIELD_BY_LOCALE);
 let bundle: QuranOfflineBundle = {};
 let mapsBySurah: Map<number, QuranOfflineAyah[]> | null = null;
 let loadPromise: Promise<void> | null = null;
+let projectedLocale: QuranTranslationLocale | null = null;
 
 function loadBundleFromAsset(): QuranOfflineBundle {
   if (!bundle.surahs) {
@@ -57,19 +58,105 @@ function loadBundleFromAsset(): QuranOfflineBundle {
   return bundle;
 }
 
-export async function ensureBundledQuranTranslationsLoaded(): Promise<void> {
-  if (bundle.surahs) return;
+function reloadFullBundledTranslationsFromAsset(): void {
+  bundle = {};
+  mapsBySurah = null;
+  projectedLocale = null;
+  loadBundleFromAsset();
+  if (!bundle.surahs?.length && process.env.NODE_ENV === "test") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      bundle = require("../../assets/bundled/quran-translations-offline.json") as QuranOfflineBundle;
+    } catch {
+      /* test asset missing */
+    }
+  }
+}
+
+/** Синхрон аят мағынасы: bundle жүктеліп, сұралған тілге проекцияланған болуы керек. */
+export function ensureBundledQuranTranslationLocaleSync(locale: QuranTranslationLocale): void {
+  if (!bundle.surahs?.length) {
+    if (process.env.NODE_ENV === "test") {
+      reloadFullBundledTranslationsFromAsset();
+    }
+    return;
+  }
+  if (projectedLocale != null && projectedLocale !== locale) {
+    if (process.env.NODE_ENV === "test") {
+      reloadFullBundledTranslationsFromAsset();
+    } else {
+      void ensureBundledQuranTranslationsLoaded(locale);
+      return;
+    }
+  }
+  projectBundledQuranTranslationsToLocale(locale);
+}
+
+/** ~18 MB көптілді bundle-ды белсенді тіл өрісіне қысу. */
+export function projectBundledQuranTranslationsToLocale(locale: QuranTranslationLocale): void {
+  if (!bundle.surahs?.length) return;
+  if (projectedLocale === locale) return;
+  const field = FIELD_BY_LOCALE[locale];
+  bundle = {
+    version: bundle.version,
+    source: bundle.source,
+    generatedAt: bundle.generatedAt,
+    surahs: bundle.surahs.map((surah) => ({
+      number: surah.number,
+      ayahs: (surah.ayahs ?? []).map((ayah) => {
+        const slim: QuranOfflineAyah = { numberInSurah: ayah.numberInSurah };
+        const text = ayah[field];
+        if (typeof text === "string" && text.trim()) {
+          (slim as unknown as Record<string, string>)[field] = text;
+        }
+        return slim;
+      }),
+    })),
+  };
+  mapsBySurah = null;
+  projectedLocale = locale;
+}
+
+export async function ensureBundledQuranTranslationsLoaded(
+  locale?: QuranTranslationLocale
+): Promise<void> {
+  if (bundle.surahs?.length) {
+    if (locale && projectedLocale && projectedLocale !== locale) {
+      /** Басқа тілге қысқартылған — толық файлды қайта жүктеу. */
+      bundle = {};
+      mapsBySurah = null;
+      projectedLocale = null;
+    } else {
+      if (locale) projectBundledQuranTranslationsToLocale(locale);
+      return;
+    }
+  }
+
   if (!loadPromise) {
     loadPromise = loadBundledJson<QuranOfflineBundle>("quran-translations-offline.json")
       .then((loaded) => {
         bundle = loaded;
         mapsBySurah = null;
+        projectedLocale = null;
+        try {
+          releaseBundledJsonMemory("quran-translations-offline.json");
+        } catch {
+          /* test mocks */
+        }
+        if (locale) projectBundledQuranTranslationsToLocale(locale);
       })
       .finally(() => {
         loadPromise = null;
       });
   }
-  return loadPromise;
+  await loadPromise;
+  if (locale && bundle.surahs?.length) {
+    projectBundledQuranTranslationsToLocale(locale);
+  }
+}
+
+export function prefetchBundledQuranTranslations(): Promise<void> {
+  return ensureBundledQuranTranslationsLoaded().catch(() => {});
 }
 
 function getSurahRows(surah: number): QuranOfflineAyah[] {
@@ -112,15 +199,45 @@ export function getBundledQuranAyahTranslation(
   locale: string
 ): string {
   if (!isBundledQuranTranslationLocale(locale)) return "";
+  ensureBundledQuranTranslationLocaleSync(locale);
   const field = FIELD_BY_LOCALE[locale];
   const row = getSurahRows(surah).find((item) => item.numberInSurah === ayah);
   return String(row?.[field] ?? "").trim();
 }
 
-/** Құран оқу экранынан шыққанда көптілді offline translation bundle-ын RAM-нан босату. */
+export async function searchBundledQuranTranslations(
+  query: string,
+  limit = 40,
+  locale: QuranTranslationLocale = "ru"
+): Promise<Array<{ surah: number; ayah: number; meaning: string }>> {
+  const needle = query.toLowerCase().normalize("NFKC").trim();
+  if (needle.length < 2) return [];
+  await ensureBundledQuranTranslationsLoaded(locale);
+  const field = FIELD_BY_LOCALE[locale];
+  const cap = Math.max(1, Math.min(limit, 120));
+  const hits: Array<{ surah: number; ayah: number; meaning: string }> = [];
+  for (const surah of loadBundleFromAsset().surahs ?? []) {
+    if (typeof surah.number !== "number") continue;
+    for (const ayah of surah.ayahs ?? []) {
+      const text = String(ayah[field] ?? "").trim();
+      if (!text || typeof ayah.numberInSurah !== "number") continue;
+      if (!text.toLowerCase().normalize("NFKC").includes(needle)) continue;
+      hits.push({ surah: surah.number, ayah: ayah.numberInSurah, meaning: text });
+      if (hits.length >= cap) return hits;
+    }
+  }
+  return hits;
+}
+
+/** Құран оқу экранынан шыққанда offline translation bundle-ын RAM-нан босату. */
 export function releaseBundledQuranTranslationsMemory(): void {
   bundle = {};
   mapsBySurah = null;
   loadPromise = null;
-  releaseBundledJsonMemory("quran-translations-offline.json");
+  projectedLocale = null;
+  try {
+    releaseBundledJsonMemory("quran-translations-offline.json");
+  } catch {
+    /* test mocks may omit releaseBundledJsonMemory */
+  }
 }

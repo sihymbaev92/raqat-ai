@@ -5,6 +5,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { HalalProductsApiProbe } from "../../services/halalProductsApiProbe";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export function HalalProductsApiBanner({ colors, probe, loading, seedCount = 0, onOpenDocs }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   if (loading && !probe) {

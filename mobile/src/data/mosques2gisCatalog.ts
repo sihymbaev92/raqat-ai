@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { filterMosquesWithinRadius, type Mosque2GisWithDistance } from "../utils/mosqueGeoFilter";
 import { tryLoadBundledJson } from "../utils/loadBundledJson";
 
@@ -29,21 +30,39 @@ type MosqueBundle = {
 
 let cached: Mosque2GisEntry[] | null = null;
 let syncedAtCache: string | null = null;
-let loadPromise: Promise<Mosque2GisEntry[] | null> | null = null;
+let loadPromise: Promise<Mosque2GisEntry[]> | null = null;
+
+function applyMosqueBundle(raw: MosqueBundle | null): Mosque2GisEntry[] {
+  cached = Array.isArray(raw?.mosques) ? raw.mosques : [];
+  syncedAtCache = raw?.syncedAt ?? null;
+  return cached;
+}
+
+function apkMosqueBundle(): MosqueBundle | null {
+  if (Platform.OS === "web" || process.env.NODE_ENV === "test") return null;
+  try {
+    // Lazy require — модуль импортталғанда JSON бірден parse болмасын.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mosques2gisApk = require("../../assets/bundled/mosques-2gis-kz.json") as MosqueBundle;
+    return Array.isArray(mosques2gisApk?.mosques) && mosques2gisApk.mosques.length
+      ? mosques2gisApk
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 async function loadMosqueBundle(): Promise<MosqueBundle | null> {
+  const apk = apkMosqueBundle();
+  if (apk) return apk;
   return tryLoadBundledJson<MosqueBundle>("mosques-2gis-kz.json");
 }
 
 export async function ensureMosques2gisCatalogLoaded(): Promise<Mosque2GisEntry[]> {
-  if (cached) return cached;
+  if (cached?.length) return cached;
   if (!loadPromise) {
     loadPromise = loadMosqueBundle()
-      .then((raw) => {
-        cached = Array.isArray(raw?.mosques) ? raw.mosques : [];
-        syncedAtCache = raw?.syncedAt ?? null;
-        return cached;
-      })
+      .then((raw) => applyMosqueBundle(raw))
       .finally(() => {
         loadPromise = null;
       });
@@ -51,9 +70,17 @@ export async function ensureMosques2gisCatalogLoaded(): Promise<Mosque2GisEntry[
   return (await loadPromise) ?? [];
 }
 
-/** 2GIS rubric 13374 — Қазақстан мешіттері (CDN/cache). */
+/** ҚМДБ «Мешіттер» табы — каталогты алдын ала жүктеу. */
+export function prefetchMosques2gisCatalog(): Promise<void> {
+  return ensureMosques2gisCatalogLoaded().then(() => undefined).catch(() => undefined);
+}
+
+/** 2GIS rubric 13374 — Қазақстан мешіттері (APK + CDN/cache). */
 export function loadMosques2gisCatalog(): Mosque2GisEntry[] {
-  return cached ?? [];
+  if (cached?.length) return cached;
+  const apk = apkMosqueBundle();
+  if (apk) return applyMosqueBundle(apk);
+  return [];
 }
 
 export function mosqueCatalogSyncedAt(): string | null {
@@ -62,6 +89,13 @@ export function mosqueCatalogSyncedAt(): string | null {
 
 export function mosqueCatalogCount(): number {
   return loadMosques2gisCatalog().length;
+}
+
+/** Nearby/KMDB жабылғанда RAM-нан мешіт каталогын түсіру. */
+export function releaseMosques2gisCatalogMemory(): void {
+  cached = null;
+  syncedAtCache = null;
+  loadPromise = null;
 }
 
 function normalizeQuery(q: string): string {
@@ -90,4 +124,15 @@ export function searchNearbyMosques(
   const within = filterMosquesWithinRadius(loadMosques2gisCatalog(), centerLat, centerLon, radiusM);
   const filtered = filterMosquesByQuery(within, query);
   return filtered.slice(0, limit);
+}
+
+export async function searchNearbyMosquesAsync(
+  centerLat: number,
+  centerLon: number,
+  radiusM: number,
+  query: string,
+  limit = 10
+): Promise<Mosque2GisWithDistance[]> {
+  await ensureMosques2gisCatalogLoaded();
+  return searchNearbyMosques(centerLat, centerLon, radiusM, query, limit);
 }

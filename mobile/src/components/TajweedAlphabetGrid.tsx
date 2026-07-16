@@ -8,6 +8,7 @@ import { kk } from "../i18n/kk";
 import { TAJWEED_ALPHABET_ROWS } from "../content/tajweedAlphabet";
 import { QURAN_BOOK_FONT_FACE } from "../fonts/quranBookFonts";
 import { isTajweedLetterSpeaking, speakTajweedLetter, stopMuftyatSpeech, warmTajweedLetterSpeech } from "../utils/tajweedMuftyatSpeech";
+import { useAppLocale } from "../i18n/runtime";
 
 const LIST_H_PAD = 14;
 const WRAP_H_PAD = 12;
@@ -29,6 +30,7 @@ function tajweedArabicTextStyle(): Pick<TextStyle, "fontFamily" | "writingDirect
 }
 
 export function TajweedAlphabetGrid() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const { width } = useWindowDimensions();
   const styles = useMemo(() => makeStyles(colors), [colors]);

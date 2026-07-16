@@ -15,7 +15,7 @@ import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import { displayCachedAyahArabic, quranAyahMeaningForLocale, type CachedAyah } from "../../storage/quranSurahCache";
-import { getCurrentLocale } from "../../i18n/runtime";
+import { getCurrentLocale, useAppLocale } from "../../i18n/runtime";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import { pickDominantAyahAboveScrollOffset } from "../../quran/mushafScrollAnchor";
@@ -135,6 +135,7 @@ export function MushafPagerPageScroll({
   onVerticalReadingAnchor,
   readingTargetAyah,
 }: Props) {
+  useAppLocale();
   const vScrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const continuousRef = useRef<MushafContinuousArabicHandle | null>(null);
@@ -313,7 +314,7 @@ export function MushafPagerPageScroll({
             const showArBlock =
               showReaderArabic &&
               (showTajweedColors && (item.textTajweed ?? "").includes("[") ? true : Boolean(arabicPlain));
-            const kkLine = quranAyahMeaningForLocale(item, getCurrentLocale());
+            const kkLine = quranAyahMeaningForLocale({ ...item, surahNumber }, getCurrentLocale());
             const kirilRead =
               getQuranTranslitOverride(surahNumber, item.numberInSurah) ??
               resolveQuranTranslitForDisplay(item.translit, arabicPlain);

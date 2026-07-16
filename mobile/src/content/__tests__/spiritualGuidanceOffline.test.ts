@@ -12,8 +12,12 @@ describe("Seerah / Hajj / Tradition offline bundles", () => {
     }
   });
 
-  it("hajj muftyat pages bundled", () => {
-    expect(HAJJ_MUFTYAT_PAGES.length).toBeGreaterThan(100);
+  it("hajj muftyat text bundled; scan images on CDN", () => {
+    expect(HAJJ_MUFTYAT_PAGES).toHaveLength(214);
+    const first = HAJJ_MUFTYAT_PAGES[0]!;
+    expect(first.source).toEqual(
+      expect.objectContaining({ uri: expect.stringMatching(/page-001\.jpg$/) })
+    );
     expect(getHajjMuftyatPageText(7)?.readable).toBe(true);
     expect(HAJJ_BOOK_SECTIONS.length).toBeGreaterThan(20);
   });

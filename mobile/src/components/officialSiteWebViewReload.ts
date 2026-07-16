@@ -18,18 +18,34 @@ export const OFFICIAL_SITE_PREFETCH_URLS = [
 
 const prefetchInflight = new Map<string, Promise<void>>();
 
-/** Желіні алдын ала қыздыру (WebView ашылмай тұрып). */
+/** Желіні алдын ала қыздыру (WebView аскылмай тұрып). */
 export async function prefetchOfficialSiteWebPages(
   urls: readonly string[] = OFFICIAL_SITE_PREFETCH_URLS
 ): Promise<void> {
+  const list = urls.filter(Boolean);
+  if (list.length === 0) return;
+
+  if (Platform.OS === "android") {
+    try {
+      const mod = NativeModules.PrayerWidget as
+        | { warmupOfficialSiteUrls?: (urls: string[]) => Promise<boolean> }
+        | undefined;
+      if (mod?.warmupOfficialSiteUrls) {
+        void mod.warmupOfficialSiteUrls([...list]).catch(() => undefined);
+      }
+    } catch {
+      /* native модуль жоқ */
+    }
+  }
+
   await Promise.allSettled(
-    urls.map((url) => {
+    list.map((url) => {
       const hit = prefetchInflight.get(url);
       if (hit) return hit;
       const task = (async () => {
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 10_000);
+          const timer = setTimeout(() => ctrl.abort(), 8_000);
           await fetch(url, {
             method: "GET",
             signal: ctrl.signal,

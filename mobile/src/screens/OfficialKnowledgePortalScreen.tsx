@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import {
   View,
   Text,
@@ -27,12 +28,14 @@ import { beginLatestRequest } from "../utils/latestRequestGuard";
 import { loadKbArticlesFeed, type KbArticlesFeedSource } from "../services/kbArticlesFeed";
 import { KbArticleCard } from "../components/kb/KbArticleCard";
 import { KbContentSourceBanner } from "../components/kb/KbContentSourceBanner";
-import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { openOfficialSiteInApp } from "../config/officialSiteProxy";
+import { warmOfficialSiteUrl } from "../services/hubScreenWarmup";
 import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
 
 const SEARCH_DEBOUNCE_MS = 420;
 
 export function OfficialKnowledgePortalScreen() {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const screenFit = useScreenFitMetrics();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -112,7 +115,7 @@ export function OfficialKnowledgePortalScreen() {
         item={item}
         colors={colors}
         onPress={() => openDetail(item)}
-        onOpenSite={item.url ? () => openOfficialSiteExternally(item.url) : undefined}
+        onOpenSite={item.url ? () => openOfficialSiteInApp(item.url, navigation) : undefined}
       />
     ),
     [colors, openDetail]
@@ -136,7 +139,8 @@ export function OfficialKnowledgePortalScreen() {
         <View style={styles.partnerRow}>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => openOfficialSiteExternally(FATUA_KK_HOME_URL)}
+            onPressIn={() => warmOfficialSiteUrl(FATUA_KK_HOME_URL)}
+            onPress={() => openOfficialSiteInApp(FATUA_KK_HOME_URL, navigation)}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openFatuaA11y}
           >
@@ -145,7 +149,8 @@ export function OfficialKnowledgePortalScreen() {
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.partnerBtn, pressed && { opacity: 0.9 }]}
-            onPress={() => openOfficialSiteExternally(MUFTYAT_KK_HOME_URL)}
+            onPressIn={() => warmOfficialSiteUrl(MUFTYAT_KK_HOME_URL)}
+            onPress={() => openOfficialSiteInApp(MUFTYAT_KK_HOME_URL, navigation)}
             accessibilityRole="link"
             accessibilityLabel={kk.knowledgePortal.openMuftyatA11y}
           >

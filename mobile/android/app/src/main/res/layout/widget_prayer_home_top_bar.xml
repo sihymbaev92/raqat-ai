@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="32dp"
-    android:minHeight="32dp"
-    android:paddingBottom="1dp">
+    android:layout_height="36dp"
+    android:minHeight="36dp"
+    android:paddingBottom="2dp">
 
   <LinearLayout
       android:id="@+id/widget_home_weather_row"
@@ -34,23 +34,18 @@
         android:includeFontPadding="false" />
   </LinearLayout>
 
-  <FrameLayout
-      android:id="@+id/widget_home_qibla_wrap"
-      android:layout_width="32dp"
-      android:layout_height="32dp"
+  <Chronometer
+      android:id="@+id/widget_home_countdown"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
       android:layout_gravity="center"
-      android:background="@drawable/widget_qibla_chip_bg"
-      android:padding="2dp"
-      android:clickable="true"
-      android:focusable="true">
-
-    <ImageView
-        android:id="@+id/widget_home_qibla_arrow"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:contentDescription="@string/widget_qibla_a11y" />
-  </FrameLayout>
+      android:fontFamily="sans-serif-medium"
+      android:textColor="@color/widget_prayer_accent"
+      android:textSize="17sp"
+      android:textStyle="bold"
+      android:countDown="true"
+      android:format="%s"
+      android:includeFontPadding="false" />
 
   <LinearLayout
       android:id="@+id/widget_home_city_row"

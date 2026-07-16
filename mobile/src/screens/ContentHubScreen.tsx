@@ -109,6 +109,13 @@ function hubSections(): HubSectionDef[] {
         image: menuIconAssets.tabDuas,
       },
       {
+        kind: "more",
+        key: "community-dua",
+        label: kk.communityDua.screenTitle,
+        screen: "CommunityDua",
+        icon: "hands-pray",
+      },
+      {
         kind: "root",
         key: "asma",
         label: kk.tabs.asma,
@@ -155,16 +162,6 @@ function hubSections(): HubSectionDef[] {
       icon: hubIcons.tg,
     },
   ];
-
-  if (Platform.OS === "ios") {
-    additionalTiles.splice(3, 0, {
-      kind: "more",
-      key: "siri",
-      label: kk.navigation.siriShortcutHubTile,
-      screen: "SiriShortcutHelp",
-      icon: hubIcons.siriShortcut,
-    });
-  }
 
   return [
     knowledge,

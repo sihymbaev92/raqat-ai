@@ -5,6 +5,7 @@ import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
 import { getMushafDensityPreset } from "../config/mushafConfig";
 import { useMushafLayoutMetrics } from "./useMushafLayoutMetrics";
 import type { MushafTypographyMetrics } from "./mushafTypography";
+import { HATIM_PAGE_HORIZONTAL_SAFE_INSET } from "./quranResponsiveLayout";
 
 export type UseMushafStylesArgs = {
   arabicFontPreset: QuranArabicFontPresetId;
@@ -21,6 +22,8 @@ export type MushafStylesBundle = {
   metrics: MushafTypographyMetrics;
   /** `mushafConfig` пресеті (metrics.densityLayout-пен бірдей, экспортқа ыңғайлы) */
   densityPreset: MushafDensityPreset;
+  /** Хатым парағы: экран жиегінен қауіпсіз горизонталь шет (px). */
+  pageHorizontalSafeInset: number;
 };
 
 /**
@@ -44,5 +47,9 @@ export function useMushafStyles({
     readingThemeId
   );
   const densityPreset = useMemo(() => getMushafDensityPreset(mushafDensity), [mushafDensity]);
-  return { metrics, densityPreset };
+  return {
+    metrics,
+    densityPreset,
+    pageHorizontalSafeInset: mushafBookLike === true ? HATIM_PAGE_HORIZONTAL_SAFE_INSET : 0,
+  };
 }

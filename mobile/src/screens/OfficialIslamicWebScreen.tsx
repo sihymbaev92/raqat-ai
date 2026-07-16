@@ -40,7 +40,7 @@ function refreshA11yForSite(site: OfficialIslamicSourceId): string {
  * ҚМДБ ресми сайттары — Fatua.kz / Muftyat.kz толық WebView (halaldamu.kz сияқты).
  */
 export function OfficialIslamicWebScreen({ navigation, route }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const site = route.params.site;
@@ -98,7 +98,7 @@ export function OfficialIslamicWebScreen({ navigation, route }: Props) {
         </View>
       ),
     });
-  }, [navigation, colors, insets, onReload, openInBrowser, site]);
+  }, [navigation, colors, insets, onReload, openInBrowser, site, locale]);
 
   return (
     <OfficialSiteFullWebView

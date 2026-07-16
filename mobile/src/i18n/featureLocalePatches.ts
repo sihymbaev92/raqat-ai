@@ -50,7 +50,7 @@ const tajweedRu: QuranTajweedPatch = {
   readerTajweedExplainShort:
     "Синий/жёлтый — медд, зелёный/фиолетовый — гунна/ихфа, красный — калкала, серый — невыносимая буква. Полный список — «Справка».",
   tajweedColorHintShort:
-    "Синий/жёлтый — медд · зелёный/фиолетовый — гунна/ихфа · красный — калкала · серый — не читается",
+    "#DD2C00 — медд · #00C853 — гунна/ихфа · #1A237E — калкала · #FFD600 — идгам",
   tajweedPanelOn: "Включить",
   tajweedPanelOff: "Выключить",
   tajweedModeLabel: "Цвета таджвида",
@@ -74,7 +74,7 @@ const tajweedEn: QuranTajweedPatch = {
   readerTajweedExplainShort:
     "Blue/yellow — madd, green/purple — ghunnah/iqlab, red — qalqalah, gray — silent letter. Full list in «Legend».",
   tajweedColorHintShort:
-    "Blue/yellow — madd · green/purple — ghunnah/iqlab · red — qalqalah · gray — silent",
+    "#DD2C00 — madd · #00C853 — ghunnah/ikhfa · #1A237E — qalqalah · #FFD600 — idgham",
   tajweedPanelOn: "On",
   tajweedPanelOff: "Off",
   tajweedModeLabel: "Tajweed colors",
@@ -98,7 +98,7 @@ const tajweedKy: QuranTajweedPatch = {
   readerTajweedExplainShort:
     "Көк/сары — медд, жашыл/кызгылт — гунна/ихфа, кызыл — калкала, боз — окула турган эмес тамга. Толук тизим — «Аныктама».",
   tajweedColorHintShort:
-    "Көк/сары — медд · жашыл/кызгылт — гунна/ихфа · кызыл — калкала · боз — окула турган эмес",
+    "#DD2C00 — медд · #00C853 — гунна/ихфа · #1A237E — калкала · #FFD600 — идгам",
   tajweedPanelOn: "Кошуу",
   tajweedPanelOff: "Өчүрүү",
   tajweedModeLabel: "Тажвид түстөрү",
@@ -122,7 +122,7 @@ const tajweedUz: QuranTajweedPatch = {
   readerTajweedExplainShort:
     "Ko'k/sariq — medd, yashil/binafsha — gunnah/ihfa, qizil — qalqala, kulrang — o'qilmaydigan harf. To'liq ro'yxat — «Izoh».",
   tajweedColorHintShort:
-    "Ko'k/sariq — medd · yashil/binafsha — gunnah/ihfa · qizil — qalqala · kulrang — o'qilmaydi",
+    "#DD2C00 — medd · #00C853 — gunnah/ihfa · #1A237E — qalqala · #FFD600 — idgam",
   tajweedPanelOn: "Yoqish",
   tajweedPanelOff: "O'chirish",
   tajweedModeLabel: "Tajvid ranglari",
@@ -146,7 +146,7 @@ const tajweedTr: QuranTajweedPatch = {
   readerTajweedExplainShort:
     "Mavi/sarı — medd, yeşil/mor — gunnah/ihfa, kırmızı — kalkale, gri — okunmayan harf. Tam liste — «Açıklama».",
   tajweedColorHintShort:
-    "Mavi/sarı — medd · yeşil/mor — gunnah/ihfa · kırmızı — kalkale · gri — okunmaz",
+    "#DD2C00 — medd · #00C853 — gunnah/ihfa · #1A237E — kalkale · #FFD600 — idgam",
   tajweedPanelOn: "Aç",
   tajweedPanelOff: "Kapat",
   tajweedModeLabel: "Tecvid renkleri",
@@ -290,6 +290,55 @@ const settingsQuranTr: SettingsQuranPatch = {
   quranSectionTajweedSub: "Renkli tecvid işaretleri ve rehber.",
 };
 
+const tajweedAr: QuranTajweedPatch = {
+  readerOpenLegend: "دليل ألوان التجويد",
+  readerTajweedExplainShort:
+    "أزرق/أصفر — مد، أخضر/بنفسجي — غنّة/إخفاء، أحمر — قلقلة، رمادي — حرف غير منطوق. القائمة الكاملة في «الدليل».",
+  tajweedColorHintShort:
+    "#DD2C00 — مد · #00C853 — غنّة/إخفاء · #1A237E — قلقلة · #FFD600 — إدغام",
+  tajweedPanelOn: "تشغيل",
+  tajweedPanelOff: "إيقاف",
+  tajweedModeLabel: "ألوان التجويد",
+  tajweedModeHint:
+    "الختمة (QCF4): King Fahd QCF V4 COLR — تجويد ملوّن داخل الحروف. قراءة السورة: وسوم Al Quran Cloud «quran-tajweed». أولاً البذرة دون اتصال، ثم الذاكرة المؤقتة/API.",
+  tajweedLoading: "جارٍ تحميل نص التجويد…",
+  tajweedLoadFailedHint:
+    "تعذّر تحميل نص التجويد. تحقق من الإنترنت وحدّث الشاشة. إن لم تتوفر البذرة دون اتصال فحدّث التطبيق.",
+  tajweedLegendTitle: "ألوان التجويد (دليل)",
+  tajweedLegendIntro:
+    "Al Quran Cloud «quran-tajweed» — 17 وسم قاعدة ([h[, [n[, [f[ …). كل لون قاعدة واحدة. النظرية الكاملة — قسم «التجويد».",
+  tajweedLegendClose: "إغلاق",
+  tajweedOpenGuide: "فتح دليل التجويد",
+  tajweedOpenGuideA11y: "قسم التجويد: القواعد والخطة",
+  tajweedSourceNote:
+    "المصدر: api.alquran.cloud · quran-tajweed. عند الاختلاف راجع معلّمًا مختصًا.",
+};
+
+const tasbihAr: TasbihBlePatch = {
+  bleTitle: "عداد إلكتروني",
+  bleHint: "فعّل حلقة أو عدّاد Bluetooth — تظهر الضغطات على الشاشة.",
+  bleConnected: (name) => `${name} متصل`,
+  bleScan: "بحث",
+  bleStopScan: "إيقاف",
+  bleDisconnect: "قطع الاتصال",
+  bleScanning: "جارٍ البحث عن أجهزة BLE…",
+  bleUnsupported: "العدّاد عبر Bluetooth متاح فقط في تطبيق Android/iOS.",
+  bleError: "تعذّر الاتصال. شغّل العدّاد وافصله عن تطبيق iQIBLA/Zikr ثم أعد المحاولة.",
+  bleAndroidFootnote: "Android 12+: امنح إذن Bluetooth. بعض الطرازات تعمل فقط مع تطبيقها.",
+  meaningLabel: "المعنى",
+};
+
+const dashboardAr: DashboardTilePatch = {
+  homeTileTasbihSub: "عدّاد الأذكار",
+  homeTileTajweedSub: "قواعد تلاوة القرآن",
+  tajweedCardSub: "QMDB · قواعد التجويد",
+};
+
+const settingsQuranAr: SettingsQuranPatch = {
+  quranSectionTajweed: "التجويد",
+  quranSectionTajweedSub: "علامات التجويد الملوّنة والدليل.",
+};
+
 export const FEATURE_LOCALE_PATCHES = {
   ru: {
     dashboard: dashboardRu,
@@ -325,5 +374,12 @@ export const FEATURE_LOCALE_PATCHES = {
     tasbih: tasbihTr,
     settings: settingsQuranTr,
     hadith: { meaningLabel: "Anlamı" },
+  },
+  ar: {
+    dashboard: dashboardAr,
+    quran: tajweedAr,
+    tasbih: tasbihAr,
+    settings: settingsQuranAr,
+    hadith: { meaningLabel: "المعنى" },
   },
 } as const;

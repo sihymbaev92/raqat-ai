@@ -14,6 +14,7 @@ import type { ImageSourcePropType } from "react-native";
 import { ZoomableImageContent } from "./ZoomableImageContent";
 import { kk } from "../../i18n/kk";
 import { modalSafeAreaInsets } from "../../theme/modalSafeArea";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   visible: boolean;
@@ -34,6 +35,7 @@ export function ImageZoomOverlay({
   closeLabel = kk.common.closeImageZoom,
   pinchHint = kk.common.imagePinchZoomHint,
 }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
   const { width, height } = useWindowDimensions();

@@ -1,22 +1,33 @@
 import { smoothBearing, smoothHeading } from "../qiblaHeadingSmooth";
+import { angleDiff } from "../qibla";
 
 describe("qiblaHeadingSmooth", () => {
+  describe("smoothHeading fast", () => {
+    it("snaps hard on large turns", () => {
+      const out = smoothHeading("fast", 0, 45);
+      expect(out).toBeCloseTo(45, 5);
+    });
+
+    it("ignores micro jitter", () => {
+      expect(smoothHeading("fast", 90, 90.02)).toBe(90);
+    });
+  });
+
   describe("smoothHeading balanced", () => {
     it("ignores sub-degree jitter inside dead zone", () => {
-      expect(smoothHeading("balanced", 90, 90.4)).toBe(90);
-      expect(smoothHeading("balanced", 90, 89.6)).toBe(90);
+      expect(smoothHeading("balanced", 90, 90.05)).toBe(90);
+      expect(smoothHeading("balanced", 90, 89.95)).toBe(90);
     });
 
-    it("moves slowly for larger steps", () => {
+    it("moves quickly toward larger steps (no chase lag)", () => {
       const out = smoothHeading("balanced", 0, 10);
-      expect(out).toBeGreaterThan(0);
-      expect(out).toBeLessThan(3);
+      expect(out).toBeGreaterThan(5);
+      expect(out).toBeLessThanOrEqual(10);
     });
 
-    it("handles wrap-around without jumping backwards", () => {
+    it("handles wrap-around without jumping the long way", () => {
       const out = smoothHeading("balanced", 359, 1);
-      expect(out).toBeGreaterThan(359);
-      expect(out).toBeLessThanOrEqual(360);
+      expect(Math.abs(angleDiff(359, out))).toBeLessThan(2.5);
     });
   });
 

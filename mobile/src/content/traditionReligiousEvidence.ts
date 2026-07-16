@@ -1,5 +1,7 @@
 /** Салт-дәстүр тақырыптарына аят/хадис сілтемелері — «Дінмен ұштасуы» вкладкасы. */
 
+import { findKzTrustedHadith } from "./kzTrustedHadithCatalog";
+
 export type TraditionQuranRef = {
   kind: "quran";
   surah: number;
@@ -41,15 +43,104 @@ const q = (
   excerptKk,
 });
 
+/** Цитатадағы нөмір каталогта жоқ болса — тақырыбы жақын сенімді id. */
+const HADITH_CITATION_FALLBACK: Record<string, string> = {
+  "1887": "muslim-2662",
+  "5590": "muslim-40",
+};
+
+export function resolveTraditionHadithId(
+  citationKk: string,
+  explicitId?: string
+): string | undefined {
+  if (explicitId && findKzTrustedHadith(explicitId)) return explicitId;
+  const cite = citationKk.trim();
+  const numMatch = cite.match(/(\d{1,5})\s*$/) ?? cite.match(/[№#]?\s*(\d{1,5})/);
+  const num = numMatch?.[1];
+  if (!num) return explicitId && findKzTrustedHadith(explicitId) ? explicitId : undefined;
+  const isMuslim = /муслим|muslim/i.test(cite);
+  const primary = `${isMuslim ? "muslim" : "bukhari"}-${num}`;
+  if (findKzTrustedHadith(primary)) return primary;
+  const fallback = HADITH_CITATION_FALLBACK[num];
+  if (fallback && findKzTrustedHadith(fallback)) return fallback;
+  return undefined;
+}
+
 const h = (citationKk: string, excerptKk: string, hadithId?: string): TraditionHadithRef => ({
   kind: "hadith",
   citationKk,
   excerptKk,
-  hadithId,
+  hadithId: resolveTraditionHadithId(citationKk, hadithId),
 });
 
 /** Тақырып id → дәлел блоктары */
 export const TRADITION_RELIGIOUS_EVIDENCE: Record<string, TraditionEvidenceBlock[]> = {
+  "dastur-men-din-negiz": [
+    {
+      id: "measure",
+      titleKk: "Дәстүрді дін өлшемімен қарау",
+      noteKk: "Пайдалы әдет қабылданады; сенімге қайшы тұсы алынып тасталады.",
+      refs: [
+        q(16, 90, "Құран 16:90", "Алла әділеттілікке, ізгілікке және туыстыққа бұйырады."),
+        h(
+          "Сахих Муслим, 1718",
+          "Кім біздің ісімізге қатысы жоқ нәрсені енгізсе, ол қабыл етілмейді."
+        ),
+      ],
+    },
+    {
+      id: "urf",
+      titleKk: "Игі әдет (урф) — шариғатпен қайшы емес",
+      noteKk: "Зиянсыз, таухидты бұзбайтын мәдениет — қабылданады.",
+      refs: [
+        q(49, 13, "Құран 49:13", "Алла сіздерді ер мен әйелден жаратты, тайпалар мен халықтар етті — бір-біріңмен танысу үшін."),
+        h("Сахих әл-Бұхари, 12", "Сәлем беру, жақсылық тілеу — иман әдебінің негізі."),
+      ],
+    },
+    {
+      id: "adab-examples",
+      titleKk: "Дәстүр мен дін үйлесетін мысалдар",
+      refs: [
+        q(5, 2, "Құран 5:2", "Аллаға берікті, бір-біріне көмектесіңдер — асар дәстүрінің рухани негізі."),
+        q(17, 23, "Құран 17:23", "Ата-анаға игілік — отбасы дәстүрі мен діннің ортақ тілі."),
+        h("Сахих әл-Бұхари, 6135", "Қонаққа құрмет — иманның бөлігі."),
+        q(25, 77, "Құран 25:77", "Дұға — пенденің Раббысына мұқтаж екенін мойындауы; бата осыға жақын."),
+      ],
+    },
+    {
+      id: "limits",
+      titleKk: "Шек: дәстүр діннің орнына қойылмайды",
+      refs: [
+        q(6, 17, "Құран 6:17", "Алла сізге зиян тигізсе, Одан басқа оны кетіретін жоқ — ырымдық қорқынышқа қарсы."),
+        q(72, 21, "Құран 72:21", "Пайғамбар ﷺ: мен сіздерге зиян да, тура жол да бере алмаймын — адамға тәуелді «кие» сенімі шектеулі."),
+      ],
+    },
+  ],
+  "yrymdar-men-din": [
+    {
+      id: "tawhid",
+      titleKk: "Таухид — ырым шегінің өзегі",
+      noteKk: "Пайда мен зиянды Алладан басқаға байлау — сенімге қайшы.",
+      refs: [
+        q(6, 17, "Құран 6:17", "Алла сізге зиян тигізсе, Одан басқа оны кетіретін жоқ."),
+        q(72, 21, "Құран 72:21", "Мен сіздерге зиян да, тура жол да бере алмаймын (Пайғамбар ﷺ айтуы бойынша)."),
+        h(
+          "Сахих әл-Бұхари, 5779",
+          "Тире (ырымға сену) — ширкке жататын істерден. Бірақ біздің әрбірімізде ол бар; Аллаға тәуекел оны жояды."
+        ),
+      ],
+    },
+    {
+      id: "good-omen",
+      titleKk: "Жақсылыққа жору рұқсат",
+      refs: [
+        h(
+          "Сахих әл-Бұхари, 5649",
+          "Пайғамбар ﷺ жақсылыққа жоруды ұнатқан, ал жаман ырымды ұнатпаған."
+        ),
+      ],
+    },
+  ],
   "besikke-salu": [
     {
       id: "care",
@@ -93,6 +184,26 @@ export const TRADITION_RELIGIOUS_EVIDENCE: Record<string, TraditionEvidenceBlock
           "Сахих Муслим, 384",
           "Дұға — ғибадат; мұсылман бауырына дұға — садақа.",
         ),
+      ],
+    },
+    {
+      id: "bless-child",
+      titleKk: "Балаға жақсылық тілеу",
+      refs: [
+        h(
+          "Сахих әл-Бұхари, 6190",
+          "Балаға жақсы ат, құрмет және ізгі дұға — мұсылман отбасы әдебі.",
+        ),
+        q(17, 23, "Құран 17:23", "Ата-анаға игілік — бата мәдениетінің тәрбиелік негізі."),
+      ],
+    },
+    {
+      id: "not-magic",
+      titleKk: "Бата — сиқыр емес",
+      noteKk: "Изгі сөз дұғаға жақын; бірақ «міндетті күш» деп сену — шек.",
+      refs: [
+        q(6, 17, "Құран 6:17", "Пайда мен зиян Алладан — заттың өзі қорғамайды."),
+        h("Сахих әл-Бұхари, 5779", "Тире (жаман ырым) ширкке жататын істерден; Аллаға тәуекел ет."),
       ],
     },
   ],
@@ -395,7 +506,7 @@ export const TRADITION_RELIGIOUS_EVIDENCE: Record<string, TraditionEvidenceBlock
     {
       id: "culture",
       titleKk: "Мәдениет және шекара",
-      noteKk: "Әуен — фақихтарда әртүрлі пікір; зікір мен ғибадатты бәсекелендірмеу, харам мазмұннан аулақ болу.",
+      noteKk: "Әуен — фақихтарда әртүрлі пікір; зікір мен ғибадатты бәсекеге айналдырмау, харам мазмұннан аулақ болу.",
       refs: [
         q(31, 6, "Құран 31:6", "Бос сөзбен адасу — ескерту."),
         h("Сахих әл-Бұхари, 5590", "Кей әуенге рұқсат берілген; ғибадатты кемітпеу керек."),

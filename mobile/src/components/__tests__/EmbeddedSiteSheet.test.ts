@@ -9,10 +9,18 @@ import {
 } from "../EmbeddedSiteSheet";
 
 describe("EmbeddedSiteSheet navigation guards", () => {
-  it("keeps regular http/https pages inside the embedded sheet", () => {
+  it("keeps allowlisted official https pages inside the embedded sheet", () => {
     expect(shouldLoadEmbeddedSiteUrl("https://halaldamu.kz/")).toBe(true);
-    expect(shouldLoadEmbeddedSiteUrl("http://example.com/page")).toBe(true);
+    expect(shouldLoadEmbeddedSiteUrl("https://muftyat.kz/kk/")).toBe(true);
+    expect(shouldLoadEmbeddedSiteUrl("https://rahatomir.com/")).toBe(true);
     expect(shouldOpenEmbeddedSiteUrlExternally("https://halaldamu.kz/")).toBe(false);
+  });
+
+  it("rejects arbitrary http hosts and javascript URLs", () => {
+    expect(shouldLoadEmbeddedSiteUrl("http://example.com/page")).toBe(false);
+    expect(shouldLoadEmbeddedSiteUrl("https://evil.example/")).toBe(false);
+    expect(shouldLoadEmbeddedSiteUrl("javascript:alert(1)")).toBe(false);
+    expect(shouldOpenEmbeddedSiteUrlExternally("https://evil.example/")).toBe(true);
   });
 
   it("blocks app/intent schemes from taking down the embedded WebView", () => {

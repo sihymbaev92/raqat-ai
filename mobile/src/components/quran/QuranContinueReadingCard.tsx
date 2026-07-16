@@ -5,6 +5,7 @@ import { Pressable } from "@/ui/Pressable";
 import { kk } from "../../i18n/kk";
 import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import type { ThemeColors } from "../../theme/colors";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -23,6 +24,7 @@ export function QuranContinueReadingCard({
   onPress,
   style,
 }: Props) {
+  useAppLocale();
   const { tr } = useKkAutoTranslator();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 

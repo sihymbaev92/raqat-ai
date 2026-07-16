@@ -4,6 +4,7 @@
 
 | Құжат | Мазмұны |
 |-------|---------|
+| [RAHAT_OMIR_GEMINI_FULL_BRIEFING.md](RAHAT_OMIR_GEMINI_FULL_BRIEFING.md) | **Gemini үшін толық іші-сырты таныстыру** (өнім + тех + native + slim) |
 | [vision.md](vision.md) | Мақсат, бәсекелес идеялар, identity/sync |
 | [../RAQAT_PLATFORM.md](../RAQAT_PLATFORM.md) | USER · VALUE · UX |
 | [../roadmap/vision-positioning.md](../roadmap/vision-positioning.md) | Ұзақ мерзімді позициялау |

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ImageBackground, Platform, ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
-import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { NativeStackScreenProps, NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { RootStackParamList } from "../navigation/types";
@@ -9,18 +9,29 @@ import { kk } from "../i18n/kk";
 import { useAppLocale } from "../i18n/runtime";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 import {
+  peekAzanDuaFullyFinished,
+  playAzanDuaAudio,
   previewPrayerNotifSound,
   stopPreviewPrayerNotifSound,
 } from "../utils/previewPrayerNotifSound";
 import {
-  prayerEnteredTitleForSlot,
+  activeAzanTextIndexFromPlayback,
+  azanDuaBlockIndex,
+} from "../services/azanTextKaraoke";
+import { readAzanDuaPlaybackStatus, readAzanPlaybackStatus } from "../services/azanPlaybackSync";
+import {
+  finishAzanDelivery,
+  getNativeAzanPlaybackStatus,
   playNativePrayerAzanAudio,
+  playNativePrayerAzanDuaAudio,
+  prayerEnteredTitleForSlot,
   stopNativePrayerAzanAudio,
 } from "../services/prayerFullScreenAzan";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PrayerAzan">;
 
 const AZAN_BACKGROUND = require("../../assets/namaz/azan-background-generated.webp");
+const KARAOKE_POLL_MS = 180;
 
 const PRAYER_AZAN_SOUND_IDS = new Set<PrayerNotifSoundId>(["off", "adhan_haramain"]);
 
@@ -41,7 +52,7 @@ const AZAN_TEXT_BASE_DURATIONS_MS: Record<string, number> = {
   "fajr-extra": 17_000,
   "takbir-close": 13_000,
   tahlil: 18_000,
-  "azan-dua": 55_000,
+  "azan-dua": 16_500,
 };
 
 export function azanTextBlockDurationMs(block: Pick<AzanTextBlock, "id" | "repeat">): number {
@@ -87,6 +98,45 @@ export function shouldAutoStartPrayerAzanAudio(isNativeAudio: boolean, soundId: 
   return !isNativeAudio && soundId !== "off";
 }
 
+export function closePrayerAzanScreen(
+  navigation: NativeStackNavigationProp<RootStackParamList, "PrayerAzan">
+): void {
+  finishAzanDelivery();
+  if (navigation.canGoBack()) {
+    navigation.goBack();
+    return;
+  }
+  navigation.reset({
+    index: 0,
+    routes: [{ name: "Main", params: { screen: "Home" } }],
+  });
+}
+
+function azanPlaybackFinished(
+  status: { positionMs: number; durationMs: number; isPlaying: boolean; completed?: boolean } | null
+): boolean {
+  if (!status) return false;
+  if (status.completed === true && !status.isPlaying) return true;
+  if (status.durationMs <= 0) return false;
+  if (status.isPlaying) return false;
+  return status.positionMs >= status.durationMs - 400;
+}
+
+/** Азан + бата толық біткеннен кейін экранды жабу. */
+export function shouldClosePrayerAzanAfterFullPlayback(opts: {
+  stopped: boolean;
+  soundOff: boolean;
+  duaStarted: boolean;
+  sessionFullyFinished: boolean;
+  duaJsFullyFinished: boolean;
+  duaStatusPlaying: boolean;
+}): boolean {
+  if (opts.stopped || opts.soundOff) return false;
+  if (opts.sessionFullyFinished) return true;
+  if (opts.duaStarted && opts.duaJsFullyFinished && !opts.duaStatusPlaying) return true;
+  return false;
+}
+
 export function PrayerAzanScreen({ route, navigation }: Props) {
   const { isDark } = useAppTheme();
   const locale = useAppLocale();
@@ -96,17 +146,26 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
   const salatKey = (route.params?.salatKey || "").trim();
   const time = (route.params?.time || "").trim();
   const soundId = normalizePrayerAzanSoundId(route.params?.soundId);
+  const useNativeAzan = Platform.OS !== "web" && soundId !== "off";
   const isNativeAudio = route.params?.nativeAudio === "1";
   const [stopped, setStopped] = useState(false);
   const azanTextBlocks = useMemo(() => buildAzanTextBlocks(salatKey), [locale, salatKey]);
   const [activeTextIdx, setActiveTextIdx] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const lineOffsetsRef = useRef<number[]>([]);
+  const duaStartedRef = useRef(false);
+  const closingRef = useRef(false);
 
   useEffect(() => {
     setStopped(false);
     setActiveTextIdx(0);
+    duaStartedRef.current = false;
+    closingRef.current = false;
+    lineOffsetsRef.current = [];
     if (soundId !== "off") {
-      if (Platform.OS === "android") {
-        playNativePrayerAzanAudio(soundId);
+      if (useNativeAzan) {
+        // Alarm delivery already started native audio when nativeAudio=1.
+        if (!isNativeAudio) playNativePrayerAzanAudio(soundId);
       } else if (!isNativeAudio) {
         void previewPrayerNotifSound(soundId);
       }
@@ -115,27 +174,107 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
       void stopPreviewPrayerNotifSound();
       stopNativePrayerAzanAudio();
     };
-  }, [isNativeAudio, soundId]);
+  }, [isNativeAudio, soundId, useNativeAzan]);
 
   useEffect(() => {
-    if (stopped || azanTextBlocks.length <= 1) return undefined;
-    const schedule = buildAzanTextSchedule(azanTextBlocks);
-    const timers = schedule.slice(1).map((delayMs, idx) =>
-      setTimeout(() => {
-        setActiveTextIdx(idx + 1);
-      }, delayMs)
-    );
-    return () => {
-      timers.forEach(clearTimeout);
+    if (stopped || soundId === "off") return undefined;
+
+    const duaIdx = azanDuaBlockIndex(azanTextBlocks);
+    let cancelled = false;
+
+    const closeFully = () => {
+      if (cancelled || closingRef.current) return;
+      closingRef.current = true;
+      setStopped(true);
+      closePrayerAzanScreen(navigation);
     };
-  }, [azanTextBlocks, stopped]);
+
+    const tick = async () => {
+      if (cancelled || closingRef.current) return;
+
+      const azanStatus = await readAzanPlaybackStatus(useNativeAzan);
+      if (
+        shouldClosePrayerAzanAfterFullPlayback({
+          stopped: false,
+          soundOff: false,
+          duaStarted: duaStartedRef.current,
+          sessionFullyFinished: azanStatus?.fullyFinished === true,
+          duaJsFullyFinished: peekAzanDuaFullyFinished(),
+          duaStatusPlaying: false,
+        })
+      ) {
+        closeFully();
+        return;
+      }
+
+      const duaStatus = await readAzanDuaPlaybackStatus(useNativeAzan);
+      if (duaStatus?.isPlaying || duaStatus?.isDua) {
+        if (duaIdx >= 0) setActiveTextIdx(duaIdx);
+        return;
+      }
+
+      if (
+        shouldClosePrayerAzanAfterFullPlayback({
+          stopped: false,
+          soundOff: false,
+          duaStarted: duaStartedRef.current,
+          sessionFullyFinished: azanStatus?.fullyFinished === true,
+          duaJsFullyFinished: peekAzanDuaFullyFinished(),
+          duaStatusPlaying: duaStatus?.isPlaying === true,
+        })
+      ) {
+        closeFully();
+        return;
+      }
+
+      if (azanPlaybackFinished(azanStatus)) {
+        if (duaIdx >= 0) setActiveTextIdx(duaIdx);
+        if (!duaStartedRef.current) {
+          duaStartedRef.current = true;
+          if (useNativeAzan) {
+            const nativeStatus = await getNativeAzanPlaybackStatus();
+            if (!nativeStatus?.isDua && !nativeStatus?.isPlaying) {
+              playNativePrayerAzanDuaAudio();
+            }
+          } else {
+            void playAzanDuaAudio();
+          }
+        }
+        return;
+      }
+
+      if (azanStatus && azanStatus.durationMs > 0) {
+        const nextIdx = activeAzanTextIndexFromPlayback(
+          azanTextBlocks,
+          azanStatus.positionMs,
+          azanStatus.durationMs,
+          azanStatus.isPlaying
+        );
+        setActiveTextIdx(nextIdx);
+      }
+    };
+
+    void tick();
+    const timer = setInterval(() => {
+      void tick();
+    }, KARAOKE_POLL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [azanTextBlocks, navigation, soundId, stopped, useNativeAzan]);
+
+  useEffect(() => {
+    const y = lineOffsetsRef.current[activeTextIdx];
+    if (typeof y !== "number") return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
+  }, [activeTextIdx]);
 
   const stop = async () => {
     await stopPreviewPrayerNotifSound();
-    stopNativePrayerAzanAudio();
     setStopped(true);
-    if (navigation.canGoBack()) navigation.goBack();
-    else navigation.navigate("Main", { screen: "Home" });
+    closePrayerAzanScreen(navigation);
   };
 
   return (
@@ -150,6 +289,7 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
         <View style={styles.textPanel}>
           <Text style={styles.textPanelTitle}>{kk.prayer.azanTextPanelTitle}</Text>
           <ScrollView
+            ref={scrollRef}
             style={styles.textScroll}
             contentContainerStyle={styles.textScrollContent}
             showsVerticalScrollIndicator={false}
@@ -157,7 +297,13 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
             {azanTextBlocks.map((block, idx) => {
               const active = idx === activeTextIdx;
               return (
-                <View key={block.id} style={[styles.azanLine, active && styles.azanLineActive]}>
+                <View
+                  key={block.id}
+                  onLayout={(e) => {
+                    lineOffsetsRef.current[idx] = e.nativeEvent.layout.y;
+                  }}
+                  style={[styles.azanLine, active && styles.azanLineActive]}
+                >
                   <View style={styles.azanLineTop}>
                     <Text style={[styles.azanArabic, active && styles.azanArabicActive]}>
                       {block.arabic}

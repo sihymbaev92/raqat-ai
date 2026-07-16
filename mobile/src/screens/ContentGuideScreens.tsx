@@ -11,11 +11,13 @@ import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import {
   getNamazLearningHintsForGuidePose,
   getNamazRecitationBlocksForGuidePose,
+  NAMAZ_CONTENT_REVIEW,
   type RecitationBlock,
 } from "../content/namazLearningContent";
 import {
@@ -35,6 +37,7 @@ import {
 } from "../components/NamazGuideLearning";
 import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
+import { ScholarContentNotice } from "../components/ScholarContentNotice";
 
 const WUDU_THEORY_ACC_KEY = "wudu-theory";
 const NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER = Platform.OS === "android" ? 0.45 : undefined;
@@ -77,6 +80,7 @@ function NamazGuideBody({
   colors: ReturnType<typeof useAppTheme>["colors"];
   styles: ReturnType<typeof makeStyles>;
 }) {
+  const t = useI18n();
   const { tr, translated } = useKkAutoTranslator();
   const [selectedPrimarySection, setSelectedPrimarySection] = useState<NamazPrimarySectionKey | null>(null);
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
@@ -97,21 +101,21 @@ function NamazGuideBody({
 
   const primarySectionTitle =
     selectedPrimarySection === "wudu"
-      ? "1. Дәрет"
+      ? `1. ${t.namazGuide.wuduHeroTitle}`
       : selectedPrimarySection === "five-prayers"
-        ? "2. 5 уақыт намаз"
+        ? `2. ${t.namazGuide.fivePrayersTitle}`
         : "";
   const primarySectionSub =
     selectedPrimarySection === "wudu"
-      ? "Қадамдар және бұзылу"
+      ? t.namazGuide.wuduCardSub
       : selectedPrimarySection === "five-prayers"
-        ? "Ниеттен сәлемге дейін"
+        ? t.namazGuide.fivePrayersSub
         : "";
 
   const renderWuduContent = () => (
     <View style={styles.wuduExpanded}>
-      <Text style={styles.unifiedIntro}>{tr(kk.namazGuide.wuduStepsIntro)}</Text>
-      <Text style={styles.imageHint}>{tr(kk.namazGuide.imageTapHint)}</Text>
+      <Text style={styles.unifiedIntro}>{t.namazGuide.wuduStepsIntro}</Text>
+      <Text style={styles.imageHint}>{t.namazGuide.imageTapHint}</Text>
 
       {NAMAZ_WUDU_VISUAL_STEPS.map((step) => (
         <View key={step.id} style={[styles.visualStepCard, { marginBottom: 14 }]}>
@@ -179,10 +183,10 @@ function NamazGuideBody({
     <View style={styles.namazExpanded}>
       <View style={styles.manualNamazPage}>
         <View style={styles.manualPageHeader}>
-          <Text style={styles.manualPageEyebrow}>{tr("Намаз оқулығы")}</Text>
-          <Text style={styles.manualPageTitle}>{tr("5 уақыт намаздың рәкәттері мен оқу реті")}</Text>
+          <Text style={styles.manualPageEyebrow}>{t.namazGuide.screenTitle}</Text>
+          <Text style={styles.manualPageTitle}>{t.namazGuide.rakatTableTitle}</Text>
           <Text style={styles.manualPageLead}>
-            {tr("Рәкәт реті сурет емес, қолданба бетіне мәтін болып жазылды. Тіл ауысқанда осы кесте де бірге аударылады.")}
+            {t.namazGuide.rakatTableHint}
           </Text>
         </View>
         {FIVE_PRAYER_RAKAT_ROWS.map((row) => (
@@ -211,8 +215,8 @@ function NamazGuideBody({
           ))}
         </View>
       </View>
-      <Text style={styles.unifiedIntro}>{tr(kk.namazGuide.unifiedNamazIntro)}</Text>
-      <Text style={styles.imageHint}>{tr(kk.namazGuide.imageTapHint)}</Text>
+      <Text style={styles.unifiedIntro}>{t.namazGuide.unifiedNamazIntro}</Text>
+      <Text style={styles.imageHint}>{t.namazGuide.imageTapHint}</Text>
 
       {NAMAZ_POSE_VISUAL_STEPS.map((v) => {
         const poseKey = `pose-${v.title}`;
@@ -264,11 +268,11 @@ function NamazGuideBody({
 
       <View style={[styles.visualStepCard, { marginBottom: 14 }]}>
         <View style={styles.unifiedStepHead}>
-          <Text style={styles.unifiedStepTitle}>{tr("Намаз соңында оқылатын дұғалар")}</Text>
+          <Text style={styles.unifiedStepTitle}>{t.namazGuide.afterPrayerDuasTitle}</Text>
         </View>
         <View style={styles.visualStepCardBody}>
           <Text style={styles.stepShortExplain}>
-            {tr("Реті: алдымен Аят әл-Курси, кейін Құнт дұғасын жаттауға ыңғайлы мәтін ретінде оқыңыз.")}
+            {t.namazGuide.afterPrayerDuasHint}
           </Text>
           <View style={styles.namazPoseReciteWrap}>
             <NamazGuidePoseRecitationBlocks blocks={FIVE_PRAYER_END_RECITATIONS} colors={colors} />
@@ -287,11 +291,14 @@ function NamazGuideBody({
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
     >
-      <Text style={styles.intro}>{tr(kk.namazGuide.intro)}</Text>
-
+      <ScholarContentNotice
+        review={NAMAZ_CONTENT_REVIEW}
+        message={t.namazGuide.scholarReviewBanner}
+        colors={colors}
+      />
       <View style={styles.studyMap}>
-        <Text style={styles.studyMapTitle}>{tr("Оқу картасы")}</Text>
-        <Text style={styles.studyMapHint}>{tr("Бөлімді таңдаңыз. Алдымен дәрет, кейін намаз қадамдарын оқыңыз.")}</Text>
+        <Text style={styles.studyMapTitle}>{t.namazGuide.studyMapTitle}</Text>
+        <Text style={styles.studyMapHint}>{t.namazGuide.studyMapPickHint}</Text>
         <View style={styles.studyMapGrid}>
           <Pressable
             onPress={() => setSelectedPrimarySection("wudu")}
@@ -302,9 +309,9 @@ function NamazGuideBody({
             accessibilityRole="button"
           >
             <Text style={styles.studyMapBadge}>1</Text>
-            <Text style={styles.studyMapCardTitle}>{tr("Дәрет")}</Text>
+            <Text style={styles.studyMapCardTitle}>{t.namazGuide.wuduHeroTitle}</Text>
             <Text style={styles.studyMapCardSub}>
-              {tr("Қадамдар және бұзылу")}
+              {t.namazGuide.wuduCardSub}
             </Text>
           </Pressable>
           <Pressable
@@ -317,10 +324,10 @@ function NamazGuideBody({
           >
             <Text style={styles.studyMapBadge}>2</Text>
             <Text style={styles.studyMapCardTitle}>
-              {tr("5 уақыт намаз")}
+              {t.namazGuide.fivePrayersTitle}
             </Text>
             <Text style={styles.studyMapCardSub}>
-              {tr("Ниеттен сәлемге дейін")}
+              {t.namazGuide.fivePrayersSub}
             </Text>
           </Pressable>
           {NAMAZ_PRAYER_TYPE_CARDS.map((card) => {
@@ -364,10 +371,10 @@ function NamazGuideBody({
           </Pressable>
           <View style={styles.modalTitleCol}>
             <Text style={styles.modalTitle} numberOfLines={1}>
-              {tr(primarySectionTitle)}
+              {primarySectionTitle}
             </Text>
             <Text style={styles.modalSub} numberOfLines={1}>
-              {tr(primarySectionSub)}
+              {primarySectionSub}
             </Text>
           </View>
         </View>
@@ -493,18 +500,6 @@ function makeStyles(colors: ThemeColors) {
     modalTitle: { color: colors.text, fontSize: 18, fontWeight: "900" },
     modalSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 2 },
     modalContent: { padding: 14, paddingBottom: 40 },
-    intro: {
-      color: colors.muted,
-      marginBottom: 16,
-      lineHeight: 22,
-      fontSize: 14,
-      backgroundColor: colors.accentSurface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-    },
     block: {
       backgroundColor: colors.card,
       borderRadius: 18,

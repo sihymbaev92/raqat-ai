@@ -12,6 +12,13 @@ export function getBundledJsonBaseUrl(): string {
       : "";
   if (env.trim()) return normalizeBase(env);
 
+  if (typeof window !== "undefined") {
+    const { hostname, origin } = window.location;
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `${origin}/assets/bundled`;
+    }
+  }
+
   const web = getExpoExtra()?.raqatWebUrl;
   if (web != null && String(web).trim()) {
     return `${normalizeBase(String(web))}/assets/bundled`;

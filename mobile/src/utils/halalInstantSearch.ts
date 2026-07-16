@@ -95,7 +95,9 @@ export function filterHalalCompaniesNearbyInstant(
 ): HalalCompanyWithDistance[] {
   if (!Number.isFinite(centerLat) || !Number.isFinite(centerLon) || radiusM <= 0) return [];
   const pool = applyClientFilters(items, opts);
-  const within = filterHalalCompaniesWithinRadius(pool, centerLat, centerLon, radiusM);
+  const within = filterHalalCompaniesWithinRadius(pool, centerLat, centerLon, radiusM, {
+    allowCityApprox: true,
+  });
   const q = query.trim().toLowerCase();
   const filtered =
     q.length > 0 ? within.filter((c) => companyNearbyHaystack(c).includes(q)) : within;

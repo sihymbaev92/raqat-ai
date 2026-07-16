@@ -9,6 +9,8 @@ import android.hardware.SensorManager
 /**
  * Device heading (0° = magnetic north) via rotation vector or accel+mag fusion.
  * Used by JS Qibla compass — more reliable than expo-location on some Samsung builds.
+ *
+ * Does not use GAME_ROTATION_VECTOR (no magnetometer → absolute Qibla impossible).
  */
 object QiblaDeviceHeadingWatcher {
   private var sensorManager: SensorManager? = null
@@ -16,20 +18,19 @@ object QiblaDeviceHeadingWatcher {
   private var accelSensor: Sensor? = null
   private var magSensor: Sensor? = null
   private var sensorListener: SensorEventListener? = null
-  private var onHeading: ((Float) -> Unit)? = null
+  private var onHeading: ((Float, Int) -> Unit)? = null
   private var smoothedHeading: Float? = null
   private var gravity: QiblaWidgetHelper.Vec3? = null
   private var magnetic: QiblaWidgetHelper.Vec3? = null
+  private var lastSensorAccuracy: Int = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
 
-  fun start(context: Context, callback: (Float) -> Unit): Boolean {
+  fun start(context: Context, callback: (Float, Int) -> Unit): Boolean {
     stop()
     val app = context.applicationContext
     val sm = app.getSystemService(Context.SENSOR_SERVICE) as? SensorManager ?: return false
     onHeading = callback
     sensorManager = sm
-    rotationSensor =
-      sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        ?: sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+    rotationSensor = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     if (rotationSensor == null) {
       accelSensor = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
       magSensor = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
@@ -41,13 +42,14 @@ object QiblaDeviceHeadingWatcher {
     smoothedHeading = null
     gravity = null
     magnetic = null
+    lastSensorAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
     val listener =
       object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
           val raw =
             when (event.sensor.type) {
-              Sensor.TYPE_ROTATION_VECTOR, Sensor.TYPE_GAME_ROTATION_VECTOR ->
-                headingFromRotation(event.values)
+              Sensor.TYPE_ROTATION_VECTOR ->
+                QiblaWidgetHelper.headingFromRotationVector(event.values)
               Sensor.TYPE_ACCELEROMETER -> {
                 gravity = QiblaWidgetHelper.Vec3(event.values[0], event.values[1], event.values[2])
                 headingFromGravityMagnetic()
@@ -58,11 +60,14 @@ object QiblaDeviceHeadingWatcher {
               }
               else -> null
             } ?: return
-          smoothedHeading = QiblaWidgetHelper.smoothHeading(smoothedHeading, raw, 0.32f)
-          onHeading?.invoke(smoothedHeading ?: raw)
+          /** Жеңіл EMA — JS adaptive smooth қос қабатты lag жасамайды. */
+          smoothedHeading = QiblaWidgetHelper.smoothHeading(smoothedHeading, raw, 0.62f)
+          onHeading?.invoke(smoothedHeading ?: raw, lastSensorAccuracy)
         }
 
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+          lastSensorAccuracy = accuracy
+        }
       }
     sensorListener = listener
     if (rotationSensor != null) {
@@ -85,16 +90,7 @@ object QiblaDeviceHeadingWatcher {
     smoothedHeading = null
     gravity = null
     magnetic = null
-  }
-
-  private fun headingFromRotation(values: FloatArray): Float? {
-    val rot = FloatArray(9)
-    val orient = FloatArray(3)
-    SensorManager.getRotationMatrixFromVector(rot, values)
-    SensorManager.getOrientation(rot, orient)
-    var az = Math.toDegrees(orient[0].toDouble()).toFloat()
-    az = (az + 360f) % 360f
-    return if (az.isFinite()) az else null
+    lastSensorAccuracy = SensorManager.SENSOR_STATUS_ACCURACY_MEDIUM
   }
 
   private fun headingFromGravityMagnetic(): Float? {

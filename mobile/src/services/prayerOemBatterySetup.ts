@@ -86,8 +86,11 @@ async function markOemBackgroundPrompted(): Promise<void> {
 /** Samsung/Xiaomi/Huawei — батарея whitelist + OEM autostart экрандары. */
 export async function ensureOemPowerSetupForAzan(opts?: {
   openSystemScreens?: boolean;
+  /** Бірінші іске қосуда батарея диалогын міндетті түрде сұрау. */
+  forceBatteryPrompt?: boolean;
 }): Promise<OemPowerSetupResult> {
   const openSystemScreens = opts?.openSystemScreens !== false;
+  const forceBatteryPrompt = opts?.forceBatteryPrompt === true;
   const rejected: OemPowerSetupResult = {
     batteryOptimizationIgnored: true,
     openedBatteryWhitelistScreen: false,
@@ -101,9 +104,15 @@ export async function ensureOemPowerSetupForAzan(opts?: {
   let openedBatteryWhitelistScreen = false;
   let openedOemBackgroundScreen = false;
 
+  const needsBattery =
+    forceBatteryPrompt ||
+    diag.batteryOptimizationIgnored === false ||
+    diag.batteryOptimizationIgnored == null;
+
   if (
     openSystemScreens &&
-    diag.batteryOptimizationIgnored === false &&
+    needsBattery &&
+    diag.batteryOptimizationIgnored !== true &&
     typeof prayerWidgetModule()?.requestIgnoreBatteryOptimizationIfNeeded === "function"
   ) {
     try {
@@ -117,14 +126,12 @@ export async function ensureOemPowerSetupForAzan(opts?: {
     diag = await getOemPowerDiagnostics();
   }
 
-  const needsOem =
-    diag.oemNeedsBackgroundSetup === true &&
-    (diag.batteryOptimizationIgnored !== true || diag.oemNeedsBackgroundSetup);
+  const needsOem = diag.oemNeedsBackgroundSetup === true;
 
   if (
     openSystemScreens &&
     needsOem &&
-    (await shouldPromptOemBackground()) &&
+    (forceBatteryPrompt || (await shouldPromptOemBackground())) &&
     typeof prayerWidgetModule()?.openOemBackgroundSettings === "function"
   ) {
     try {

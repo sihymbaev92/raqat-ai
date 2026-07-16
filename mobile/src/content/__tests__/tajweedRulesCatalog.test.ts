@@ -2,8 +2,8 @@ import {
   TAJWEED_LEGEND_SECTIONS,
   TAJWEED_RULES_CATALOG,
   tajweedColorForRule,
-} from "../content/tajweedRulesCatalog";
-import type { TajweedRuleKey } from "../utils/alquranTajweedParse";
+} from "../tajweedRulesCatalog";
+import type { TajweedRuleKey } from "../../utils/alquranTajweedParse";
 
 describe("tajweedRulesCatalog", () => {
   it("covers all 17 API rule keys exactly once", () => {
@@ -38,9 +38,16 @@ describe("tajweedRulesCatalog", () => {
     }
   });
 
-  it("d and b idgham colors differ in light and dark themes", () => {
-    expect(tajweedColorForRule("d", false)).not.toBe(tajweedColorForRule("b", false));
-    expect(tajweedColorForRule("d", true)).not.toBe(tajweedColorForRule("b", true));
+  it("idgham mutajanis and mutaqarib share yellow palette", () => {
+    expect(tajweedColorForRule("d", false)).toBe(tajweedColorForRule("b", false));
+    expect(tajweedColorForRule("d", true)).toBe(tajweedColorForRule("b", true));
+  });
+
+  it("madd uses international red #DD2C00", () => {
+    expect(tajweedColorForRule("n", false)).toBe("#DD2C00");
+    expect(tajweedColorForRule("q", false)).toBe("#1A237E");
+    expect(tajweedColorForRule("g", false)).toBe("#00C853");
+    expect(tajweedColorForRule("a", false)).toBe("#FFD600");
   });
 
   it("tajweedColorForRule returns catalog colors", () => {

@@ -1,7 +1,6 @@
-import React, { useEffect, useLayoutEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Linking } from "react-native";
+import React, { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { Pressable } from "@/ui/Pressable";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -13,12 +12,77 @@ import {
   hadithTextForLocale,
   releaseHadithCorpusMemoryCache,
   type HadithCorpus,
+  type SahihHadithEntry,
 } from "../storage/hadithCorpus";
+import { findKzTrustedHadith } from "../content/kzTrustedHadithCatalog";
 import { useAppLocale } from "../i18n/runtime";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import { resolveHadithGradeText } from "../content/hadithGrade";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "HadithDetail">;
+
+type DisplayHadith = {
+  id: string;
+  collectionNameKk: string;
+  bookTitleKk: string;
+  reference: string;
+  arabic: string;
+  textKk: string;
+  narratorKk: string;
+  grade: string;
+  citation: string;
+  sourceLabel: string;
+  sourceNote: string;
+  themeKk?: string;
+  fromTrusted: boolean;
+  corpusEntry?: SahihHadithEntry;
+};
+
+function buildDisplay(hadithId: string, corpus: HadithCorpus | null): DisplayHadith | null {
+  const trusted = findKzTrustedHadith(hadithId);
+  const corpusEntry = corpus ? findHadith(corpus, hadithId) : undefined;
+
+  if (trusted) {
+    return {
+      id: trusted.id,
+      collectionNameKk: trusted.collectionNameKk,
+      bookTitleKk: trusted.bookTitleKk,
+      reference: trusted.reference,
+      arabic: trusted.arabic,
+      textKk: trusted.textKk,
+      narratorKk: trusted.narratorKk,
+      grade: trusted.grade,
+      citation: trusted.sourceCitationKk,
+      sourceLabel: trusted.sourceLabelKk,
+      sourceNote: trusted.sourceNoteKk,
+      themeKk: trusted.themeKk,
+      fromTrusted: true,
+      corpusEntry,
+    };
+  }
+
+  if (!corpusEntry) return null;
+
+  return {
+    id: corpusEntry.id,
+    collectionNameKk: corpusEntry.collectionNameKk ?? "",
+    bookTitleKk: corpusEntry.bookTitleKk ?? "",
+    reference: corpusEntry.reference ?? "",
+    arabic: corpusEntry.arabic ?? "",
+    textKk: (corpusEntry.textKk ?? "").trim(),
+    narratorKk: corpusEntry.narratorKk?.trim() ?? "",
+    grade: resolveHadithGradeText(corpusEntry.grade),
+    citation:
+      corpusEntry.sourceCitationKk?.trim() ||
+      `${corpusEntry.collectionNameKk}, хадис № ${corpusEntry.reference}`,
+    sourceLabel: corpusEntry.kkSourceLabel?.trim() || corpusEntry.collectionNameKk || "",
+    sourceNote: corpusEntry.sourceOnly
+      ? kk.hadith.sourceOnlyNoteInApp
+      : kk.hadith.detailMeaningNote,
+    fromTrusted: false,
+    corpusEntry,
+  };
+}
 
 export function HadithDetailScreen({ route, navigation }: Props) {
   const { hadithId } = route.params;
@@ -29,6 +93,10 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     let alive = true;
+    const trustedNow = findKzTrustedHadith(hadithId);
+    if (trustedNow) {
+      setLoading(false);
+    }
     void (async () => {
       try {
         await runWhenHeavyWorkAllowed();
@@ -46,25 +114,20 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     };
   }, [hadithId]);
 
-  const h = corpus ? findHadith(corpus, hadithId) : undefined;
-  const narratorKk = h?.narratorKk?.trim() ?? "";
-  const gradeText = resolveHadithGradeText(h?.grade);
-  const sourceOnly = Boolean(h?.sourceOnly ?? (corpus?.version ?? 0) >= 4);
-  const citation = h?.sourceCitationKk?.trim() || (h ? `${h.collectionNameKk}, хадис № ${h.reference}` : "");
-  const sourceLabel = h?.kkSourceLabel?.trim() || h?.kkSourceSite?.trim() || "";
-  const sourceUrl = h?.kkSourceUrl?.trim() || "";
+  const display = useMemo(() => buildDisplay(hadithId, corpus), [corpus, hadithId]);
 
   useLayoutEffect(() => {
-    if (h) {
-      const coll = h.collectionNameKk ?? kk.hadith.title;
-      const ref = h.reference ?? "";
-      navigation.setOptions({ title: `${coll} · №${ref}` });
-    }
-  }, [navigation, h]);
+    if (!display) return;
+    navigation.setOptions({
+      title: display.themeKk
+        ? display.themeKk
+        : `${display.collectionNameKk} · №${display.reference}`,
+    });
+  }, [navigation, display]);
 
   const styles = makeStyles(colors);
 
-  if (loading) {
+  if (loading && !display) {
     return (
       <View style={styles.center}>
         <RaqatOrnamentSpinner size={52} />
@@ -72,7 +135,7 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  if (!h) {
+  if (!display) {
     return (
       <View style={styles.center}>
         <Text style={styles.err}>{kk.hadith.notFound}</Text>
@@ -80,81 +143,67 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  const openSource = () => {
-    if (!sourceUrl) return;
-    void Linking.openURL(sourceUrl).catch(() => {
-      /* елемеу */
-    });
-  };
+  const localeExtra =
+    display.corpusEntry && (appLocale === "en" || appLocale === "ru" || appLocale === "tr")
+      ? hadithTextForLocale(display.corpusEntry, appLocale)
+      : "";
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.meta}>{h.collectionNameKk ?? ""}</Text>
-      {h.bookTitleKk?.trim() ? <Text style={styles.book}>{h.bookTitleKk}</Text> : null}
+      <Text style={styles.meta}>{display.collectionNameKk}</Text>
+      {display.themeKk ? <Text style={styles.theme}>{display.themeKk}</Text> : null}
+      {display.bookTitleKk.trim() ? <Text style={styles.book}>{display.bookTitleKk}</Text> : null}
       <Text style={styles.ref}>
-        {kk.hadith.refLabel} №{h.reference}
+        {kk.hadith.refLabel} №{display.reference}
       </Text>
+
       <Text style={styles.section}>{kk.hadith.reliabilityTitle}</Text>
       <View style={styles.badgesRow}>
-        <Text style={styles.badge}>{kk.hadith.sourceBadge(h.collectionNameKk || "—")}</Text>
-        <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
+        <Text style={styles.badge}>{kk.hadith.sourceBadge(display.collectionNameKk || "—")}</Text>
+        <Text style={styles.badge}>{kk.hadith.gradeBadge(display.grade)}</Text>
       </View>
 
       <Text style={styles.section}>{kk.hadith.arabic}</Text>
-      <Text style={styles.arabic}>{h.arabic}</Text>
+      <Text style={styles.arabic} selectable>
+        {display.arabic}
+      </Text>
 
-      {(() => {
-        if (appLocale !== "en" && appLocale !== "ru" && appLocale !== "tr") return null;
-        const localeText = hadithTextForLocale(h, appLocale);
-        if (!localeText) return null;
-        const label =
-          appLocale === "ru" ? "Перевод" : appLocale === "tr" ? "Çeviri" : "Translation";
-        return (
-          <>
-            <Text style={styles.section}>{label}</Text>
-            <Text style={styles.body} selectable>{localeText}</Text>
-          </>
-        );
-      })()}
-
-      <Text style={styles.section}>{kk.hadith.kkSourceTitle}</Text>
-      <Text style={styles.body}>{citation}</Text>
-      {sourceOnly ? (
-        <Text style={styles.meaningNote}>{kk.hadith.sourceOnlyNote}</Text>
-      ) : (
-        <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
-      )}
-      {sourceUrl ? (
-        <Pressable
-          onPress={openSource}
-          oyuBackdrop={false}
-          accessibilityRole="link"
-          accessibilityLabel={kk.hadith.kkSourceOpenA11y(sourceLabel || kk.hadith.kkSourceTitle)}
-          style={({ pressed }) => [styles.sourceBtn, pressed && styles.sourceBtnPressed]}
-        >
-          <Text style={styles.sourceBtnTxt}>
-            {sourceLabel ? `${kk.hadith.kkSourceTitle}: ${sourceLabel}` : kk.hadith.kkSourceTitle}
-          </Text>
-        </Pressable>
-      ) : null}
-
-      {narratorKk ? (
+      {display.textKk ? (
         <>
-          <Text style={styles.section}>{kk.hadith.narrator}</Text>
-          <Text style={styles.body}>{narratorKk}</Text>
+          <Text style={styles.section}>{kk.hadith.translationKk}</Text>
+          <Text style={styles.body} selectable>
+            {display.textKk}
+          </Text>
+          <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
+        </>
+      ) : (
+        <Text style={styles.meaningNote}>{display.sourceNote}</Text>
+      )}
+
+      {localeExtra ? (
+        <>
+          <Text style={styles.section}>
+            {appLocale === "ru" ? kk.hadith.translationRu : appLocale === "tr" ? "Çeviri" : kk.hadith.translationEn}
+          </Text>
+          <Text style={styles.body} selectable>
+            {localeExtra}
+          </Text>
         </>
       ) : null}
 
-      {corpus?.provenance ? (
-        <View style={styles.prov}>
-          <Text style={styles.provTitle}>{kk.hadith.provenance}</Text>
-          {corpus.provenance.evidenceKk ? (
-            <Text style={styles.provTxt}>{corpus.provenance.evidenceKk}</Text>
-          ) : null}
-          {corpus.provenance.licenseHint ? (
-            <Text style={styles.provTxt}>{corpus.provenance.licenseHint}</Text>
-          ) : null}
-        </View>
+      <View style={styles.sourceCard}>
+        <Text style={styles.section}>{kk.hadith.kkSourceTitle}</Text>
+        <Text style={styles.sourceLabel}>{display.sourceLabel}</Text>
+        <Text style={styles.body}>{display.citation}</Text>
+        <Text style={styles.sourceNote}>{display.sourceNote}</Text>
+        <Text style={styles.inAppOnly}>{kk.hadith.inAppSourceOnly}</Text>
+      </View>
+
+      {display.narratorKk ? (
+        <>
+          <Text style={styles.section}>{kk.hadith.narrator}</Text>
+          <Text style={styles.body}>{display.narratorKk}</Text>
+        </>
       ) : null}
     </ScrollView>
   );
@@ -164,75 +213,55 @@ function makeStyles(colors: ThemeColors) {
   const pageBg = "#FFFFFF";
   const text = "#111827";
   const muted = "#4B5563";
-  const arabic = "#111827";
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: pageBg },
-    content: { padding: 20, paddingBottom: 40 },
-    center: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: pageBg,
-      padding: 24,
-    },
-    err: { color: colors.error, textAlign: "center" },
-    meta: { color: muted, fontWeight: "700", fontSize: 14 },
-    book: { color: muted, fontSize: 13, marginTop: 4 },
-    ref: { color: muted, fontSize: 12, marginBottom: 8 },
-    badgesRow: { flexDirection: "row", gap: 6, flexWrap: "wrap", marginBottom: 8 },
+    content: { padding: 16, paddingBottom: 36 },
+    center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: pageBg, padding: 24 },
+    err: { color: colors.error, textAlign: "center", fontWeight: "700" },
+    meta: { color: colors.accent, fontSize: 13, fontWeight: "800", marginBottom: 4 },
+    theme: { color: text, fontSize: 22, fontWeight: "900", marginBottom: 6 },
+    book: { color: muted, fontSize: 13, fontWeight: "600", marginBottom: 4 },
+    ref: { color: muted, fontSize: 13, fontWeight: "700", marginBottom: 12 },
+    section: { color: text, fontSize: 14, fontWeight: "900", marginTop: 14, marginBottom: 8 },
+    badgesRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     badge: {
-      color: muted,
-      fontSize: 11,
-      fontWeight: "700",
-      borderWidth: 0,
-      borderColor: "transparent",
-      borderRadius: 0,
-      paddingHorizontal: 0,
-      paddingVertical: 0,
-      backgroundColor: "transparent",
+      backgroundColor: colors.accentSurface,
+      color: text,
+      fontSize: 12,
+      fontWeight: "800",
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
       overflow: "hidden",
     },
-    section: {
-      color: muted,
-      fontSize: 12,
-      fontWeight: "700",
-      marginTop: 12,
-      marginBottom: 6,
-    },
     arabic: {
-      color: arabic,
-      fontSize: 16,
-      lineHeight: 28,
-      writingDirection: "rtl",
+      color: text,
+      fontSize: 22,
+      lineHeight: 36,
       textAlign: "right",
+      writingDirection: "rtl",
+      fontWeight: "600",
     },
-    meaningNote: {
-      color: muted,
-      fontSize: 13,
-      lineHeight: 20,
-      marginTop: 8,
-      fontStyle: "italic",
+    body: { color: text, fontSize: 15, lineHeight: 24, fontWeight: "600" },
+    meaningNote: { color: muted, fontSize: 12, lineHeight: 18, marginTop: 8, fontWeight: "600" },
+    sourceCard: {
+      marginTop: 16,
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
     },
-    body: { color: text, fontSize: 16, lineHeight: 26 },
-    sourceBtn: {
+    sourceLabel: { color: colors.accent, fontSize: 14, fontWeight: "900", marginBottom: 6 },
+    sourceNote: { color: muted, fontSize: 12, lineHeight: 18, marginTop: 8, fontWeight: "600" },
+    inAppOnly: {
+      color: text,
+      fontSize: 12,
+      fontWeight: "800",
       marginTop: 10,
-      alignSelf: "flex-start",
-      paddingHorizontal: 0,
-      paddingVertical: 4,
-      borderRadius: 0,
-      backgroundColor: "transparent",
+      paddingTop: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
     },
-    sourceBtnPressed: { opacity: 0.88 },
-    sourceBtnTxt: { color: muted, fontWeight: "700", fontSize: 14 },
-    prov: {
-      marginTop: 20,
-      padding: 0,
-      backgroundColor: "transparent",
-      borderRadius: 0,
-      borderWidth: 0,
-      borderColor: "transparent",
-    },
-    provTitle: { color: muted, fontSize: 11, fontWeight: "700", marginBottom: 6 },
-    provTxt: { color: muted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
   });
 }

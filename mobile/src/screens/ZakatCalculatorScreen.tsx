@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -9,7 +10,7 @@ import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { InformationalToolBanner } from "../components/InformationalToolBanner";
 import { GuideAccordionSection } from "../components/GuideAccordion";
-import { openOfficialSiteExternally } from "../config/officialSiteProxy";
+import { openOfficialSiteInApp } from "../config/officialSiteProxy";
 import {
   FATUA_ZAKAT_SEARCH_URL,
   MUFTYAT_ZAKAT_SEARCH_URL,
@@ -59,7 +60,8 @@ const NISAB_MODES: { id: NisabMode; label: string }[] = [
   { id: "silver", label: kk.zakatCalculator.nisabModeSilver },
 ];
 
-export function ZakatCalculatorScreen(_props: Props) {
+export function ZakatCalculatorScreen({ navigation }: Props) {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const [amounts, setAmounts] = useState<ZakatAmountInput>(INITIAL_AMOUNTS);
@@ -219,7 +221,7 @@ export function ZakatCalculatorScreen(_props: Props) {
 
       <View style={styles.actions}>
         <Pressable
-          onPress={() => openOfficialSiteExternally(FATUA_ZAKAT_SEARCH_URL)}
+          onPress={() => openOfficialSiteInApp(FATUA_ZAKAT_SEARCH_URL, navigation)}
           style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
           accessibilityLabel={kk.zakatCalculator.openFatuaA11y}
@@ -228,7 +230,7 @@ export function ZakatCalculatorScreen(_props: Props) {
           <Text style={styles.actionTxt}>{kk.zakatCalculator.openFatua}</Text>
         </Pressable>
         <Pressable
-          onPress={() => openOfficialSiteExternally(MUFTYAT_ZAKAT_SEARCH_URL)}
+          onPress={() => openOfficialSiteInApp(MUFTYAT_ZAKAT_SEARCH_URL, navigation)}
           style={({ pressed }) => [styles.actionBtn, styles.actionBtnSecondary, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
           accessibilityLabel={kk.zakatCalculator.openMuftyatA11y}

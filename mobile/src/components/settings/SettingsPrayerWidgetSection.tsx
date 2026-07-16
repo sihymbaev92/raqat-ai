@@ -1,149 +1,165 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
+import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
+import { SettingsSection, makeSettingsStyles } from "./settingsUi";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
-import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
-import { SettingsCard, SettingsSection } from "./settingsUi";
 import {
   getPrayerWidgetPinStatus,
   requestPinPrayerWidget,
   type PrayerWidgetPinStatus,
 } from "../../services/prayerWidgetPin";
+import { syncNativePrayerWidgetFromStorage } from "../../storage/prayerCache";
+import { useAppLocale } from "../../i18n/runtime";
 
-export function SettingsPrayerWidgetSection({ colors }: { colors: ThemeColors }) {
-  const { tr } = useKkAutoTranslator();
-  const [status, setStatus] = useState<PrayerWidgetPinStatus | null>(null);
+type Props = {
+  colors: ThemeColors;
+};
+
+export function SettingsPrayerWidgetSection({ colors }: Props) {
+  useAppLocale();
+  const ui = makeSettingsStyles(colors);
+  const styles = makeWidgetStyles(colors);
+  const [pinStatus, setPinStatus] = useState<PrayerWidgetPinStatus | null>(null);
   const [pinBusy, setPinBusy] = useState(false);
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [syncBusy, setSyncBusy] = useState(false);
 
-  const refresh = useCallback(async () => {
-    setStatus(await getPrayerWidgetPinStatus());
+  const refreshPinStatus = useCallback(async () => {
+    setPinStatus(await getPrayerWidgetPinStatus());
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      void refresh();
-    }, [refresh])
-  );
+  useEffect(() => {
+    void refreshPinStatus();
+  }, [refreshPinStatus]);
 
-  const isAndroid = Platform.OS === "android";
-  const isIos = Platform.OS === "ios";
-  if (!isAndroid && !isIos) return null;
+  if (Platform.OS === "web") return null;
 
-  const title = isAndroid ? kk.settings.androidPrayerWidgetTitle : kk.settings.iosPrayerWidgetTitle;
-  const steps = isAndroid ? kk.settings.androidPrayerWidgetSteps : kk.settings.iosPrayerWidgetSteps;
-  const pinned = (status?.pinnedCount ?? 0) > 0;
-  const pinSupported = status?.pinSupported === true;
+  const title =
+    Platform.OS === "ios" ? kk.settings.iosPrayerWidgetTitle : kk.settings.androidPrayerWidgetTitle;
+  const subtitle =
+    Platform.OS === "ios"
+      ? kk.settings.iosPrayerWidgetSectionSub
+      : kk.settings.androidPrayerWidgetSectionSub;
+  const steps =
+    Platform.OS === "ios" ? kk.settings.iosPrayerWidgetSteps : kk.settings.androidPrayerWidgetSteps;
+  const hint =
+    Platform.OS === "ios" ? kk.settings.iosPrayerWidgetHint : kk.settings.androidPrayerWidgetHint;
 
   const onPin = async () => {
+    if (Platform.OS !== "android" || pinBusy) return;
     setPinBusy(true);
     try {
       await requestPinPrayerWidget();
-      await refresh();
+      await refreshPinStatus();
     } finally {
       setPinBusy(false);
     }
   };
 
+  const onSync = async () => {
+    if (syncBusy) return;
+    setSyncBusy(true);
+    try {
+      await syncNativePrayerWidgetFromStorage();
+      if (Platform.OS === "android") {
+        await refreshPinStatus();
+      }
+    } finally {
+      setSyncBusy(false);
+    }
+  };
+
   return (
-    <SettingsSection
-      colors={colors}
-      title={title}
-      subtitle={isAndroid ? kk.settings.androidPrayerWidgetSectionSub : kk.settings.iosPrayerWidgetSectionSub}
-    >
-      <SettingsCard colors={colors} panel testID="settings-prayer-widget-section">
-        <View style={styles.statusRow}>
-          <MaterialIcons
-            name={pinned ? "check-circle" : "widgets"}
-            size={22}
-            color={pinned ? colors.accent : colors.muted}
-          />
-          <Text style={[styles.statusTxt, pinned && { color: colors.accent }]}>
-            {pinned
-              ? tr(kk.settings.androidPrayerWidgetStatusPinned(status?.pinnedCount ?? 0))
-              : tr(kk.settings.androidPrayerWidgetStatusNotPinned)}
-          </Text>
-        </View>
+    <SettingsSection colors={colors} title={title} subtitle={subtitle}>
+      {Platform.OS === "android" && pinStatus ? (
+        <Text style={ui.hint}>
+          {pinStatus.pinnedCount > 0
+            ? kk.settings.androidPrayerWidgetStatusPinned(pinStatus.pinnedCount)
+            : kk.settings.androidPrayerWidgetStatusNotPinned}
+        </Text>
+      ) : null}
 
-        {isAndroid && pinSupported ? (
-          <Pressable
-            onPress={() => void onPin()}
-            disabled={pinBusy}
-            style={({ pressed }) => [styles.pinBtn, (pressed || pinBusy) && { opacity: 0.88 }]}
-            accessibilityRole="button"
-            accessibilityLabel={tr(kk.settings.androidPrayerWidgetPinCta)}
-            testID="settings-prayer-widget-pin-cta"
-          >
-            <MaterialIcons name="add-to-home-screen" size={20} color="#fff" />
-            <Text style={styles.pinBtnTxt}>
-              {pinBusy ? kk.common.loading : tr(kk.settings.androidPrayerWidgetPinCta)}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        {isAndroid && status && !pinSupported ? (
-          <Text style={styles.warn}>{tr(kk.settings.androidPrayerWidgetPinUnsupported)}</Text>
-        ) : null}
-
-        <Text style={styles.manualTitle}>{tr(kk.settings.androidPrayerWidgetPinManualTitle)}</Text>
-        {steps.map((step, i) => (
-          <View key={`${i}-${step}`} style={styles.stepRow}>
-            <Text style={styles.stepNum}>{i + 1}.</Text>
-            <Text style={styles.stepTxt}>{tr(step)}</Text>
-          </View>
-        ))}
-
-        <Text style={styles.hint}>{tr(isAndroid ? kk.settings.androidPrayerWidgetHint : kk.settings.iosPrayerWidgetHint)}</Text>
-
+      {Platform.OS === "android" && pinStatus?.pinSupported ? (
         <Pressable
-          onPress={() => void refresh()}
-          style={({ pressed }) => [styles.refreshBtn, pressed && { opacity: 0.85 }]}
+          onPress={() => void onPin()}
+          disabled={pinBusy}
+          style={({ pressed }) => [styles.actionBtn, (pressed || pinBusy) && { opacity: 0.75 }]}
           accessibilityRole="button"
-          accessibilityLabel={tr(kk.settings.androidPrayerWidgetRefreshStatus)}
-          testID="settings-prayer-widget-refresh"
+          accessibilityLabel={kk.settings.androidPrayerWidgetPinCta}
         >
-          <MaterialIcons name="refresh" size={18} color={colors.accent} />
-          <Text style={styles.refreshTxt}>{tr(kk.settings.androidPrayerWidgetRefreshStatus)}</Text>
+          {pinBusy ? (
+            <RaqatOrnamentSpinner size={22} />
+          ) : (
+            <Text style={styles.actionBtnTxt}>{kk.settings.androidPrayerWidgetPinCta}</Text>
+          )}
         </Pressable>
-      </SettingsCard>
+      ) : null}
+
+      {Platform.OS === "android" && pinStatus && !pinStatus.pinSupported ? (
+        <Text style={ui.hint}>{kk.settings.androidPrayerWidgetPinUnsupported}</Text>
+      ) : null}
+
+      <Text style={styles.stepsTitle}>{kk.settings.androidPrayerWidgetPinManualTitle}</Text>
+      {steps.map((step, index) => (
+        <Text key={`widget-step-${index}`} style={ui.hint}>
+          {`${index + 1}. ${step}`}
+        </Text>
+      ))}
+
+      <View style={styles.actionsRow}>
+        <Pressable
+          onPress={() => void onSync()}
+          disabled={syncBusy}
+          style={({ pressed }) => [styles.secondaryBtn, (pressed || syncBusy) && { opacity: 0.75 }]}
+          accessibilityRole="button"
+          accessibilityLabel={kk.settings.androidPrayerWidgetRefreshStatus}
+        >
+          {syncBusy ? (
+            <RaqatOrnamentSpinner size={22} />
+          ) : (
+            <Text style={styles.secondaryBtnTxt}>{kk.settings.androidPrayerWidgetRefreshStatus}</Text>
+          )}
+        </Pressable>
+      </View>
+
+      <Text style={ui.hint}>{hint}</Text>
     </SettingsSection>
   );
 }
 
-function makeStyles(colors: ThemeColors) {
+function makeWidgetStyles(colors: ThemeColors) {
   return StyleSheet.create({
-    statusRow: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 12 },
-    statusTxt: { flex: 1, color: colors.muted, fontSize: 14, fontWeight: "700", lineHeight: 20 },
-    pinBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-      backgroundColor: colors.accent,
-      borderRadius: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      marginBottom: 12,
+    stepsTitle: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "800",
+      marginTop: 8,
+      marginBottom: 4,
     },
-    pinBtnTxt: { color: "#fff", fontSize: 14, fontWeight: "900" },
-    warn: { color: colors.error, fontSize: 13, lineHeight: 18, marginBottom: 10 },
-    manualTitle: { color: colors.text, fontSize: 13, fontWeight: "800", marginBottom: 8, marginTop: 4 },
-    stepRow: { flexDirection: "row", gap: 8, marginBottom: 6 },
-    stepNum: { color: colors.accent, fontSize: 13, fontWeight: "900", width: 18 },
-    stepTxt: { flex: 1, color: colors.muted, fontSize: 13, lineHeight: 18, fontWeight: "600" },
-    hint: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 10 },
-    refreshBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
+    actionsRow: {
+      marginTop: 10,
+      marginBottom: 4,
+    },
+    actionBtn: {
       alignSelf: "flex-start",
-      marginTop: 12,
-      paddingVertical: 6,
-      paddingHorizontal: 4,
+      marginTop: 8,
+      marginBottom: 4,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      backgroundColor: colors.accent,
     },
-    refreshTxt: { color: colors.accent, fontSize: 13, fontWeight: "800" },
+    actionBtnTxt: { color: "#fff", fontSize: 14, fontWeight: "800" },
+    secondaryBtn: {
+      alignSelf: "flex-start",
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    secondaryBtnTxt: { color: colors.text, fontSize: 14, fontWeight: "700" },
   });
 }

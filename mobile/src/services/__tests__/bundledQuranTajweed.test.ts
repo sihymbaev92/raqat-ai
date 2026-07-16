@@ -1,7 +1,7 @@
 import { getBundledTajweedAyahText, loadBundledTajweedSurahMap } from "../bundledQuranTajweed";
 
 jest.mock("../../utils/loadBundledJson", () => ({
-  loadBundledJson: jest.fn(async () => ({
+  tryLoadBundledJson: jest.fn(async () => ({
     version: 1,
     surahs: {
       "1": {

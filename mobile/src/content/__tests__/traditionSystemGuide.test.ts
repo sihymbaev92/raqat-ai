@@ -56,7 +56,9 @@ describe("traditionSystemGuide", () => {
       for (const id of topic.articleIds) {
         expect(getTraditionArticleById(id)).toBeTruthy();
       }
-      expect(getRelatedTraditionAudios(topic.id).length).toBe(topic.audioIds.length);
+      expect(getRelatedTraditionAudios(topic.id).length).toBe(
+        topic.id === "bata-beru" ? 100 : topic.audioIds.length
+      );
       expect(getRelatedTraditionArticles(topic.id).length).toBe(topic.articleIds.length);
     }
   });

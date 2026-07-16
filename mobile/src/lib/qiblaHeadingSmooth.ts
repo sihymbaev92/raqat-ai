@@ -1,8 +1,8 @@
 import { angleDiff } from "./qibla";
 
 /**
- * Компас heading тегістеу — телефон қозғалмағанда стрелка «қуып» кетпеуі үшін.
- * balanced: тұрақты көрсету; fast: қолмен бұрғанда тез жауап (UI-да fast өшірілген).
+ * Компас heading тегістеу — қолға тез ерсін, тұрғанда шуды бассын.
+ * adaptive α: үлкен бұрылыста snap, кіші дірілде жеңіл blend.
  */
 export function smoothHeading(
   mode: "balanced" | "fast",
@@ -17,15 +17,19 @@ export function smoothHeading(
   }
   const rawStep = angleDiff(prev, next);
   const absStep = Math.abs(rawStep);
-  /** Телефон тұрақсыз тұрғанда шуды елемеу — balanced режимде кең dead zone. */
-  const deadZone = mode === "fast" ? 0.08 : 0.55;
-  if (absStep <= deadZone) {
-    return prev;
+
+  if (mode === "fast") {
+    if (absStep <= 0.04) return prev;
+    const alpha = absStep > 12 ? 1 : absStep > 4 ? 0.92 : 0.8;
+    const blended = prev + rawStep * alpha;
+    return ((blended % 360) + 360) % 360;
   }
-  /** Бір кадрда тым үлкен секіруді шектейміз (магнит шу / OEM jitter). */
-  const maxStep = mode === "fast" ? 96 : 6;
+
+  /** Dashboard chip: тұрақты, бірақ қуып қалмасын. */
+  if (absStep <= 0.1) return prev;
+  const alpha = absStep > 15 ? 0.88 : absStep > 5 ? 0.72 : 0.58;
+  const maxStep = absStep > 30 ? 120 : 64;
   const clampedStep = Math.max(-maxStep, Math.min(maxStep, rawStep));
-  const alpha = mode === "fast" ? 0.88 : 0.18;
   const blended = prev + clampedStep * alpha;
   return ((blended % 360) + 360) % 360;
 }
@@ -43,12 +47,10 @@ export function smoothBearing(prev: number | null, next: number): number {
   }
   const step = angleDiff(prev, norm);
   const abs = Math.abs(step);
-  /** Азимут шамамен 0.1° шу — елемеу. */
   if (abs < 0.12) {
     return prev;
   }
-  /** Орын айтарлықтай өзгерсе — бірден емес, жартылай жақындау. */
-  const alpha = abs > 3 ? 0.32 : 0.22;
+  const alpha = abs > 3 ? 0.42 : 0.28;
   const blended = prev + step * alpha;
   return ((blended % 360) + 360) % 360;
 }

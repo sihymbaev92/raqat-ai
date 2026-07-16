@@ -30,8 +30,10 @@ import {
   halalCompanyWhatsAppUrl,
   halalExtraLinkLabel,
 } from "../../utils/halalCompanyNavigation";
+import { isHalalMapCompanyStub } from "../../utils/halalCompanyStub";
 import { HalalCertBadge } from "../HalalCertBadge";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   visible: boolean;
@@ -42,6 +44,7 @@ type Props = {
 };
 
 export function HalalCompanyDetailSheet({ visible, company, colors, isDark, onClose }: Props) {
+  useAppLocale();
   const [detail, setDetail] = useState<HalalDamuCompanyCard | null>(company);
   const [loading, setLoading] = useState(false);
   const [loadErr, setLoadErr] = useState<string | null>(null);
@@ -106,6 +109,7 @@ export function HalalCompanyDetailSheet({ visible, company, colors, isDark, onCl
     if (site.startsWith("http")) return site;
     return halalDamuCompanyWebUrl(detail);
   }, [detail]);
+  const isStubCard = useMemo(() => (detail ? isHalalMapCompanyStub(detail) : false), [detail]);
 
   if (!visible) return null;
 
@@ -130,6 +134,12 @@ export function HalalCompanyDetailSheet({ visible, company, colors, isDark, onCl
             ) : null}
             {loadErr ? (
               <Text style={[styles.loadErr, { color: colors.muted }]}>{loadErr}</Text>
+            ) : null}
+            {isStubCard ? (
+              <View style={[styles.stubBanner, { backgroundColor: colors.accentSurface, borderColor: colors.border }]}>
+                <MaterialIcons name="info-outline" size={18} color={colors.accent} />
+                <Text style={[styles.stubBannerTxt, { color: colors.text }]}>{kk.features.halalHubStubBanner}</Text>
+              </View>
             ) : null}
 
             <View style={[styles.hero, { backgroundColor: colors.accentSurface }]}>
@@ -424,6 +434,16 @@ const styles = StyleSheet.create({
   loadingRow: { alignItems: "center", paddingVertical: 12, gap: 8 },
   loadingTxt: { fontSize: 13, fontWeight: "600" },
   loadErr: { fontSize: 12, marginBottom: 8, textAlign: "center" },
+  stubBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 10,
+  },
+  stubBannerTxt: { flex: 1, fontSize: 12, lineHeight: 17, fontWeight: "600" },
   hero: {
     minHeight: 140,
     borderRadius: 16,

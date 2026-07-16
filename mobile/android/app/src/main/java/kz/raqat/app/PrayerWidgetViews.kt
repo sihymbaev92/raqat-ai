@@ -7,6 +7,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 
@@ -26,7 +28,6 @@ object PrayerWidgetViews {
   private const val RC_TWO_COL = 15
   private const val RC_FIVE_DUAL = 16
   private const val RC_HOME_STRIP = 17
-  private const val RC_HOME_QIBLA = 18
 
   fun readPayloadJson(context: Context): String? =
     context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_JSON, null)
@@ -52,22 +53,9 @@ object PrayerWidgetViews {
     refresh(mgr, app, PrayerHomeStripWidgetProvider::class.java) { buildHomeStripRemoteViews(it) }
   }
 
-  /** Sensor tick: тек құбыла стрелкасын айналдыру (partial update). */
+  /** Құбыла виджеті жойылды — кері санақ орталықта Chronometer арқылы жаңарады. */
   fun updateHomeStripQiblaOnly(context: Context, headingOverride: Float? = null) {
-    val mgr = AppWidgetManager.getInstance(context)
-    val app = context.applicationContext
-    val ids = mgr.getAppWidgetIds(ComponentName(app, PrayerHomeStripWidgetProvider::class.java))
-    if (ids.isEmpty()) return
-    val parsed = PrayerWidgetPayload.parse(app, readPayloadJson(app))
-    val rv = RemoteViews(app.packageName, R.layout.widget_prayer_home_strip)
-    bindHomeQibla(app, rv, parsed, headingOverride)
-    for (id in ids) {
-      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-        mgr.partiallyUpdateAppWidget(id, rv)
-      } else {
-        mgr.updateAppWidget(id, buildHomeStripRemoteViews(app))
-      }
-    }
+    updateHomeStripWidgetsOnly(context)
   }
 
   private fun refresh(
@@ -242,20 +230,23 @@ object PrayerWidgetViews {
     rv.setInt(
       R.id.widget_home_strip_root,
       "setBackgroundResource",
-      homeBackgroundForWeather(parsed?.weatherCode)
+      R.drawable.widget_prayer_home_bg_black
     )
   }
 
-  private fun homeBackgroundForWeather(code: Int?): Int {
-    if (code == null) return R.drawable.widget_prayer_home_bg
-    return when (code) {
-      0 -> R.drawable.widget_prayer_home_bg_sunny
-      1, 2, 3, 45, 48 -> R.drawable.widget_prayer_home_bg_cloudy
-      51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82 -> R.drawable.widget_prayer_home_bg_rain
-      71, 73, 75, 77, 85, 86 -> R.drawable.widget_prayer_home_bg_snow
-      95, 96, 99 -> R.drawable.widget_prayer_home_bg_storm
-      else -> R.drawable.widget_prayer_home_bg_cloudy
+  private fun bindHomeCountdown(rv: RemoteViews, salatRows: List<PrayerRow>?) {
+    val sec =
+      if (salatRows.isNullOrEmpty()) 0
+      else PrayerWidgetTime.secondsUntilNext(salatRows)
+    if (sec <= 0) {
+      rv.setChronometer(R.id.widget_home_countdown, SystemClock.elapsedRealtime(), "00:00:00", false)
+      return
     }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      rv.setChronometerCountDown(R.id.widget_home_countdown, true)
+    }
+    val base = SystemClock.elapsedRealtime() + sec * 1000L
+    rv.setChronometer(R.id.widget_home_countdown, base, "%s", true)
   }
 
   private fun nextInSubset(next: PrayerRow?, subset: List<PrayerRow>): PrayerRow? =
@@ -286,7 +277,7 @@ object PrayerWidgetViews {
       rv.setTextViewText(R.id.widget_home_weather_temp, "—°")
       setWidgetTextColor(rv, R.id.widget_home_weather_temp, context.getColor(R.color.widget_prayer_muted))
       rv.setTextViewText(R.id.widget_home_city, context.getString(R.string.widget_prayer_label))
-      bindHomeQibla(context, rv, null)
+      bindHomeCountdown(rv, null)
       return
     }
     rv.setTextViewText(R.id.widget_home_weather_icon, weatherGlyph(parsed.weatherCode))
@@ -295,59 +286,7 @@ object PrayerWidgetViews {
     setWidgetTextColor(rv, R.id.widget_home_weather_temp, weatherColorFor(context, parsed.weatherCode))
     val city = widgetCityTitle(context, parsed)
     rv.setTextViewText(R.id.widget_home_city, city)
-    bindHomeQibla(context, rv, parsed)
-  }
-
-  private fun bindHomeQibla(
-    context: Context,
-    rv: RemoteViews,
-    parsed: PrayerDayParsed?,
-    headingOverride: Float? = null
-  ) {
-    rv.setViewVisibility(R.id.widget_home_qibla_wrap, View.VISIBLE)
-    val lat = parsed?.latitude
-    val lon = parsed?.longitude
-    val chipDp = 28
-    if (lat == null || lon == null) {
-      val fallback =
-        QiblaWidgetHelper.renderChipBitmap(
-          context,
-          sizeDp = chipDp,
-          aligned = false,
-          canvasRotationDeg = null
-        )
-      rv.setImageViewBitmap(R.id.widget_home_qibla_arrow, fallback)
-      rv.setFloat(R.id.widget_home_qibla_arrow, "setRotation", 0f)
-      rv.setInt(R.id.widget_home_qibla_wrap, "setBackgroundResource", R.drawable.widget_qibla_chip_bg)
-    } else {
-      val bearing = QiblaWidgetHelper.bearingToKaaba(lat, lon)
-      val heading =
-        headingOverride?.takeIf { it.isFinite() }
-          ?: QiblaWidgetHelper.readCachedHeading(context)
-          ?: QiblaWidgetHelper.readHeadingDegrees(context, timeoutMs = 350L)
-      val rotateDeg = QiblaWidgetHelper.qiblaArrowRotationDeg(heading, bearing)
-      val aligned =
-        rotateDeg != null &&
-          kotlin.math.abs(rotateDeg) <= QiblaWidgetHelper.ALIGN_THRESHOLD_DEG.toFloat()
-      val bmp =
-        QiblaWidgetHelper.renderChipBitmap(
-          context,
-          sizeDp = chipDp,
-          aligned = aligned,
-          canvasRotationDeg = null
-        )
-      rv.setImageViewBitmap(R.id.widget_home_qibla_arrow, bmp)
-      rv.setFloat(R.id.widget_home_qibla_arrow, "setRotation", rotateDeg ?: 0f)
-      rv.setInt(
-        R.id.widget_home_qibla_wrap,
-        "setBackgroundResource",
-        if (aligned) R.drawable.widget_qibla_chip_bg_aligned else R.drawable.widget_qibla_chip_bg
-      )
-      if (heading != null) {
-        QiblaWidgetHelper.saveHeading(context, heading)
-      }
-    }
-    bindOpenTap(rv, R.id.widget_home_qibla_wrap, context, RC_HOME_QIBLA, "raqat://qibla")
+    bindHomeCountdown(rv, parsed.salatRowsFive())
   }
 
   private fun bindFiveStripGrid(
@@ -383,21 +322,15 @@ object PrayerWidgetViews {
   }
 
   private fun bindHomeNextRow(rv: RemoteViews, next: PrayerRow?, salatRows: List<PrayerRow>?) {
+    rv.setViewVisibility(R.id.widget_home_next_row, View.VISIBLE)
+    bindHomeCountdown(rv, salatRows)
     if (next == null) {
       rv.setTextViewText(R.id.widget_home_next_line, "— · —")
-      rv.setTextViewText(R.id.widget_home_countdown, "00:00:00")
       return
     }
     val timeTxt =
       if (next.timeRaw.isBlank()) "—" else PrayerWidgetRichText.timeHead(next.timeRaw)
     rv.setTextViewText(R.id.widget_home_next_line, "${next.label} · $timeTxt")
-    val sec =
-      if (salatRows.isNullOrEmpty()) 0
-      else PrayerWidgetTime.secondsUntilNext(salatRows)
-    rv.setTextViewText(
-      R.id.widget_home_countdown,
-      if (sec <= 0) "00:00:00" else PrayerWidgetTime.formatHms(sec)
-    )
   }
 
   private fun bindNextCountdown(rv: RemoteViews, salatRows: List<PrayerRow>?) {

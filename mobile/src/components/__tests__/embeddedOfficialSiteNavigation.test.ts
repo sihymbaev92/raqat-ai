@@ -29,6 +29,10 @@ describe("embeddedOfficialSiteNavigation", () => {
     expect(shouldStayInOfficialSiteWebView("tel:+77001234567", MUFTYAT_WEBVIEW_HOSTS)).toBe(false);
   });
 
+  it("never stays on javascript: URLs", () => {
+    expect(shouldStayInOfficialSiteWebView("javascript:alert(1)", HALAL_DAMU_WEBVIEW_HOSTS)).toBe(false);
+  });
+
   it("keeps fatua.kz inside muftyat webview", () => {
     expect(shouldStayInOfficialSiteWebView("https://fatua.kz/kk/article", MUFTYAT_WEBVIEW_HOSTS)).toBe(true);
     expect(shouldStayInOfficialSiteWebView("https://www.muftyat.kz/kk/news", MUFTYAT_WEBVIEW_HOSTS)).toBe(true);

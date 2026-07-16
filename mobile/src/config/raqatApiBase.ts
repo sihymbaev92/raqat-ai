@@ -10,12 +10,41 @@ import { getExpoExtra } from "./expoExtra";
 const API_BASE_OVERRIDE_KEY = "imam_ai_api_base_override_v1";
 const LEGACY_OVERRIDE_KEY = "raqat_api_base_override_v1";
 
+/** Продта AsyncStorage override тек осы host-тарға (MITM / hijack). */
+const TRUSTED_API_OVERRIDE_HOSTS = ["api.rahatomir.com", "rahatomir.com"] as const;
+
 let apiBaseOverride = "";
 
 function normalizeBase(raw: string): string {
   const t = raw.trim();
   if (!t) return "";
   return t.replace(/\/+$/, "");
+}
+
+function hostOfUrl(raw: string): string {
+  try {
+    return new URL(raw).hostname.trim().toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+/** Release: тек HTTPS + allowlist (немесе bundled API host). Dev: кез келген. */
+export function isTrustedRaqatApiBaseOverride(rawBase: string): boolean {
+  const normalized = normalizeBase(rawBase);
+  if (!normalized) return false;
+  if (typeof __DEV__ !== "undefined" && __DEV__) return true;
+  try {
+    const u = new URL(normalized);
+    if (u.protocol !== "https:") return false;
+    const h = hostOfUrl(normalized);
+    if (!h) return false;
+    if (TRUSTED_API_OVERRIDE_HOSTS.some((t) => h === t || h.endsWith(`.${t}`))) return true;
+    const bundledHost = hostOfUrl(getBundledRaqatApiBase());
+    return Boolean(bundledHost) && (h === bundledHost || h.endsWith(`.${bundledHost}`));
+  } catch {
+    return false;
+  }
 }
 
 /** Overrideсыз: .env → app.config.js extra (жинақтағы нақты әдепкі). */
@@ -51,7 +80,14 @@ export async function hydrateRaqatApiBaseOverride(): Promise<void> {
       raw = await AsyncStorage.getItem(LEGACY_OVERRIDE_KEY);
       if (raw?.trim()) await AsyncStorage.setItem(API_BASE_OVERRIDE_KEY, normalizeBase(raw));
     }
-    apiBaseOverride = raw ? normalizeBase(raw) : "";
+    const normalized = raw ? normalizeBase(raw) : "";
+    if (normalized && !isTrustedRaqatApiBaseOverride(normalized)) {
+      apiBaseOverride = "";
+      await AsyncStorage.removeItem(API_BASE_OVERRIDE_KEY);
+      await AsyncStorage.removeItem(LEGACY_OVERRIDE_KEY);
+      return;
+    }
+    apiBaseOverride = normalized;
   } catch {
     apiBaseOverride = "";
   }
@@ -64,6 +100,9 @@ export async function saveRaqatApiBaseOverride(nextBase: string): Promise<string
     await AsyncStorage.removeItem(API_BASE_OVERRIDE_KEY);
     await AsyncStorage.removeItem(LEGACY_OVERRIDE_KEY);
     return "";
+  }
+  if (!isTrustedRaqatApiBaseOverride(normalized)) {
+    throw new Error("Untrusted API base override rejected");
   }
   apiBaseOverride = normalized;
   await AsyncStorage.setItem(API_BASE_OVERRIDE_KEY, normalized);

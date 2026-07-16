@@ -1,4 +1,5 @@
 import type { TajweedRuleKey } from "../utils/alquranTajweedParse";
+import { TAJWEED_STD } from "./tajweedColorPalette";
 
 /** Al Quran Cloud quran-tajweed тегтері — түс және қазақша анықтама (tajweed-guide). */
 export type TajweedRuleMeta = {
@@ -11,142 +12,159 @@ export type TajweedRuleMeta = {
   colorDark: string;
 };
 
+function ruleColors(light: string, dark: string): Pick<TajweedRuleMeta, "colorLight" | "colorDark"> {
+  return { colorLight: light, colorDark: dark };
+}
+
+const MADD = ruleColors(TAJWEED_STD.madd.light, TAJWEED_STD.madd.dark);
+const GHUNNA_IKHFA = ruleColors(TAJWEED_STD.ghunnahIkhfa.light, TAJWEED_STD.ghunnahIkhfa.dark);
+const QALQALAH = ruleColors(TAJWEED_STD.qalqalah.light, TAJWEED_STD.qalqalah.dark);
+const IDGHAM = ruleColors(TAJWEED_STD.idgham.light, TAJWEED_STD.idgham.dark);
+const NEUTRAL = ruleColors(TAJWEED_STD.neutral.light, TAJWEED_STD.neutral.dark);
+
 export const TAJWEED_RULES_CATALOG: TajweedRuleMeta[] = [
   {
     rule: "h",
     tagOpen: "[h[",
     labelKk: "Һәмзәт уасл",
     detailKk: "Жазылып тұрады, бірақ оқылмайды — келесі дауыстыға жабысады.",
-    colorLight: "#6b7280",
-    colorDark: "#b6bcc6",
+    ...NEUTRAL,
   },
   {
     rule: "s",
     tagOpen: "[s[",
     labelKk: "Тыныш әріп",
     detailKk: "Дыбыс шығарылмайды; келесі әріпке жұмсақ өту.",
-    colorLight: "#6b7280",
-    colorDark: "#9ca3af",
+    ...NEUTRAL,
   },
   {
     rule: "l",
     tagOpen: "[l[",
     labelKk: "Ләм шәмси",
     detailKk: "«ال» ішіндегі ل жұмсартылады — келесі әріп қосарланады (الشَّمْس).",
-    colorLight: "#0284c7",
-    colorDark: "#67e8f9",
+    ...NEUTRAL,
   },
   {
     rule: "n",
     tagOpen: "[n[",
     labelKk: "Мәдд — табиғи (2)",
     detailKk: "Қалыпты ұзарту — екі харакат созылуы.",
-    colorLight: "#537fff",
-    colorDark: "#93c5fd",
+    ...MADD,
   },
   {
     rule: "p",
     tagOpen: "[p[",
     labelKk: "Мәдд — рұқсат (2/4/6)",
     detailKk: "Рұқсатты ұзарту — 2, 4 немесе 6 харакат (ұстазбен).",
-    colorLight: "#4050ff",
-    colorDark: "#818cf8",
+    ...MADD,
   },
   {
     rule: "m",
     tagOpen: "[m[",
     labelKk: "Мәдд — лазым (6)",
     detailKk: "Міндетті ұзын мәдд — әдетте 6 харакат.",
-    colorLight: "#000ebc",
-    colorDark: "#60a5fa",
+    ...MADD,
   },
   {
     rule: "o",
     tagOpen: "[o[",
     labelKk: "Мәдд — вәжіп (4–5)",
     detailKk: "Міндетті орта мәдд — 4–5 харакат.",
-    colorLight: "#2144c1",
-    colorDark: "#7dd3fc",
+    ...MADD,
   },
   {
     rule: "q",
     tagOpen: "[q[",
     labelKk: "Қалқала",
-    detailKk: "ق ط ب ج د сукунмен — қысқа «секіру» дыбысы.",
-    colorLight: "#dd0008",
-    colorDark: "#f87171",
+    detailKk: "ق ط ب ج д сукунмен — қысқа «секіру» дыбысы.",
+    ...QALQALAH,
   },
   {
     rule: "g",
     tagOpen: "[g[",
     labelKk: "Ғунна",
     detailKk: "Мұрыннан екі харакат созылуы (нун/мим ғунна).",
-    colorLight: "#ff7e1e",
-    colorDark: "#fdba74",
+    ...GHUNNA_IKHFA,
   },
   {
     rule: "f",
     tagOpen: "[f[",
     labelKk: "Ихфа",
     detailKk: "Нун сәкин/тәнуин — н дыбысы жасырынып оқылады.",
-    colorLight: "#9400a8",
-    colorDark: "#e879f9",
+    ...GHUNNA_IKHFA,
   },
   {
     rule: "c",
     tagOpen: "[c[",
     labelKk: "Ихфа шафави",
     detailKk: "Мим сәкиннен кейін ب — ерін жабық, дыбыс жеңіл.",
-    colorLight: "#d500b7",
-    colorDark: "#f0abfc",
-  },
-  {
-    rule: "w",
-    tagOpen: "[w[",
-    labelKk: "Идғам шафави",
-    detailKk: "Мим сәкиннен кейін м — қосарланып, 2 харакат ғунна.",
-    colorLight: "#58b800",
-    colorDark: "#6ee7b7",
+    ...GHUNNA_IKHFA,
   },
   {
     rule: "i",
     tagOpen: "[i[",
     labelKk: "Иқлаб",
     detailKk: "Нун сәкиннен кейін ب — дыбыс мимге ауысады.",
-    colorLight: "#26bffd",
-    colorDark: "#67e8f9",
+    ...GHUNNA_IKHFA,
+  },
+  {
+    rule: "w",
+    tagOpen: "[w[",
+    labelKk: "Идғам шафави",
+    detailKk: "Мим сәкиннен кейін м — қосарланып, 2 харакат ғунна.",
+    ...IDGHAM,
   },
   {
     rule: "a",
     tagOpen: "[a[",
     labelKk: "Идғам (ғуннамен)",
     detailKk: "Нун келесі әріпке сіңісіп, ғуннамен оқылады.",
-    colorLight: "#169777",
-    colorDark: "#34d399",
+    ...IDGHAM,
   },
   {
     rule: "u",
     tagOpen: "[u[",
     labelKk: "Идғам (ғуннасыз)",
     detailKk: "Нун келесі әріпке сіңісіп, ғуннасыз оқылады.",
-    colorLight: "#169200",
-    colorDark: "#4ade80",
+    ...IDGHAM,
   },
   {
     rule: "d",
     tagOpen: "[d[",
     labelKk: "Идғам мутәжанисайн",
     detailKk: "Ұқсас дыбысты әріптердің бірі жұмсартылады.",
-    colorLight: "#a1a1a1",
-    colorDark: "#a8a29e",
+    ...IDGHAM,
   },
   {
     rule: "b",
     tagOpen: "[b[",
     labelKk: "Идғам мутақарибайн",
     detailKk: "Жақын маһражды әріптер бірігіп оқылады.",
-    colorLight: "#a1a1a1",
-    colorDark: "#a8a29e",
+    ...IDGHAM,
+  },
+];
+
+/** Легенда — 4 халықаралық түс тобы + сұр көмекші ережелер. */
+export const TAJWEED_LEGEND_SECTIONS: { titleKk: string; rules: TajweedRuleKey[] }[] = [
+  {
+    titleKk: `Мәдд · ${TAJWEED_STD.madd.light}`,
+    rules: ["n", "p", "m", "o"],
+  },
+  {
+    titleKk: `Ғунна, ихфа, иқлаб · ${TAJWEED_STD.ghunnahIkhfa.light}`,
+    rules: ["g", "f", "c", "i"],
+  },
+  {
+    titleKk: `Қалқала · ${TAJWEED_STD.qalqalah.light}`,
+    rules: ["q"],
+  },
+  {
+    titleKk: `Идғам · ${TAJWEED_STD.idgham.light}`,
+    rules: ["a", "u", "w", "d", "b"],
+  },
+  {
+    titleKk: `Жұмсарту / оқылмайды · ${TAJWEED_STD.neutral.light}`,
+    rules: ["h", "l", "s"],
   },
 ];
 

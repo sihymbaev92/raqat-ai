@@ -12,6 +12,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.math.acos
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -77,15 +78,54 @@ object QiblaWidgetHelper {
   /** Бір реттік heading (0° = солтүстік), widget tick кезінде. */
   fun readHeadingDegrees(context: Context, timeoutMs: Long = 450L): Float? {
     val sm = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager ?: return null
-    val rotation =
-      sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        ?: sm.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+    /** GAME_ROTATION_VECTOR магнитометрсіз — абсолют құбыла үшін жарамсыз. */
+    val rotation = sm.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
     if (rotation != null) {
       return readRotationVectorHeading(sm, rotation, timeoutMs)
     }
     val accel = sm.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) ?: return null
     val mag = sm.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) ?: return null
     return readMagAccelHeading(sm, accel, mag, timeoutMs)
+  }
+
+  /**
+   * Жазық: телефон үсті (Y) — құбыла иінінің «жоғары» белгісі.
+   * Тік/қиғаш: артқы камера бағыты (−Z) — экранға қарап тұрып Қағбаға бет бұру.
+   */
+  fun headingFromRotationMatrix(rotIn: FloatArray): Float? {
+    if (rotIn.size < 9) return null
+    val outR = FloatArray(9)
+    val orient = FloatArray(3)
+    val r8 = rotIn[8].coerceIn(-1f, 1f)
+    val inclinationRad = acos(r8.toDouble())
+    val flat =
+      inclinationRad < Math.toRadians(25.0) || inclinationRad > Math.toRadians(155.0)
+    val matrix =
+      if (flat) {
+        rotIn
+      } else if (
+        SensorManager.remapCoordinateSystem(
+          rotIn,
+          SensorManager.AXIS_X,
+          SensorManager.AXIS_Z,
+          outR
+        )
+      ) {
+        outR
+      } else {
+        rotIn
+      }
+    SensorManager.getOrientation(matrix, orient)
+    var az = Math.toDegrees(orient[0].toDouble()).toFloat()
+    if (!az.isFinite()) return null
+    az = (az + 360f) % 360f
+    return az
+  }
+
+  fun headingFromRotationVector(values: FloatArray): Float? {
+    val rot = FloatArray(9)
+    SensorManager.getRotationMatrixFromVector(rot, values)
+    return headingFromRotationMatrix(rot)
   }
 
   private fun readRotationVectorHeading(
@@ -99,13 +139,7 @@ object QiblaWidgetHelper {
       object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
           if (heading != null) return
-          val rot = FloatArray(9)
-          val orient = FloatArray(3)
-          SensorManager.getRotationMatrixFromVector(rot, event.values)
-          SensorManager.getOrientation(rot, orient)
-          var az = Math.toDegrees(orient[0].toDouble()).toFloat()
-          az = (az + 360f) % 360f
-          heading = az
+          heading = headingFromRotationVector(event.values) ?: return
           latch.countDown()
         }
 
@@ -119,8 +153,8 @@ object QiblaWidgetHelper {
 
   internal data class Vec3(var x: Float, var y: Float, var z: Float)
 
-  /** Sensor jitter азайту — виджет стрелкасы тегіс айналады. */
-  fun smoothHeading(prev: Float?, next: Float, alpha: Float = 0.28f): Float {
+  /** Sensor jitter азайту — виджет стрелкасы тегіс айналады (бірақ қуып қалмасын). */
+  fun smoothHeading(prev: Float?, next: Float, alpha: Float = 0.45f): Float {
     if (prev == null || !prev.isFinite()) return next
     val delta = angleDiff(prev.toDouble(), next.toDouble()).toFloat()
     var out = prev + delta * alpha
@@ -166,33 +200,16 @@ object QiblaWidgetHelper {
   }
 
   internal fun headingFromGravityMagnetic(gravity: Vec3, geomagnetic: Vec3): Float? {
-    val ax = gravity.x
-    val ay = gravity.y
-    val az = gravity.z
-    val normSqA = ax * ax + ay * ay + az * az
-    if (normSqA < 0.01f * 9.81f * 9.81f) return null
-    val ex = geomagnetic.x
-    val ey = geomagnetic.y
-    val ez = geomagnetic.z
-    var hx = ey * az - ez * ay
-    var hy = ez * ax - ex * az
-    var hz = ex * ay - ey * ax
-    val normH = kotlin.math.sqrt((hx * hx + hy * hy + hz * hz).toDouble()).toFloat()
-    if (normH < 0.1f) return null
-    hx /= normH
-    hy /= normH
-    hz /= normH
-    val invA = 1f / kotlin.math.sqrt(normSqA)
-    val nax = ax * invA
-    val nay = ay * invA
-    val naz = az * invA
-    val mx = nay * hz - naz * hy
-    val my = naz * hx - nax * hz
-    val rad = atan2(my.toDouble(), mx.toDouble())
-    var deg = Math.toDegrees(rad).toFloat()
-    if (!deg.isFinite()) return null
-    deg = (deg + 360f) % 360f
-    return deg
+    val R = FloatArray(9)
+    val ok =
+      SensorManager.getRotationMatrix(
+        R,
+        null,
+        floatArrayOf(gravity.x, gravity.y, gravity.z),
+        floatArrayOf(geomagnetic.x, geomagnetic.y, geomagnetic.z)
+      )
+    if (!ok) return null
+    return headingFromRotationMatrix(R)
   }
 
   fun renderChipBitmap(

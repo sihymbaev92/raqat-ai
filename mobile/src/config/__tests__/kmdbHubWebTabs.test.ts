@@ -94,8 +94,9 @@ describe("kmdbHubWebTabs", () => {
     expect(kmdbHubWebTabExtraPageInject("fatua")).toBeUndefined();
   });
 
-  it("uses desktop presentation for muftyat on wide screens only", () => {
-    expect(kmdbHubWebTabSitePresentation("muftyat", 720)).toBe("desktop");
+  it("uses desktop presentation for muftyat on large tablets only", () => {
+    expect(kmdbHubWebTabSitePresentation("muftyat", 920)).toBe("desktop");
+    expect(kmdbHubWebTabSitePresentation("muftyat", 720)).toBe("mobile");
     expect(kmdbHubWebTabSitePresentation("muftyat", 400)).toBe("mobile");
     expect(kmdbHubWebTabSitePresentation("fatua")).toBe("mobile");
     expect(kmdbHubWebTabSitePresentation("mosques")).toBe("mobile");

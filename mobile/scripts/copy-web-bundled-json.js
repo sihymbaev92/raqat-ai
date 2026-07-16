@@ -16,9 +16,6 @@ fs.mkdirSync(outDir, { recursive: true });
 const skipFiles = new Set([
   "offline-auto-translations.json",
   "hadith-from-db.json",
-  "scraped-hadith-muftyat.json",
-  "extracted-hadith-muftyat.json",
-  "external-hadith-kk.json",
 ]);
 const files = fs.readdirSync(srcDir).filter((f) => f.endsWith(".json") && !skipFiles.has(f));
 for (const f of files) {

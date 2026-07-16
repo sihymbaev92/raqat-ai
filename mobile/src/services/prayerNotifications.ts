@@ -1,6 +1,6 @@
 import { Linking, NativeModules, Platform } from "react-native";
 import type { PrayerTimesResult } from "../api/prayerTimes";
-import { applyPrayerTimeShift, fetchPrayerTimesForLocationForDate } from "../api/prayerTimes";
+import { applyPrayerTimeShift, fetchPrayerTimesForLocation, fetchPrayerTimesForLocationForDate } from "../api/prayerTimes";
 import { kk } from "../i18n/kk";
 import {
   getIftarEnabled,
@@ -14,7 +14,7 @@ import {
   type PrayerNotifSalatKey,
   type PrayerNotifSoundId,
 } from "../storage/prefs";
-import { loadPrayerCache } from "../storage/prayerCache";
+import { loadPrayerCache, loadPrayerCacheForCity, savePrayerCache } from "../storage/prayerCache";
 import { refreshPrayerCacheIfCalendarStale } from "./prayerDaySelfHeal";
 import { AndroidNotificationPriority } from "expo-notifications";
 import { getQuickActionCategoryId } from "./notificationQuickActions";
@@ -28,6 +28,7 @@ import {
   shouldPlayPrayerAdhanSound,
   type PrayerDayBucket,
 } from "./prayerNotificationSchedule";
+export { getFullScreenAzanAlarmDiagnostics } from "./prayerFullScreenAzan";
 import {
   cancelFullScreenAzanAlarms,
   clearLegacyNativeAzanNotifications,
@@ -45,12 +46,23 @@ async function loadNotifications() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
     Notifications = require("expo-notifications") as typeof import("expo-notifications");
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async (notification) => {
+        const id = notification.request.identifier;
+        if (id && isPrayerNotificationIdentifier(id)) {
+          return {
+            shouldShowBanner: false,
+            shouldShowList: false,
+            shouldPlaySound: false,
+            shouldSetBadge: false,
+          };
+        }
+        return {
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+        };
+      },
     });
   }
   return Notifications;
@@ -115,32 +127,6 @@ export async function openAndroidBatteryOptimizationSettings(): Promise<void> {
     await Linking.openSettings();
   } catch {
     /* */
-  }
-}
-
-/** Android 14+: full-screen intent рұқсаты (locked-screen azan). */
-export async function openAndroidFullScreenIntentSettings(): Promise<void> {
-  if (Platform.OS !== "android" || Number(Platform.Version) < 34) return;
-  const PrayerWidget = NativeModules.PrayerWidget as {
-    requestFullScreenIntentPermissionIfNeeded?: () => Promise<boolean>;
-  };
-  try {
-    if (typeof PrayerWidget?.requestFullScreenIntentPermissionIfNeeded === "function") {
-      const opened = await PrayerWidget.requestFullScreenIntentPermissionIfNeeded();
-      if (opened) return;
-    }
-  } catch {
-    /* */
-  }
-  try {
-    const pkg = "kz.raqat.app";
-    await Linking.openURL(`android.settings.MANAGE_APP_USE_FULL_SCREEN_INTENT?package=${pkg}`);
-  } catch {
-    try {
-      await Linking.openSettings();
-    } catch {
-      /* */
-    }
   }
 }
 
@@ -229,7 +215,6 @@ export type PrayerNotificationDiagnostics = {
   nativeAzanAlarmCount: number;
   nativeAzanAlarmLastError: string | null;
   nativeAzanExactAlarmPermissionGranted: boolean | null;
-  nativeAzanFullScreenIntentPermissionGranted: boolean | null;
   soundId: PrayerNotifSoundId;
   androidChannelId: string | null;
   mutedSalatKeys: PrayerNotifSalatKey[];
@@ -241,7 +226,6 @@ function nativeAzanReliabilityStatus(args: {
   scheduledCount: number;
   lastError: string | null;
   exactAlarmPermissionGranted: boolean | null;
-  fullScreenIntentPermissionGranted: boolean | null;
 }): PrayerNotificationDiagnostics["nativeAzanReliabilityStatus"] {
   if (Platform.OS !== "android") return "unavailable";
   if (!args.enabled) return "idle";
@@ -332,7 +316,11 @@ function buildPrayerNotificationContent(
     return c as import("expo-notifications").NotificationContentInput;
   }
 
-  return { ...base, sound: iosContentSound(soundId) };
+  return {
+    ...base,
+    sound: iosContentSound(soundId),
+    interruptionLevel: "timeSensitive",
+  } as import("expo-notifications").NotificationContentInput;
 }
 
 function prayerTriggerChannel(
@@ -376,7 +364,17 @@ async function scheduleExpoPrayerSlots(
 
     await N.scheduleNotificationAsync({
       identifier: slot.identifier,
-      content: buildPrayerNotificationContent(slotSoundId, body, { title }),
+      content: {
+        ...buildPrayerNotificationContent(slotSoundId, body, { title }),
+        data: {
+          raqatType: "prayer_azan",
+          label: slot.label,
+          enteredTitle: title,
+          timeShort: slot.timeShort,
+          salatKey: slot.salatKey,
+          soundId: slotSoundId,
+        },
+      },
       trigger: prayerTriggerChannel(N, slotSoundId, slot.when),
     });
   }
@@ -445,9 +443,10 @@ export async function reschedulePrayerNotifications(
       shouldPlayPrayerAdhanSound(slot, mutedSalatKeys) ? soundId : "off";
     const nativeAzan = await scheduleFullScreenAzanAlarms(slots, soundIdForSlot);
 
-    if (Platform.OS === "android") {
+    if (Platform.OS === "android" || Platform.OS === "ios") {
       const nativeOk = nativeAzan.accepted && nativeAzan.identifiers.size > 0;
-      if (!nativeOk && N && (await ensureAndroidNotificationPermission(N))) {
+      if (nativeOk) return;
+      if (N) {
         await scheduleExpoPrayerSlots(N, slots, soundIdForSlot, { iftarExtra: opts.iftarExtra });
       }
       return;
@@ -461,7 +460,9 @@ export async function reschedulePrayerNotifications(
 }
 
 /** Қолданба ашылғанда / фоннан оралғанда / background fetch — алдымен кэшті жаңарту, содан жоспарлау. */
-export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
+let rescheduleFromCacheInFlight: Promise<void> | null = null;
+
+async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
   await refreshPrayerCacheIfCalendarStale();
   const [enabled, iftar, cached, selected] = await Promise.all([
     getNotifEnabled(),
@@ -474,10 +475,41 @@ export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
     return;
   }
   if (cached.city !== selected.city || cached.country !== selected.country) {
-    await cancelAllPrayerNotifications();
+    try {
+      const freshRaw = await fetchPrayerTimesForLocation(selected.city, selected.country);
+      if (!freshRaw.error) {
+        const shift = await getPrayerScheduleShiftMin();
+        const fresh = shift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, shift);
+        await savePrayerCache(fresh);
+        await reschedulePrayerNotifications(fresh, {
+          enabled,
+          iftarExtra: iftar,
+          prayerTimesAlreadyAdjusted: true,
+        });
+        return;
+      }
+    } catch {
+      /* network */
+    }
+    const prior = await loadPrayerCacheForCity(selected.city, selected.country);
+    if (prior && !prior.error) {
+      await reschedulePrayerNotifications(prior, {
+        enabled,
+        iftarExtra: iftar,
+        prayerTimesAlreadyAdjusted: true,
+      });
+    }
     return;
   }
   await reschedulePrayerNotifications(cached, { enabled, iftarExtra: iftar, prayerTimesAlreadyAdjusted: true });
+}
+
+export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
+  if (rescheduleFromCacheInFlight) return rescheduleFromCacheInFlight;
+  rescheduleFromCacheInFlight = reschedulePrayerNotificationsFromCacheBody().finally(() => {
+    rescheduleFromCacheInFlight = null;
+  });
+  return rescheduleFromCacheInFlight;
 }
 
 export async function cancelAllPrayerNotifications(): Promise<void> {
@@ -515,12 +547,10 @@ export async function getPrayerNotificationDiagnostics(): Promise<PrayerNotifica
         scheduledCount: nativeAzan.scheduledCount,
         lastError: nativeAzan.lastError,
         exactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
-        fullScreenIntentPermissionGranted: nativeAzan.fullScreenIntentPermissionGranted,
       }),
       nativeAzanAlarmCount: nativeAzan.scheduledCount,
       nativeAzanAlarmLastError: nativeAzan.lastError,
       nativeAzanExactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
-      nativeAzanFullScreenIntentPermissionGranted: nativeAzan.fullScreenIntentPermissionGranted,
       soundId,
       androidChannelId: null,
       mutedSalatKeys,
@@ -542,12 +572,10 @@ export async function getPrayerNotificationDiagnostics(): Promise<PrayerNotifica
       scheduledCount: nativeAzan.scheduledCount,
       lastError: nativeAzan.lastError,
       exactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
-      fullScreenIntentPermissionGranted: nativeAzan.fullScreenIntentPermissionGranted,
     }),
     nativeAzanAlarmCount: nativeAzan.scheduledCount,
     nativeAzanAlarmLastError: nativeAzan.lastError,
     nativeAzanExactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
-    nativeAzanFullScreenIntentPermissionGranted: nativeAzan.fullScreenIntentPermissionGranted,
     soundId,
     androidChannelId: Platform.OS === "android" ? prayerAndroidChannelId(soundId) : null,
     mutedSalatKeys,

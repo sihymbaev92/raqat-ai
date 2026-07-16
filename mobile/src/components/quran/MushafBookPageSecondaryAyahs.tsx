@@ -3,8 +3,9 @@ import { View, Text } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { kk } from "../../i18n/kk";
-import { getCurrentLocale } from "../../i18n/runtime";
+import { getCurrentLocale, useAppLocale } from "../../i18n/runtime";
 import { quranAyahMeaningForLocale } from "../../storage/quranSurahCache";
+import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import type { MushafBookPageStyles } from "../../quran/mushafBookPageStyles";
 import type { MushafAyahRef, MushafBookAyah } from "../../quran/mushafBookTypes";
 import { surahDisplayTitle } from "../../constants/surahTitleKk";
@@ -33,6 +34,7 @@ export function MushafBookPageSecondaryAyahs({
   accentColor,
   onToggleAudio,
 }: Props) {
+  useAppLocale();
   const hasFocusedAyah = ayahs.some(
     (a) =>
       (playingRef?.surah === a.surahNumber && playingRef.ayah === a.numberInSurah) ||
@@ -53,11 +55,17 @@ export function MushafBookPageSecondaryAyahs({
             <Text style={st.mushafSecondaryAyahRibbon}>
               {surahDisplayTitle(a.surahNumber, "")} · {a.numberInSurah}
             </Text>
-            {showReaderTranslit && resolved.translit ? (
-              <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
-            ) : null}
-            {showReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
-              <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
+            {showReaderTranslit
+              ? (() => {
+                  const kiril = resolveQuranTranslitForDisplay(resolved.translit, resolved.text);
+                  return kiril ? <Text style={st.mushafAyahKiril}>{kiril}</Text> : null;
+                })()
+              : null}
+            {showReaderMeaning &&
+            quranAyahMeaningForLocale({ ...resolved, surahNumber: a.surahNumber }, getCurrentLocale()) ? (
+              <Text style={st.mushafAyahKk}>
+                {quranAyahMeaningForLocale({ ...resolved, surahNumber: a.surahNumber }, getCurrentLocale())}
+              </Text>
             ) : null}
             {isAudioFocus ? (
               <Pressable

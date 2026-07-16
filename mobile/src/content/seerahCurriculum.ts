@@ -34,87 +34,355 @@ export const SEERAH_PHASES: SeerahPhase[] = [
   },
   {
     id: "childhood",
-    titleKk: "2. Балажандық · жастық",
+    titleKk: "2. Балалық · жастық",
     subtitleKk: "сабақ 5–9",
-    introKk: "Туылу, Халима, атасы мен шешесінің қайтыс болуы, Шам сапары, Зиджара және «ас-Садик» атануы.",
+    introKk:
+      "Туылу, Халима, атасы мен анасының қайтыс болуы, Шам сапары, саудадағы адалдығы және «ас-Садиқ» атануы.",
     icon: "child-care",
   },
   {
     id: "before",
-    titleKk: "3. Пайғамбарлик алдындағы өмір",
+    titleKk: "3. Пайғамбарлық алдындағы өмір",
     subtitleKk: "сабақ 10–14",
-    introKk: "Хадиджа ﷼мен неке, Хира үңgірі, алғашқы уаһи, алғашқы мусылмандар мен ашық дауа.",
+    introKk: "Хадиджа ﷼мен неке, Хира үңгірі, алғашқы уаһи, алғашқы мұсылмандар мен ашық дауат.",
     icon: "mosque",
   },
   {
     id: "mekka",
-    titleKk: "4. Меккедегі дауа · қуғын",
+    titleKk: "4. Меккедегі дауат · қуғын",
     subtitleKk: "сабақ 15–22",
-    introKk: "Құрайш қысымы, Хабаш сапары, Шәб-i Абу Талиб, Таиф, Исра мен Миғраж, алғашқы бай'ат.",
+    introKk:
+      "Құрайыш қысымы, Хабаша сапары, Әбу Талиб шырағы, Таиф, Исра мен Миғраж, алғашқы байғат.",
     icon: "warning",
   },
   {
     id: "hijra",
-    titleKk: "5. Хиджра · Мединаға қоныс",
+    titleKk: "5. Хижра · Мединеге қоныс",
     subtitleKk: "сабақ 23–27",
-    introKk: "Хиджра жоспары, Мединаға көшу, ансар мен көшкендер бірлігі, Масжид ан-Нabawi.",
+    introKk: "Хижра жоспары, Мединеге көшу, ансар мен мүһәжирлер бірлігі, Мәсжид ән-Нәбәуи.",
     icon: "flight-takeoff",
   },
   {
     id: "medina",
-    titleKk: "6. Медина · мемлекет · соғыс",
+    titleKk: "6. Медине · мемлекет · соғыс",
     subtitleKk: "сабақ 28–34",
-    introKk: "Бадр, Ухуд, Хандақ, Худейбия, Фатх Мекке, Табук — иман мен бірлік сынақтары.",
+    introKk: "Бәдр, Ухуд, Хандақ, Худәйбия, Меккенің ашылуы, Тәбук — иман мен бірлік сынақтары.",
     icon: "home",
   },
   {
     id: "farewell",
-    titleKk: "7. Прощание · мұра",
+    titleKk: "7. Қоштасу · мұра",
     subtitleKk: "сабақ 35–38",
-    introKk: "Қоштасу қажылығы, Прощание хутбасы, Құран толықты, Пайғамбар ﷺ өмірден қайтысы.",
+    introKk: "Қоштасу қажылығы, қоштасу хутбасы, діннің кемелденуі, Пайғамбар ﷺ өмірден өтуі.",
     icon: "star",
   },
 ];
 
 export const SEERAH_LESSONS: SeerahLessonEntry[] = [
-  { n: 1, phaseId: "pre", titleKk: "Арабия мен дүние", summaryKk: "VI ғасырдағы Арабия политикасы, сауда жолдары және рухани орта. Пайғамбар ﷺ дүниеге келгенге дейінгі әлемдік контекст.", focusKk: "Контекст" },
-  { n: 2, phaseId: "pre", titleKk: "Мекке · Каaba", summaryKk: "Меккенің қасиеті, Каaba орталығы, Құрайш руы және қала экономикасы. Мекке — сауда мен діннің қиылысқан орны.", focusKk: "Мекке" },
-  { n: 3, phaseId: "pre", titleKk: "Амин · Абдулла", summaryKk: "Пайғамбар ﷺ отбасы шежіресі: Бani Hashim, Абdulла мен Аминаның некесі. Нұрлы шежіре мен сенімді ру.", focusKk: "Шежіре" },
-  { n: 4, phaseId: "pre", titleKk: "Туылу алдындағы белгілер", summaryKk: "Уаһи алдындағы рухани дайындық пен Меккедегі күтулер. Алла Тағала Пайғамбар ﷺ келуін дайындаған.", focusKk: "Белгілер" },
-  { n: 5, phaseId: "childhood", titleKk: "Туылу · Халима", summaryKk: "571 жылы туылу, Халима бinti Abd al-Uzza қамқорлығы, сüt emу дәстүрі. Бalaжандықтағы бақыт пен табиғат.", focusKk: "Туылу" },
-  { n: 6, phaseId: "childhood", titleKk: "Шам сапары · Бaħira", summaryKk: "Сапар барысында монах Бaħiraмен кездесу, керемет белгілер. Жастық шaқтағы алғашқы рухани ілтипат.", focusKk: "Сапар" },
-  { n: 7, phaseId: "childhood", titleKk: "Ата-ана қайтыс болуы", summaryKk: "Абdulла мен Аминаның ерте қайтыс болуы; Абdul-Muttalib қамқорлығы. Жетімдік — sabir пен мейірім сабағы.", focusKk: "Жетімдік" },
-  { n: 8, phaseId: "childhood", titleKk: "Зиджара · «ас-Садик»", summaryKk: "Жастықтағы адалдық, «Шыншыл» атануы, сенімділік. Меккеде Пайғамбар ﷺ әділдікпен tanilgan.", focusKk: "Адалдық" },
-  { n: 9, phaseId: "childhood", titleKk: "Хилф әл-Фудул", summaryKk: "Зulmге қарсы біріккен kelisim — әділдікке берік тұру. Жастықта zulmge qarsy birlik.", focusKk: "Әділдік" },
-  { n: 10, phaseId: "before", titleKk: "Хадиджа ﷼мен неке", summaryKk: "25 жасында неке, отбасы мейірімі, саудадағы сенім. Хадиджа ﷼ — алғашқы iman qolдаушы.", focusKk: "Неке" },
-  { n: 11, phaseId: "before", titleKk: "Хира үңgірі", summaryKk: "Тanha ibadat, ойlanu, ruhani dayindiq. Хира — алғашқы уaһi alдындағы tynshilik орны.", focusKk: "Иbadat" },
-  { n: 12, phaseId: "before", titleKk: "Алғашқы уaһi", summaryKk: "40 жасында Jibril ﷺ, «Oqi!» ayaty, Khadija ﷼ qoldauy. Payg'ambardyq baslanuy.", focusKk: "Уaһi" },
-  { n: 13, phaseId: "before", titleKk: "Алғашқы мусылмандар", summaryKk: "Khadija, Ali, Zayd, Abu Bakr — alғashqy iman. Birinshi jamaat — otbasydan bastaldy.", focusKk: "Sahaba" },
-  { n: 14, phaseId: "before", titleKk: "Ашық дауa", summaryKk: "As-Safa tausy, Quraysh qarsylygy baslanady. Ashyq da'wat — birlik pen sabir synamasy.", focusKk: "Da'wat" },
-  { n: 15, phaseId: "mekka", titleKk: "Quraysh qysymy", summaryKk: "Musylmandarga qiyys, boykot, azap. Iman — qiyynshilyqta musteqim turu.", focusKk: "Qiyys" },
-  { n: 16, phaseId: "mekka", titleKk: "Habash sapyry", summaryKk: "Negizgi musylmandar Najashi qorgauynda. Birinshi hijra — Habash zheli.", focusKk: "Habash" },
-  { n: 17, phaseId: "mekka", titleKk: "Shäb-i Abu Talib", summaryKk: "Ushaq boykot, açlyq zhyldary. Birlik — qiyyn zhyldarda qorgau.", focusKk: "Boykot" },
-  { n: 18, phaseId: "mekka", titleKk: "«Hüzün» zhyly", summaryKk: "Abu Talib pen Khadija qaytys bolu — qaygy zhyly. Sabir men tawakkal.", focusKk: "Qaygy" },
-  { n: 19, phaseId: "mekka", titleKk: "Taif sapyry", summaryKk: "Taif qabylamady, biraq jannat perishteleri komektesedi. Qaytaru — da'wat zhanashyry.", focusKk: "Taif" },
-  { n: 20, phaseId: "mekka", titleKk: "Isra uä Mi'raj", summaryKk: "Tun kiyiminde Qudsi ziyarat, bes namaz. Mi'raj — imannyn künalik timiri.", focusKk: "Mi'raj" },
-  { n: 21, phaseId: "mekka", titleKk: "Bes namaz", summaryKk: "Namaz — imannyn künalik timiri. Mi'rajdan keiin namaz — musylman omirinin negizi.", focusKk: "Namaz" },
-  { n: 22, phaseId: "mekka", titleKk: "Birinshi bay'at", summaryKk: "Medina azamattarymen kelisim. Aqaba bay'aty — Medinaga dayindiq.", focusKk: "Bay'at" },
-  { n: 23, phaseId: "hijra", titleKk: "Hidjra zhosparlau", summaryKk: "Quraysh qudalygy, musylmandar Medinaga köshedi. Hidjra — zhana basy.", focusKk: "Hidjra" },
-  { n: 24, phaseId: "hijra", titleKk: "Safa-Marwa", summaryKk: "Abu Bakr men Ali qalyp, Payg'ambardyn köshui. Hidjra — iman zhane birlik.", focusKk: "Kösh" },
-  { n: 25, phaseId: "hijra", titleKk: "Medina qabyl auasy", summaryKk: "Ansar men muhajirler birligi. Medina — musylman qalasy.", focusKk: "Ansar" },
-  { n: 26, phaseId: "hijra", titleKk: "Masjid an-Nabawi", summaryKk: "Meshit — birlik pen biliм ortalygy. Medinada birinshi jamaat ortalygy.", focusKk: "Meshit" },
-  { n: 27, phaseId: "hijra", titleKk: "Muahat", summaryKk: "Brattyq shart — ansar men muhajirler. Birlik — Medina qalasyndagy negiz.", focusKk: "Brattyq" },
-  { n: 28, phaseId: "medina", titleKk: "Badr oiasy", summaryKk: "624 zh. — imannyn zhauyngeriligi. Badr — birinshi ulken zhenis.", focusKk: "Badr" },
-  { n: 29, phaseId: "medina", titleKk: "Uhud", summaryKk: "Sabir synamasy, Hamza ﷼ shahed. Uhud — sabir pen tawba sabagy.", focusKk: "Uhud" },
-  { n: 30, phaseId: "medina", titleKk: "Handak", summaryKk: "Qala qorgauy, Salman Farsi ideyasy. Birlik — qala qorgauynda zhauapkershilik.", focusKk: "Handak" },
-  { n: 31, phaseId: "medina", titleKk: "Hudeybiya", summaryKk: "Tinish sharty — strategiyalyq zhenis. Sabir — uzak merzimdi payda.", focusKk: "Hudeybiya" },
-  { n: 32, phaseId: "medina", titleKk: "Fath Mekke", summaryKk: "630 zh. — keshirim men azat etu. Fath — keshirim men adildik.", focusKk: "Fath" },
-  { n: 33, phaseId: "medina", titleKk: "Tabuk", summaryKk: "Sońgy ulken sapyr, sabir. Tabuk — iman pen zhauapkershilik.", focusKk: "Tabuk" },
-  { n: 34, phaseId: "medina", titleKk: "Hajj oqytu", summaryKk: "Namaz, zaket, hajj — tolyq din. Din — kundelikti omirge enu.", focusKk: "Hajj" },
-  { n: 35, phaseId: "farewell", titleKk: "Qosh tas hajj", summaryKk: "632 zh. — sońgy qajylyq. Qosh tas hajj — musylmandarga sońgy nasihat.", focusKk: "Qosh tas" },
-  { n: 36, phaseId: "farewell", titleKk: "Proshanie hutbasy", summaryKk: "Adamdar teng, qan ustinde qan joq. Hutba — adildik pen birlik.", focusKk: "Hutba" },
-  { n: 37, phaseId: "farewell", titleKk: "Qur'an tolqyndy", summaryKk: "Din tolqyndy — saqtaudy unyatpa. Qur'an — musylmandarga mura.", focusKk: "Qur'an" },
-  { n: 38, phaseId: "farewell", titleKk: "Payg'ambardyn vafaty", summaryKk: "632 zh. 12 Rabi al-awwal — musylmandarga mura. Payg'ambar ﷺ — barsha ummetke ulgi.", focusKk: "Mura" },
+  {
+    n: 1,
+    phaseId: "pre",
+    titleKk: "Арабия мен дүние",
+    summaryKk:
+      "VI ғасырдағы Арабия саясаты, сауда жолдары және рухани орта. Пайғамбар ﷺ дүниеге келгенге дейінгі әлемдік контекст.",
+    focusKk: "Контекст",
+  },
+  {
+    n: 2,
+    phaseId: "pre",
+    titleKk: "Мекке · Қағба",
+    summaryKk:
+      "Меккенің қасиеті, Қағба орталығы, Құрайыш руы және қала экономикасы. Мекке — сауда мен діннің қиылысқан орны.",
+    focusKk: "Мекке",
+  },
+  {
+    n: 3,
+    phaseId: "pre",
+    titleKk: "Әмина · Абдулла",
+    summaryKk:
+      "Пайғамбар ﷺ отбасы шежіресі: Бану Хашим, Абдулла мен Әминаның некесі. Нұрлы шежіре мен сенімді ру.",
+    focusKk: "Шежіре",
+  },
+  {
+    n: 4,
+    phaseId: "pre",
+    titleKk: "Туылу алдындағы белгілер",
+    summaryKk:
+      "Уаһи алдындағы рухани дайындық пен Меккедегі күтулер. Алла Тағала Пайғамбар ﷺ келуін дайындаған.",
+    focusKk: "Белгілер",
+  },
+  {
+    n: 5,
+    phaseId: "childhood",
+    titleKk: "Туылу · Халима",
+    summaryKk:
+      "571 жылы туылу, Халима бинт Әбд әл-Узза қамқорлығы, емізу дәстүрі. Балалықтағы бақыт пен табиғат.",
+    focusKk: "Туылу",
+  },
+  {
+    n: 6,
+    phaseId: "childhood",
+    titleKk: "Шам сапары · Бахира",
+    summaryKk:
+      "Сапар барысында монах Бахирамен кездесу, керемет белгілер. Жастықтағы алғашқы рухани ілтипат.",
+    focusKk: "Сапар",
+  },
+  {
+    n: 7,
+    phaseId: "childhood",
+    titleKk: "Ата-ананың қайтыс болуы",
+    summaryKk:
+      "Абдулла мен Әминаның ерте қайтыс болуы; Әбд әл-Мутталиб қамқорлығы. Жетімдік — сабыр мен мейірім сабағы.",
+    focusKk: "Жетімдік",
+  },
+  {
+    n: 8,
+    phaseId: "childhood",
+    titleKk: "«Ас-Садиқ» · адалдық",
+    summaryKk:
+      "Жастықтағы адалдық, «Шыншыл» атануы, сенімділік. Меккеде Пайғамбар ﷺ әділдікпен танылған.",
+    focusKk: "Адалдық",
+  },
+  {
+    n: 9,
+    phaseId: "childhood",
+    titleKk: "Хилф әл-Фудул",
+    summaryKk:
+      "Зұлымдыққа қарсы біріккен келісім — әділдікке берік тұру. Жастықта зұлымдыққа қарсы бірлік.",
+    focusKk: "Әділдік",
+  },
+  {
+    n: 10,
+    phaseId: "before",
+    titleKk: "Хадиджа ﷼мен неке",
+    summaryKk:
+      "Жиырма бес жасында неке, отбасы мейірімі, саудадағы сенім. Хадиджа ﷼ — алғашқы иман қолдаушысы.",
+    focusKk: "Неке",
+  },
+  {
+    n: 11,
+    phaseId: "before",
+    titleKk: "Хира үңгірі",
+    summaryKk:
+      "Жалғыз ғибадат, ойлану, рухани дайындық. Хира — алғашқы уаһи алдындағы тыныштық орны.",
+    focusKk: "Ғибадат",
+  },
+  {
+    n: 12,
+    phaseId: "before",
+    titleKk: "Алғашқы уаһи",
+    summaryKk:
+      "Қырық жасында Жәбірейіл ﷺ, «Оқы!» аяты, Хадиджа ﷼ қолдауы. Пайғамбарлықтың басталуы.",
+    focusKk: "Уаһи",
+  },
+  {
+    n: 13,
+    phaseId: "before",
+    titleKk: "Алғашқы мұсылмандар",
+    summaryKk:
+      "Хадиджа, Әли, Зәйд, Әбу Бәкір — алғашқы иман. Бірінші жамағат отбасынан басталды.",
+    focusKk: "Сахаба",
+  },
+  {
+    n: 14,
+    phaseId: "before",
+    titleKk: "Ашық дауат",
+    summaryKk:
+      "Әс-Сафа тауы, Құрайыш қарсылығы басталады. Ашық дауат — бірлік пен сабыр сынамасы.",
+    focusKk: "Дауат",
+  },
+  {
+    n: 15,
+    phaseId: "mekka",
+    titleKk: "Құрайыш қысымы",
+    summaryKk:
+      "Мұсылмандарға қиянат, бойкот, азап. Иман — қиыншылықта түзу тұру.",
+    focusKk: "Қиянат",
+  },
+  {
+    n: 16,
+    phaseId: "mekka",
+    titleKk: "Хабаша сапары",
+    summaryKk:
+      "Негізгі мұсылмандар Нәжаши қорғауында. Бірінші хижра — Хабаша жері.",
+    focusKk: "Хабаша",
+  },
+  {
+    n: 17,
+    phaseId: "mekka",
+    titleKk: "Әбу Талиб шырағы",
+    summaryKk:
+      "Үш жылдық бойкот, аштық жылдары. Бірлік — қиын жылдарда қорғау.",
+    focusKk: "Бойкот",
+  },
+  {
+    n: 18,
+    phaseId: "mekka",
+    titleKk: "Қайғы жылы",
+    summaryKk:
+      "Әбу Талиб пен Хадиджаның қайтыс болуы — қайғы жылы. Сабыр мен тәуекел.",
+    focusKk: "Қайғы",
+  },
+  {
+    n: 19,
+    phaseId: "mekka",
+    titleKk: "Таиф сапары",
+    summaryKk:
+      "Таиф қабылдамады, бірақ жәннат періштелері көмектеседі. Қайтару — дауат жанашыры.",
+    focusKk: "Таиф",
+  },
+  {
+    n: 20,
+    phaseId: "mekka",
+    titleKk: "Исра мен Миғраж",
+    summaryKk:
+      "Түнгі сапарда Әл-Қудс зияраты, бес намаз. Миғраж — иманның күнілік тірегі.",
+    focusKk: "Миғраж",
+  },
+  {
+    n: 21,
+    phaseId: "mekka",
+    titleKk: "Бес намаз",
+    summaryKk:
+      "Намаз — иманның күнілік тірегі. Миғраждан кейін намаз — мұсылман өмірінің негізі.",
+    focusKk: "Намаз",
+  },
+  {
+    n: 22,
+    phaseId: "mekka",
+    titleKk: "Бірінші байғат",
+    summaryKk:
+      "Медине азаматтарымен келісім. Ақаба байғаты — Мединеге дайындық.",
+    focusKk: "Байғат",
+  },
+  {
+    n: 23,
+    phaseId: "hijra",
+    titleKk: "Хижраны жоспарлау",
+    summaryKk:
+      "Құрайыш қудалауы, мұсылмандар Мединеге көшеді. Хижра — жаңа бастау.",
+    focusKk: "Хижра",
+  },
+  {
+    n: 24,
+    phaseId: "hijra",
+    titleKk: "Хижра · көшу",
+    summaryKk:
+      "Әбу Бәкір мен Әли қалып, Пайғамбардың көшуі. Хижра — иман және бірлік.",
+    focusKk: "Көшу",
+  },
+  {
+    n: 25,
+    phaseId: "hijra",
+    titleKk: "Мединенің қабылдауы",
+    summaryKk:
+      "Ансар мен мүһәжирлер бірлігі. Медине — мұсылман қаласы.",
+    focusKk: "Ансар",
+  },
+  {
+    n: 26,
+    phaseId: "hijra",
+    titleKk: "Мәсжид ән-Нәбәуи",
+    summaryKk:
+      "Мешіт — бірлік пен білім орталығы. Мединедегі бірінші жамағат орталығы.",
+    focusKk: "Мешіт",
+  },
+  {
+    n: 27,
+    phaseId: "hijra",
+    titleKk: "Муахат",
+    summaryKk:
+      "Бауырластық шарт — ансар мен мүһәжирлер. Бірлік — Медине қаласындағы негіз.",
+    focusKk: "Бауырластық",
+  },
+  {
+    n: 28,
+    phaseId: "medina",
+    titleKk: "Бәдр оқиғасы",
+    summaryKk:
+      "624 ж. — иманның жауынгерлігі. Бәдр — бірінші үлкен жеңіс.",
+    focusKk: "Бәдр",
+  },
+  {
+    n: 29,
+    phaseId: "medina",
+    titleKk: "Ухуд",
+    summaryKk:
+      "Сабыр сынамасы, Хамза ﷼ шәһид. Ухуд — сабыр мен тәубе сабағы.",
+    focusKk: "Ухуд",
+  },
+  {
+    n: 30,
+    phaseId: "medina",
+    titleKk: "Хандақ",
+    summaryKk:
+      "Қала қорғауы, Салман әл-Фариси идеясы. Бірлік — қала қорғауындағы жауапкершілік.",
+    focusKk: "Хандақ",
+  },
+  {
+    n: 31,
+    phaseId: "medina",
+    titleKk: "Худәйбия",
+    summaryKk:
+      "Бейбітшілік шарты — стратегиялық жеңіс. Сабыр — ұзақ мерзімді пайда.",
+    focusKk: "Худәйбия",
+  },
+  {
+    n: 32,
+    phaseId: "medina",
+    titleKk: "Меккенің ашылуы",
+    summaryKk:
+      "630 ж. — кешірім мен азат ету. Фатх — кешірім мен әділдік.",
+    focusKk: "Фатх",
+  },
+  {
+    n: 33,
+    phaseId: "medina",
+    titleKk: "Тәбук",
+    summaryKk:
+      "Соңғы үлкен сапар, сабыр. Тәбук — иман мен жауапкершілік.",
+    focusKk: "Тәбук",
+  },
+  {
+    n: 34,
+    phaseId: "medina",
+    titleKk: "Қажылықты үйрету",
+    summaryKk:
+      "Намаз, зекет, қажылық — толық дін. Дін — күнделікті өмірге ену.",
+    focusKk: "Қажылық",
+  },
+  {
+    n: 35,
+    phaseId: "farewell",
+    titleKk: "Қоштасу қажылығы",
+    summaryKk:
+      "632 ж. — соңғы қажылық. Қоштасу қажылығы — мұсылмандарға соңғы насихат.",
+    focusKk: "Қоштасу",
+  },
+  {
+    n: 36,
+    phaseId: "farewell",
+    titleKk: "Қоштасу хутбасы",
+    summaryKk:
+      "Адамдар тең, қан үстінде қан жоқ. Хутба — әділдік пен бірлік.",
+    focusKk: "Хутба",
+  },
+  {
+    n: 37,
+    phaseId: "farewell",
+    titleKk: "Дін кемелденді",
+    summaryKk:
+      "Дін кемелденді — сақтауды ұмытпа. Құран — мұсылмандарға мұра.",
+    focusKk: "Құран",
+  },
+  {
+    n: 38,
+    phaseId: "farewell",
+    titleKk: "Пайғамбардың өмірден өтуі",
+    summaryKk:
+      "632 ж. 12 Рабиғ әл-әууәл — мұсылмандарға мұра. Пайғамбар ﷺ — барша үмметке үлгі.",
+    focusKk: "Мұра",
+  },
 ];
 
 export function getSeerahLessonsForPhase(phaseId: string): SeerahLessonEntry[] {

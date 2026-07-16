@@ -226,6 +226,7 @@ export function SettingsScreen() {
   const [oauthMsg, setOauthMsg] = useState<string | null>(null);
   const [platformPid, setPlatformPid] = useState<string | null>(null);
   const [supportAccountCopied, setSupportAccountCopied] = useState(false);
+  const [localeBusy, setLocaleBusy] = useState(false);
   const [diagnostics, setDiagnostics] = useState<ReleaseDiagnostics>({
     api: null,
     prayer: null,
@@ -403,8 +404,8 @@ export function SettingsScreen() {
 
       <SettingsSection
         colors={colors}
-        title="Қолданба күйі"
-        subtitle="Release алдында версия, API және азан рұқсаттарын бір жерден тексеріңіз."
+        title={kk.settings.diagnosticsSectionTitle}
+        subtitle={kk.settings.diagnosticsSectionSubtitle}
       >
         <SettingsCard colors={colors} panel style={styles.diagnosticsCard}>
           <View style={styles.diagnosticsHeader}>
@@ -412,7 +413,9 @@ export function SettingsScreen() {
               <MaterialIcons name="verified-user" size={22} color={colors.accent} />
               <View style={styles.diagnosticsTitleText}>
                 <Text style={styles.diagnosticsTitle}>RAHAT OMIR</Text>
-                <Text style={styles.diagnosticsSub}>Соңғы тексеріс: {checkedAtLine(diagnostics.checkedAt)}</Text>
+                <Text style={styles.diagnosticsSub}>
+                  {kk.settings.diagnosticsLastChecked}: {checkedAtLine(diagnostics.checkedAt)}
+                </Text>
               </View>
             </View>
             <Pressable
@@ -420,32 +423,32 @@ export function SettingsScreen() {
               onPress={() => void loadReleaseDiagnostics()}
               disabled={diagnosticsLoading}
               accessibilityRole="button"
-              accessibilityLabel="Диагностиканы жаңарту"
+              accessibilityLabel={kk.settings.diagnosticsRefreshA11y}
             >
               <Text style={styles.diagnosticsRefreshTxt}>
-                {diagnosticsLoading ? "Тексерілуде..." : "Жаңарту"}
+                {diagnosticsLoading ? kk.settings.diagnosticsRefreshing : kk.settings.diagnosticsRefresh}
               </Text>
             </Pressable>
           </View>
           <View style={styles.diagnosticsGrid}>
             <View style={styles.diagnosticsPill}>
-              <Text style={styles.diagnosticsPillLabel}>Версия</Text>
+              <Text style={styles.diagnosticsPillLabel}>{kk.settings.diagnosticsVersionLabel}</Text>
               <Text style={styles.diagnosticsPillValue}>{appVersionLine()}</Text>
             </View>
             <View style={styles.diagnosticsPill}>
-              <Text style={styles.diagnosticsPillLabel}>API</Text>
+              <Text style={styles.diagnosticsPillLabel}>{kk.settings.diagnosticsApiLabel}</Text>
               <Text style={styles.diagnosticsPillValue} numberOfLines={2}>
                 {apiStatusLine(diagnostics.api)}
               </Text>
             </View>
             <View style={styles.diagnosticsPill}>
-              <Text style={styles.diagnosticsPillLabel}>Хабарлама</Text>
+              <Text style={styles.diagnosticsPillLabel}>{kk.settings.diagnosticsNotifLabel}</Text>
               <Text style={styles.diagnosticsPillValue}>
-                {diagnostics.prayer?.permissionStatus ?? "Тексерілмеді"}
+                {diagnostics.prayer?.permissionStatus ?? kk.settings.diagnosticsNotChecked}
               </Text>
             </View>
             <View style={styles.diagnosticsPill}>
-              <Text style={styles.diagnosticsPillLabel}>Азан</Text>
+              <Text style={styles.diagnosticsPillLabel}>{kk.settings.diagnosticsAzanLabel}</Text>
               <Text style={styles.diagnosticsPillValue}>
                 {nativeAzanStatusLabel(diagnostics.prayer?.nativeAzanReliabilityStatus)}
               </Text>
@@ -453,19 +456,22 @@ export function SettingsScreen() {
           </View>
           <View style={styles.diagnosticsDetails}>
             <Text style={styles.diagnosticsDetailText}>
-              Намаз schedule: {diagnostics.prayer?.scheduledPrayerCount ?? 0} · Native azan:{" "}
-              {diagnostics.prayer?.nativeAzanAlarmCount ?? 0}
+              {kk.settings.diagnosticsDetailSchedule(
+                diagnostics.prayer?.scheduledPrayerCount ?? 0,
+                diagnostics.prayer?.nativeAzanAlarmCount ?? 0
+              )}
             </Text>
             <Text style={styles.diagnosticsDetailText}>
-              Exact alarm: {boolStatus(diagnostics.prayer?.nativeAzanExactAlarmPermissionGranted)} · Full-screen:{" "}
-              {boolStatus(diagnostics.prayer?.nativeAzanFullScreenIntentPermissionGranted)}
+              {kk.settings.diagnosticsDetailPermissions(
+                boolStatus(diagnostics.prayer?.nativeAzanExactAlarmPermissionGranted)
+              )}
             </Text>
             {nativeAzanWarningLine(diagnostics.prayer) ? (
               <Text style={styles.diagnosticsWarn}>{nativeAzanWarningLine(diagnostics.prayer)}</Text>
             ) : null}
             {diagnostics.error ? <Text style={styles.diagnosticsWarn}>{diagnostics.error}</Text> : null}
             <Text style={styles.diagnosticsBase} numberOfLines={1}>
-              API base: {apiBase || "орнатылмаған"}
+              {kk.settings.diagnosticsApiBase(apiBase || kk.settings.diagnosticsApiNotSet)}
             </Text>
           </View>
         </SettingsCard>
@@ -480,8 +486,15 @@ export function SettingsScreen() {
           colors={colors}
           options={languageOptions}
           value={locale}
-          onChange={(next) => void setCurrentLocale(next)}
+          onChange={(next) => {
+            if (localeBusy || next === locale) return;
+            setLocaleBusy(true);
+            void setCurrentLocale(next).finally(() => setLocaleBusy(false));
+          }}
         />
+        {localeBusy ? (
+          <Text style={[ui.hint, { marginTop: 8 }]}>{kk.common.loading}</Text>
+        ) : null}
       </SettingsSection>
 
       <SettingsSection

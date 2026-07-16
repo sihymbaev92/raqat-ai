@@ -61,6 +61,14 @@ import {
   type TajweedRuleKey,
 } from "../../utils/alquranTajweedParse";
 import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
+import {
+  ensureQcf4ColrPageFontLoaded,
+  qcf4ColrFontFamilyName,
+  qcf4ColrTajweedEnabledOnPlatform,
+  qcf4ColrTextClassName,
+} from "../../quran/qcf4ColrFontLoader";
+import { resolveQcf4TajweedPaint } from "../../quran/qcf4ColrTajweedHybrid";
+import { qcf4ColrPaletteForReadingTheme } from "../../quran/qcf4ColrTheme";
 
 /** 15 жолдық торда барлық аят glyph-тері бір тұрақты өлшеммен тұрсын. */
 const QCF4_GLYPH_SCALE_QCOM = 0.72;
@@ -220,6 +228,7 @@ export function MushafBookPageQcf4({
 }: Props) {
   const [qcfPage, setQcfPage] = useState<Qcf4PageJson | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
+  const [colrReady, setColrReady] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
   const [localTajweedByAyah, setLocalTajweedByAyah] = useState<Record<string, string>>({});
 
@@ -280,6 +289,27 @@ export function MushafBookPageQcf4({
   const lineMetricsAreaH = Math.max(80, linesAreaH - phoneVerticalSafePadding * 2);
   const qcomTitleInk = isDark ? "#FFFFFF" : (st.mushafAyahTxt.color ?? "#111111");
   const karaokeWordIndex = useQuranKaraokeWordIndex(Boolean(playingRef && ayahAudioIsPlaying));
+  const colrTheme = useMemo(
+    () => qcf4ColrPaletteForReadingTheme(readingThemeId, isDark),
+    [readingThemeId, isDark]
+  );
+  const useColrStack = showTajweedColors && qcf4ColrTajweedEnabledOnPlatform();
+  const useColrGlyphs = useColrStack && colrReady;
+
+  useEffect(() => {
+    if (!isActive || !useColrStack) {
+      setColrReady(false);
+      return;
+    }
+    let alive = true;
+    setColrReady(false);
+    void ensureQcf4ColrPageFontLoaded(page.mushafPageNumber, colrTheme).then((ok) => {
+      if (alive) setColrReady(ok);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [colrTheme, isActive, page.mushafPageNumber, useColrStack]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -606,8 +636,18 @@ export function MushafBookPageQcf4({
               const taggedAyah =
                 ref != null ? tajweedTaggedByAyah.get(`${ref.surah}:${ref.ayah}`) : undefined;
               const readableWord = qcf4ReadableText(word);
+              const nextWord = line.words[wi + 1];
+              const tajweedPaint = resolveQcf4TajweedPaint({
+                useColrGlyphs,
+                word,
+                nextWord,
+                taggedAyah,
+                wordIndex: wordRuleIndex,
+                glyphIndexInWord: glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0,
+              });
               const usePerLetterTajweed =
                 showTajweedColors &&
+                !useColrGlyphs &&
                 word.type === "word" &&
                 Boolean(taggedAyah) &&
                 wordRuleIndex != null &&
@@ -615,25 +655,36 @@ export function MushafBookPageQcf4({
               const tajweedCharRuns = usePerLetterTajweed
                 ? tajweedWordCharRuns(taggedAyah, wordRuleIndex!, readableWord)
                 : [];
-              const tajweedRule =
-                ref != null && wordRuleIndex != null && !usePerLetterTajweed
-                  ? tajweedRuleForWordGlyph(
-                      taggedAyah,
-                      wordRuleIndex,
-                      glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0
-                    )
+              const tajweedRule = usePerLetterTajweed
+                ? undefined
+                : tajweedPaint.mode === "tag" && tajweedPaint.rule
+                  ? tajweedPaint.rule
+                  : ref != null && wordRuleIndex != null && !useColrGlyphs
+                    ? tajweedRuleForWordGlyph(
+                        taggedAyah,
+                        wordRuleIndex,
+                        glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0
+                      )
+                    : undefined;
+              const useColrGlyphFont =
+                useColrGlyphs && tajweedPaint.mode === "colr" && word.type === "word" && !readableWebText;
+              const colrWebClass =
+                useColrGlyphFont && Platform.OS === "web"
+                  ? qcf4ColrTextClassName(page.mushafPageNumber, colrTheme)
                   : undefined;
               const tappable = ref != null;
               const glyphTextStyle = {
                 fontFamily:
-                  usePerLetterTajweed || readableWebText
-                    ? QCF4_READABLE_WEB_FONT
-                    : qcf4FontFamilyName(word.font),
+                  useColrGlyphFont
+                    ? qcf4ColrFontFamilyName(page.mushafPageNumber)
+                    : usePerLetterTajweed || readableWebText
+                      ? QCF4_READABLE_WEB_FONT
+                      : qcf4FontFamilyName(word.font),
                 fontSize: displayedFontSize,
                 lineHeight: glyphLineHeight,
                 paddingHorizontal: glyphSideBearingPad,
                 marginHorizontal: glyphSideBearingMargin,
-                fontWeight: usePerLetterTajweed || readableWebText ? "700" : "500",
+                fontWeight: (usePerLetterTajweed || readableWebText ? "700" : "500") as "700" | "500",
                 color:
                   word.type === "surah_header"
                     ? QCF4_AYAH_MARKER_BLUE
@@ -641,10 +692,10 @@ export function MushafBookPageQcf4({
                       ? tajweedColorForRule(tajweedRule, isDark)
                       : st.mushafAyahTxt.color,
                 textShadowColor:
-                  !readableWebText && !usePerLetterTajweed && word.type !== "surah_header"
+                  !readableWebText && !usePerLetterTajweed && !useColrGlyphFont && word.type !== "surah_header"
                     ? st.mushafAyahTxt.color
                     : "transparent",
-                textShadowRadius: readableWebText || usePerLetterTajweed ? 0 : 0.18,
+                textShadowRadius: readableWebText || usePerLetterTajweed || useColrGlyphFont ? 0 : 0.18,
                 transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
                 backgroundColor: isCurrentPlayingWord
                   ? "rgba(16, 185, 129, 0.34)"
@@ -687,7 +738,14 @@ export function MushafBookPageQcf4({
                     ))}
                   </Text>
                 ) : (
-                  <Text style={glyphTextStyle}>{displayedText}</Text>
+                  <Text
+                    style={glyphTextStyle}
+                    {...(Platform.OS === "web" && colrWebClass
+                      ? ({ className: colrWebClass } as { className?: string })
+                      : {})}
+                  >
+                    {displayedText}
+                  </Text>
                 );
               if (!tappable) {
                 return (

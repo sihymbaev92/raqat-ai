@@ -30,6 +30,8 @@ const hatimRu: CorePatch["hatim"] = {
       : `${title}. Открыть чтение`,
   settingsTitle: "Настройки хатма",
   settingsSubtitle: "Тема, мусхаф, аудио, напоминание и прогресс.",
+  tajweedOfflineQuickAction: "Цвета таджвида",
+  tajweedOfflineQuickActionA11y: "Цвета таджвида — 114 сур офлайн",
 };
 
 const hatimEn: CorePatch["hatim"] = {
@@ -49,6 +51,8 @@ const hatimEn: CorePatch["hatim"] = {
       : `${title}. Open reader`,
   settingsTitle: "Hatim settings",
   settingsSubtitle: "Theme, mushaf, audio, reminder and progress.",
+  tajweedOfflineQuickAction: "Tajweed colors",
+  tajweedOfflineQuickActionA11y: "Tajweed colors — 114 surahs offline",
 };
 
 const hatimKy: CorePatch["hatim"] = {
@@ -69,9 +73,75 @@ const hatimKy: CorePatch["hatim"] = {
       : `${title}. Окууну ачуу`,
   settingsTitle: "Хатм жөндөөлөрү",
   settingsSubtitle: "Тема, мусхаф, аудио, эскертүү жана прогресс.",
+  tajweedOfflineQuickAction: "Тажвид түстөрү",
+  tajweedOfflineQuickActionA11y: "Тажвид түстөрү — 114 сүрө офлайн",
 };
 
-const hatimUz: CorePatch["hatim"] = hatimKy;
+const hatimUz: CorePatch["hatim"] = {
+  progressTitle: "Xatm progressi",
+  progressCount: "{read} / {total} sura belgilangan",
+  resumeLine: "Oxirgi o'qish: {surahTitle} · oyat {ayah}",
+  continueReading: "Davom etish",
+  tapAyahHint:
+    "Oyatga bosing — progress saqlanadi; oxirgi oyatdan keyin sura o'qilgan deb belgilanadi.",
+  juzHeaderBtnA11y: "Juz yoki sahifa bo'yicha o'tish",
+  juzQuickAction: "Juz",
+  searchBtnA11y: "Sura qidirish",
+  searchQuickAction: "Sura qidirish",
+  markReadA11y: "«{title}» surasini o'qilgan deb belgilash",
+  openSurahRowA11y: (title, meta) =>
+    meta
+      ? `Sura ${meta.surahNumber}, ${title}, ${meta.ayahCount} oyat. O'qishni ochish`
+      : `${title}. O'qishni ochish`,
+  settingsTitle: "Xatm sozlamalari",
+  settingsSubtitle: "Mavzu, mushaf, audio, eslatma va progress.",
+  tajweedOfflineQuickAction: "Tajvid ranglari",
+  tajweedOfflineQuickActionA11y: "Tajvid ranglari — 114 sura oflayn",
+};
+
+const hatimTr: CorePatch["hatim"] = {
+  progressTitle: "Hatim ilerlemesi",
+  progressCount: "{read} / {total} sure işaretlendi",
+  resumeLine: "Son okuma: {surahTitle} · ayet {ayah}",
+  continueReading: "Devam et",
+  tapAyahHint:
+    "Bir ayete dokunun — ilerleme kaydedilir; son ayetten sonra sure okundu işaretlenir.",
+  juzHeaderBtnA11y: "Cüz veya sayfaya git",
+  juzQuickAction: "Cüz",
+  searchBtnA11y: "Sure ara",
+  searchQuickAction: "Sure ara",
+  markReadA11y: "«{title}» suresini okundu işaretle",
+  openSurahRowA11y: (title, meta) =>
+    meta
+      ? `Sure ${meta.surahNumber}, ${title}, ${meta.ayahCount} ayet. Okumayı aç`
+      : `${title}. Okumayı aç`,
+  settingsTitle: "Hatim ayarları",
+  settingsSubtitle: "Tema, mushaf, ses, hatırlatma ve ilerleme.",
+  tajweedOfflineQuickAction: "Tecvid renkleri",
+  tajweedOfflineQuickActionA11y: "Tecvid renkleri — 114 sure çevrimdışı",
+};
+
+const hatimAr: CorePatch["hatim"] = {
+  progressTitle: "تقدّم الختمة",
+  progressCount: "{read} / {total} سورة مُعلَّمة",
+  resumeLine: "آخر قراءة: {surahTitle} · آية {ayah}",
+  continueReading: "متابعة",
+  tapAyahHint:
+    "اضغط على آية لحفظ التقدّم؛ بعد آخر آية تُعلَّم السورة مقروءة.",
+  juzHeaderBtnA11y: "الانتقال حسب الجزء أو الصفحة",
+  juzQuickAction: "جزء",
+  searchBtnA11y: "بحث عن سورة",
+  searchQuickAction: "بحث عن سورة",
+  markReadA11y: "تعليم سورة «{title}» مقروءة",
+  openSurahRowA11y: (title, meta) =>
+    meta
+      ? `سورة ${meta.surahNumber}، ${title}، ${meta.ayahCount} آية. فتح القراءة`
+      : `${title}. فتح القراءة`,
+  settingsTitle: "إعدادات الختمة",
+  settingsSubtitle: "المظهر والمصحف والصوت والتذكير والتقدّم.",
+  tajweedOfflineQuickAction: "ألوان التجويد",
+  tajweedOfflineQuickActionA11y: "ألوان التجويد — 114 سورة دون اتصال",
+};
 
 const qiblaRu: CorePatch["qibla"] = {
   permLoading: "Разрешение на местоположение…",
@@ -85,7 +155,8 @@ const qiblaRu: CorePatch["qibla"] = {
   openSettings: "Открыть настройки",
   retryLocation: "Повторить",
   hintPending: "Стрелка появится, когда будут готовы местоположение и компас.",
-  hintAligned: "Стрелка направлена к Каабе. Металл и магнитные поля могут влиять на точность.",
+  hintAligned:
+    "Стрелка направлена к Каабе. Держите телефон горизонтально или смотрите на экран и повернитесь лицом к Каабе. Металл и магнитные поля могут влиять на точность.",
   hintTurnCw: "Медленно поворачивайте телефон по часовой стрелке к Каабе.",
   hintTurnCcw: "Медленно поворачивайте телефон против часовой стрелки к Каабе.",
   modeCompass: "Компас",
@@ -108,7 +179,8 @@ const qiblaEn: CorePatch["qibla"] = {
   openSettings: "Open settings",
   retryLocation: "Retry",
   hintPending: "Arrow appears when location and compass are ready.",
-  hintAligned: "Arrow points toward the Kaaba. Metal and magnetic fields may affect accuracy.",
+  hintAligned:
+    "Arrow points toward the Kaaba. Hold the phone flat or face the Kaaba while looking at the screen. Metal and magnetic fields may affect accuracy.",
   hintTurnCw: "Slowly rotate the phone clockwise toward the Kaaba.",
   hintTurnCcw: "Slowly rotate the phone counter-clockwise toward the Kaaba.",
   modeCompass: "Compass",
@@ -165,6 +237,52 @@ const qiblaUz: CorePatch["qibla"] = {
   calibrationStop: "To'xtatish",
 };
 
+const qiblaTr: CorePatch["qibla"] = {
+  permLoading: "Konum izni…",
+  deniedTitle: "Konum gerekli",
+  deniedBody: "Uygulama ayarlarından konumu açın veya «Ayarları aç»a dokunun.",
+  servicesOffTitle: "Konum servisleri kapalı",
+  servicesOffBody: "Telefonda GPS'i açıp uygulamaya dönün.",
+  positionFailedTitle: "Konum alınamadı",
+  positionFailedBody: "Açık alanda tekrar deneyin. Seçili şehre göre yaklaşık yön gösterilebilir.",
+  cityApproxHint: "Seçili şehir merkezine göre yön (kesin GPS yok).",
+  openSettings: "Ayarları aç",
+  retryLocation: "Tekrar dene",
+  hintPending: "Konum ve pusula hazır olunca ok görünür.",
+  hintAligned: "Ok Kâbe'ye bakıyor. Metal ve manyetik alanlar doğruluğu etkileyebilir.",
+  hintTurnCw: "Telefonu yavaşça saat yönünde Kâbe'ye doğru çevirin.",
+  hintTurnCcw: "Telefonu yavaşça saat yönünün tersine Kâbe'ye doğru çevirin.",
+  modeCompass: "Pusula",
+  modeCamera: "Kamera",
+  magnetHint: "Metal nesneler pusula doğruluğunu düşürebilir.",
+  calibrationTitle: "Pusula kalibrasyonu",
+  calibrationStart: "Kalibrasyonu başlat",
+  calibrationStop: "Durdur",
+};
+
+const qiblaAr: CorePatch["qibla"] = {
+  permLoading: "إذن الموقع…",
+  deniedTitle: "يلزم الموقع",
+  deniedBody: "فعّل إذن الموقع في إعدادات التطبيق أو اضغط «فتح الإعدادات».",
+  servicesOffTitle: "خدمات الموقع متوقفة",
+  servicesOffBody: "فعّل GPS في إعدادات الهاتف ثم عد إلى التطبيق.",
+  positionFailedTitle: "تعذّر تحديد الموقع",
+  positionFailedBody: "جرّب في مكان مكشوف. قد يُعرض اتجاه تقريبي حسب المدينة المختارة.",
+  cityApproxHint: "الاتجاه حسب مركز المدينة المختارة (بدون GPS دقيق).",
+  openSettings: "فتح الإعدادات",
+  retryLocation: "إعادة المحاولة",
+  hintPending: "يظهر السهم عندما يكون الموقع والبوصلة جاهزين.",
+  hintAligned: "السهم نحو الكعبة. المعادن والحقول المغناطيسية قد تؤثر على الدقة.",
+  hintTurnCw: "أدِر الهاتف ببطء مع عقارب الساعة نحو الكعبة.",
+  hintTurnCcw: "أدِر الهاتف ببطء عكس عقارب الساعة نحو الكعبة.",
+  modeCompass: "بوصلة",
+  modeCamera: "كاميرا",
+  magnetHint: "قد تقلل الأجسام المعدنية دقة البوصلة.",
+  calibrationTitle: "معايرة البوصلة",
+  calibrationStart: "بدء المعايرة",
+  calibrationStop: "إيقاف",
+};
+
 const tasbihRu: CorePatch["tasbih"] = {
   screenTitle: "Зикры",
   openCounterA11y: "Открыть экран тасбиха",
@@ -189,6 +307,18 @@ const tasbihUz: CorePatch["tasbih"] = {
   loadFailedHint: "Zikrlar yuklanmadi. Ulanishni tekshirib, qayta urinib ko'ring.",
 };
 
+const tasbihTr: CorePatch["tasbih"] = {
+  screenTitle: "Zikirler",
+  openCounterA11y: "Tesbih ekranını aç",
+  loadFailedHint: "Zikirler yüklenemedi. Bağlantıyı kontrol edip tekrar deneyin.",
+};
+
+const tasbihAr: CorePatch["tasbih"] = {
+  screenTitle: "الأذكار",
+  openCounterA11y: "فتح شاشة التسبيح",
+  loadFailedHint: "تعذّر تحميل الأذكار. تحقق من الاتصال وحاول مجددًا.",
+};
+
 const duasRu: CorePatch["duas"] = {
   menzikirTitle: "Разделы (8)",
   searchPlaceholder: "Поиск: название, арабский, транскрипция или значение…",
@@ -211,6 +341,18 @@ const duasUz: CorePatch["duas"] = {
   menzikirTitle: "Bo'limlar (8)",
   searchPlaceholder: "Qidiruv: sarlavha, arabcha, transkripsiya yoki ma'nosi…",
   noSearchResults: "Dua topilmadi — boshqa so'rov kiriting.",
+};
+
+const duasTr: CorePatch["duas"] = {
+  menzikirTitle: "Bölümler (8)",
+  searchPlaceholder: "Ara: başlık, Arapça, okunuş veya anlam…",
+  noSearchResults: "Dua bulunamadı — başka bir arama deneyin.",
+};
+
+const duasAr: CorePatch["duas"] = {
+  menzikirTitle: "الأقسام (8)",
+  searchPlaceholder: "بحث: العنوان أو العربي أو النطق أو المعنى…",
+  noSearchResults: "لم يُعثر على دعاء — جرّب طلبًا آخر.",
 };
 
 const zakatRu: CorePatch["zakatCalculator"] = {
@@ -247,6 +389,24 @@ const zakatUz: CorePatch["zakatCalculator"] = {
   resultTitle: "Taxminiy zakat summasi",
   askAi: "Zakat haqida so'rash",
   clear: "Tozalash",
+};
+
+const zakatTr: CorePatch["zakatCalculator"] = {
+  title: "Zekât hesaplayıcı",
+  eyebrow: "Hanefi zekât tahmini",
+  lead: "Malı girin: nakit, altın/gümüş, ticaret malları, alacaklar ve kısa vadeli borçlar. Nisaba ulaşınca %2,5 hesaplanır.",
+  resultTitle: "Tahmini zekât",
+  askAi: "Zekât hakkında sor",
+  clear: "Temizle",
+};
+
+const zakatAr: CorePatch["zakatCalculator"] = {
+  title: "حاسبة الزكاة",
+  eyebrow: "تقدير زكاة حنفي",
+  lead: "أدخل المال: نقدًا، ذهبًا/فضة، بضائع تجارة، مستحقات وديون قصيرة. عند بلوغ النصاب يُحسب 2.5٪.",
+  resultTitle: "الزكاة التقديرية",
+  askAi: "اسأل عن الزكاة",
+  clear: "مسح",
 };
 
 function mergeCore(locale: CorePatch): CorePatch {
@@ -288,4 +448,18 @@ export const CORE_SCREEN_LOCALE_PATCHES = {
     duas: duasUz,
     zakatCalculator: zakatUz,
   }),
-} as const satisfies Record<"ru" | "en" | "ky" | "uz", CorePatch>;
+  tr: mergeCore({
+    hatim: hatimTr,
+    qibla: qiblaTr,
+    tasbih: tasbihTr,
+    duas: duasTr,
+    zakatCalculator: zakatTr,
+  }),
+  ar: mergeCore({
+    hatim: hatimAr,
+    qibla: qiblaAr,
+    tasbih: tasbihAr,
+    duas: duasAr,
+    zakatCalculator: zakatAr,
+  }),
+} as const satisfies Record<"ru" | "en" | "ky" | "uz" | "tr" | "ar", CorePatch>;

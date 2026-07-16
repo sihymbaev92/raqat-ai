@@ -8,16 +8,20 @@ import type { MoreStackParamList } from "./types";
 import { moreStackScreenBackListeners } from "./useMoreStackHardwareBack";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
 import { lazyScreen } from "./lazyScreen";
-import { KmdbHubScreen } from "../screens/KmdbHubScreen";
-import { HalalScreen } from "../screens/HalalScreen";
+const KmdbHubScreen = lazyScreen(() =>
+  import("../screens/KmdbHubScreen").then((m) => ({ default: m.KmdbHubScreen }))
+);
+const HalalScreen = lazyScreen(() =>
+  import("../screens/HalalScreen").then((m) => ({ default: m.HalalScreen }))
+);
+const OfficialIslamicWebScreen = lazyScreen(() =>
+  import("../screens/OfficialIslamicWebScreen").then((m) => ({ default: m.OfficialIslamicWebScreen }))
+);
 const NamazGuideScreen = lazyScreen(() =>
   import("../screens/ContentGuideScreens").then((m) => ({ default: m.NamazGuideScreen }))
 );
 const KbArticleDetailScreen = lazyScreen(() =>
   import("../screens/KbArticleDetailScreen").then((m) => ({ default: m.KbArticleDetailScreen }))
-);
-const OfficialIslamicWebScreen = lazyScreen(() =>
-  import("../screens/OfficialIslamicWebScreen").then((m) => ({ default: m.OfficialIslamicWebScreen }))
 );
 const Stack = createNativeStackNavigator<MoreStackParamList>();
 const MORE_STACK_WEB_CACHE_VERSION = "more-stack-cache-bust-2026-06-07";
@@ -27,13 +31,21 @@ const QuranListScreen = lazyScreen(() => import("../screens/QuranListScreen").th
 const QuranSurahScreen = lazyScreen(() => import("../screens/QuranSurahScreen").then((m) => ({ default: m.QuranSurahScreen })));
 const SeerahScreen = lazyScreen(() => import("../screens/SeerahScreen").then((m) => ({ default: m.SeerahScreen })));
 const DuasScreen = lazyScreen(() => import("../screens/DuasScreen").then((m) => ({ default: m.DuasScreen })));
+const CommunityDuaScreen = lazyScreen(() =>
+  import("../screens/CommunityDuaScreen").then((m) => ({ default: m.CommunityDuaScreen }))
+);
 const TelegramInfoScreen = lazyScreen(() => import("../screens/TelegramInfoScreen").then((m) => ({ default: m.TelegramInfoScreen })));
 const SettingsScreen = lazyScreen(() => import("../screens/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
 const PrayerSettingsScreen = lazyScreen(() => import("../screens/PrayerSettingsScreen").then((m) => ({ default: m.PrayerSettingsScreen })));
 const QuranSettingsScreen = lazyScreen(() => import("../screens/QuranSettingsScreen").then((m) => ({ default: m.QuranSettingsScreen })));
-const SiriShortcutHelpScreen = lazyScreen(() => import("../screens/SiriShortcutHelpScreen").then((m) => ({ default: m.SiriShortcutHelpScreen })));
 const HatimScreen = lazyScreen(() => import("../screens/HatimScreen").then((m) => ({ default: m.HatimScreen })));
 const HatimSettingsScreen = lazyScreen(() => import("../screens/HatimSettingsScreen").then((m) => ({ default: m.HatimSettingsScreen })));
+const HatimTajweedListScreen = lazyScreen(() =>
+  import("../screens/HatimTajweedListScreen").then((m) => ({ default: m.HatimTajweedListScreen }))
+);
+const HatimTajweedSurahScreen = lazyScreen(() =>
+  import("../screens/HatimTajweedSurahScreen").then((m) => ({ default: m.HatimTajweedSurahScreen }))
+);
 const QuranMushafBookScreen = lazyScreen(() => import("../screens/QuranMushafBookScreen").then((m) => ({ default: m.QuranMushafBookScreen })));
 const MakkahLiveScreen = lazyScreen(() =>
   import("../screens/MakkahLiveScreen").then((m) => ({ default: m.MakkahLiveScreen }))
@@ -104,6 +116,11 @@ export function MoreNavigator() {
       <Stack.Screen name="Seerah" component={SeerahScreen} options={{ title: kk.seerah.title }} />
       <Stack.Screen name="Duas" component={DuasScreen} options={{ title: kk.navigation.duasTitle }} />
       <Stack.Screen
+        name="CommunityDua"
+        component={CommunityDuaScreen}
+        options={{ title: kk.communityDua.screenTitle }}
+      />
+      <Stack.Screen
         name="TelegramInfo"
         component={TelegramInfoScreen}
         options={{ title: kk.navigation.telegramTitle }}
@@ -124,11 +141,6 @@ export function MoreNavigator() {
         options={{ title: kk.settings.quranSettingsTitle }}
       />
       <Stack.Screen
-        name="SiriShortcutHelp"
-        component={SiriShortcutHelpScreen}
-        options={{ title: kk.navigation.siriShortcutHelpTitle }}
-      />
-      <Stack.Screen
         name="Hatim"
         component={HatimScreen}
         options={{ title: kk.features.hatimTitle }}
@@ -137,6 +149,16 @@ export function MoreNavigator() {
         name="HatimSettings"
         component={HatimSettingsScreen}
         options={{ title: kk.hatim.settingsTitle }}
+      />
+      <Stack.Screen
+        name="HatimTajweedList"
+        component={HatimTajweedListScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="HatimTajweedSurah"
+        component={HatimTajweedSurahScreen}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="QuranMushafBook"
@@ -166,12 +188,12 @@ export function MoreNavigator() {
       <Stack.Screen
         name="KazakhTraditionArticles"
         component={KazakhTraditionArticlesScreen}
-        options={{ title: "Мақалалар" }}
+        options={{ title: kk.features.traditionGuide.articlesTitle }}
       />
       <Stack.Screen
         name="KazakhTraditionFavorites"
         component={KazakhTraditionFavoritesScreen}
-        options={{ title: "Таңдаулылар" }}
+        options={{ title: kk.features.traditionGuide.favoritesTitle }}
       />
       <Stack.Screen
         name="KurbanAit"
@@ -208,9 +230,10 @@ export function MoreNavigator() {
         name="MakkahLive"
         component={MakkahLiveScreen}
         options={{
-          title: "Қағба — тікелей эфир",
+          title: kk.features.kaabaLiveTitle,
           headerShown: false,
           animation: "fade",
+          contentStyle: { backgroundColor: "#000" },
         }}
       />
       <Stack.Screen

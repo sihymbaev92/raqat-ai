@@ -33,6 +33,17 @@ describe("halalProductsSeedKz", () => {
     expect(hit[0]?.title.toLowerCase()).toContain("айран");
   });
 
+  it("finds seed by barcode digits directly", () => {
+    const hit = lookupHalalProductsSeedByBarcode("4607025392015");
+    expect(hit.length).toBe(1);
+    expect(hit[0]?.title.toLowerCase()).toContain("айран");
+  });
+
+  it("finds seed when searching numeric barcode string", () => {
+    const hit = searchHalalProductsSeed("4607025392015", 5);
+    expect(hit.some((p) => p.barcode === "4607025392015")).toBe(true);
+  });
+
   it("search matches ingredients token", () => {
     const hit = searchHalalProductsSeed("желатин", 10);
     expect(hit.some((p) => (p.ingredients ?? "").toLowerCase().includes("желатин"))).toBe(true);

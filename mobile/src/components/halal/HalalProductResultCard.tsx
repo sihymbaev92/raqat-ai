@@ -6,6 +6,7 @@ import type { ThemeColors } from "../../theme/colors";
 import { HalalCertBadge } from "../HalalCertBadge";
 import { halalCertBadgeColors, halalCertTone } from "../../utils/halalCertDisplay";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 
 type ProductProps = {
   kind: "product";
@@ -33,6 +34,7 @@ type AdditiveProps = {
 type Props = ProductProps | AdditiveProps;
 
 export function HalalProductResultCard(props: Props) {
+  useAppLocale();
   const { colors, isDark } = props;
   const tone = props.kind === "product" ? halalCertTone(props.certificateStatus) : "neutral";
   const accent = halalCertBadgeColors(tone, isDark).dot;

@@ -16,6 +16,7 @@ keystore/
 web-build/
 .DS_Store
 # QA screenshots / manual captures (APK-ға кірмейді, репода қалmasın)
+.qa-phone/
 qa-*.png
 qa-*.xml
 qa-*.log
@@ -27,5 +28,12 @@ qa-hatim-check/
 manual-sweep-*/
 .content-pack-staging/
 .tmp-apk-slim-stash/
+# Release artifacts (git track емес — validate-play-release тексереді)
+raqat-release-latest.apk
+raqat-debug-latest.apk
+raqat-play-release-latest.aab
+dist-webdeploy.tar.gz
+raqat-web-refresh.tar.gz
+raqat-web-quran-size.tar.gz
 # Ескі: build-тар .gradle-ascii репо ішіндегі кэш (қазір D:/raqat-gradle default)
 .gradle-ascii/

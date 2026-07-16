@@ -24,6 +24,7 @@ import {
 } from "../../storage/prefs";
 import { disablePrayerLocationAutoFromManualPick } from "../../services/devicePrayerLocation";
 import { KZ_CITY_PRESETS_LIST } from "../../constants/kzCityPresetsList";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -42,6 +43,7 @@ export function SettingsPrayerLocationSection({
   onCityChange,
   onPrayerScheduleChange,
 }: Props) {
+  useAppLocale();
   const styles = makeSettingsStyles(colors);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [sourceMode, setSourceMode] = useState<PrayerSourceMode>("calc");

@@ -78,7 +78,6 @@ export function HalalCompanySearchList({
         data={items}
         keyExtractor={(item) => `halal-co-${item.id}`}
         renderItem={renderItem}
-        estimatedItemSize={ESTIMATED_ROW}
         drawDistance={pageSize * ESTIMATED_ROW}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.35}

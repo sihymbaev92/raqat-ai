@@ -23,8 +23,6 @@ export function cdnAyahBitrateKbps(edition: string): 128 | 192 {
   if (CDN_AYAH_192_EDITIONS.has(e)) return 192;
   return 128;
 }
-export const QURAN_SUDAIS_EDITION = "ar.abdurrahmaansudais";
-
 export function quranReciterUsesAyahAudio(edition: string): boolean {
   void edition;
   return true;
@@ -60,11 +58,6 @@ export function quranAyahMp3Url(globalAyahOneBased: number, edition: string = DE
   return `https://cdn.islamic.network/quran/audio/${br}/${ed}/${n}.mp3`;
 }
 
-/** @deprecated қолданыңыз: quranAyahMp3Url(n, edition) */
-export function sudaisAyahMp3Url(globalAyahOneBased: number): string {
-  return quranAyahMp3Url(globalAyahOneBased, QURAN_SUDAIS_EDITION);
-}
-
 /** Толық сүре файлы (128 kbps) — сыртқы ойнатқыш; edition сол қариға сәйкес. */
 export function quranSurahMp3Url(surahOneBased: number, edition: string = DEFAULT_QURAN_RECITER_EDITION): string {
   const s = Math.max(1, Math.min(114, Math.floor(surahOneBased)));
@@ -72,9 +65,4 @@ export function quranSurahMp3Url(surahOneBased: number, edition: string = DEFAUL
   const ed = (edition || DEFAULT_QURAN_RECITER_EDITION).trim() || DEFAULT_QURAN_RECITER_EDITION;
   /** Толық сүре: CDN әдетте 128 kbps жолмен (аят сайын bitrate-тен өзгеше). */
   return `https://cdn.islamic.network/quran/audio-surah/128/${ed}/${padded}.mp3`;
-}
-
-/** @deprecated қолданыңыз: quranSurahMp3Url(s, edition) */
-export function sudaisSurahMp3Url(surahOneBased: number): string {
-  return quranSurahMp3Url(surahOneBased, QURAN_SUDAIS_EDITION);
 }

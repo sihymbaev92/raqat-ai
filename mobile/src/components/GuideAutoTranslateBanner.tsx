@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 /** Машиналық аударма көрсетілгенде үстінде шығатын ескерту жолағы. */
 export function GuideAutoTranslateBanner({
@@ -12,6 +13,7 @@ export function GuideAutoTranslateBanner({
   colors: ThemeColors;
   visible: boolean;
 }) {
+  useAppLocale();
   if (!visible) return null;
   return (
     <View

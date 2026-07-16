@@ -11,10 +11,12 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { MoreStackParamList } from "../navigation/types";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KurbanAit">;
 
 export function KurbanAitScreen({ navigation, route }: Props) {
+  useAppLocale();
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);

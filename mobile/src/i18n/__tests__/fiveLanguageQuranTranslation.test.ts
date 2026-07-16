@@ -3,15 +3,15 @@ import {
   PRIMARY_QURAN_TRANSLATION_LOCALES,
   QURAN_TRANSLATION_EDITION_BY_LOCALE,
   QURAN_TRANSLATION_FIELD_BY_LOCALE,
-} from "../config/primaryQuranLocales";
-import { getQuranSurahTranslation } from "../services/quranTranslationEditions";
-import { quranAyahMeaningForLocale, quranAyahMeaningForSurah } from "../storage/quranSurahCache";
-import { setCurrentLocale, type AppLocale } from "../i18n/runtime";
-import { kk } from "../i18n/kk";
-import { quranTranslationAttributionForLocale } from "../i18n/quranTranslationAttribution";
+} from "../../config/primaryQuranLocales";
+import { getQuranSurahTranslation } from "../../services/quranTranslationEditions";
+import { quranAyahMeaningForLocale, quranAyahMeaningForSurah } from "../../storage/quranSurahCache";
+import { setCurrentLocale, type AppLocale } from "../runtime";
+import { kk } from "../kk";
+import { quranTranslationAttributionForLocale } from "../quranTranslationAttribution";
 
 const FATIHA_1: Record<Exclude<AppLocale, "ar" | "tr" | "zh" | "fa" | "id" | "ms" | "hi" | "ku">, RegExp> = {
-  kk: /Аса қамқор|Милостив|Al-Fatihah|бастаймын/i,
+  kk: /Аса қамқор|бастаймын/i,
   ru: /Во имя Аллаха|Милостивого/i,
   en: /In the name of Allah/i,
   ky: /Аллахтын аты|Ырайымдуу/i,

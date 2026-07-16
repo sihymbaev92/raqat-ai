@@ -14,8 +14,7 @@ object PrayerAzanAlarmScheduler {
   data class ScheduleResult(
     val scheduledCount: Int,
     val identifiers: List<String>,
-    val exactAlarmPermissionGranted: Boolean,
-    val fullScreenIntentPermissionGranted: Boolean
+    val exactAlarmPermissionGranted: Boolean
   )
 
   const val ACTION_AZAN = "kz.raqat.app.action.PRAYER_AZAN_FULLSCREEN"
@@ -68,7 +67,6 @@ object PrayerAzanAlarmScheduler {
     val requestCodes = JSONArray()
     val identifiers = mutableListOf<String>()
     val exactAlarmPermissionGranted = canScheduleExactAlarms(app)
-    val fullScreenIntentPermissionGranted = canUseFullScreenIntent(app)
     for (i in 0 until arr.length()) {
       val item = arr.optJSONObject(i) ?: continue
       val atMillis = item.optLong("atMillis", 0L)
@@ -117,8 +115,7 @@ object PrayerAzanAlarmScheduler {
     return ScheduleResult(
       identifiers.size,
       identifiers,
-      exactAlarmPermissionGranted,
-      fullScreenIntentPermissionGranted
+      exactAlarmPermissionGranted
     )
   }
 
@@ -126,12 +123,6 @@ object PrayerAzanAlarmScheduler {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true
     val am = context.applicationContext.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
     return am?.canScheduleExactAlarms() == true
-  }
-
-  fun canUseFullScreenIntent(context: Context): Boolean {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
-    val mgr = context.applicationContext.getSystemService(android.app.NotificationManager::class.java)
-    return mgr?.canUseFullScreenIntent() == true
   }
 
   fun cancelAll(context: Context) {
@@ -188,12 +179,17 @@ object PrayerAzanAlarmScheduler {
     val uri = Uri.parse(
       "imamai://azan?label=${enc(label)}&enteredTitle=${enc(enteredTitle)}&time=${enc(time)}&soundId=${enc(soundId)}&salatKey=${enc(salatKey)}"
     )
+    var launchFlags =
+      Intent.FLAG_ACTIVITY_NEW_TASK or
+        Intent.FLAG_ACTIVITY_CLEAR_TOP or
+        Intent.FLAG_ACTIVITY_SINGLE_TOP or
+        Intent.FLAG_ACTIVITY_NO_USER_ACTION
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+      launchFlags = launchFlags or 0x00080000 or 0x00200000
+    }
     val intent = Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java).apply {
-      flags =
-        Intent.FLAG_ACTIVITY_NEW_TASK or
-          Intent.FLAG_ACTIVITY_CLEAR_TOP or
-          Intent.FLAG_ACTIVITY_SINGLE_TOP or
-          Intent.FLAG_ACTIVITY_NO_USER_ACTION
+      putExtra(PrayerAzanDelivery.EXTRA_AZAN_TRUSTED, true)
+      flags = launchFlags
     }
     return PendingIntent.getActivity(
       context,

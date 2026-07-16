@@ -22,7 +22,6 @@ describe("scheduleFullScreenAzanAlarmsForResult", () => {
       scheduledCount: 1,
       identifiers: ["test-fajr"],
       exactAlarmPermissionGranted: false,
-      fullScreenIntentPermissionGranted: true,
     });
     expect(result.accepted).toBe(false);
     expect(result.identifiers.size).toBe(0);
@@ -33,7 +32,6 @@ describe("scheduleFullScreenAzanAlarmsForResult", () => {
       scheduledCount: 1,
       identifiers: ["test-fajr"],
       exactAlarmPermissionGranted: true,
-      fullScreenIntentPermissionGranted: true,
     });
     expect(result.accepted).toBe(true);
   });

@@ -1,6 +1,8 @@
 import type { Qcf4PageJson, Qcf4Word, Qcf4WordType } from "../qcf4Types";
 import {
   QCF4_EXTERNAL_SURAH_FRAME_RESERVE,
+  QCF4_LANDSCAPE_PHONE_LINE_PADDING,
+  QCF4_LANDSCAPE_PHONE_LINE_SCALE_X,
   QCF4_PHONE_GLYPH_MAX_QCOM,
   QCF4_PHONE_GLYPH_SCALE_QCOM,
   QCF4_PHONE_NATIVE_SAFE_INSET,
@@ -10,6 +12,7 @@ import {
   QCF4_RENDER_LINE_COUNT,
   buildQcf4RenderableLines,
   computeQcf4LineMetrics,
+  hatimQcf4GlyphMetrics,
   qcf4EffectiveLineWidth,
   qcf4MetricLineCount,
   qcf4SafeGlyphSizeForLine,
@@ -19,6 +22,8 @@ import {
   computeMushafBookPageBox,
   mushafBookNativeContentWidth,
 } from "../mushafBookPageLayout";
+import { resolveHatimMushafLayout } from "../hatimMushafLayoutPolicy";
+import { HATIM_UNIFIED_ARABIC_FONT_SIZE } from "../mushafTextScale";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const qcf4Page1 = require("../../../assets/quran/qcf4/pages/001.json") as Qcf4PageJson;
@@ -193,11 +198,26 @@ describe("mushafQcf4Layout", () => {
     expect(Math.abs(surahStart.lineHeight - normal.lineHeight)).toBeLessThanOrEqual(2);
   });
 
-  it("keeps phone effective QCF4 line width readable after page safe insets", () => {
-    expect(QCF4_PHONE_NATIVE_SAFE_INSET).toBeGreaterThanOrEqual(12);
-    expect(qcf4EffectiveLineWidth(354 - QCF4_PHONE_NATIVE_SAFE_INSET * 2)).toBeGreaterThanOrEqual(220);
-    expect(qcf4EffectiveLineWidth(354 - QCF4_PHONE_NATIVE_SAFE_INSET * 2)).toBeLessThanOrEqual(230);
-    expect(qcf4EffectiveLineWidth(390 - QCF4_PHONE_WEB_SAFE_INSET * 2)).toBeGreaterThanOrEqual(245);
+  it("keeps phone effective QCF4 line width readable after ayah edge inset only", () => {
+    const layout = resolveHatimMushafLayout(390, "android");
+    const effective = qcf4EffectiveLineWidth(layout.bookPageWidth, layout.linePadding, layout.lineScaleX);
+    expect(effective).toBeGreaterThanOrEqual(300);
+    expect(effective).toBeLessThanOrEqual(390);
+  });
+
+  it("landscape phone fillViewport uses full pager width", () => {
+    const { pageWidth, pageHeight } = computeMushafBookPageBox(800, 360, 0, true, {
+      horizontalSafeInset: 0,
+      fillViewport: true,
+    });
+    expect(pageWidth).toBe(800);
+    expect(pageHeight).toBeGreaterThanOrEqual(300);
+    const landscapeLine = qcf4EffectiveLineWidth(
+      pageWidth,
+      QCF4_LANDSCAPE_PHONE_LINE_PADDING,
+      QCF4_LANDSCAPE_PHONE_LINE_SCALE_X
+    );
+    expect(landscapeLine).toBeGreaterThanOrEqual(760);
   });
 
   it("clamps phone glyph size so text line height never exceeds its row", () => {
@@ -302,5 +322,16 @@ describe("mushafQcf4Layout", () => {
       expect(renderLines.length).toBeGreaterThan(0);
       expect(Math.ceil(glyphSize * 1.46 * 1.04)).toBeLessThanOrEqual(lineHeight - 2);
     }
+  });
+
+  it("hatimQcf4GlyphMetrics keeps glyph line height inside the line slot", () => {
+    for (const slot of [32, 35, 40, 44]) {
+      const { glyphSize, glyphLineHeight } = hatimQcf4GlyphMetrics(slot);
+      expect(glyphLineHeight).toBeLessThanOrEqual(slot);
+      expect(glyphSize).toBeLessThanOrEqual(HATIM_UNIFIED_ARABIC_FONT_SIZE);
+      expect(glyphSize).toBeGreaterThanOrEqual(1);
+    }
+    const wide = hatimQcf4GlyphMetrics(44);
+    expect(wide.glyphSize).toBe(HATIM_UNIFIED_ARABIC_FONT_SIZE);
   });
 });

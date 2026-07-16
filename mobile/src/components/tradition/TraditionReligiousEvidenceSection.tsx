@@ -11,6 +11,7 @@ import {
   type TraditionEvidenceRef,
 } from "../../content/traditionReligiousEvidence";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 
 const tg = kk.features.traditionGuide;
 
@@ -108,6 +109,7 @@ function EvidenceBlockCard({
 }
 
 export function TraditionReligiousEvidenceSection({ topicId, palette, nav, tr }: Props) {
+  useAppLocale();
   const blocks = getTraditionReligiousEvidence(topicId);
   const styles = useMemo(() => makeStyles(palette), [palette]);
 

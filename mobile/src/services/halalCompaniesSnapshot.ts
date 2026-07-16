@@ -1,6 +1,7 @@
 /**
- * Halal Damu companies — CDN snapshot (instant hub after cache; APK-да bundled жоқ).
+ * Halal Damu companies — CDN snapshot (instant hub; APK bundled sync require).
  */
+import { Platform } from "react-native";
 import type { HalalDamuCompanyCard } from "../api/halalDamuWp";
 import { getHalalCompaniesSnapshotUrl } from "../config/halalCompaniesSnapshotBase";
 import { tryLoadBundledJson } from "../utils/loadBundledJson";
@@ -60,6 +61,7 @@ export function snapshotRowToCompanyCard(row: HalalCompanySnapshotRow): HalalDam
   const lat = row.lat != null && Number.isFinite(row.lat) ? row.lat : null;
   const lon = row.lon != null && Number.isFinite(row.lon) ? row.lon : null;
   return {
+    ...emptyCardFields(),
     id: row.id,
     title: row.title,
     legalName: row.legalName ?? null,
@@ -67,23 +69,18 @@ export function snapshotRowToCompanyCard(row: HalalCompanySnapshotRow): HalalDam
     categoryType: row.categoryType ?? null,
     certificateStatus: row.certificateStatus ?? null,
     address: row.address ?? null,
-    ...emptyCardFields(),
     lat,
     lon,
   };
 }
 
 export async function ensureHalalCompaniesSnapshotLoaded(): Promise<HalalCompaniesSnapshotBundle | null> {
+  const sync = ensureBundledSnapshotSync();
+  if (sync) return sync;
   if (bundledCache) return bundledCache;
   if (!bundledLoadPromise) {
     bundledLoadPromise = tryLoadBundledJson<HalalCompaniesSnapshotBundle>("halal-companies-snapshot.json")
-      .then((data) => {
-        if (data?.items?.length) {
-          bundledCache = data;
-          bundledCardsCache = data.items.map(snapshotRowToCompanyCard);
-        }
-        return bundledCache;
-      })
+      .then((data) => applyBundledSnapshot(data))
       .finally(() => {
         bundledLoadPromise = null;
       });
@@ -91,14 +88,39 @@ export async function ensureHalalCompaniesSnapshotLoaded(): Promise<HalalCompani
   return bundledLoadPromise;
 }
 
-function getBundledSnapshot(): HalalCompaniesSnapshotBundle | null {
+function applyBundledSnapshot(data: HalalCompaniesSnapshotBundle | null): HalalCompaniesSnapshotBundle | null {
+  if (!data?.items?.length) return bundledCache;
+  bundledCache = data;
+  bundledCardsCache = data.items.map(snapshotRowToCompanyCard);
   return bundledCache;
 }
 
-/** Sync — cache/фон жүктелгеннен кейін ғана толық тізім. */
+function apkHalalCompaniesSnapshot(): HalalCompaniesSnapshotBundle | null {
+  if (Platform.OS === "web") return null;
+  try {
+    // Lazy require — Halal экраны ашылғанша JSON parse болмасын.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const data = require("../../assets/bundled/halal-companies-snapshot.json") as HalalCompaniesSnapshotBundle;
+    return Array.isArray(data?.items) && data.items.length ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function ensureBundledSnapshotSync(): HalalCompaniesSnapshotBundle | null {
+  if (bundledCache) return bundledCache;
+  return applyBundledSnapshot(apkHalalCompaniesSnapshot());
+}
+
+function getBundledSnapshot(): HalalCompaniesSnapshotBundle | null {
+  return bundledCache ?? ensureBundledSnapshotSync();
+}
+
+/** Sync — APK bundled немесе бұрын жүктелген кэш. */
 export function getHalalCompaniesBundledCards(): HalalDamuCompanyCard[] {
-  if (bundledCardsCache) return bundledCardsCache;
-  return [];
+  if (bundledCardsCache?.length) return bundledCardsCache;
+  ensureBundledSnapshotSync();
+  return bundledCardsCache ?? [];
 }
 
 export function getHalalCompaniesBundledSyncedAt(): string | null {
@@ -107,6 +129,13 @@ export function getHalalCompaniesBundledSyncedAt(): string | null {
 
 export function getHalalCompaniesBundledCount(): number {
   return getHalalCompaniesBundledCards().length;
+}
+
+export function releaseHalalCompaniesSnapshotMemory(): void {
+  bundledCache = null;
+  bundledCardsCache = null;
+  bundledLoadPromise = null;
+  cdnHydrateInFlight = null;
 }
 
 /** CDN snapshot — bundled-тан жаңарақ болса жадқа жүктейді. */

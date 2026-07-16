@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Platform,
   StyleSheet,
   Text,
@@ -11,8 +12,9 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
+import { getCurrentLocale, useAppLocale } from "../../i18n/runtime";
 import { surahDisplayTitle } from "../../constants/surahTitleKk";
-import { searchQuranAyahs, type QuranAyahSearchHit } from "../../quran/searchQuranAyahs";
+import { prefetchQuranAyahSearch, searchQuranAyahsLocal, type QuranAyahSearchHit } from "../../quran/searchQuranAyahs";
 import { beginLatestRequest } from "../../utils/latestRequestGuard";
 
 type Props = {
@@ -20,11 +22,22 @@ type Props = {
   isDark: boolean;
   surahEnglishNames: Map<number, string>;
   onOpenAyah: (surah: number, ayah: number) => void;
+  autoFocus?: boolean;
+  listMaxHeight?: number;
 };
 
-const SEARCH_DEBOUNCE_MS = 320;
+const SEARCH_DEBOUNCE_MS = 280;
+const SEARCH_RESULT_LIMIT = 80;
 
-export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenAyah }: Props) {
+export function QuranAyahWordSearch({
+  colors,
+  isDark,
+  surahEnglishNames,
+  onOpenAyah,
+  autoFocus = false,
+  listMaxHeight,
+}: Props) {
+  useAppLocale();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<QuranAyahSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,7 +58,9 @@ export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenA
     const timer = setTimeout(() => {
       const { isCurrentRequest } = beginLatestRequest(requestSeqRef);
       setLoading(true);
-      void searchQuranAyahs(trimmed, { limit: 40 })
+      const locale = getCurrentLocale();
+      void prefetchQuranAyahSearch(locale)
+        .then(() => searchQuranAyahsLocal(trimmed, SEARCH_RESULT_LIMIT, locale))
         .then((rows) => {
           if (!isCurrentRequest()) return;
           setHits(rows);
@@ -71,6 +86,32 @@ export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenA
     [onOpenAyah]
   );
 
+  const renderHit = useCallback(
+    ({ item }: { item: QuranAyahSearchHit }) => {
+      const english = surahEnglishNames.get(item.surah) ?? "";
+      const surahTitle = surahDisplayTitle(item.surah, english);
+      const refLine = kk.quran.ayahWordSearchHitLine(surahTitle, item.ayah);
+      return (
+        <Pressable
+          style={({ pressed }) => [styles.hitRow, pressed && { opacity: 0.92 }]}
+          onPress={() => onPick(item)}
+          accessibilityRole="button"
+          accessibilityLabel={`${refLine}. ${item.meaning}`}
+        >
+          <Text style={styles.hitRef} numberOfLines={1}>
+            {refLine}
+          </Text>
+          <Text style={styles.hitMeaning} numberOfLines={3}>
+            {item.meaning}
+          </Text>
+        </Pressable>
+      );
+    },
+    [onPick, styles.hitMeaning, styles.hitRef, styles.hitRow, surahEnglishNames]
+  );
+
+  const keyExtractor = useCallback((item: QuranAyahSearchHit) => `${item.surah}:${item.ayah}`, []);
+
   return (
     <View style={styles.wrap}>
       <View style={styles.searchWrap}>
@@ -83,6 +124,7 @@ export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenA
           style={styles.searchInput}
           autoCorrect={false}
           autoCapitalize="none"
+          autoFocus={autoFocus}
           accessibilityLabel={kk.quran.ayahWordSearchPlaceholder}
           returnKeyType="search"
         />
@@ -107,29 +149,19 @@ export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenA
         <Text style={styles.emptyTxt}>{kk.quran.ayahWordSearchEmpty}</Text>
       ) : null}
       {hits.length > 0 ? (
-        <View style={styles.results}>
-          {hits.map((row) => {
-            const english = surahEnglishNames.get(row.surah) ?? "";
-            const surahTitle = surahDisplayTitle(row.surah, english);
-            const refLine = kk.quran.ayahWordSearchHitLine(surahTitle, row.ayah);
-            return (
-              <Pressable
-                key={`${row.surah}:${row.ayah}`}
-                style={({ pressed }) => [styles.hitRow, pressed && { opacity: 0.92 }]}
-                onPress={() => onPick(row)}
-                accessibilityRole="button"
-                accessibilityLabel={`${refLine}. ${row.meaning}`}
-              >
-                <Text style={styles.hitRef} numberOfLines={1}>
-                  {refLine}
-                </Text>
-                <Text style={styles.hitMeaning} numberOfLines={3}>
-                  {row.meaning}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        <FlatList
+          data={hits}
+          keyExtractor={keyExtractor}
+          renderItem={renderHit}
+          style={[styles.results, listMaxHeight != null ? { maxHeight: listMaxHeight } : null]}
+          contentContainerStyle={styles.resultsContent}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled
+          initialNumToRender={12}
+          maxToRenderPerBatch={16}
+          windowSize={7}
+          removeClippedSubviews={Platform.OS === "android"}
+        />
       ) : null}
     </View>
   );
@@ -138,6 +170,7 @@ export function QuranAyahWordSearch({ colors, isDark, surahEnglishNames, onOpenA
 function makeStyles(colors: ThemeColors, isDark: boolean) {
   return StyleSheet.create({
     wrap: {
+      flexGrow: 1,
       marginBottom: 10,
     },
     searchWrap: {
@@ -179,7 +212,10 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     results: {
       marginTop: 8,
+    },
+    resultsContent: {
       gap: 6,
+      paddingBottom: 4,
     },
     hitRow: {
       borderRadius: 12,
@@ -188,6 +224,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       backgroundColor: isDark ? "rgba(255,255,255,0.04)" : colors.card,
       paddingHorizontal: 12,
       paddingVertical: 10,
+      marginBottom: 6,
     },
     hitRef: {
       color: colors.accent,

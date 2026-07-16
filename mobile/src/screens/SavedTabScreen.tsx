@@ -13,8 +13,7 @@ import { loadAyahMarkers, type AyahMarkerRecord } from "../storage/quranAyahMark
 import { hatimProgressFraction, loadHatimProgress, loadHatimResume, type HatimResume } from "../storage/hatimProgress";
 import { loadHalalFavorites, type HalalFavoriteCompany } from "../storage/halalLocalPrefs";
 import { surahDisplayTitle } from "../constants/surahTitleKk";
-import { kk } from "../i18n/kk";
-import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { useI18n } from "../i18n/useI18n";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 
 type SavedSnapshot = {
@@ -52,7 +51,8 @@ function countLine(label: string, count: number, total?: number): string {
 export function SavedTabScreen() {
   const { colors } = useAppTheme();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
-  const { tr } = useKkAutoTranslator();
+  const t = useI18n();
+  const st = t.navigation.savedTab;
   const [snapshot, setSnapshot] = useState<SavedSnapshot>(() => emptySnapshot());
   const [loading, setLoading] = useState(true);
   useTabHomeBackHeader(navigation, colors);
@@ -106,7 +106,10 @@ export function SavedTabScreen() {
     snapshot.halalFavorites.length > 0;
 
   const openMushaf = (surah: number, ayah = 1) => {
-    navigateToQuranMushafBook({ focusSurah: surah, focusAyah: ayah }, navigation);
+    navigateToQuranMushafBook(
+      { focusSurah: surah, focusAyah: ayah, continuousMushaf: true },
+      navigation
+    );
   };
 
   return (
@@ -122,25 +125,21 @@ export function SavedTabScreen() {
           <MaterialIcons name="bookmark" size={26} color={colors.accent} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>{kk.navigation.tabSaved}</Text>
-          <Text style={styles.sub}>{kk.dashboard.savedTabHint}</Text>
+          <Text style={styles.title}>{t.navigation.tabSaved}</Text>
+          <Text style={styles.sub}>{t.dashboard.savedTabHint}</Text>
         </View>
       </View>
 
-      {loading ? <Text style={styles.muted}>{kk.common.loading}</Text> : null}
+      {loading ? <Text style={styles.muted}>{t.common.loading}</Text> : null}
 
       {!loading && !hasSaved ? (
         <View style={styles.emptyCard}>
           <MaterialIcons name="auto-stories" size={32} color={colors.accent} />
-          <Text style={styles.emptyTitle}>{tr("Әзірге сақталған дерек жоқ")}</Text>
-          <Text style={styles.emptyText}>
-            {tr(
-              "Құраннан bookmark қойсаңыз, хатымды жалғастырсаңыз немесе Halal ұйымын таңдаулыға қоссаңыз, бәрі осы жерде жиналады."
-            )}
-          </Text>
+          <Text style={styles.emptyTitle}>{st.emptyTitle}</Text>
+          <Text style={styles.emptyText}>{st.emptyHint}</Text>
           <View style={styles.quickRow}>
-            <QuickButton label={tr("Хатым")} onPress={() => navigateToMoreStackScreen("Hatim", undefined, navigation)} />
-            <QuickButton label={tr("Халал")} onPress={() => navigateToMoreStackScreen("Halal", undefined, navigation)} />
+            <QuickButton label={st.quickHatim} onPress={() => navigateToMoreStackScreen("Hatim", undefined, navigation)} />
+            <QuickButton label={st.quickHalal} onPress={() => navigateToMoreStackScreen("Halal", undefined, navigation)} />
           </View>
         </View>
       ) : null}
@@ -148,9 +147,9 @@ export function SavedTabScreen() {
       {snapshot.lastRead ? (
         <SavedCard
           icon="history"
-          title={tr("Соңғы оқылған аят")}
+          title={st.lastAyahTitle}
           body={surahLine(snapshot.lastRead.surah, snapshot.lastRead.ayah)}
-          action={tr("Ашу")}
+          action={st.open}
           onPress={() => openMushaf(snapshot.lastRead!.surah, snapshot.lastRead!.ayah)}
         />
       ) : null}
@@ -158,17 +157,17 @@ export function SavedTabScreen() {
       {snapshot.hatimResume || snapshot.hatimReadCount > 0 ? (
         <SavedCard
           icon="menu-book"
-          title={tr("Хатым прогресі")}
+          title={st.hatimProgressTitle}
           body={
             snapshot.hatimResume
               ? `${surahLine(snapshot.hatimResume.surah, snapshot.hatimResume.ayah)} · ${countLine(
-                  tr("Оқылған сүре"),
+                  st.readSurahLabel,
                   snapshot.hatimReadCount,
                   114
                 )}`
-              : countLine(tr("Оқылған сүре"), snapshot.hatimReadCount, 114)
+              : countLine(st.readSurahLabel, snapshot.hatimReadCount, 114)
           }
-          action={snapshot.hatimResume ? tr("Жалғастыру") : tr("Хатымды ашу")}
+          action={snapshot.hatimResume ? st.continue : st.openHatim}
           onPress={() =>
             snapshot.hatimResume
               ? openMushaf(snapshot.hatimResume.surah, snapshot.hatimResume.ayah)
@@ -178,14 +177,14 @@ export function SavedTabScreen() {
       ) : null}
 
       {snapshot.ayahMarkers.length > 0 ? (
-        <Section title={`${tr("Белгіленген аяттар")} · ${snapshot.ayahMarkers.length}`}>
+        <Section title={`${st.markedAyahs} · ${snapshot.ayahMarkers.length}`}>
           {snapshot.ayahMarkers.slice(0, 5).map((row) => (
             <SavedCard
               key={row.key}
               icon="label"
               title={surahLine(row.surah, row.ayah)}
-              body={row.marker.note.trim() || tr("Белгі қойылған аят")}
-              action={tr("Ашу")}
+              body={row.marker.note.trim() || st.markedAyahDefault}
+              action={st.open}
               onPress={() => openMushaf(row.surah, row.ayah)}
               compact
             />
@@ -194,7 +193,7 @@ export function SavedTabScreen() {
       ) : null}
 
       {snapshot.bookmarkedSurahs.length > 0 ? (
-        <Section title={`${tr("Bookmark сүрелер")} · ${snapshot.bookmarkedSurahs.length}`}>
+        <Section title={`${st.bookmarkSurahs} · ${snapshot.bookmarkedSurahs.length}`}>
           <View style={styles.chipWrap}>
             {snapshot.bookmarkedSurahs.slice(0, 18).map((surah) => (
               <Pressable
@@ -211,14 +210,14 @@ export function SavedTabScreen() {
       ) : null}
 
       {snapshot.halalFavorites.length > 0 ? (
-        <Section title={`${tr("Halal таңдаулылар")} · ${snapshot.halalFavorites.length}`}>
+        <Section title={`${st.halalFavorites} · ${snapshot.halalFavorites.length}`}>
           {snapshot.halalFavorites.slice(0, 5).map((item) => (
             <SavedCard
               key={item.id}
               icon="verified"
               title={item.title}
-              body={tr("Halal ұйымы таңдаулыға қосылған")}
-              action={tr("Halal ашу")}
+              body={st.halalFavoriteBody}
+              action={st.openHalal}
               onPress={() => navigateToMoreStackScreen("Halal", undefined, navigation)}
               compact
             />

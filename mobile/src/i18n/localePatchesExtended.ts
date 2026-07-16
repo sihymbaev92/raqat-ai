@@ -17,6 +17,8 @@ const namazGuideRu: ExtendedPatch["namazGuide"] = {
   screenTitle: "Учебник намаза",
   intro:
     "Изучайте намаз по шагам: сначала омовение, затем от намерения до саляма. Уточняйте фикх у знающего наставника.",
+  scholarReviewBanner:
+    "Материал подготовлен по ханафитскому фикху; до официального одобрения учёного используйте только как учебник.",
   hubTitle: "Центр намаза",
   hubSub: "Быстрые ссылки и прогресс обучения",
   quickPrayerTimes: "Время намаза",
@@ -55,6 +57,8 @@ const namazGuideEn: ExtendedPatch["namazGuide"] = {
   screenTitle: "Prayer Guide",
   intro:
     "Learn prayer step by step: wudu first, then from intention to salam. Confirm fiqh details with a qualified teacher.",
+  scholarReviewBanner:
+    "Content follows Hanafi fiqh; until scholar sign-off, use as a study guide only.",
   hubTitle: "Prayer hub",
   hubSub: "Quick links and learning progress",
   quickPrayerTimes: "Prayer times",
@@ -93,6 +97,8 @@ const namazGuideAr: ExtendedPatch["namazGuide"] = {
   screenTitle: "دليل الصلاة",
   intro:
     "تعلّم الصلاة خطوة بخطوة: الوضوء أولاً، ثم من النية إلى السلام. راجع الأحكام الفقهية مع عالم مختص.",
+  scholarReviewBanner:
+    "المحتوى وفق الفقه الحنفي؛ إلى حين اعتماد عالم، استخدمه كدليل تعليمي فقط.",
   hubTitle: "مركز الصلاة",
   hubSub: "روابط سريعة وتقدم التعلم",
   quickPrayerTimes: "مواقيت الصلاة",
@@ -103,7 +109,7 @@ const namazGuideAr: ExtendedPatch["namazGuide"] = {
   wuduTheoryTitle: "نظرية إضافية",
   wuduTheorySubtitle: "أنواع الوضوء، ما ينقضه، ملاحظات للرجال والنساء",
   sectionNamazMovesTitle: "حركات الصلاة والسلام (مع صور)",
-  learningWuduHeading: "الوضوء: تعلم خطوة بخطوة (عربي، транскription)",
+  learningWuduHeading: "الوضوء: تعلّم خطوة بخطوة (عربي ونقحرة)",
   learningCommonMistakes: "أخطاء شائعة",
   learningCheckpoint: "تحقق من نفسك",
   stepMarkDone: "أتممت هذه الخطوة",
@@ -116,7 +122,7 @@ const namazGuideAr: ExtendedPatch["namazGuide"] = {
   unifiedNamazTitle: "دليل الصلاة (كامل)",
   unifiedNamazSubtitle: "صورة، شرح، نص عربي، تلاوة ومعنى.",
   unifiedNamazIntro:
-    "الترتيب: النية والتكbir → القيام → الركوع → السجود → الجلسة الأخيرة → السلام. افتح كل قسم واحفظ التلاوة.",
+    "الترتيب: النية والتكبير → القيام → الركوع → السجود → الجلسة الأخيرة → السلام. افتح كل قسم واحفظ التلاوة.",
   imageTapHint: "الصورة أدناه؛ اضغط للملء الشاشة.",
   closeImageLightbox: "إغلاق",
   openImageA11y: "فتح الصورة",
@@ -162,6 +168,18 @@ const prayerNotifAr: ExtendedPatch["prayer"] = {
   presets: "مدن كازاخستان",
 };
 
+const prayerNotifTr: ExtendedPatch["prayer"] = {
+  enableNotif: "Bildirimleri aç",
+  notifHint:
+    "Bildirimler sistem takvimiyle planlanır — uygulama kapalıyken de zamanında gelmelidir. Ezan açıksa namaz vaktinde tam ekran sayfa açılır.",
+  notifSoundSection: "Namaz bildirim sesi",
+  notifSoundHint: "Seçiminiz planlı uyarılara uygulanır. Önizlemek için ▶ dokunun.",
+  iftarExtra: "İftar hatırlatması (Akşam)",
+  iftarHint: "İftar vaktinde ek hatırlatma",
+  mosqueShiftHint: "Cami saati kayması programa uygulanır.",
+  presets: "Kazakistan şehirleri",
+};
+
 const settingsExtendedRu: ExtendedPatch["settings"] = {
   prayerSettingsTitle: "Настройки намаза",
   prayerSettingsSubtitle: "Город, источник времени, уведомления и звук азана.",
@@ -190,8 +208,7 @@ const settingsExtendedRu: ExtendedPatch["settings"] = {
   diagnosticsSectionSubtitle: "Версия, API и разрешения азана в одном месте.",
   diagnosticsDetailSchedule: (scheduled, azan) =>
     `Расписание намаза: ${scheduled} · Native azan: ${azan}`,
-  diagnosticsDetailPermissions: (exact, fullscreen) =>
-    `Точный будильник: ${exact} · Полный экран: ${fullscreen}`,
+  diagnosticsDetailPermissions: (exact) => `Точный будильник: ${exact}`,
   diagnosticsApiBase: (base) => `API base: ${base}`,
   diagnosticsApiNotSet: "не задан",
   themeSchemeNoir: "Тёмный",
@@ -212,7 +229,7 @@ const settingsExtendedRu: ExtendedPatch["settings"] = {
   notifOpenSystemSettings: "Открыть системные настройки",
   prayerNotifDiagnosticsTitle: "Диагностика уведомлений",
   prayerNotifDiagnosticsHint: "Статус разрешений и запланированных намазов.",
-  accountLoginCompactHint: "Gmail, Apple или телефон — синхронизация хатма и AI.",
+  accountLoginCompactHint: "Gmail, Apple или телефон — синхронизация хатма и закладок Корана.",
 };
 
 const settingsExtendedEn: ExtendedPatch["settings"] = {
@@ -243,8 +260,7 @@ const settingsExtendedEn: ExtendedPatch["settings"] = {
   diagnosticsSectionSubtitle: "Version, API and adhan permissions in one place.",
   diagnosticsDetailSchedule: (scheduled, azan) =>
     `Prayer schedule: ${scheduled} · Native adhan: ${azan}`,
-  diagnosticsDetailPermissions: (exact, fullscreen) =>
-    `Exact alarm: ${exact} · Full screen: ${fullscreen}`,
+  diagnosticsDetailPermissions: (exact) => `Exact alarm: ${exact}`,
   diagnosticsApiBase: (base) => `API base: ${base}`,
   diagnosticsApiNotSet: "not set",
   themeSchemeNoir: "Dark",
@@ -265,7 +281,87 @@ const settingsExtendedEn: ExtendedPatch["settings"] = {
   notifOpenSystemSettings: "Open system settings",
   prayerNotifDiagnosticsTitle: "Notification diagnostics",
   prayerNotifDiagnosticsHint: "Permission status and scheduled prayers.",
-  accountLoginCompactHint: "Gmail, Apple or phone — syncs hatim and AI history.",
+  accountLoginCompactHint: "Gmail, Apple or phone — syncs hatim and Quran bookmarks.",
+};
+
+const hadithEnGap: ExtendedPatch["hadith"] = {
+  letterIndexHint:
+    "Hadiths are ordered within the book (№ 1, 2, 3…) and grouped by chapter. Chapter titles come from the export source.",
+};
+
+const uzGap: Partial<ExtendedPatch> = {
+  namazGuide: { learningWuduHeading: "Tahorat: bosqichma-bosqich o'qitish (arabcha, o'qilish)" },
+  aiChat: { apiMissingDetail: "Xizmatga ulanib bo'lmadi. Keyinroq qayta urinib ko'ring." },
+  kmdbHub: {
+    officialSitesLead:
+      "Rasmiy matnni ochib o'qing, tushunmagan joyini AI orqali manbaga tayangan holda so'rang.",
+    tabMosques: "Masjidlar",
+    tileMosques: "Masjidlar",
+  },
+  features: {
+    halalHeroTagRegistry: "Rasmiy reestr",
+    halalHubStubBanner:
+      "Xarita nuqtasidan vaqtinchalik kartochka. To'liq ma'lumot onlayn bo'lganda rasmiy katalogdan yuklanadi.",
+    hajjScanCdnHint: "Skan sahifalar tarmoq orqali yuklanadi; matn oflayn mavjud.",
+  },
+  prayer: {
+    notifSoundHint:
+      "Tanlov rejalashtirilgan bildirishnomalar va «vaqt kirdi» ekraniga qo'llaniladi. ▶ orqali azonni tinglab ko'ring.",
+  },
+  settings: {
+    diagnosticsSectionTitle: "Ilova holati",
+    diagnosticsApiNotSet: "o'rnatilmagan",
+    prayerNotifDiagnosticsHint:
+      "Fresh install qabulida ruxsat, channel va rejalashtirilgan namoz sonini shu yerdan tekshiring.",
+  },
+};
+
+const trGap: Partial<ExtendedPatch> = {
+  namazGuide: { learningWuduHeading: "Abdest: adım adım öğrenme (Arapça, okunuş)" },
+  aiChat: { apiMissingDetail: "Hizmete bağlanılamadı. Daha sonra tekrar deneyin." },
+  kmdbHub: {
+    officialSitesLead:
+      "Resmi metni açıp okuyun; anlamadığınız yeri AI'dan kaynağa dayanarak sorun.",
+    tabMosques: "Camiler",
+    tileMosques: "Camiler",
+  },
+  knowledgePortal: { bilimTitle: "Dini bilgi" },
+  features: {
+    halalHeroTagRegistry: "Resmi kayıt",
+    halalHubStubBanner:
+      "Harita işaretinden geçici kart. Tam bilgi çevrimiçi olduğunda resmi kayıttan yüklenir.",
+    hajjScanCdnHint: "Tarama sayfaları ağ üzerinden yüklenir; metin çevrimdışı kalır.",
+  },
+  quran: {
+    quranAudioStreamingNotice:
+      "Seçilen ses tam indirilmedi. Dinlemek için internet gerekir; çalınan ayetler önbelleğe kaydedilir.",
+  },
+  settings: {
+    diagnosticsSectionTitle: "Uygulama durumu",
+    diagnosticsApiNotSet: "ayarlanmadı",
+    prayerNotifDiagnosticsHint:
+      "Fresh install kabulünde izin, kanal ve planlanan namaz sayısını buradan kontrol edin.",
+  },
+};
+
+const arGap: Partial<ExtendedPatch> = {
+  aiChat: { apiMissingDetail: "تعذّر الاتصال بالخدمة. حاول مرة أخرى لاحقًا." },
+  kmdbHub: {
+    officialSitesLead:
+      "افتح النص الرسمي واقرأه، واسأل الذكاء الاصطناعي عما لا تفهمه استنادًا إلى المصدر.",
+    tabMosques: "المساجد",
+    tileMosques: "المساجد",
+  },
+  features: {
+    halalHeroTagRegistry: "السجل الرسمي",
+    halalHubStubBanner:
+      "بطاقة مؤقتة من علامة الخريطة. تُحمَّل التفاصيل الكاملة من السجل عند الاتصال بالإنترنت.",
+    hajjScanCdnHint: "صفحات المسح تُحمَّل عبر الشبكة؛ النص متاح دون اتصال.",
+  },
+  settings: {
+    prayerNotifDiagnosticsHint:
+      "في Fresh install تحقق هنا من الإذن والقناة وعدد الصلوات المجدولة.",
+  },
 };
 
 const settingsExtendedAr: ExtendedPatch["settings"] = {
@@ -287,8 +383,7 @@ const settingsExtendedAr: ExtendedPatch["settings"] = {
   diagnosticsSectionTitle: "حالة التطبيق",
   diagnosticsDetailSchedule: (scheduled, azan) =>
     `جدول الصلاة: ${scheduled} · أذان أصلي: ${azan}`,
-  diagnosticsDetailPermissions: (exact, fullscreen) =>
-    `منبه دقيق: ${exact} · ملء الشاشة: ${fullscreen}`,
+  diagnosticsDetailPermissions: (exact) => `منبه دقيق: ${exact}`,
   diagnosticsApiBase: (base) => `API base: ${base}`,
   diagnosticsApiNotSet: "غير مضبوط",
   notifPermission: "اسمح بالإشعارات في إعدادات النظام.",
@@ -301,11 +396,28 @@ export const EXTENDED_LOCALE_PATCHES = {
     namazGuide: namazGuideRu,
     prayer: prayerNotifRu,
     settings: settingsExtendedRu,
+    features: {
+      halalHubStubBanner:
+        "Временная карточка с карты. Полные данные загружаются из реестра при подключении к сети.",
+      hajjScanCdnHint: "Скан-страницы загружаются по сети; текст доступен офлайн.",
+    },
+    hadith: {
+      corpusArabicOnlyBadge: "Арабский оригинал",
+    },
   },
   en: {
     namazGuide: namazGuideEn,
     prayer: prayerNotifEn,
     settings: settingsExtendedEn,
+    hadith: {
+      ...hadithEnGap,
+      corpusArabicOnlyBadge: "Arabic original",
+    },
+    features: {
+      halalHubStubBanner:
+        "Temporary map marker card. Full details load from the registry when online.",
+      hajjScanCdnHint: "Scan pages load over the network; text stays available offline.",
+    },
   },
   ky: {
     namazGuide: {
@@ -330,18 +442,29 @@ export const EXTENDED_LOCALE_PATCHES = {
       shortTitle: "Namoz",
       screenTitle: "Namoz qo'llanmasi",
       intro: namazGuideEn?.intro,
+      scholarReviewBanner:
+        "Mazmun hanafiy fiqhiga ko'ra tayyorlangan; rasmiy olim tasdig'i olgunicha faqat o'quv qo'llanma sifatida foydalaning.",
       wuduHeroTitle: "Tahorat",
       quizHeading: "Qisqa test (6 savol)",
+      learningWuduHeading: uzGap.namazGuide?.learningWuduHeading,
     },
     prayer: {
       enableNotif: "Bildirishnomalarni yoqish",
       notifHint: prayerNotifEn?.notifHint,
+      notifSoundHint: uzGap.prayer?.notifSoundHint,
     },
     settings: {
       languageAr: "العربية",
       languageTr: "Türkçe",
       languageSectionSub: "Menyu va navigatsiya tanlangan tilda.",
+      diagnosticsSectionTitle: uzGap.settings?.diagnosticsSectionTitle,
+      diagnosticsApiNotSet: uzGap.settings?.diagnosticsApiNotSet,
+      prayerNotifDiagnosticsHint: uzGap.settings?.prayerNotifDiagnosticsHint,
     },
+    aiChat: uzGap.aiChat,
+    kmdbHub: uzGap.kmdbHub,
+    features: uzGap.features,
+    hadith: { corpusArabicOnlyBadge: "Arab asl nusxa" },
   },
   tr: {
     namazGuide: {
@@ -349,22 +472,41 @@ export const EXTENDED_LOCALE_PATCHES = {
       screenTitle: "Namaz rehberi",
       intro:
         "Namazı adım adım öğrenin: önce abdest, sonra niyetten selama kadar. Fıkhi detayları hocanıza sorun.",
+      scholarReviewBanner:
+        "İçerik Hanefi fıkhına göre hazırlanmıştır; alim onayı alınana kadar yalnızca öğrenme rehberi olarak kullanın.",
       wuduHeroTitle: "Abdest",
       quizHeading: "Kısa test (6 soru)",
+      learningWuduHeading: trGap.namazGuide?.learningWuduHeading,
     },
-    prayer: prayerNotifRu,
+    prayer: prayerNotifTr,
     settings: {
       languageAr: "العربية",
       languageTr: "Türkçe",
       languageSectionSub: "Menü ve gezinme seçilen dilde çalışır.",
       sectionNotifications: "Bildirimler",
       sectionNotificationsSub: "Namaz hatırlatmaları ve ses.",
+      diagnosticsSectionTitle: trGap.settings?.diagnosticsSectionTitle,
+      diagnosticsApiNotSet: trGap.settings?.diagnosticsApiNotSet,
+      prayerNotifDiagnosticsHint: trGap.settings?.prayerNotifDiagnosticsHint,
     },
+    aiChat: trGap.aiChat,
+    kmdbHub: trGap.kmdbHub,
+    knowledgePortal: trGap.knowledgePortal,
+    features: trGap.features,
+    quran: trGap.quran,
+    hadith: { corpusArabicOnlyBadge: "Arapça asıl metin" },
   },
   ar: {
     namazGuide: namazGuideAr,
     prayer: prayerNotifAr,
-    settings: settingsExtendedAr,
+    settings: {
+      ...settingsExtendedAr,
+      prayerNotifDiagnosticsHint: arGap.settings?.prayerNotifDiagnosticsHint,
+    },
+    aiChat: arGap.aiChat,
+    kmdbHub: arGap.kmdbHub,
+    features: arGap.features,
+    hadith: { corpusArabicOnlyBadge: "النص العربي" },
   },
   zh: {},
   fa: {},

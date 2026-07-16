@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { RasterImage } from "@/ui/RasterImage";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -15,28 +15,14 @@ import {
   getTraditionTopicById,
   traditionCategoryLabel,
 } from "../content/traditionTopicsCatalog";
-import {
-  TraditionArticleCard,
-  TraditionOrnamentDivider,
-  TraditionSectionHeader,
-} from "../components/tradition/TraditionRedesignCards";
 import { TraditionReligiousEvidenceSection } from "../components/tradition/TraditionReligiousEvidenceSection";
-import { traditionEvidenceRefCount } from "../content/traditionReligiousEvidence";
 import { isTraditionFavorite, toggleTraditionFavorite } from "../storage/traditionFavorites";
-import { kk } from "../i18n/kk";
 import { useAutoTranslatedFields } from "../quran/useAutoTranslatedFields";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { useI18n } from "../i18n/useI18n";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KazakhTraditionTopicDetail">;
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
-type TabKey = "about" | "faith" | "steps" | "blessing";
-
-const TABS: Array<{ key: TabKey; label: string }> = [
-  { key: "about", label: "Дәстүр туралы" },
-  { key: "faith", label: "Дінмен ұштасуы" },
-  { key: "steps", label: "Қалай өтеді?" },
-  { key: "blessing", label: "Бата" },
-];
 
 function splitReligionLink(text: string) {
   const normalized = text.trim();
@@ -56,8 +42,8 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const nav = useNavigation<Nav>();
   const topic = getTraditionTopicById(route.params.topicId);
-  const [tab, setTab] = useState<TabKey>("about");
   const [favorite, setFavorite] = useState(false);
+  const [bataQuery, setBataQuery] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -72,7 +58,6 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
     [topic]
   );
   const howToSource = useMemo(() => topic?.howTo ?? [], [topic]);
-  /** Тұрақты рет: 0 title, 1 subtitle, 2 summary, 3 origin, 4 harmony, 5 limit, 6 blessing, 7 quote, 8.. howTo */
   const sourceFields = useMemo(
     () =>
       topic
@@ -92,14 +77,20 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   );
   const { values: tFields, translated } = useAutoTranslatedFields(sourceFields);
   const { tr } = useKkAutoTranslator();
-  const articles = useMemo(() => (topic ? getRelatedTraditionArticles(topic.id) : []), [topic]);
-  const audios = useMemo(() => (topic ? getRelatedTraditionAudios(topic.id) : []), [topic]);
-  const evidenceCount = useMemo(() => (topic ? traditionEvidenceRefCount(topic.id) : 0), [topic]);
+  const t = useI18n();
+  const relatedBlessings = useMemo(
+    () => (topic ? getRelatedTraditionAudios(topic.id, bataQuery) : []),
+    [topic, bataQuery]
+  );
+  const relatedArticles = useMemo(
+    () => (topic ? getRelatedTraditionArticles(topic.id) : []),
+    [topic]
+  );
 
   if (!topic) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>{tr("Дәстүр табылмады")}</Text>
+        <Text style={styles.missingTitle}>{t.features.traditionGuide.topicNotFound}</Text>
       </View>
     );
   }
@@ -108,71 +99,18 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   const tSubtitle = tFields[1] ?? topic.subtitle;
   const tSummary = tFields[2] ?? topic.summary;
   const tOrigin = tFields[3] ?? topic.origin;
-  const religion = { harmony: tFields[4] ?? religionSource.harmony, limit: tFields[5] ?? religionSource.limit };
+  const religion = {
+    harmony: tFields[4] ?? religionSource.harmony,
+    limit: tFields[5] ?? religionSource.limit,
+  };
   const tBlessing = tFields[6] ?? topic.blessing;
   const tQuote = tFields[7] ?? topic.quote;
   const tHowTo = tFields.slice(8);
+  const steps = tHowTo.length ? tHowTo : topic.howTo;
 
   const toggleFavorite = async () => {
     const next = await toggleTraditionFavorite("topic", topic.id);
     setFavorite(next.active);
-  };
-
-  const renderTabBody = () => {
-    if (tab === "faith") {
-      return (
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>{tr("Дінмен ұштасуы")}</Text>
-          <View style={styles.faithPoint}>
-            <MaterialIcons name="check-circle" size={18} color={palette.bannerBg} />
-            <View style={styles.faithPointText}>
-              <Text style={styles.faithPointTitle}>{tr("Ұштасуы")}</Text>
-              <Text style={styles.bodyText}>{religion.harmony}</Text>
-            </View>
-          </View>
-          {religion.limit ? (
-            <View style={styles.faithPoint}>
-              <MaterialIcons name="verified-user" size={18} color={palette.goldMuted} />
-              <View style={styles.faithPointText}>
-                <Text style={styles.faithPointTitle}>{tr("Шариғи шегі")}</Text>
-                <Text style={styles.bodyText}>{religion.limit}</Text>
-              </View>
-            </View>
-          ) : null}
-          <TraditionReligiousEvidenceSection topicId={topic.id} palette={palette} nav={nav} tr={tr} />
-        </View>
-      );
-    }
-    if (tab === "steps") {
-      return (
-        <View style={styles.timeline}>
-          {(tHowTo.length ? tHowTo : topic.howTo).map((line, index) => (
-            <View key={`${index}-${line.slice(0, 12)}`} style={styles.stepRow}>
-              <View style={styles.stepNo}>
-                <Text style={styles.stepNoText}>{index + 1}</Text>
-              </View>
-              <Text style={styles.stepText}>{line}</Text>
-            </View>
-          ))}
-        </View>
-      );
-    }
-    if (tab === "blessing") {
-      return (
-        <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>{tr("Бата мәтіні")}</Text>
-          <Text style={styles.blessingText}>{tBlessing}</Text>
-        </View>
-      );
-    }
-    return (
-      <View style={styles.infoCard}>
-        <Text style={styles.infoTitle}>{tr("Дәстүр туралы")}</Text>
-        <Text style={styles.bodyText}>{tSummary}</Text>
-        <Text style={[styles.infoTitle, { marginTop: 14 }]}>{tr("Шығу төркіні")}</Text>
-        <Text style={styles.bodyText}>{tOrigin}</Text>
-      </View>
-    );
   };
 
   return (
@@ -181,127 +119,140 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         <RasterImage source={topic.image} style={styles.heroImage} resizeMode="cover" />
         <View style={styles.heroShade} />
         <View style={styles.heroTop}>
-          <Pressable oyuBackdrop={false} onPress={() => nav.goBack()} hitSlop={8}>
+          <Pressable oyuBackdrop={false} onPress={() => nav.goBack()} hitSlop={8} accessibilityRole="button">
             <MaterialIcons name="arrow-back" size={22} color={palette.headerText} />
           </Pressable>
-          <View style={styles.heroActions}>
-            <Pressable oyuBackdrop={false} onPress={toggleFavorite} hitSlop={8}>
-              <MaterialIcons
-                name={favorite ? "bookmark" : "bookmark-border"}
-                size={22}
-                color={palette.headerText}
-              />
-            </Pressable>
-          </View>
+          <Pressable oyuBackdrop={false} onPress={toggleFavorite} hitSlop={8} accessibilityRole="button">
+            <MaterialIcons
+              name={favorite ? "bookmark" : "bookmark-border"}
+              size={22}
+              color={palette.headerText}
+            />
+          </Pressable>
         </View>
         <View style={styles.heroText}>
           <Text style={styles.heroTitle}>{tTitle}</Text>
-          <Text style={styles.heroSub}>{topic.categories.map((c) => tr(traditionCategoryLabel(c))).join(" · ")}</Text>
-        </View>
-      </View>
-
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryText}>{tSubtitle}</Text>
-      </View>
-
-      <Pressable
-        oyuBackdrop={false}
-        onPress={() => setTab("faith")}
-        style={({ pressed }) => [styles.faithSummaryCard, pressed && { opacity: 0.92 }]}
-        accessibilityRole="button"
-        accessibilityLabel={tr("Дінмен ұштасуын ашу")}
-      >
-        <View style={styles.faithSummaryIcon}>
-          <MaterialIcons name="mosque" size={20} color={palette.buttonGoldText} />
-        </View>
-        <View style={styles.faithSummaryText}>
-          <Text style={styles.faithSummaryTitle}>{tr("Дінмен ұштасуы")}</Text>
-          <Text style={styles.faithSummaryBody} numberOfLines={3}>
-            {religion.harmony}
+          <Text style={styles.heroSub}>
+            {topic.categories.map((c) => tr(traditionCategoryLabel(c))).join(" · ")}
           </Text>
-          {religion.limit ? (
-            <Text style={styles.faithSummaryLimit} numberOfLines={2}>
-              {tr("Шегі")}: {religion.limit}
-            </Text>
-          ) : null}
-          {evidenceCount > 0 ? (
-            <Text style={styles.faithSummaryEvidence}>
-              {tr(kk.features.traditionGuide.traditionEvidenceCount(evidenceCount))}
-            </Text>
-          ) : null}
         </View>
-        <MaterialIcons name="chevron-right" size={20} color={palette.goldMuted} />
-      </Pressable>
+      </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {TABS.map((item) => (
-          <Pressable
-            key={item.key}
-            oyuBackdrop={false}
-            onPress={() => setTab(item.key)}
-            style={({ pressed }) => [
-              styles.tab,
-              tab === item.key && styles.tabActive,
-              pressed && { opacity: 0.88 },
-            ]}
-          >
-            <Text style={[styles.tabText, tab === item.key && styles.tabTextActive]}>{tr(item.label)}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
+      <Text style={styles.lead}>{tSubtitle}</Text>
 
-      {renderTabBody()}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t.features.traditionGuide.aboutTraditionTitle}</Text>
+        <Text style={styles.body}>{tSummary}</Text>
+        <Text style={[styles.cardTitle, styles.cardTitleGap]}>{t.features.traditionGuide.originTitle}</Text>
+        <Text style={styles.body}>{tOrigin}</Text>
+      </View>
 
-      {audios.length ? (
-        <>
-          <TraditionSectionHeader title={tr("Бата мәтін үлгілері")} palette={palette} />
-          {audios.map((audio) => (
-            <View key={audio.id} style={styles.audioCard}>
-              <View style={styles.audioIcon}>
-                <MaterialIcons name="notes" size={18} color={palette.buttonGoldText} />
-              </View>
-              <View style={styles.audioTextCol}>
-                <Text style={styles.audioTitle}>{tr(audio.title)}</Text>
-                <Text style={styles.audioMeta}>
-                  {tr("мәтін үлгісі")} · {audio.duration} · {tr(audio.sourceLabel)}
-                </Text>
-                <Text style={styles.audioBody}>{tr(audio.text)}</Text>
-              </View>
-            </View>
-          ))}
-        </>
+      <View style={[styles.card, styles.faithCard]}>
+        <View style={styles.cardHead}>
+          <MaterialIcons name="mosque" size={18} color={palette.buttonGoldText} />
+          <Text style={styles.cardTitleInline}>{t.features.traditionGuide.religionLinkTitle}</Text>
+        </View>
+        <Text style={styles.body}>{religion.harmony}</Text>
+      </View>
+
+      {religion.limit ? (
+        <View style={[styles.card, styles.limitCard]}>
+          <View style={styles.cardHead}>
+            <MaterialIcons name="shield" size={18} color={palette.goldMuted} />
+            <Text style={styles.cardTitleInline}>{t.features.traditionGuide.superstitionLimitTitle}</Text>
+          </View>
+          <Text style={styles.body}>{religion.limit}</Text>
+        </View>
       ) : null}
 
-      {articles.length ? (
-        <>
-          <TraditionSectionHeader
-            title={tr("Мақалалар")}
-            action={tr("барлығы")}
-            palette={palette}
-            onPress={() => nav.navigate("KazakhTraditionArticles")}
-          />
-          {articles.slice(0, 2).map((article) => (
-            <TraditionArticleCard
-              key={article.id}
-              title={tr(article.title)}
-              excerpt={tr(article.excerpt)}
-              tag={tr(article.tag)}
-              palette={palette}
-              onPress={() => nav.navigate("KazakhTraditionArticles", { articleId: article.id })}
+      <TraditionReligiousEvidenceSection topicId={topic.id} palette={palette} nav={nav} tr={tr} />
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t.features.traditionGuide.howToHoldTitle}</Text>
+        {steps.map((line, index) => (
+          <View key={`${index}-${line.slice(0, 16)}`} style={styles.stepRow}>
+            <View style={styles.stepNo}>
+              <Text style={styles.stepNoText}>{index + 1}</Text>
+            </View>
+            <Text style={styles.stepText}>{line}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>{t.features.traditionGuide.bataTextsTitle}</Text>
+        <Text style={styles.body}>{tBlessing}</Text>
+        {topic.id === "bata-beru" ? (
+          <View style={styles.bataSearch}>
+            <MaterialIcons name="search" size={18} color={palette.goldMuted} />
+            <TextInput
+              value={bataQuery}
+              onChangeText={setBataQuery}
+              placeholder={tr("Іздеу: жол, той, бала, рамазан...")}
+              placeholderTextColor={palette.muted}
+              style={styles.bataSearchInput}
+              returnKeyType="search"
             />
+            {bataQuery ? (
+              <Pressable oyuBackdrop={false} onPress={() => setBataQuery("")} hitSlop={8}>
+                <MaterialIcons name="close" size={18} color={palette.muted} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+        {relatedBlessings.length ? (
+          <Text style={styles.bataCountLabel}>
+            {tr(`${relatedBlessings.length} бата`)}
+          </Text>
+        ) : null}
+        {relatedBlessings.length ? (
+          <View style={styles.blessingList}>
+            {relatedBlessings.map((item) => (
+              <View key={item.id} style={styles.blessingItem}>
+                <Text style={styles.blessingItemTitle}>{tr(item.title)}</Text>
+                <Text style={styles.blessingItemText}>{tr(item.text)}</Text>
+                {item.sourceLabel ? (
+                  <Text style={styles.blessingItemSource}>{tr(item.sourceLabel)}</Text>
+                ) : null}
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
+
+      {relatedArticles.length ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t.features.traditionGuide.relatedArticlesTitle}</Text>
+          {relatedArticles.map((article) => (
+            <Pressable
+              key={article.id}
+              oyuBackdrop={false}
+              onPress={() => nav.navigate("KazakhTraditionArticles", { articleId: article.id })}
+              style={({ pressed }) => [styles.articleRow, pressed && { opacity: 0.9 }]}
+              accessibilityRole="button"
+              accessibilityLabel={tr(article.title)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.blessingItemTitle}>{tr(article.title)}</Text>
+                <Text style={styles.blessingItemText} numberOfLines={3}>
+                  {tr(article.excerpt)}
+                </Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={palette.goldMuted} />
+            </Pressable>
           ))}
-        </>
+        </View>
       ) : null}
 
       <View style={styles.quoteCard}>
         <Text style={styles.quoteMark}>“</Text>
         <Text style={styles.quoteText}>{tQuote}</Text>
       </View>
-      <TraditionOrnamentDivider palette={palette} />
+
       {translated ? (
         <View style={styles.autoTranslateBanner}>
           <MaterialIcons name="translate" size={15} color={palette.goldMuted} />
-          <Text style={styles.autoTranslateBannerText}>{kk.common.autoTranslateNotice}</Text>
+          <Text style={styles.autoTranslateBannerText}>{t.common.autoTranslateNotice}</Text>
         </View>
       ) : null}
     </ScrollView>
@@ -312,8 +263,145 @@ function makeStyles(p: TraditionKazakhPalette) {
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: p.screenBg },
     content: { padding: 14, paddingBottom: 32 },
-    center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: p.screenBg, padding: 24 },
-    title: { color: p.text, fontSize: 20, fontWeight: "900" },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: p.screenBg,
+      padding: 24,
+    },
+    missingTitle: { color: p.text, fontSize: 20, fontWeight: "900" },
+    hero: {
+      height: 210,
+      borderRadius: 22,
+      overflow: "hidden",
+      marginBottom: 12,
+      backgroundColor: p.brown,
+    },
+    heroImage: { width: "100%", height: "100%" },
+    heroShade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(42,28,14,0.4)" },
+    heroTop: {
+      position: "absolute",
+      top: 14,
+      left: 14,
+      right: 14,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    heroText: { position: "absolute", left: 16, right: 16, bottom: 16 },
+    heroTitle: { color: p.headerText, fontSize: 26, fontWeight: "900" },
+    heroSub: { color: p.headerSubtext, fontSize: 13, marginTop: 4, fontWeight: "700" },
+    lead: {
+      color: p.text,
+      fontSize: 15,
+      fontWeight: "700",
+      lineHeight: 22,
+      marginBottom: 12,
+      paddingHorizontal: 2,
+    },
+    card: {
+      backgroundColor: p.cardBg,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+    },
+    faithCard: {
+      backgroundColor: p.goldSurface,
+      borderColor: p.goldMuted,
+    },
+    limitCard: {
+      borderColor: p.goldMuted,
+    },
+    cardHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 },
+    cardTitle: { color: p.text, fontSize: 15, fontWeight: "900", marginBottom: 8 },
+    cardTitleInline: { color: p.text, fontSize: 15, fontWeight: "900", flex: 1 },
+    cardTitleGap: { marginTop: 14 },
+    body: { color: p.muted, fontSize: 14, lineHeight: 21, fontWeight: "600" },
+    stepRow: { flexDirection: "row", gap: 10, marginBottom: 10, alignItems: "flex-start" },
+    stepNo: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: p.chipActiveBg,
+    },
+    stepNoText: { color: p.chipActiveText, fontSize: 12, fontWeight: "900" },
+    stepText: { flex: 1, color: p.text, fontSize: 14, lineHeight: 20, fontWeight: "600" },
+    blessing: {
+      color: p.text,
+      fontSize: 15,
+      lineHeight: 23,
+      fontWeight: "700",
+      fontStyle: "italic",
+    },
+    blessingList: { marginTop: 14, gap: 12 },
+    blessingItem: {
+      padding: 12,
+      borderRadius: 14,
+      backgroundColor: p.cardElevated,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+    },
+    blessingItemTitle: {
+      color: p.text,
+      fontSize: 15,
+      fontWeight: "800",
+      marginBottom: 8,
+    },
+    blessingItemText: {
+      color: p.text,
+      fontSize: 14,
+      lineHeight: 22,
+      fontWeight: "600",
+    },
+    blessingItemSource: {
+      color: p.muted,
+      fontSize: 12,
+      fontWeight: "600",
+      marginTop: 8,
+    },
+    bataSearch: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 12,
+      backgroundColor: p.cardElevated,
+      borderRadius: 12,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+    },
+    bataSearchInput: { flex: 1, color: p.text, fontSize: 14, fontWeight: "600", paddingVertical: 6 },
+    bataCountLabel: {
+      color: p.goldMuted,
+      fontSize: 12,
+      fontWeight: "800",
+      marginTop: 10,
+      marginBottom: 4,
+    },
+    articleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: p.border,
+    },
+    quoteCard: {
+      marginTop: 4,
+      padding: 14,
+      borderRadius: 16,
+      backgroundColor: p.cardElevated,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.border,
+    },
+    quoteMark: { color: p.goldMuted, fontSize: 28, fontWeight: "900", lineHeight: 28 },
+    quoteText: { color: p.text, fontSize: 15, lineHeight: 22, fontWeight: "700", marginTop: 2 },
     autoTranslateBanner: {
       flexDirection: "row",
       alignItems: "center",
@@ -327,184 +415,5 @@ function makeStyles(p: TraditionKazakhPalette) {
       borderColor: p.goldMuted,
     },
     autoTranslateBannerText: { flex: 1, color: p.muted, fontSize: 11, fontWeight: "600" },
-    hero: { height: 230, borderRadius: 24, overflow: "hidden", marginBottom: 12, backgroundColor: p.brown },
-    heroImage: { width: "100%", height: "100%" },
-    heroShade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(42,28,14,0.38)" },
-    heroTop: {
-      position: "absolute",
-      top: 14,
-      left: 14,
-      right: 14,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-    },
-    heroActions: { flexDirection: "row", alignItems: "center", gap: 12 },
-    heroText: { position: "absolute", left: 18, right: 18, bottom: 18 },
-    heroTitle: { color: p.headerText, fontSize: 28, fontWeight: "900" },
-    heroSub: { color: p.headerSubtext, fontSize: 13, marginTop: 5, fontWeight: "700" },
-    summaryCard: {
-      backgroundColor: p.cardBg,
-      borderRadius: 18,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: p.border,
-      marginBottom: 12,
-    },
-    summaryText: { color: p.text, fontSize: 14, lineHeight: 21, fontWeight: "700" },
-    faithSummaryCard: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-      backgroundColor: p.goldSurface,
-      borderRadius: 18,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: p.gold,
-      marginBottom: 12,
-    },
-    faithSummaryIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: p.buttonGoldBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    faithSummaryText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    faithSummaryTitle: {
-      color: p.text,
-      fontSize: 15,
-      fontWeight: "900",
-      marginBottom: 4,
-    },
-    faithSummaryBody: {
-      color: p.text,
-      fontSize: 13,
-      lineHeight: 19,
-      fontWeight: "700",
-    },
-    faithSummaryLimit: {
-      color: p.muted,
-      fontSize: 12,
-      lineHeight: 17,
-      fontWeight: "700",
-      marginTop: 6,
-    },
-    faithSummaryEvidence: {
-      color: p.bannerBg,
-      fontSize: 12,
-      lineHeight: 17,
-      fontWeight: "800",
-      marginTop: 6,
-    },
-    tabs: { flexDirection: "row", gap: 8, paddingBottom: 10 },
-    tab: {
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: p.border,
-      backgroundColor: p.cardBg,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-    },
-    tabActive: { borderColor: p.gold, backgroundColor: p.goldSurface },
-    tabText: { color: p.muted, fontSize: 12, fontWeight: "800" },
-    tabTextActive: { color: p.goldMuted },
-    infoCard: {
-      backgroundColor: p.cardBg,
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: p.border,
-      padding: 14,
-      marginBottom: 12,
-    },
-    infoTitle: { color: p.text, fontSize: 15, fontWeight: "900", marginBottom: 8 },
-    bodyText: { color: p.muted, fontSize: 14, lineHeight: 22 },
-    faithPoint: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-      paddingVertical: 8,
-    },
-    faithPointText: {
-      flex: 1,
-      minWidth: 0,
-    },
-    faithPointTitle: {
-      color: p.text,
-      fontSize: 13,
-      fontWeight: "900",
-      marginBottom: 3,
-    },
-    blessingText: { color: p.text, fontSize: 18, lineHeight: 28, fontWeight: "800" },
-    primaryBtn: {
-      marginTop: 14,
-      alignSelf: "flex-start",
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      borderRadius: 999,
-      backgroundColor: p.buttonGoldBg,
-      paddingHorizontal: 14,
-      paddingVertical: 9,
-    },
-    primaryBtnText: { color: p.buttonGoldText, fontSize: 13, fontWeight: "900" },
-    timeline: {
-      backgroundColor: p.cardBg,
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: p.border,
-      padding: 14,
-      marginBottom: 12,
-      gap: 12,
-    },
-    stepRow: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
-    stepNo: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: p.buttonGoldBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    stepNoText: { color: p.buttonGoldText, fontSize: 13, fontWeight: "900" },
-    stepText: { flex: 1, color: p.text, fontSize: 14, lineHeight: 21, fontWeight: "600" },
-    audioCard: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-      backgroundColor: p.cardBg,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: p.border,
-      padding: 12,
-      marginBottom: 10,
-    },
-    audioIcon: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      backgroundColor: p.buttonGoldBg,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    audioTextCol: { flex: 1, minWidth: 0 },
-    audioTitle: { color: p.text, fontSize: 14, lineHeight: 19, fontWeight: "900" },
-    audioMeta: { color: p.goldMuted, fontSize: 11, lineHeight: 15, fontWeight: "800", marginTop: 2 },
-    audioBody: { color: p.muted, fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 5 },
-    quoteCard: {
-      marginTop: 8,
-      backgroundColor: p.cardBg,
-      borderRadius: 22,
-      borderWidth: 1,
-      borderColor: p.border,
-      padding: 18,
-      alignItems: "center",
-    },
-    quoteMark: { color: p.goldMuted, fontSize: 42, lineHeight: 42, fontWeight: "900" },
-    quoteText: { color: p.text, fontSize: 18, lineHeight: 27, fontWeight: "900", textAlign: "center" },
   });
 }

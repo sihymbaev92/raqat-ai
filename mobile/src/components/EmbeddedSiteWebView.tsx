@@ -14,7 +14,13 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { RaqatOrnamentSpinner } from "./RaqatOrnamentSpinner";
+import {
+  DEFAULT_EMBEDDED_SITE_HOSTS,
+  shouldStayInOfficialSiteWebView,
+} from "./embeddedOfficialSiteNavigation";
+import { SECURE_ANDROID_WEBVIEW_PROPS } from "./webviewAndroidSecurity";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 /** Сайт мобильді «жеңіл» нұсқа бермесін — толық бет + суреттер үшін кеңейтілген UA. */
 const DESKTOP_CHROME_UA =
@@ -88,29 +94,36 @@ true;
 
 const EXTERNAL_SCHEME_RE = /^(?:tel|mailto|sms|intent|whatsapp|tg|geo|market):/i;
 
-export function shouldLoadEmbeddedSiteUrl(rawUrl: string | null | undefined): boolean {
+export function shouldLoadEmbeddedSiteUrl(
+  rawUrl: string | null | undefined,
+  allowedHosts: readonly string[] = DEFAULT_EMBEDDED_SITE_HOSTS
+): boolean {
   const u = (rawUrl ?? "").trim();
   if (!u) return false;
+  if (/^javascript:/i.test(u)) return false;
   if (/^(?:about:blank|data:text\/html)/i.test(u)) return true;
-  try {
-    const parsed = new URL(u);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
+  return shouldStayInOfficialSiteWebView(u, allowedHosts);
 }
 
-export function shouldOpenEmbeddedSiteUrlExternally(rawUrl: string | null | undefined): boolean {
+export function shouldOpenEmbeddedSiteUrlExternally(
+  rawUrl: string | null | undefined,
+  allowedHosts: readonly string[] = DEFAULT_EMBEDDED_SITE_HOSTS
+): boolean {
   const u = (rawUrl ?? "").trim();
   if (!u) return false;
-  return EXTERNAL_SCHEME_RE.test(u) || !shouldLoadEmbeddedSiteUrl(u);
+  if (/^javascript:/i.test(u)) return false;
+  return EXTERNAL_SCHEME_RE.test(u) || !shouldLoadEmbeddedSiteUrl(u, allowedHosts);
 }
 
 /** Қолмен жаңарту кезінде кэштен аулақ болу үшін URL-ге уақыт белгісі. */
 export function withEmbeddedSiteCacheBust(url: string, bustToken: number): string {
   if (!url || bustToken <= 0) return url;
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}_raqat=${bustToken}`;
+  const hashIdx = url.indexOf("#");
+  const base = hashIdx >= 0 ? url.slice(0, hashIdx) : url;
+  const hash = hashIdx >= 0 ? url.slice(hashIdx) : "";
+  const sep = base.includes("?") ? "&" : "?";
+  const nonce = bustToken % 1_000_000;
+  return `${base}${sep}_raqat=${bustToken}&_nc=${nonce}${hash}`;
 }
 
 export type EmbeddedSiteWebViewHandle = {
@@ -136,6 +149,7 @@ export const EmbeddedSiteWebView = forwardRef<EmbeddedSiteWebViewHandle, Props>(
   { url, colors, title, reloadKey = 0, pullToRefreshEnabled = false },
   ref
 ) {
+  useAppLocale();
   const webRef = useRef<WebViewType>(null);
   const [loadToken, setLoadToken] = useState(0);
   const resolvedUrl = useMemo(() => withEmbeddedSiteCacheBust(url, loadToken), [url, loadToken]);
@@ -250,8 +264,8 @@ export const EmbeddedSiteWebView = forwardRef<EmbeddedSiteWebViewHandle, Props>(
 
   const shouldStartWebViewLoad = useCallback((ev: WebViewNavigation) => {
     const nextUrl = ev.url || "";
-    if (shouldLoadEmbeddedSiteUrl(nextUrl)) return true;
-    if (shouldOpenEmbeddedSiteUrlExternally(nextUrl)) {
+    if (shouldLoadEmbeddedSiteUrl(nextUrl, DEFAULT_EMBEDDED_SITE_HOSTS)) return true;
+    if (shouldOpenEmbeddedSiteUrlExternally(nextUrl, DEFAULT_EMBEDDED_SITE_HOSTS)) {
       void Linking.openURL(nextUrl).catch(() => {});
     }
     return false;
@@ -326,17 +340,17 @@ export const EmbeddedSiteWebView = forwardRef<EmbeddedSiteWebViewHandle, Props>(
           allowsInlineMediaPlayback
           mediaPlaybackRequiresUserAction={false}
           allowsFullscreenVideo
-          setSupportMultipleWindows={false}
+          {...SECURE_ANDROID_WEBVIEW_PROPS}
           sharedCookiesEnabled
           thirdPartyCookiesEnabled={Platform.OS === "android"}
-          mixedContentMode="compatibility"
           cacheEnabled={loadToken === 0}
           cacheMode={loadToken > 0 ? "LOAD_NO_CACHE" : "LOAD_DEFAULT"}
           nestedScrollEnabled
           androidLayerType="hardware"
           pullToRefreshEnabled={pullToRefreshEnabled}
-          refreshing={pullRefreshing}
-          onRefresh={pullToRefreshEnabled ? onPullRefresh : undefined}
+          {...(pullToRefreshEnabled
+            ? ({ onRefresh: onPullRefresh } as { onRefresh?: () => void })
+            : null)}
           onShouldStartLoadWithRequest={shouldStartWebViewLoad}
           onContentProcessDidTerminate={onWebViewContentTerminated}
           onRenderProcessGone={onWebViewRenderGone}

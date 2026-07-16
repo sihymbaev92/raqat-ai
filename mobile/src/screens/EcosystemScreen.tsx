@@ -9,6 +9,7 @@ import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner
 import { getInstitutionCatalog } from "../ecosystem";
 import type { InstitutionSource } from "../ecosystem/types";
 import { persistCatalogLineage } from "../storage/provenanceRegistry";
+import { useAppLocale } from "../i18n/runtime";
 
 function institutionTypeLabel(t: InstitutionSource["type"]): string {
   switch (t) {
@@ -26,6 +27,7 @@ function institutionTypeLabel(t: InstitutionSource["type"]): string {
 }
 
 export function EcosystemScreen() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const styles = makeStyles(colors);
   const { tr, translated } = useKkAutoTranslator();

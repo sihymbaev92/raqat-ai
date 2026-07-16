@@ -1,4 +1,4 @@
-/** Namaz azan screen copy — ky/uz LOCALE_PATCHES prayer кеңейтулері. */
+/** Namaz azan screen copy — ky/uz/tr/ar LOCALE_PATCHES prayer кеңейтулері. */
 
 export const PRAYER_AZAN_PATCH_KY = {
   azanScreenKicker: "Намаз убактысы башталды",
@@ -68,11 +68,11 @@ export const PRAYER_AZAN_PATCH_KY = {
   azanDuaTextBlock: {
     id: "azan-dua",
     arabic:
-      "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+      "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
     translit:
-      "Аллахумма рабба хазихи-д-да'вати-т-таммати ва-с-саляти-ль-ка'имати, ати Мухаммадан аль-василата ва-ль-фадилата, ваб'асху макамам-махмуданил-лязи ва'адтах, иннака ля тухлифу-ль-ми'ад.",
+      "Аллахумма рабба хазихи-д-да'вати-т-таммати ва-с-саляти-ль-ка'имати, ати Мухаммадан аль-василата ва-ль-фадилата вад-даражатар-рафи'а. Ваб'асху макамам-махмуданил-лязи ва'адтах. Иннака ля тухлифул-ми'ад.",
     meaning:
-      "Аллахым, бул толук чакыруу жана турган намаздын Раббы! Мухаммадыга васила менен артыкчылык бер, ал уадаган мактоолуу ордуна көтөр. Чындыгында, Сен уададыңды бузбайсың.",
+      "Аллахым, бул толук азан жана окулуучу намаздын Раббы! Мухаммадга васила, артыкчылык жана жогорку даража бер! Аны убада кылган «Махмуд» ордуна жеткир. Сен убадаңды бузбайсың.",
   },
 } as const;
 
@@ -144,10 +144,162 @@ export const PRAYER_AZAN_PATCH_UZ = {
   azanDuaTextBlock: {
     id: "azan-dua",
     arabic:
-      "اللَّهُمَّ رَبَّ هٰذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+      "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
     translit:
-      "Allohumma rabba hazihid-da'vatit-tammati vas-salotil-qoimati, ati Muhammadan al-vasilata val-fadilata, vab'ashu maqoman mahmudanil-laziy va'dtah, innaka la tuhliful-mi'od.",
+      "Allohumma rabba hazihid-da'vatit-tammati vas-salotil-qoimati, ati Muhammadan al-vasilata val-fadilata vad-darajatar-rafi'a. Vab'ashu maqoman mahmudanil-laziy va'dtah. Innaka la tukhliful-mi'ad.",
     meaning:
-      "Ey Alloh, bu to'liq chaqiriq va o'qiladigan namozning Robbi! Muhammadga vasila va fazilat ber, va va'da qilgan maqtovli maqomga ko'tar. Albatta, Sen va'dangdan qaytmaysan.",
+      "Ey Alloh, bu to'liq azon va o'qiladigan namozning Robbi! Muhammadga vasila, fazilat va yuksak daraja ber! Uni va'da qilgan «Mahmud» maqomiga yetkaz. Sen va'dangni buzmaysan.",
+  },
+} as const;
+
+export const PRAYER_AZAN_PATCH_TR = {
+  azanScreenKicker: "Namaz vakti girdi",
+  azanScreenDefaultLabel: "Namaz",
+  azanScreenBody:
+    "Ezan tam okunur. Gerekirse aşağıdaki düğmeyle durdurabilirsiniz.",
+  azanTextPanelTitle: "Ezan metni",
+  azanScreenStop: "Ezanı durdur",
+  azanScreenStopped: "Ezan durduruldu",
+  azanTextBlocks: [
+    {
+      id: "takbir-open",
+      arabic: "اللَّهُ أَكْبَرُ",
+      translit: "Allahu ekber",
+      meaning: "Allah en büyüktür.",
+      repeat: "4 kez",
+    },
+    {
+      id: "shahada-tawhid",
+      arabic: "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ",
+      translit: "Eşhedü en lâ ilâhe illallah",
+      meaning: "Şahitlik ederim ki Allah'tan başka ibadete layık ilah yoktur.",
+      repeat: "2 kez",
+    },
+    {
+      id: "shahada-risala",
+      arabic: "أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللَّهِ",
+      translit: "Eşhedü enne Muhammeden rasûlullah",
+      meaning: "Şahitlik ederim ki Muhammed Allah'ın elçisidir.",
+      repeat: "2 kez",
+    },
+    {
+      id: "hayya-salah",
+      arabic: "حَيَّ عَلَى الصَّلَاةِ",
+      translit: "Hayye ale's-salâh",
+      meaning: "Namaz'a koşun.",
+      repeat: "2 kez",
+    },
+    {
+      id: "hayya-falah",
+      arabic: "حَيَّ عَلَى الْفَلَاحِ",
+      translit: "Hayye ale'l-felâh",
+      meaning: "Kurtuluşa koşun.",
+      repeat: "2 kez",
+    },
+    {
+      id: "takbir-close",
+      arabic: "اللَّهُ أَكْبَرُ",
+      translit: "Allahu ekber",
+      meaning: "Allah en büyüktür.",
+      repeat: "2 kez",
+    },
+    {
+      id: "tahlil",
+      arabic: "لَا إِلٰهَ إِلَّا اللَّهُ",
+      translit: "Lâ ilâhe illallah",
+      meaning: "Allah'tan başka ibadete layık ilah yoktur.",
+    },
+  ],
+  fajrAzanTextBlock: {
+    id: "fajr-extra",
+    arabic: "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
+    translit: "Es-salâtü hayrun mine'n-nevm",
+    meaning: "Namaz uykudan hayırlıdır.",
+    repeat: "2 kez",
+  },
+  azanDuaTextBlock: {
+    id: "azan-dua",
+    arabic:
+      "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+    translit:
+      "Allahümme rabbe hâzihi'd-da'veti't-tâmme ve's-salâti'l-kâime, âti Muhammedeni'l-vesîlete ve'l-fazîleh ve'd-derecete'r-rafî'a. Veb'ashü makâmen mahmûdeni'llezî vaadtah. İnneke lâ tuhlifu'l-mîâd.",
+    meaning:
+      "Allah'ım, bu eksiksiz ezanın ve kılınan namazın Rabbi! Muhammed'e vesile, fazilet ve yüce derece ver! Onu vaat ettiğin «Mahmud» makamına yükselt. Sen vaadini bozmazsın.",
+  },
+} as const;
+
+export const PRAYER_AZAN_PATCH_AR = {
+  azanScreenKicker: "دخل وقت الصلاة",
+  azanScreenDefaultLabel: "صلاة",
+  azanScreenBody:
+    "يُقرأ الأذان كاملاً. يمكنك إيقافه بالزر أدناه عند الحاجة.",
+  azanTextPanelTitle: "نص الأذان",
+  azanScreenStop: "إيقاف الأذان",
+  azanScreenStopped: "تم إيقاف الأذان",
+  azanTextBlocks: [
+    {
+      id: "takbir-open",
+      arabic: "اللَّهُ أَكْبَرُ",
+      translit: "Allāhu akbar",
+      meaning: "الله أكبر.",
+      repeat: "4 مرات",
+    },
+    {
+      id: "shahada-tawhid",
+      arabic: "أَشْهَدُ أَنْ لَا إِلٰهَ إِلَّا اللَّهُ",
+      translit: "Ashhadu allā ilāha illā Allāh",
+      meaning: "أشهد أن لا إله إلا الله.",
+      repeat: "مرتين",
+    },
+    {
+      id: "shahada-risala",
+      arabic: "أَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ اللَّهِ",
+      translit: "Ashhadu anna Muḥammadan rasūl Allāh",
+      meaning: "أشهد أن محمدًا رسول الله.",
+      repeat: "مرتين",
+    },
+    {
+      id: "hayya-salah",
+      arabic: "حَيَّ عَلَى الصَّلَاةِ",
+      translit: "Ḥayya ʿalā aṣ-ṣalāh",
+      meaning: "حيّ على الصلاة.",
+      repeat: "مرتين",
+    },
+    {
+      id: "hayya-falah",
+      arabic: "حَيَّ عَلَى الْفَلَاحِ",
+      translit: "Ḥayya ʿalā al-falāḥ",
+      meaning: "حيّ على الفلاح.",
+      repeat: "مرتين",
+    },
+    {
+      id: "takbir-close",
+      arabic: "اللَّهُ أَكْبَرُ",
+      translit: "Allāhu akbar",
+      meaning: "الله أكبر.",
+      repeat: "مرتين",
+    },
+    {
+      id: "tahlil",
+      arabic: "لَا إِلٰهَ إِلَّا اللَّهُ",
+      translit: "Lā ilāha illā Allāh",
+      meaning: "لا إله إلا الله.",
+    },
+  ],
+  fajrAzanTextBlock: {
+    id: "fajr-extra",
+    arabic: "الصَّلَاةُ خَيْرٌ مِنَ النَّوْمِ",
+    translit: "Aṣ-ṣalātu khayrun mina n-nawm",
+    meaning: "الصلاة خير من النوم.",
+    repeat: "مرتين",
+  },
+  azanDuaTextBlock: {
+    id: "azan-dua",
+    arabic:
+      "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَالدَّرَجَةَ الرَّفِيعَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ إِنَّكَ لَا تُخْلِفُ الْمِيعَادَ",
+    translit:
+      "Allāhumma rabba hādhihi d-daʿwati t-tāmmati waṣ-ṣalāti l-qāʾimah, āti Muḥammadan al-wasīlata wa l-faḍīlata wa d-darajata r-rafīʿah. Wabʿathhu maqāman maḥmūdan alladhī waʿadtah. Innaka lā tukhlifu l-mīʿād.",
+    meaning:
+      "اللهم رب هذا الأذان التام والصلاة القائمة، آت محمدًا الوسيلة والفضيلة والدرجة الرفيعة، وابعثه مقامًا محمودًا الذي وعدته، إنك لا تخلف الميعاد.",
   },
 } as const;

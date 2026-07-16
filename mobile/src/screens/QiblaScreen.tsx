@@ -20,6 +20,7 @@ import { QiblaArrowPointer } from "../components/QiblaArrowPointer";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { qiblaAlignHint, QIBLA_ALIGN_THRESHOLD_DEG, type QiblaAlignHint } from "../lib/qiblaHints";
 import { angleDiff } from "../lib/qibla";
+import { useAppLocale } from "../i18n/runtime";
 
 const { width } = Dimensions.get("window");
 
@@ -52,6 +53,7 @@ function formatAccuracyMeters(m: number | null | undefined): string {
 type QiblaRoute = RouteProp<RootStackParamList, "Qibla">;
 
 export function QiblaScreen() {
+  useAppLocale();
   return (
     <QiblaSensorProvider>
       <QiblaScreenContent />
@@ -82,6 +84,7 @@ function QiblaScreenContent() {
     setMotionMode,
     headingAccuracyDeg,
     compassQuality,
+    resetHeadingSmoothing,
   } = useQiblaSensor();
   const dialSize = Math.min(width - 84, 260);
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -93,15 +96,17 @@ function QiblaScreenContent() {
   const alignHint = qiblaAlignHint(effectiveRotateDeg, bearing, { headingReady: effectiveHeadingHasSample });
   const mainHint = screenHint(alignHint, bearing);
   const [calibrating, setCalibrating] = useState(false);
-  const [calibrationSecLeft, setCalibrationSecLeft] = useState(20);
+  const [calibrationSecLeft, setCalibrationSecLeft] = useState(12);
   const [calibrationResult, setCalibrationResult] = useState<"high" | "medium" | "low" | null>(null);
   const rotateDegRef = useRef(effectiveRotateDeg);
+  const compassQualityRef = useRef(compassQuality);
   const showWebCompassPermission = Platform.OS === "web" && bearing != null && !headingHasSample;
   rotateDegRef.current = effectiveRotateDeg;
+  compassQualityRef.current = compassQuality;
 
   useFocusEffect(
     useCallback(() => {
-      setMotionMode("balanced");
+      setMotionMode("fast");
       void refreshBearing();
     }, [refreshBearing, setMotionMode])
   );
@@ -121,20 +126,24 @@ function QiblaScreenContent() {
 
   useEffect(() => {
     if (!calibrating) return;
-    setCalibrationSecLeft(20);
+    setCalibrationSecLeft(12);
+    resetHeadingSmoothing();
     const tick = setInterval(() => {
       setCalibrationSecLeft((prev) => {
         if (prev <= 1) {
           clearInterval(tick);
           setCalibrating(false);
           void refreshBearing();
-          const diff = Math.abs(rotateDegRef.current);
-          if (diff <= 8) {
+          const q = compassQualityRef.current;
+          if (q === "high") {
             setCalibrationResult("high");
-          } else if (diff <= 18) {
+          } else if (q === "medium") {
             setCalibrationResult("medium");
-          } else {
+          } else if (q === "low") {
             setCalibrationResult("low");
+          } else {
+            /** Sensor accuracy әлі жоқ — туралау бойынша емес, үлгі бар-жоғы. */
+            setCalibrationResult(headingHasSample ? "medium" : "low");
           }
           return 0;
         }
@@ -142,7 +151,7 @@ function QiblaScreenContent() {
       });
     }, 1000);
     return () => clearInterval(tick);
-  }, [calibrating, refreshBearing]);
+  }, [calibrating, refreshBearing, resetHeadingSmoothing, headingHasSample]);
 
   const openAppSettings = () => {
     void Linking.openSettings();
@@ -369,6 +378,18 @@ function QiblaScreenContent() {
       ) : null}
 
       <View style={styles.motionModeRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.modeChip,
+            motionMode === "fast" && styles.modeChipActive,
+            pressed && { opacity: 0.9 },
+          ]}
+          onPress={() => setMotionMode("fast")}
+        >
+          <Text style={[styles.modeTxt, motionMode === "fast" && styles.modeTxtActive]}>
+            {kk.qibla.motionFast}
+          </Text>
+        </Pressable>
         <Pressable
           style={({ pressed }) => [
             styles.modeChip,

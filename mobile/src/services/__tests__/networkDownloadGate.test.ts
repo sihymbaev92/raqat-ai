@@ -1,5 +1,5 @@
 import * as Network from "expo-network";
-import { isAllowedDownloadNetworkType } from "../services/networkDownloadGate";
+import { isAllowedDownloadNetworkType } from "../networkDownloadGate";
 
 describe("networkDownloadGate", () => {
   it("allows Wi-Fi and Ethernet always", () => {

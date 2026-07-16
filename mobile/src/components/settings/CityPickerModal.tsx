@@ -13,6 +13,7 @@ import { Pressable } from "@/ui/Pressable";
 import { KZ_CITY_PRESETS_LIST, type KzCityPreset } from "../../constants/kzCityPresetsList";
 import { getSavedCities, type SavedCity } from "../../storage/prefs";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 import type { ThemeColors } from "../../theme/colors";
 import { modalSafeAreaInsets } from "../../theme/modalSafeArea";
 
@@ -37,6 +38,7 @@ export function CityPickerModal({
   onClose,
   onSelect,
 }: Props) {
+  const locale = useAppLocale();
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
   const [query, setQuery] = useState("");
@@ -78,7 +80,7 @@ export function CityPickerModal({
     }
     out.push({ title: kk.prayer.presets, data: filtered });
     return out;
-  }, [filtered, query, savedPresets]);
+  }, [filtered, query, savedPresets, locale]);
 
   if (!visible) return null;
 

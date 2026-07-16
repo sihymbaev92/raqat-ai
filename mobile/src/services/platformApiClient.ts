@@ -921,6 +921,147 @@ export function fetchPlatformHadithSearch(
   );
 }
 
+export type CommunityDuaRow = {
+  id: number;
+  body: string;
+  amen_count: number;
+  created_at: string;
+};
+
+export type CommunityDuasPayload = {
+  ok: boolean;
+  duas?: CommunityDuaRow[];
+  status?: number;
+  detail?: unknown;
+};
+
+/**
+ * GET /api/v1/community/duas — fetchJson емес: 4xx/5xx денесін оқи алады, желі қатесінде лақтырмайды.
+ */
+export async function fetchCommunityDuas(
+  base: string,
+  opts?: { limit?: number; timeoutMs?: number; authorizationBearer?: string }
+): Promise<CommunityDuasPayload> {
+  const lim = opts?.limit != null ? Math.min(100, Math.max(1, opts.limit)) : 35;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS);
+  const headers: Record<string, string> = { Accept: "application/json" };
+  const b = opts?.authorizationBearer?.trim();
+  if (b) headers.Authorization = `Bearer ${b}`;
+  try {
+    const r = await fetch(joinUrl(base, `/api/v1/community/duas?limit=${lim}`), {
+      method: "GET",
+      signal: ctrl.signal,
+      headers,
+    });
+    let j: CommunityDuasPayload;
+    try {
+      j = (await r.json()) as CommunityDuasPayload;
+    } catch {
+      return { ok: false, duas: [], status: r.status, detail: "parse_error" };
+    }
+    if (!r.ok) {
+      return {
+        ok: false,
+        duas: Array.isArray(j.duas) ? j.duas : [],
+        status: r.status,
+        detail: j.detail,
+      };
+    }
+    if (!Array.isArray(j.duas)) {
+      return { ok: false, duas: [], status: r.status, detail: "invalid_payload" };
+    }
+    return { ok: j.ok !== false, duas: j.duas, status: r.status };
+  } catch {
+    return { ok: false, duas: [], detail: "network" };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function postCommunityDua(
+  base: string,
+  text: string,
+  clientId: string,
+  opts?: { timeoutMs?: number; authorizationBearer?: string }
+): Promise<{ ok?: boolean; id?: number; detail?: unknown; status?: number }> {
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    "X-Raqat-Client-Id": clientId.trim(),
+  };
+  const b = opts?.authorizationBearer?.trim();
+  if (b) headers.Authorization = `Bearer ${b}`;
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/community/duas"), {
+      method: "POST",
+      signal: ctrl.signal,
+      headers,
+      body: JSON.stringify({ text: text.trim() }),
+    });
+    let j: { ok?: boolean; id?: number; detail?: unknown };
+    try {
+      j = (await r.json()) as { ok?: boolean; id?: number; detail?: unknown };
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function postCommunityDuaAmen(
+  base: string,
+  duaId: number,
+  clientId: string,
+  opts?: { timeoutMs?: number; authorizationBearer?: string }
+): Promise<{
+  ok?: boolean;
+  inserted?: boolean;
+  amen_count?: number;
+  detail?: unknown;
+  status?: number;
+}> {
+  const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    "X-Raqat-Client-Id": clientId.trim(),
+  };
+  const b = opts?.authorizationBearer?.trim();
+  if (b) headers.Authorization = `Bearer ${b}`;
+  try {
+    const r = await fetch(joinUrl(base, `/api/v1/community/duas/${duaId}/amen`), {
+      method: "POST",
+      signal: ctrl.signal,
+      headers,
+    });
+    let j: { ok?: boolean; inserted?: boolean; amen_count?: number; detail?: unknown };
+    try {
+      j = (await r.json()) as {
+        ok?: boolean;
+        inserted?: boolean;
+        amen_count?: number;
+        detail?: unknown;
+      };
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 export type AuthLoginResponse = {
   ok?: boolean;
   access_token?: string;
@@ -1313,6 +1454,77 @@ export async function putMeQuranLastRead(
     let j: MeQuranLastReadPayload;
     try {
       j = (await r.json()) as MeQuranLastReadPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export type MeQuranBookmarksPayload = {
+  ok?: boolean;
+  surahs?: number[];
+  updated_at?: string | null;
+  detail?: unknown;
+  status?: number;
+};
+
+export async function fetchMeQuranBookmarks(
+  base: string,
+  accessToken: string,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranBookmarksPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-bookmarks"), {
+      method: "GET",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+    });
+    let j: MeQuranBookmarksPayload;
+    try {
+      j = (await r.json()) as MeQuranBookmarksPayload;
+    } catch {
+      return { ok: false, detail: "parse_error", status: r.status };
+    }
+    return { ...j, status: r.status };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  } finally {
+    clearTimeout(id);
+  }
+}
+
+export async function putMeQuranBookmarks(
+  base: string,
+  accessToken: string,
+  surahs: number[],
+  timeoutMs: number = DEFAULT_TIMEOUT_MS
+): Promise<MeQuranBookmarksPayload> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const r = await fetch(joinUrl(base, "/api/v1/me/quran-bookmarks"), {
+      method: "PUT",
+      signal: ctrl.signal,
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken.trim()}`,
+      },
+      body: JSON.stringify({ surahs }),
+    });
+    let j: MeQuranBookmarksPayload;
+    try {
+      j = (await r.json()) as MeQuranBookmarksPayload;
     } catch {
       return { ok: false, detail: "parse_error", status: r.status };
     }

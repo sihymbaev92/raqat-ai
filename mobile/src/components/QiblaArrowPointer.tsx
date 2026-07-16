@@ -112,14 +112,19 @@ export function QiblaArrowPointer({
 
   useEffect(() => {
     const step = angleDiff(lastRotRef.current, spinDeg);
+    if (Math.abs(step) < 0.015) return;
     lastRotRef.current += step;
-    Animated.spring(rotAnim, {
+    const abs = Math.abs(step);
+    /** Кіші қадам — бірден; үлкен — қысқа timing (spring қуып қалмасын). */
+    if (abs <= 10) {
+      rotAnim.setValue(lastRotRef.current);
+      return;
+    }
+    Animated.timing(rotAnim, {
       toValue: lastRotRef.current,
+      duration: Math.min(40, Math.max(14, abs * 0.28)),
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
-      friction: 18,
-      tension: 260,
-      restDisplacementThreshold: 0.03,
-      restSpeedThreshold: 0.03,
     }).start();
   }, [spinDeg, rotAnim]);
 

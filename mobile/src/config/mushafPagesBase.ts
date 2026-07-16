@@ -82,6 +82,29 @@ export function mushafQcf4FontFileUrl(fontId: string, ext: "ttf" | "woff2" = "tt
   return `${getMushafPagesBaseUrl()}/qcf4/${dir}/${file}`;
 }
 
+/** Quran Foundation V4 Tajweed COLR CDN root. */
+export const QCF4_COLR_CDN_BASE = "https://verses.quran.foundation/fonts/quran/hafs";
+
+export type Qcf4ColrPaletteTheme = "light" | "dark" | "sepia";
+
+function qcf4ColrPageName(page: number): string {
+  return `p${Math.max(1, Math.min(604, Math.floor(page)))}`;
+}
+
+/** COLRv1 per-page font (web Chrome/Safari/Edge + font-palette). */
+export function mushafQcf4ColrFontUrl(page: number, ext: "ttf" | "woff" | "woff2" = "woff2"): string {
+  return `${QCF4_COLR_CDN_BASE}/v4/colrv1/${ext}/${qcf4ColrPageName(page)}.${ext}`;
+}
+
+/** OT-SVG per-page font with baked theme colors (native + Firefox dark). */
+export function mushafQcf4ColrOtSvgFontUrl(
+  page: number,
+  theme: Qcf4ColrPaletteTheme,
+  ext: "ttf" | "woff" | "woff2" = "woff2"
+): string {
+  return `${QCF4_COLR_CDN_BASE}/v4/ot-svg/${theme}/${ext}/${qcf4ColrPageName(page)}.${ext}`;
+}
+
 /** Madinah mushaf page aspect (Mushaf Database viewBox). */
 export const MUSHAF_PAGE_VIEWBOX = { w: 382.68, h: 547.09 } as const;
 

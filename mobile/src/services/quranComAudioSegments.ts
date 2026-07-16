@@ -10,9 +10,24 @@ export type QuranComAyahAudioMeta = {
 };
 
 const cache = new Map<string, QuranComAyahAudioMeta | null>();
+const AUDIO_SEGMENTS_CACHE_MAX = 40;
 
 function cacheKey(surah: number, ayah: number, reciterId: number): string {
   return `${reciterId}:${surah}:${ayah}`;
+}
+
+export function clearQuranComAudioSegmentsCache(): void {
+  cache.clear();
+}
+
+function rememberAudioSegments(key: string, value: QuranComAyahAudioMeta | null): void {
+  if (cache.has(key)) cache.delete(key);
+  cache.set(key, value);
+  while (cache.size > AUDIO_SEGMENTS_CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest == null) break;
+    cache.delete(oldest);
+  }
 }
 
 function parseSegments(raw: unknown): QuranComAyahSegment[] {
@@ -52,7 +67,7 @@ export async function fetchQuranComAyahAudioSegments(
     const url = `https://api.quran.com/api/v4/verses/by_key/${surah}:${ayah}?audio=${reciterId}`;
     const r = await fetch(url, { headers: { Accept: "application/json" }, signal: ctrl.signal });
     if (!r.ok) {
-      cache.set(key, null);
+      rememberAudioSegments(key, null);
       return null;
     }
     const j = (await r.json()) as {
@@ -60,12 +75,12 @@ export async function fetchQuranComAyahAudioSegments(
     };
     const segments = parseSegments(j.verse?.audio?.segments);
     if (!segments.length) {
-      cache.set(key, null);
+      rememberAudioSegments(key, null);
       return null;
     }
     const referenceDurationMs = segments[segments.length - 1]![3];
     const meta: QuranComAyahAudioMeta = { segments, referenceDurationMs };
-    cache.set(key, meta);
+    rememberAudioSegments(key, meta);
     return meta;
   } catch {
     // Желілік timeout уақытша болуы мүмкін; келесі ойнатуда қайта сынауға мүмкіндік қалдырамыз.

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -10,6 +10,7 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { MoreStackParamList } from "../navigation/types";
 import { KAZAKH_GREAT_WORDS_ROOT_LEAD, KAZAKH_GREAT_WORDS_ROOT_TITLE } from "../content/kazakhGreatWordsContent";
+import { useAppLocale } from "../i18n/runtime";
 import {
   countEntriesForAuthor,
   getAuthorById,
@@ -23,21 +24,28 @@ import {
   type GreatWordsEntry,
   type GreatWordsMergedTopic,
 } from "../content/greatWordsCatalog";
+import { useGreatWordsCatalogReady } from "../content/useGreatWordsCatalogReady";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KazakhGreatWords">;
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
 
 export function KazakhGreatWordsScreen(_props: Props) {
+  useAppLocale();
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { tr, translated } = useKkAutoTranslator();
   const g = kk.features.greatWordsGuide;
   const navigation = useNavigation<Nav>();
   const [q, setQ] = useState("");
-  const stats = useMemo(() => getGreatWordsStats(), []);
-  const authors = useMemo(() => getGreatWordsAuthors(), []);
-  const mergedTopics = useMemo(() => getMergedGreatWordsTopics(10), []);
-  const reflectiveEntries = useMemo(() => getReflectiveGreatWordsEntries(6), []);
+  const { ready: catalogReady, loading: catalogLoading, failed: catalogFailed } = useGreatWordsCatalogReady();
+  const [catalogTick, setCatalogTick] = useState(0);
+  useEffect(() => {
+    if (catalogReady) setCatalogTick((n) => n + 1);
+  }, [catalogReady]);
+  const stats = useMemo(() => getGreatWordsStats(), [catalogTick]);
+  const authors = useMemo(() => getGreatWordsAuthors(), [catalogTick]);
+  const mergedTopics = useMemo(() => getMergedGreatWordsTopics(10), [catalogTick]);
+  const reflectiveEntries = useMemo(() => getReflectiveGreatWordsEntries(6), [catalogTick]);
 
   const searchHits = useMemo(() => {
     const query = q.trim();
@@ -100,6 +108,16 @@ export function KazakhGreatWordsScreen(_props: Props) {
         style={styles.search}
         accessibilityLabel={g.searchA11y}
       />
+
+      {catalogLoading ? (
+        <View style={styles.catalogLoading}>
+          <ActivityIndicator color={colors.accent} />
+          <Text style={styles.catalogLoadingTxt}>{tr(g.loadingCatalog)}</Text>
+        </View>
+      ) : null}
+      {catalogFailed ? (
+        <Text style={styles.catalogFailed}>{tr(g.catalogLoadFailed)}</Text>
+      ) : null}
 
       {searchHits != null ? (
         <>
@@ -319,6 +337,20 @@ function makeStyles(colors: ThemeColors) {
     topicTitle: { fontSize: 15, fontWeight: "900", color: colors.text },
     topicMeta: { fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17 },
     rowArrow: { fontSize: 22, color: colors.muted, fontWeight: "200" },
+    catalogLoading: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 12,
+    },
+    catalogLoadingTxt: { fontSize: 13, color: colors.muted, fontWeight: "600" },
+    catalogFailed: {
+      fontSize: 13,
+      color: "#B91C1C",
+      lineHeight: 18,
+      marginBottom: 8,
+      fontWeight: "600",
+    },
     reflectiveRow: { gap: 10, paddingRight: 4, paddingBottom: 12 },
     reflectiveCard: {
       width: 220,

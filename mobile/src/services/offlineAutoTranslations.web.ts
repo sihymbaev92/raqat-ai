@@ -27,8 +27,36 @@ let loadPromise: Promise<void> | null = null;
 
 const FETCH_JSON_MS = 12_000;
 
-export async function ensureOfflineAutoTranslationsLoaded(): Promise<void> {
-  if (bundle.targets) return;
+export function areOfflineAutoTranslationsReady(): boolean {
+  const targets = bundle.targets;
+  if (!targets) return false;
+  return Object.keys(targets).length > 0;
+}
+
+export function hasOfflineAutoTranslationLocale(locale: OfflineAutoTranslateTarget): boolean {
+  const map = bundle.targets?.[locale];
+  return Boolean(map && Object.keys(map).length > 0);
+}
+
+export function pruneOfflineAutoTranslationsToLocale(locale: OfflineAutoTranslateTarget): void {
+  const map = bundle.targets?.[locale];
+  if (!map || Object.keys(map).length === 0) return;
+  bundle = {
+    version: bundle.version,
+    sourceLocale: bundle.sourceLocale,
+    generatedAt: bundle.generatedAt,
+    targets: { [locale]: map },
+  };
+}
+
+export async function ensureOfflineAutoTranslationsLoaded(
+  preferred?: OfflineAutoTranslateTarget
+): Promise<void> {
+  if (preferred && bundle.targets?.[preferred]) {
+    pruneOfflineAutoTranslationsToLocale(preferred);
+    return;
+  }
+  if (areOfflineAutoTranslationsReady() && !preferred) return;
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
@@ -44,9 +72,15 @@ export async function ensureOfflineAutoTranslationsLoaded(): Promise<void> {
         signal: ctrl?.signal,
       });
       if (!response.ok) return;
-      bundle = (await response.json()) as OfflineAutoTranslationBundle;
+      const loaded = (await response.json()) as OfflineAutoTranslationBundle;
+      if (loaded?.targets && Object.keys(loaded.targets).length > 0) {
+        bundle = loaded;
+        if (preferred && loaded.targets[preferred]) {
+          pruneOfflineAutoTranslationsToLocale(preferred);
+        }
+      }
     } catch {
-      bundle = {};
+      /* keep empty */
     } finally {
       if (timer) clearTimeout(timer);
     }
@@ -57,6 +91,13 @@ export async function ensureOfflineAutoTranslationsLoaded(): Promise<void> {
   } finally {
     loadPromise = null;
   }
+  if (preferred && bundle.targets?.[preferred]) {
+    pruneOfflineAutoTranslationsToLocale(preferred);
+  }
+}
+
+export function releaseOfflineAutoTranslationsMemory(): void {
+  bundle = {};
 }
 
 export function hashAutoTranslateSource(s: string): string {

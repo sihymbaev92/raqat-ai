@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { loadPrayerCache, savePrayerCache } from "../prayerCache";
+import { loadPrayerCache, loadPrayerCacheRelaxed, savePrayerCache } from "../prayerCache";
 
 jest.mock("@react-native-async-storage/async-storage", () => {
   const store = new Map<string, string>();
@@ -20,14 +20,14 @@ jest.mock("../../services/openMeteoCurrent", () => ({
   fetchOpenMeteoCurrent: jest.fn(async () => null),
 }));
 
-const CACHE_KEY = "raqat_prayer_cache_v1";
+const CACHE_KEY = "raqat_prayer_cache_v2";
 
 const shymkentPrayer = {
   city: "Shymkent",
   country: "Kazakhstan",
   latitude: 42.368009,
   longitude: 69.612769,
-  source: "aladhan" as const,
+  source: "muftyat" as const,
   date: "2026-06-13",
   fajr: "02:59",
   sunrise: "04:41",
@@ -42,12 +42,12 @@ describe("prayer cache source guard", () => {
     await AsyncStorage.clear();
   });
 
-  it("keeps Aladhan cache for Kazakhstan", async () => {
+  it("keeps Muftyat cache for Kazakhstan", async () => {
     await savePrayerCache(shymkentPrayer);
 
     await expect(loadPrayerCache()).resolves.toMatchObject({
       city: "Shymkent",
-      source: "aladhan",
+      source: "muftyat",
       asr: "17:42",
     });
   });
@@ -64,5 +64,23 @@ describe("prayer cache source guard", () => {
     );
 
     await expect(loadPrayerCache()).resolves.toBeNull();
+  });
+
+  it("loadPrayerCacheRelaxed accepts legacy source without strict profile guard", async () => {
+    await AsyncStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        ...shymkentPrayer,
+        source: "aladhan",
+        calculationMethod: 3,
+        calculationSchool: 1,
+        savedAt: new Date().toISOString(),
+      })
+    );
+
+    await expect(loadPrayerCacheRelaxed()).resolves.toMatchObject({
+      city: "Shymkent",
+      source: "aladhan",
+    });
   });
 });

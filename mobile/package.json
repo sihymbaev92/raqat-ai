@@ -1,6 +1,6 @@
 {
   "name": "raqat-mobile",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -23,6 +23,8 @@
     "test:full": "npm run lint && jest --ci",
     "test:auto-location": "jest src/services/__tests__/devicePrayerLocation.test.ts src/constants/__tests__/kzCities.test.ts --ci",
     "prebuild": "expo prebuild",
+    "prebuild:ios": "powershell -ExecutionPolicy Bypass -File scripts/prebuild-ios.ps1",
+    "prebuild:ios:unix": "bash scripts/prebuild-ios.sh",
     "generate:icon": "python scripts/generate-app-icon.py",
     "fetch:azan": "python scripts/fetch_prayer_azan_assets.py",
     "halal:seed": "python ../scripts/enrich_halal_products_seed.py",
@@ -31,6 +33,7 @@
     "build:apk": "node scripts/build-apk-node.cjs release",
     "qa:android:release": "powershell -ExecutionPolicy Bypass -File scripts/android-release-smoke.ps1",
     "qa:azan:locked": "powershell -ExecutionPolicy Bypass -File scripts/azan-locked-screen-qa.ps1 -GrantExactAlarm -WhitelistBattery",
+    "qa:azan:oem": "powershell -ExecutionPolicy Bypass -File scripts/azan-oem-3day-qa.ps1",
     "build:ios": "powershell -ExecutionPolicy Bypass -File scripts/build-ios-eas.ps1",
     "build:aab": "node scripts/build-apk-node.cjs aab",
     "build:apk:debug": "node scripts/build-apk-node.cjs debug",
@@ -51,7 +54,7 @@
     "export:hadith-json": "cd .. && .venv/bin/python scripts/hadith_corpus_sync.py export --db global_clean.db --out mobile/assets/bundled/hadith-from-db.json --source-only",
     "export:hadith-json:full": "cd .. && .venv/bin/python scripts/hadith_corpus_sync.py export --db global_clean.db --out mobile/assets/bundled/hadith-from-db.json",
     "export:hadith-json:kk-only": "cd .. && .venv/bin/python scripts/hadith_corpus_sync.py export --db global_clean.db --out mobile/assets/bundled/hadith-from-db.json --only-with-kk",
-    "export:scraped-hadith-muftyat": "cd .. && python scripts/export_scraped_hadith_mobile.py",
+    "export:scraped-hadith-muftyat": "echo scraped-hadith removed; exit 0",
     "extract:hadith-quotes": "cd .. && python scripts/extract_muftyat_hadith_quotes_mobile.py",
     "fill:hadith-en-ru": "cd .. && bash scripts/run_hadith_fawaz_en_ru.sh",
     "hadith:quality": "cd .. && python scripts\\hadith_quality_gate.py",
@@ -64,7 +67,6 @@
   "dependencies": {
     "@expo-google-fonts/amiri": "^0.4.1",
     "@expo-google-fonts/lateef": "^0.4.2",
-    "@expo-google-fonts/noto-sans": "^0.4.2",
     "@expo-google-fonts/nunito": "^0.4.2",
     "@expo-google-fonts/scheherazade-new": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
@@ -113,11 +115,11 @@
     "react-native-web": "^0.21.0",
     "react-native-web-webview": "^1.0.2",
     "react-native-webview": "13.15.0",
-    "react-native-worklets": "^0.5.2",
-    "react-native-youtube-iframe": "^2.4.1"
+    "react-native-worklets": "^0.5.2"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@bacons/apple-targets": "^4.0.7",
     "@expo/ngrok": "^4.1.3",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.1.10",

@@ -152,6 +152,7 @@ export function navigateToQuranSurah(
       {
         focusSurah: params.surahNumber,
         focusAyah: params.initialAyah ?? 1,
+        continuousMushaf: true,
       },
       navigation
     );

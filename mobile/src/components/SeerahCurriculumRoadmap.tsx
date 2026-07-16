@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 import { urlForSeerahLesson } from "../config/seerahVideos";
 import { openYouTubeWatchUrl } from "../utils/openExternalVideo";
 import {
@@ -20,6 +21,7 @@ type Props = {
   onLessonViewed: (lesson: number) => Promise<void>;
 };
 
+/** Сира: офлайн қысқаша + опциялық YouTube. */
 export function SeerahCurriculumRoadmap({
   colors,
   tr,
@@ -27,9 +29,9 @@ export function SeerahCurriculumRoadmap({
   lastLesson,
   onLessonViewed,
 }: Props) {
+  const t = useI18n();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [openPhase, setOpenPhase] = useState<string | null>(SEERAH_PHASES[0]?.id ?? null);
-  const [openLesson, setOpenLesson] = useState<number | null>(null);
 
   const openVideo = useCallback(
     async (lesson: number) => {
@@ -46,36 +48,19 @@ export function SeerahCurriculumRoadmap({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.head}>
-        <View style={styles.headIcon}>
-          <MaterialIcons name="auto-stories" size={20} color={colors.accent} />
-        </View>
-        <View style={styles.headText}>
-          <Text style={styles.title}>{tr(kk.seerah.curriculumTitle)}</Text>
-          <Text style={styles.lead}>{tr(kk.seerah.curriculumLead)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.phaseList}>
-        {SEERAH_PHASES.map((phase) => (
-          <SeerahPhaseBlock
-            key={phase.id}
-            phase={phase}
-            colors={colors}
-            tr={tr}
-            expanded={openPhase === phase.id}
-            onToggle={() => {
-              setOpenLesson(null);
-              setOpenPhase((cur) => (cur === phase.id ? null : phase.id));
-            }}
-            openLesson={openLesson}
-            onLessonToggle={(n) => setOpenLesson((cur) => (cur === n ? null : n))}
-            viewedLessons={viewedLessons}
-            lastLesson={lastLesson}
-            onOpenVideo={(n) => void openVideo(n)}
-          />
-        ))}
-      </View>
+      {SEERAH_PHASES.map((phase) => (
+        <SeerahPhaseBlock
+          key={phase.id}
+          phase={phase}
+          colors={colors}
+          tr={tr}
+          expanded={openPhase === phase.id}
+          onToggle={() => setOpenPhase((cur) => (cur === phase.id ? null : phase.id))}
+          viewedLessons={viewedLessons}
+          lastLesson={lastLesson}
+          onOpenVideo={(n) => void openVideo(n)}
+        />
+      ))}
     </View>
   );
 }
@@ -86,8 +71,6 @@ function SeerahPhaseBlock({
   tr,
   expanded,
   onToggle,
-  openLesson,
-  onLessonToggle,
   viewedLessons,
   lastLesson,
   onOpenVideo,
@@ -97,8 +80,6 @@ function SeerahPhaseBlock({
   tr: (text: string) => string;
   expanded: boolean;
   onToggle: () => void;
-  openLesson: number | null;
-  onLessonToggle: (n: number) => void;
   viewedLessons: number[];
   lastLesson: number | null;
   onOpenVideo: (n: number) => void;
@@ -127,56 +108,44 @@ function SeerahPhaseBlock({
             {tr(phase.subtitleKk)}
           </Text>
         </View>
-        <Text style={[styles.phaseCount, expanded && styles.phaseCountOpen]}>{lessons.length}</Text>
+        <MaterialIcons
+          name={expanded ? "expand-less" : "expand-more"}
+          size={22}
+          color={expanded ? "#FFFFFF" : colors.muted}
+        />
       </Pressable>
 
       {expanded ? (
         <View style={styles.body}>
           <Text style={styles.phaseIntro}>{tr(phase.introKk)}</Text>
           {lessons.map((lesson) => {
-            const lessonOpen = openLesson === lesson.n;
             const viewed = viewedLessons.includes(lesson.n);
+            const isLast = lastLesson === lesson.n;
             return (
-              <View key={lesson.n} style={styles.lessonCard}>
+              <View key={lesson.n} style={styles.lessonRow}>
+                <View style={[styles.lessonNum, viewed && styles.lessonNumViewed]}>
+                  <Text style={[styles.lessonNumText, viewed && styles.lessonNumTextViewed]}>{lesson.n}</Text>
+                </View>
+                <View style={styles.lessonTextCol} accessibilityLabel={kk.seerah.lessonA11y(lesson.n)}>
+                  <Text style={styles.lessonTitle} numberOfLines={2}>
+                    {tr(lesson.titleKk)}
+                    {isLast ? ` · ${kk.seerah.lastBadge}` : ""}
+                  </Text>
+                  <Text style={styles.lessonFocus} numberOfLines={2}>
+                    {tr(lesson.focusKk)}
+                  </Text>
+                  <Text style={styles.lessonSummary}>{tr(lesson.summaryKk)}</Text>
+                </View>
                 <Pressable
                   oyuBackdrop={false}
-                  onPress={() => onLessonToggle(lesson.n)}
+                  onPress={() => onOpenVideo(lesson.n)}
                   accessibilityRole="button"
-                  accessibilityState={{ expanded: lessonOpen }}
-                  accessibilityLabel={`${tr(lesson.titleKk)} — ${lessonOpen ? "жабу" : "ашу"}`}
-                  style={({ pressed }) => [styles.lessonHead, pressed && { opacity: 0.92 }]}
+                  accessibilityLabel={kk.seerah.openVideoA11y(lesson.n)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.88 }]}
                 >
-                  <View style={[styles.lessonNum, viewed && styles.lessonNumViewed]}>
-                    <Text style={[styles.lessonNumText, viewed && styles.lessonNumTextViewed]}>{lesson.n}</Text>
-                  </View>
-                  <View style={styles.lessonTextCol}>
-                    <Text style={styles.lessonTitle} numberOfLines={2}>
-                      {tr(lesson.titleKk)}
-                      {lastLesson === lesson.n ? ` · ${tr("Соңғы")}` : ""}
-                    </Text>
-                    <Text style={styles.lessonFocus}>{tr(lesson.focusKk)}</Text>
-                  </View>
-                  <MaterialIcons
-                    name={lessonOpen ? "expand-less" : "expand-more"}
-                    size={20}
-                    color={colors.muted}
-                  />
+                  <MaterialIcons name="play-circle-outline" size={26} color={colors.accent} />
                 </Pressable>
-                {lessonOpen ? (
-                  <View style={styles.lessonBody}>
-                    <Text style={styles.lessonSummary}>{tr(lesson.summaryKk)}</Text>
-                    <Pressable
-                      oyuBackdrop={false}
-                      onPress={() => onOpenVideo(lesson.n)}
-                      accessibilityRole="button"
-                      accessibilityLabel={kk.seerah.lessonA11y(lesson.n)}
-                      style={({ pressed }) => [styles.videoBtn, pressed && { opacity: 0.9 }]}
-                    >
-                      <MaterialIcons name="play-circle-outline" size={18} color={colors.accent} />
-                      <Text style={styles.videoBtnText}>{tr(kk.seerah.lessonSub)}</Text>
-                    </Pressable>
-                  </View>
-                ) : null}
               </View>
             );
           })}
@@ -186,29 +155,9 @@ function SeerahPhaseBlock({
   );
 }
 
-function makeStyles(colors: ThemeColors) {
+function makeStyles(_colors: ThemeColors) {
   return StyleSheet.create({
-    wrap: { marginBottom: 20, alignSelf: "stretch" },
-    head: {
-      flexDirection: "row",
-      gap: 12,
-      marginBottom: 14,
-      alignItems: "flex-start",
-    },
-    headIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    headText: { flex: 1, minWidth: 0 },
-    title: { color: colors.text, fontWeight: "800", fontSize: 16, lineHeight: 22 },
-    lead: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 4 },
-    phaseList: { gap: 10 },
+    wrap: { marginBottom: 12, alignSelf: "stretch", gap: 8 },
   });
 }
 
@@ -223,7 +172,7 @@ function makePhaseStyles(colors: ThemeColors) {
       paddingHorizontal: 12,
       borderRadius: 14,
       backgroundColor: colors.card,
-      borderWidth: 1,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: colors.border,
     },
     phaseHeadOpen: {
@@ -231,87 +180,68 @@ function makePhaseStyles(colors: ThemeColors) {
       borderColor: colors.accent,
     },
     phaseIcon: {
-      width: 34,
-      height: 34,
+      width: 36,
+      height: 36,
       borderRadius: 10,
-      backgroundColor: colors.bg,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: colors.accentSurface,
     },
     phaseTextCol: { flex: 1, minWidth: 0 },
-    phaseTitle: { color: colors.text, fontWeight: "800", fontSize: 14, lineHeight: 20 },
+    phaseTitle: { color: colors.text, fontSize: 15, fontWeight: "900" },
     phaseTitleOpen: { color: "#FFFFFF" },
-    phaseSub: { color: colors.muted, fontSize: 12, marginTop: 2 },
+    phaseSub: { color: colors.muted, fontSize: 12, fontWeight: "600", marginTop: 2 },
     phaseSubOpen: { color: "rgba(255,255,255,0.85)" },
-    phaseCount: {
-      color: colors.accent,
-      fontWeight: "900",
-      fontSize: 15,
-      minWidth: 22,
-      textAlign: "right",
-    },
-    phaseCountOpen: { color: "#FFFFFF" },
     body: {
-      marginTop: 8,
-      padding: 12,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      gap: 10,
+      marginTop: 6,
+      gap: 8,
+      paddingLeft: 4,
     },
     phaseIntro: {
       color: colors.muted,
       fontSize: 13,
-      lineHeight: 20,
-      marginBottom: 4,
+      lineHeight: 19,
+      fontWeight: "600",
+      paddingHorizontal: 6,
+      paddingBottom: 2,
     },
-    lessonCard: {
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: "hidden",
-      backgroundColor: colors.bg,
-    },
-    lessonHead: {
+    lessonRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 10,
-      padding: 10,
+      paddingVertical: 11,
+      paddingHorizontal: 10,
+      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
     },
     lessonNum: {
-      width: 28,
-      height: 28,
-      borderRadius: 8,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: colors.accentSurface,
+      marginTop: 2,
     },
-    lessonNumViewed: {
-      backgroundColor: colors.accent,
-      borderColor: colors.accent,
-    },
-    lessonNumText: { color: colors.accent, fontWeight: "800", fontSize: 12 },
+    lessonNumViewed: { backgroundColor: colors.accent },
+    lessonNumText: { color: colors.accent, fontSize: 12, fontWeight: "900" },
     lessonNumTextViewed: { color: "#FFFFFF" },
     lessonTextCol: { flex: 1, minWidth: 0 },
-    lessonTitle: { color: colors.text, fontWeight: "700", fontSize: 14, lineHeight: 19 },
-    lessonFocus: { color: colors.muted, fontSize: 11, marginTop: 2 },
-    lessonBody: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
-    lessonSummary: { color: colors.text, fontSize: 14, lineHeight: 22 },
-    videoBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      alignSelf: "flex-start",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
+    lessonTitle: { color: colors.text, fontSize: 14, fontWeight: "800" },
+    lessonFocus: { color: colors.muted, fontSize: 12, fontWeight: "600", marginTop: 2 },
+    lessonSummary: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "500",
+      marginTop: 6,
+      opacity: 0.92,
     },
-    videoBtnText: { color: colors.accent, fontWeight: "700", fontSize: 13 },
+    playBtn: {
+      paddingTop: 2,
+      paddingLeft: 2,
+    },
   });
 }

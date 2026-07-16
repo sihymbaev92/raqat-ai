@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { raqatLoadingSpinnerOrnament } from "../theme/ornamentAssets";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   /** true — айналады; false — жасырылады */
@@ -42,6 +43,7 @@ export function RaqatOrnamentSpinner({
   style,
   accessibilityLabel = kk.common.loading,
 }: Props) {
+  useAppLocale();
   const box = useMemo(() => resolveOrnamentSpinnerSize(size), [size]);
   const imageSize = box;
   const rotation = useSharedValue(0);

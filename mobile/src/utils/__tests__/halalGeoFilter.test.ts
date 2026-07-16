@@ -60,4 +60,27 @@ describe("halalGeoFilter", () => {
     });
     expect(halalCompanyEffectiveCoords(c)?.lat).toBeCloseTo(43.24, 2);
   });
+
+  it("includes address-matched city approx within radius when allowCityApprox", () => {
+    const centerLat = 43.23895;
+    const centerLon = 76.88971;
+    const local = company({
+      id: 4,
+      title: "Алматы кафе",
+      address: "ҚР, Алматы қ., Абай 10",
+      lat: null,
+      lon: null,
+    });
+    const far = company({
+      id: 5,
+      title: "Астана кафе",
+      address: "ҚР, Астана қ., Бейбітшілік 1",
+      lat: null,
+      lon: null,
+    });
+    const filtered = filterHalalCompaniesWithinRadius([local, far], centerLat, centerLon, 5000, {
+      allowCityApprox: true,
+    });
+    expect(filtered.map((c) => c.id)).toEqual([4]);
+  });
 });

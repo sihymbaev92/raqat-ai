@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import {
   View,
   Text,
   StyleSheet,
   Platform,
-  Dimensions,
+  useWindowDimensions,
   type StyleProp,
   type ViewStyle,
 } from "react-native";
@@ -20,8 +21,6 @@ import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
 import { qiblaAlignHint, type QiblaAlignHint } from "../lib/qiblaHints";
 import { kk } from "../i18n/kk";
 import type { ThemeColors } from "../theme/colors";
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 function overlayHint(h: QiblaAlignHint, bearing: number | null): string {
   if (bearing == null) return kk.qibla.hintPending;
@@ -52,8 +51,10 @@ type Props = {
  * Алдыңғы камера + құбыла көрсеткісі: телефонды бұрағанда иін сенсор бойынша айналады.
  */
 export function QiblaArCameraView({ colors, layout, style, onClose, title }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
+  const { width: screenW, height: screenH } = useWindowDimensions();
   const [permission, requestPermission] = useCameraPermissions();
   const [ready, setReady] = useState(false);
   const { bearing, refreshBearing } = useQiblaStable();
@@ -66,11 +67,11 @@ export function QiblaArCameraView({ colors, layout, style, onClose, title }: Pro
   const mainHint = overlayHint(alignHint, bearing);
 
   const dialSize = useMemo(() => {
-    if (layout === "inline") return Math.min(SCREEN_W - 48, 220);
-    return Math.min(SCREEN_W, SCREEN_H) * 0.42;
-  }, [layout]);
+    if (layout === "inline") return Math.min(screenW - 48, 220);
+    return Math.min(screenW, screenH) * 0.42;
+  }, [layout, screenW, screenH]);
 
-  const styles = useMemo(() => makeStyles(colors, layout), [colors, layout]);
+  const styles = useMemo(() => makeStyles(colors, layout, screenH), [colors, layout, screenH]);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -209,8 +210,8 @@ export function QiblaArCameraView({ colors, layout, style, onClose, title }: Pro
   );
 }
 
-function makeStyles(colors: ThemeColors, layout: "modal" | "inline") {
-  const inlineMinH = Math.min(SCREEN_H * 0.52, 420);
+function makeStyles(colors: ThemeColors, layout: "modal" | "inline", screenH: number) {
+  const inlineMinH = Math.min(screenH * 0.52, 420);
   return StyleSheet.create({
     root: {
       flex: layout === "modal" ? 1 : undefined,

@@ -1,5 +1,8 @@
 import * as Network from "expo-network";
-import { isQuranAudioCached } from "../services/quranAudioCache";
+import {
+  isQuranAudioCached,
+  resolveCachedOrRemoteQuranAudioUri,
+} from "../services/quranAudioCache";
 import {
   isReciterEditionFullyDownloaded,
   loadQuranAudioDownloadState,
@@ -19,7 +22,6 @@ export type QuranAudioPlaybackPlan = {
 export async function planQuranAyahAudioPlayback(remoteUri: string): Promise<QuranAudioPlaybackPlan> {
   const cached = await isQuranAudioCached(remoteUri);
   if (cached) {
-    const { resolveCachedOrRemoteQuranAudioUri } = await import("../services/quranAudioCache");
     const uri = await resolveCachedOrRemoteQuranAudioUri(remoteUri);
     return { remoteUri, uri, source: "cache", needsNetwork: false };
   }

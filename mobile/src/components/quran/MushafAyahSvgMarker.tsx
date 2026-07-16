@@ -25,6 +25,8 @@ type Props = {
   textColor: TextStyle["color"];
   /** Дөңгелек белгінің диаметрі (px) */
   height?: number;
+  /** Бекітілген аят нөмірі қарпі (хатым: барлық белгілер бірдей). */
+  numberFontSize?: number;
   /** Quran.com хатым — 8 тісті алтын дөңгелек */
   variant?: "default" | "qcom";
 };
@@ -47,17 +49,21 @@ export function MushafAyahSvgMarker({
   fill = MARKER_BLUE_FACE,
   textColor = "#111111",
   height = 36,
+  numberFontSize,
   variant = "default",
 }: Props) {
   const qcom = variant === "qcom";
   const size = qcom ? height : height;
   const labelLength = Array.from(label).length;
-  const fs = qcom
-    ? Math.max(
-        labelLength >= 3 ? 10 : 12,
-        Math.min(22, Math.round(size * (labelLength >= 3 ? 0.32 : labelLength === 2 ? 0.4 : 0.48)))
-      )
-    : Math.max(10, Math.min(14, Math.round(size * 0.34)));
+  const fs =
+    numberFontSize != null
+      ? numberFontSize
+      : qcom
+        ? Math.max(
+            labelLength >= 3 ? 10 : 12,
+            Math.min(22, Math.round(size * (labelLength >= 3 ? 0.32 : labelLength === 2 ? 0.4 : 0.48)))
+          )
+        : Math.max(10, Math.min(14, Math.round(size * 0.34)));
   const numberFont = qcom ? MARKER_NUMBER_FONT_QCOM : MARKER_NUMBER_FONT_DEFAULT;
 
   if (qcom) {

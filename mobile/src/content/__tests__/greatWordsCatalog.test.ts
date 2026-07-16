@@ -4,9 +4,13 @@ import {
   getMergedGreatWordsTopics,
   getReflectiveGreatWordsEntries,
   searchMergedGreatWordsTopics,
+  ensureGreatWordsCatalogLoaded,
 } from "../greatWordsCatalog";
 
 describe("greatWordsCatalog", () => {
+  beforeAll(async () => {
+    await ensureGreatWordsCatalogLoaded();
+  });
   it("merges repeated same-name topics into readable virtual entries", () => {
     const topics = getMergedGreatWordsTopics(20);
     const otan = topics.find((topic) => topic.title.toLowerCase() === "отан");

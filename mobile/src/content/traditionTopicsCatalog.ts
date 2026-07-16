@@ -1,41 +1,10 @@
 import type { ImageSourcePropType } from "react-native";
 import type { TraditionTopicCategory } from "./kazakhTraditionTopicStats";
 import { getTraditionReligiousEvidence } from "./traditionReligiousEvidence";
+import { getAllTraditionBatas, searchTraditionBatas } from "./traditionBataCatalog";
+import type { TraditionArticle, TraditionAudioBlessing, TraditionTopic } from "./traditionContentTypes";
 
-export type TraditionTopic = {
-  id: string;
-  title: string;
-  subtitle: string;
-  categories: TraditionTopicCategory[];
-  summary: string;
-  origin: string;
-  religionLink: string;
-  howTo: string[];
-  blessing: string;
-  quote: string;
-  image: ImageSourcePropType;
-  audioIds: string[];
-  articleIds: string[];
-};
-
-export type TraditionAudioBlessing = {
-  id: string;
-  topicId?: string;
-  title: string;
-  duration: string;
-  text: string;
-  sourceLabel: string;
-};
-
-export type TraditionArticle = {
-  id: string;
-  topicId?: string;
-  title: string;
-  source: string;
-  excerpt: string;
-  tag: string;
-  url?: string;
-};
+export type { TraditionArticle, TraditionAudioBlessing, TraditionTopic } from "./traditionContentTypes";
 
 export const traditionHeroImage = require("../../assets/menu-icons/hero-din-tradition-family.png");
 const traditionTileImage = require("../../assets/menu-icons/tile-din-tradition.png");
@@ -48,11 +17,58 @@ export const TRADITION_CATEGORY_TILES: Array<{
   { id: "family", label: "Отбасы", icon: "home" },
   { id: "ceremony", label: "Рәсімдер", icon: "celebration" },
   { id: "social", label: "Қоғам", icon: "groups" },
-  { id: "faith", label: "Дінмен үндес", icon: "auto-stories" },
+  { id: "faith", label: "Дінмен байланыс", icon: "auto-stories" },
   { id: "articles", label: "Мақалалар", icon: "article" },
 ];
 
 export const TRADITION_TOPICS: TraditionTopic[] = [
+  {
+    id: "dastur-men-din-negiz",
+    title: "Дәстүр мен дін: негіз",
+    subtitle: "Не ұқсас, не бөлек, қалай дұрыс ұстау",
+    categories: ["faith"],
+    summary:
+      "Дін — Алланың пәрмені мен Пайғамбар ﷺ сүннеті; дәстүр — халықтың ғасырлар бойы сыналған әдебі. Екеуі тек таухидты бұзбай, адамға зиян келтірмей, шариғат шегін сақтай отырып ғана бірге жүреді. Ақида дәстүрді өлшейді: игі әдет қабылданады, сенімге қайшы тұсы алынып тасталады.",
+    origin:
+      "Қазақ қоғамында бата, қонақжайлылық, асар, жеті ата, той мен жаназа — отбасы мен ауыл бірлігін сақтаған. Ислам келгеннен кейін халық осы әдеттердің игі жағын сақтап, сенімге қайшы тұсын ажырата бастаған. Ғибадат (намаз, ораза, зекет) — діннің өзі; әдеп (сәлем, қонақ, бата) — дәстүрдің дінмен үйлесетін жағы.",
+    religionLink:
+      "Ұштасуы: ізгі әдет, ата-ана құрметі, қонақ күту, қайырым, тазалық, дұға және бірлік — Құран мен сүннет әдебімен үйлеседі (мысалы: 5:2 көмек, 17:23 ата-ана, 25:77 дұға). Шегі: дәстүрді шариғаттың орнына қою, ырымды «міндет» ету, затқа немесе адамға тәуелді күш сену, ысырап пен мақтан — дінге қайшы.",
+    howTo: [
+      "Әр рәсімде мақсатты анықтаңыз: қуаныш, дұға, көмек — әлде ырым ба?",
+      "Пайдалы жағын алыңыз: мейірім, бірлік, әдеп, шүкір.",
+      "Сенім шегін сақтаңыз: қайыр да, зиян да Алладан; зат қорғамайды.",
+      "Күмәнді жерде білікті ұстазға немесе ресми діни нұсқаулыққа сүйеніңіз.",
+    ],
+    blessing: "Алла дәстүріміздің игісін сақтап, сенімімізді таза, жүрегімізді бірлікке толтырсын.",
+    quote: "Дәстүр — әдеп; дін — өлшем.",
+    image: traditionTileImage,
+    audioIds: ["birlik-batasi"],
+    articleIds: ["tradition-values", "din-dastur-connection"],
+  },
+  {
+    id: "yrymdar-men-din",
+    title: "Ырымдар және дін",
+    subtitle: "Жақсы ырым, зиянды ырым, шариғи шек",
+    categories: ["faith", "ceremony"],
+    summary:
+      "Ырым — халықтың тәжірибесінен шыққан әдет немесе тыйым. Біреуі жай мәдениет (құрмет, сақтық), біреуі сенімді бұзады (затқа, санға, түске тәуелді күш сену). Исламда негіз — таухид: пайда да, зиян да Алладан. Сондықтан ырымды «міндетті дін» деп емес, әдеп пен сенімді ажыратып қарау керек.",
+    origin:
+      "Көшпелі тұрмыста адам табиғат, жол, ауру, той-тойыс қаупінен сақтану үшін белгілер мен тыйымдар жинаған. Кейінірек олардың бір бөлігі мәдени әдепке айналса, бір бөлігі сиқырлық сенімге ұқсап кеткен. Қазақ ислам дәстүрі ырымның пайдалы сақтығын сақтап, күпірлікке апармайтын шегін үйреткен.",
+    religionLink:
+      "Ұштасуы: жақсылыққа жору (тәфәул), дұға, сақтық, тазалық және адамға зиян келтірмеу — дін әдебіне сай. Шегі: «бұл болмаса бақытсыздық болады», «бұл зат қорғайды», «сан/түс/күн өзінен күш» деген сенім; сиқыр, балгерлік, құрбанды ырымға байлау — шариғатқа қайшы. Мұндайда Аллаға тәуекел етіп, дұға жасаңыз, ырымды міндет етпеңіз.",
+    howTo: [
+      "Ырымды үш сұрақпен тексеріңіз: 1) Алладан басқа күшке сендіре ме? 2) Адамға зиян/қорқыныш туғыза ма? 3) Шариғаттың орнына қоя ма?",
+      "Егер тек әдеп немесе сақтық болса (мысалы, үлкенді сыйлау) — мәдениет ретінде ұстаңыз.",
+      "Егер «міндетті күш» немесе қорқыту болса — тоқтатып, дұға мен тәуекелге қайтыңыз.",
+      "Балаға түсіндіріңіз: бақыт — ырымда емес, Алланың қалауында және ізгі амалда.",
+      "Ауруда медицинаны, діни мәселеде ұстазды бірінші қойыңыз.",
+    ],
+    blessing: "Алла жүрегіңізді ырым қорқынышынан азат етіп, иман мен тәуекелге толтырсын.",
+    quote: "Ырым — әдеп болса жақсы; сенім болса — шек бар.",
+    image: traditionTileImage,
+    audioIds: ["zhol-batasi"],
+    articleIds: ["tradition-values"],
+  },
   {
     id: "besikke-salu",
     title: "Бесікке салу",
@@ -106,21 +122,22 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     subtitle: "Ізгі тілек пен дұға мәдениеті",
     categories: ["family", "faith", "social"],
     summary:
-      "Бата - үлкеннің ықыласы, жақсылық тілеу және дұғаға жақын рухани сөз. Оның мәні - ұрпақты қайырлы іске бағыттау.",
+      "Бата — үлкеннің ықыласы, жақсылық тілеу және дұғаға жақын рухани сөз. Исламда дұға — ғибадат; мұсылман бауырына дұға — садақа. Бата сиқыр емес — ниет, әдеп және Аллаға тәуекел маңызды. Төменде 100 дәстүрлі бата мәтіні (күнделікті, отбасы, сапар, денсаулық, той, ғибадат).",
     origin:
-      "Бата қазақ отбасында ас соңында, сапар алдында, қуаныш пен маңызды кезеңдерде айтылған тәрбиелік сөз ретінде сақталған.",
+      "Бата қазақ отбасында ас соңында, сапар алдында, қуаныш пен маңызды кезеңдерде айтылған тәрбиелік сөз ретінде сақталған. Пайғамбар ﷺ балаға жақсы ат, құрмет және дұға жасауды ұнатқан — бата осы сүннет желісіне жақын.",
     religionLink:
-      "Ұштасуы: бата - Алладан қайыр сұрауға жақын ізгі тілек, дұға мәдениетімен байланысады. Шегі: батаны сиқырлы күш санау, қарғыс қосу, шариғатқа қайшы тілек айту немесе адамды Алладан тәуелсіз жарылқаушы ету дұрыс емес.",
+      "Ұштасуы: бата — Алладан қайыр сұрауға жақын ізгі тілек (Құран 25:77; хадис: дұға ғибадат). Шегі: батаны сиқырлы күш санау, қарғыс қосу, шариғатқа қайшы тілек айту немесе адамды Алладан тәуелсіз жарылқаушы ету дұрыс емес.",
     howTo: [
       "Батаны қысқа әрі түсінікті айту.",
       "Алладан қайыр, береке, иман және амандық тілеу.",
       "Қарғыс, мақтан немесе күмәнді сөз қоспау.",
       "Балаларға батаның мағынасын түсіндіру.",
     ],
-    blessing: "Алла ниетіңді қабыл етсін, отбасыңа береке, жүрегіңе иман, ісіңе қайыр берсін.",
+    blessing:
+      "Бата — үлкеннің игі тілегі; төмендегі мәтіндерді ниетпен, дұға ретінде оқыңыз. Алладан қайыр тілеп, адамға зиянсыз сөзбен шектеліңіз.",
     quote: "Бата - сөзбен берілген мейірім.",
     image: traditionTileImage,
-    audioIds: ["as-batasi", "zhol-batasi"],
+    audioIds: [],
     articleIds: ["bata-meaning"],
   },
   {
@@ -455,7 +472,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     origin:
       "Қазақ отбасында айт намазынан кейін үлкендерге сәлем беру, балаларға қуаныш сыйлау, дастарқан жаю және кешірім сұрау сақталған.",
     religionLink:
-      "Ұштасуы: айт намазы, фитр садақасы, такбир, кешірім және туыстықты жаңарту шариғатпен байланысты. Шегі: айттың діни амалдарын ұмыт қалдырып, тек дастарқан мен сыйлыққа айналдыру, ысырап және харамнан сақтану керек.",
+      "Ұштасуы: айт намазы, фитр садақасы, тәкбір, кешірім және туыстықты жаңарту шариғатпен байланысты. Шегі: айттың діни амалдарын ұмыт қалдырып, тек дастарқан мен сыйлыққа айналдыру, ысырап және харамнан сақтану керек.",
     howTo: [
       "Фитр садақасын уақытында өтеу.",
       "Айт намазы уақытын мешіттен нақтылау.",
@@ -727,7 +744,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     subtitle: "Қайырым, парыз және ниет тазалығы",
     categories: ["faith", "social"],
     summary:
-      "Садақа - ерікті қайырым, зекет - шарттары болса парыз ғибадат. Қазақтағы қайырым дәстүрі осы ұғымдармен пысықталады.",
+      "Садақа - ерікті қайырым, зекет - шарттары болса парыз ғибадат. Қазақтағы қайырым дәстүрі осы ұғымдармен түсіндіріледі.",
     origin:
       "Қазақ қоғамында жетім-жесірге, жолаушыға, жоқ-жітікке көмек беру, асар және жылу жинау қайырым мәдениетін сақтаған.",
     religionLink:
@@ -782,7 +799,7 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
       "Күйдің тарихын балаларға қысқа түсіндіру.",
       "Дыбысты көрші мен жамағатқа кедергі қылмау.",
       "Өнерді мақтан емес, тәрбие құралы ету.",
-      "Ғибадат уақыты мен орнын құрметтеу.",
+      "Ғғибадат уақыты мен орнын құрметтеу.",
     ],
     blessing: "Өнеріңіз өнегелі, сөзіңіз салмақты, жүрегіңіз иманды болсын.",
     quote: "Өнер әдеппен жүрсе, тәрбиеге айналады.",
@@ -884,47 +901,28 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
   },
 ];
 
-export const TRADITION_AUDIO_BLESSINGS: TraditionAudioBlessing[] = [
-  {
-    id: "besik-batasi",
-    topicId: "besikke-salu",
-    title: "Бесікке салу батасы",
-    duration: "01:45",
-    text: "Бесігің берік болсын, ұйқың тыныш болсын. Алла тағала деніңе саулық, жүрегіңе иман, өміріңе береке берсін.",
-    sourceLabel: "Халық батасы",
-  },
-  {
-    id: "tusau-batasi",
-    topicId: "tusaukeser",
-    title: "Тұсаукесер батасы",
-    duration: "01:28",
-    text: "Қадамың құтты болсын, жолың ашық болсын. Жақсыға жақын, жаманнан алыс болып өс.",
-    sourceLabel: "Отбасы батасы",
-  },
-  {
-    id: "as-batasi",
-    topicId: "qonaq-kutu",
-    title: "Ас беру батасы",
-    duration: "02:03",
-    text: "Дастарханға береке, шаңыраққа мереке берсін. Ас иесіне Алла разы болсын.",
-    sourceLabel: "Дастарқан батасы",
-  },
-  {
-    id: "zhol-batasi",
-    title: "Жол батасы",
-    duration: "01:20",
-    text: "Жолың болсын, сапарың оң болсын. Алла алдынан жарылқап, артыңнан қорғап жүрсін.",
-    sourceLabel: "Сапар батасы",
-  },
-  {
-    id: "birlik-batasi",
-    topicId: "asar",
-    title: "Бірлік батасы",
-    duration: "01:36",
-    text: "Бірлігің бекем, тірлігің көркем болсын. Ел аман, жұрт тыныш, ниет қабыл болсын.",
-    sourceLabel: "Қауым батасы",
-  },
-];
+/** Ескі topic audioIds → жаңа каталог id (100 бата). */
+const LEGACY_BATA_AUDIO_ALIASES: Record<string, string> = {
+  "bata-jalpy": "bata-001",
+  "besik-batasi": "bata-021",
+  "tusau-batasi": "bata-022",
+  "as-batasi": "bata-063",
+  "zhol-batasi": "bata-039",
+  "birlik-batasi": "bata-091",
+  "bata-bala": "bata-024",
+  "bata-kelin": "bata-034",
+  "bata-kuda": "bata-033",
+  "bata-ui": "bata-099",
+  "bata-shetel": "bata-040",
+  "bata-nauqas": "bata-047",
+  "bata-toishy": "bata-055",
+};
+
+export const TRADITION_AUDIO_BLESSINGS: TraditionAudioBlessing[] = getAllTraditionBatas();
+
+function resolveBlessingId(id: string): string {
+  return LEGACY_BATA_AUDIO_ALIASES[id] ?? id;
+}
 
 export const TRADITION_ARTICLES: TraditionArticle[] = [
   {
@@ -933,6 +931,15 @@ export const TRADITION_ARTICLES: TraditionArticle[] = [
     source: "RAHAT OMIR",
     tag: "Оқу",
     excerpt: "Дәстүрді сақтағанда оның пайдалы жағын алып, сенімге қайшы тұсын ажырату маңызды.",
+  },
+  {
+    id: "din-dastur-connection",
+    topicId: "dastur-men-din-negiz",
+    title: "Дін мен дәстүр: қалай үйлеседі?",
+    source: "RAHAT OMIR",
+    tag: "Негіз",
+    excerpt:
+      "Үш тірек — ақида, ғибадат, әдеп. Дәстүр діннің орнына қойылмайды; игі әдет қабылданады, сенімге қайшы тұсы алынып тасталады. Төмендегі дәлелдер бөлімінен аят пен хадис ашыңыз.",
   },
   {
     id: "child-care-adab",
@@ -946,9 +953,10 @@ export const TRADITION_ARTICLES: TraditionArticle[] = [
     id: "bata-meaning",
     topicId: "bata-beru",
     title: "Бата - рухани мұра",
-    source: "Мақала",
+    source: "Дәстүр оқулығы",
     tag: "Бата",
-    excerpt: "Батаның дұғамен байланысы, мағынасы және отбасылық тәрбиеге әсері.",
+    excerpt:
+      "Бата — үлкеннің кішіге, қарияның жасқа игі тілек айтуы. Ислам бойынша бұл дұғаға жақын: Алладан қайыр тілеу, адамға зиянсыз сөз. Батаны «сиқыр» немесе «міндетті күш» деп ұғу дұрыс емес — ниет, әдеп және Аллаға тәуекел маңызды. Ас, жол, той, үй, балаға бата — жағдайға қарай таңдалады.",
   },
   {
     id: "community-adab",
@@ -997,19 +1005,25 @@ export function getTraditionTopicByTitle(title: string): TraditionTopic | undefi
 }
 
 export function getTraditionAudioById(id: string): TraditionAudioBlessing | undefined {
-  return TRADITION_AUDIO_BLESSINGS.find((audio) => audio.id === id);
+  const resolved = resolveBlessingId(id);
+  return TRADITION_AUDIO_BLESSINGS.find((audio) => audio.id === resolved);
 }
 
 export function getTraditionArticleById(id: string): TraditionArticle | undefined {
   return TRADITION_ARTICLES.find((article) => article.id === id);
 }
 
-export function getRelatedTraditionAudios(topicId: string): TraditionAudioBlessing[] {
+export function getRelatedTraditionAudios(topicId: string, query = ""): TraditionAudioBlessing[] {
+  if (topicId === "bata-beru") {
+    return query.trim() ? searchTraditionBatas(query) : getAllTraditionBatas();
+  }
   const topic = getTraditionTopicById(topicId);
   const ids = topic?.audioIds ?? [];
   if (ids.length) {
     const byId = new Map(TRADITION_AUDIO_BLESSINGS.map((audio) => [audio.id, audio]));
-    return ids.map((id) => byId.get(id)).filter((audio): audio is TraditionAudioBlessing => Boolean(audio));
+    return ids
+      .map((id) => byId.get(resolveBlessingId(id)))
+      .filter((audio): audio is TraditionAudioBlessing => Boolean(audio));
   }
   return TRADITION_AUDIO_BLESSINGS.filter((audio) => audio.topicId === topicId);
 }
@@ -1033,7 +1047,7 @@ export function traditionCategoryLabel(category: TraditionTopicCategory): string
     case "ceremony":
       return "Рәсім";
     case "faith":
-      return "Дінмен үндес";
+      return "Дінмен байланыс";
     default:
       return category;
   }

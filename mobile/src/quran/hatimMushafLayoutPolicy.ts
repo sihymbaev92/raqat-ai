@@ -77,11 +77,6 @@ export function hatimNativeBottomInset(
   return Math.max(insetsBottom, 10);
 }
 
-/** @deprecated resolveHatimMushafLayout().centerBookColumn */
-export function hatimPagerShouldCenterPage(pagerWidth: number, bookPageWidth: number): boolean {
-  return bookPageWidth + 4 < pagerWidth;
-}
-
 export function hatimQcf4LineJustifyContent(): "space-between" {
   return "space-between";
 }

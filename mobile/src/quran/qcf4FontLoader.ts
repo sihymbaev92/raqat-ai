@@ -119,8 +119,8 @@ async function loadQcf4Font(fontId: string): Promise<boolean> {
           ? `${fontId}_W.woff2`
           : `${fontId}_W.ttf`;
     const uris = [
-      `${getQcf4UpstreamBaseUrl()}/${dir}/${file}`,
       mushafQcf4FontFileUrl(fontId, ext),
+      `${getQcf4UpstreamBaseUrl()}/${dir}/${file}`,
     ];
     if (Platform.OS === "web") {
       return loadQcf4FontWeb(fontId, family, qcf4WebFontUris(uris[0]!, uris[1]!));

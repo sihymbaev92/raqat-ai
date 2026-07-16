@@ -8,6 +8,35 @@
 const INCLUDE_NATIVE_EXPO_CONFIG =
   process.env.EAS_BUILD === "true" || process.env.RAQAT_INCLUDE_NATIVE_EXPO_CONFIG === "1";
 
+function isReleaseExpoBuild() {
+  return (
+    process.env.RAQAT_EXPO_RELEASE_BUILD === "1" ||
+    process.env.NODE_ENV === "production" ||
+    process.env.EAS_BUILD === "true"
+  );
+}
+
+/** iOS ATS: LAN / emulator HTTP — тек dev/debug; production HTTPS-only. */
+const IOS_DEV_INSECURE_DOMAINS = {
+  "10.0.2.2": { NSExceptionAllowsInsecureHTTPLoads: true },
+  localhost: { NSExceptionAllowsInsecureHTTPLoads: true },
+  "127.0.0.1": { NSExceptionAllowsInsecureHTTPLoads: true },
+  "192.168.0.148": { NSExceptionAllowsInsecureHTTPLoads: true },
+  "10.191.110.203": { NSExceptionAllowsInsecureHTTPLoads: true },
+  "192.168.1.100": { NSExceptionAllowsInsecureHTTPLoads: true },
+  "5.75.162.140": { NSExceptionAllowsInsecureHTTPLoads: true },
+};
+
+const IOS_PROD_NS_EXCEPTION_DOMAINS = {
+  "api.rahatomir.com": { NSIncludesSubdomains: true },
+  "rahatomir.com": { NSIncludesSubdomains: true },
+  /** Қағба HD HLS (http://m.live.net.sa:1935/…). */
+  "live.net.sa": {
+    NSIncludesSubdomains: true,
+    NSExceptionAllowsInsecureHTTPLoads: true,
+  },
+};
+
 const BASE_EXTRA = {
   imamAiApiBase: "https://api.rahatomir.com",
   raqatApiBase: "https://api.rahatomir.com",
@@ -84,26 +113,23 @@ const NATIVE_EXPO_CONFIG = {
     "expo-web-browser",
     "expo-secure-store",
     "expo-apple-authentication",
+    "@bacons/apple-targets",
+    "./plugins/withIosPrayerWidgetBridge",
+    "./plugins/withIosCarPlay",
   ],
   ios: {
     supportsTablet: true,
     usesAppleSignIn: true,
     bundleIdentifier: "kz.raqat.app",
+    appleTeamId: process.env.RAQAT_IOS_APPLE_TEAM_ID || undefined,
+    entitlements: {
+      "com.apple.security.application-groups": ["group.kz.raqat.app"],
+    },
     infoPlist: {
-      CFBundleSpokenName: "Rahat Omir",
-      LSApplicationQueriesSchemes: ["shortcuts"],
       NSAppTransportSecurity: {
-        NSExceptionDomains: {
-          "5.75.162.140": { NSExceptionAllowsInsecureHTTPLoads: true },
-          "api.rahatomir.com": { NSIncludesSubdomains: true },
-          "rahatomir.com": { NSIncludesSubdomains: true },
-          "192.168.0.148": { NSExceptionAllowsInsecureHTTPLoads: true },
-          "10.191.110.203": { NSExceptionAllowsInsecureHTTPLoads: true },
-          "192.168.1.100": { NSExceptionAllowsInsecureHTTPLoads: true },
-          "10.0.2.2": { NSExceptionAllowsInsecureHTTPLoads: true },
-          localhost: { NSExceptionAllowsInsecureHTTPLoads: true },
-          "127.0.0.1": { NSExceptionAllowsInsecureHTTPLoads: true },
-        },
+        NSExceptionDomains: isReleaseExpoBuild()
+          ? IOS_PROD_NS_EXCEPTION_DOMAINS
+          : { ...IOS_PROD_NS_EXCEPTION_DOMAINS, ...IOS_DEV_INSECURE_DOMAINS },
       },
       NSLocationWhenInUseUsageDescription: "Your location is used for Qibla and prayer times.",
       NSLocationAlwaysAndWhenInUseUsageDescription: "Your location is used for Qibla and prayer times.",
@@ -115,7 +141,7 @@ const NATIVE_EXPO_CONFIG = {
   },
   android: {
     softwareKeyboardLayoutMode: "resize",
-    versionCode: 10,
+    versionCode: 11,
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#000000",
@@ -153,7 +179,7 @@ module.exports = ({ config }) => {
     ...config,
     name: "RAHAT OMIR",
     slug: "raqat-mobile",
-    version: "1.1.0",
+    version: "1.1.1",
     owner: "raqat-omir",
     web: {
       favicon: "./assets/favicon.png",
@@ -190,6 +216,16 @@ module.exports = ({ config }) => {
   /** AI/контент: клиент бандлына құпия енгізілмейді — JWT (кіру) арқылы. */
   delete extra.raqatAiSecret;
   delete extra.raqatContentSecret;
+  /** Release: Metro EXPO_PUBLIC_* инлайн жасамасын. */
+  const isReleaseConfig =
+    process.env.NODE_ENV === "production" ||
+    process.env.EAS_BUILD_PROFILE === "production" ||
+    process.env.RAQAT_STRIP_CLIENT_SECRETS === "1";
+  if (isReleaseConfig) {
+    delete process.env.EXPO_PUBLIC_RAQAT_CONTENT_SECRET;
+    delete process.env.EXPO_PUBLIC_RAQAT_AI_SECRET;
+    delete process.env.EXPO_PUBLIC_IMAM_AI_SECRET;
+  }
   if (donationEnv) extra.raqatDonationUrl = donationEnv;
 
   const halalDamuEnv = (process.env.EXPO_PUBLIC_HALAL_DAMU_URL || "").trim();
@@ -201,6 +237,13 @@ module.exports = ({ config }) => {
   if (raqatWebEnv) {
     extra.raqatWebUrl = raqatWebEnv.replace(/\/+$/, "");
   }
+
+  const googleWeb = (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "").trim();
+  const googleIos = (process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "").trim();
+  const googleAndroid = (process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "").trim();
+  if (googleWeb) extra.googleWebClientId = googleWeb;
+  if (googleIos) extra.googleIosClientId = googleIos;
+  if (googleAndroid) extra.googleAndroidClientId = googleAndroid;
 
   expo.extra = extra;
   return { expo };

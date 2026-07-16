@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppLocale } from "../../i18n/runtime";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Location from "expo-location";
@@ -23,7 +24,9 @@ import {
   isHalalCatalogEstablishment,
 } from "../../utils/halalCompanyLocalFilter";
 import { type HalalCompanyWithDistance } from "../../utils/halalGeoFilter";
+import { findNearestKzCityPreset } from "../../constants/kzCities";
 import { dedupeHalalCompanyCards, filterHalalCompaniesInstant } from "../../utils/halalInstantSearch";
+import { ensureHalalCompaniesSnapshotLoaded } from "../../services/halalCompaniesSnapshot";
 import { halalCatalogPageSize } from "../../utils/halalPerformanceProfile";
 import { runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
 import { useAppTheme } from "../../theme/ThemeContext";
@@ -36,7 +39,9 @@ type Props = {
   colors: ThemeColors;
 };
 
-const LOCAL_RADIUS_OPTIONS_KM = [10, 25, 50] as const;
+/** Жақын жергілікті мекемелер — 5 км әдепкі, 10/15 км кеңейту. */
+const LOCAL_RADIUS_OPTIONS_KM = [5, 10, 15] as const;
+const DEFAULT_LOCAL_RADIUS_KM = LOCAL_RADIUS_OPTIONS_KM[0];
 
 function mergeCompanyList(
   base: HalalDamuCompanyCard[],
@@ -67,6 +72,7 @@ function mergeCompanyList(
 }
 
 export function HalalCatalogTabPanel({ active, colors }: Props) {
+  useAppLocale();
   const { isDark } = useAppTheme();
   const [catalogItems, setCatalogItems] = useState<HalalDamuCompanyCard[]>(() =>
     enrichHalalCompanyCardsFromBulkCache(getHalalHubInstantCatalog())
@@ -74,7 +80,7 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
   const [searchText, setSearchText] = useState("");
   const [visibleCount, setVisibleCount] = useState(() => halalCatalogPageSize());
   const [selectedCompany, setSelectedCompany] = useState<HalalDamuCompanyCard | null>(null);
-  const [radiusKm, setRadiusKm] = useState<number>(LOCAL_RADIUS_OPTIONS_KM[1]);
+  const [radiusKm, setRadiusKm] = useState<number>(DEFAULT_LOCAL_RADIUS_KM);
   const [centerLat, setCenterLat] = useState<number | null>(null);
   const [centerLon, setCenterLon] = useState<number | null>(null);
   const [cityTokens, setCityTokens] = useState<string[]>([]);
@@ -86,6 +92,7 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
 
   const refreshCatalog = useCallback(async () => {
     void prefetchHalalDamuHub();
+    await ensureHalalCompaniesSnapshotLoaded().catch(() => null);
     const snap = await readHalalHubCatalogSnapshot();
     const bundled = enrichHalalCompanyCardsFromBulkCache(getHalalHubInstantCatalog());
     let items = snap?.items?.length ? snap.items : bundled;
@@ -95,8 +102,11 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
 
   useEffect(() => {
     if (!active) return;
-    const instant = enrichHalalCompanyCardsFromBulkCache(getHalalHubInstantCatalog());
-    if (instant.length > 0) setCatalogItems(instant);
+    // Snapshot фонға — GPS-ті күттірмейді.
+    void ensureHalalCompaniesSnapshotLoaded().then(() => {
+      const instant = enrichHalalCompanyCardsFromBulkCache(getHalalHubInstantCatalog());
+      if (instant.length > 0) setCatalogItems(instant);
+    });
     let cancelled = false;
     void runWhenHeavyWorkAllowed().then(() => {
       if (!cancelled) void refreshCatalog();
@@ -109,39 +119,88 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
+    let gen = 0;
     setLocationBusy(true);
+
+    const mergeNearbyApi = (lat: number, lon: number) => {
+      void fetchHalalDamuCompaniesNearby(lat, lon, radiusKm, {
+        perPage: 80,
+        skipMediaEnrich: true,
+      }).then((nearby) => {
+        if (cancelled || nearby.items.length === 0) return;
+        setCatalogItems((prev) =>
+          dedupeHalalCompanyCards([
+            ...nearby.items,
+            ...enrichHalalCompanyCardsFromBulkCache(prev),
+          ])
+        );
+      });
+    };
+
+    const applyCoords = (lat: number, lon: number, opts?: { clearBusy?: boolean }) => {
+      if (cancelled) return;
+      setCenterLat(lat);
+      setCenterLon(lon);
+      const nearest = findNearestKzCityPreset(lat, lon);
+      if (nearest && nearest.distanceM <= 40_000) {
+        setLocationLabel(nearest.label);
+        setCityTokens((prev) => {
+          const next = new Set(prev);
+          next.add(nearest.label.toLowerCase());
+          next.add(nearest.city.toLowerCase());
+          return [...next];
+        });
+      }
+      setCatalogItems((prev) => {
+        const enriched = enrichHalalCompanyCardsFromBulkCache(
+          prev.length ? prev : getHalalHubInstantCatalog()
+        );
+        return enriched.length ? enriched : prev;
+      });
+      // API нәтижесін астына қосу — бірінші тізімді күттірмейді.
+      mergeNearbyApi(lat, lon);
+      if (opts?.clearBusy) setLocationBusy(false);
+    };
+
     void (async () => {
+      const myGen = ++gen;
       try {
         const perm = await Location.requestForegroundPermissionsAsync();
-        if (cancelled) return;
+        if (cancelled || myGen !== gen) return;
         if (perm.status !== "granted") {
           setLocationDenied(true);
           setLocationBusy(false);
           return;
         }
         setLocationDenied(false);
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        if (cancelled) return;
-        setCenterLat(pos.coords.latitude);
-        setCenterLon(pos.coords.longitude);
-        const geo = await Location.reverseGeocodeAsync({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
+
+        const last = await Location.getLastKnownPositionAsync({
+          maxAge: 5 * 60_000,
+          requiredAccuracy: 8000,
         });
-        if (cancelled) return;
-        const tokens = extractLocalCityTokens(geo);
-        setCityTokens(tokens);
-        const label = geo[0]?.city ?? geo[0]?.subregion ?? geo[0]?.region ?? null;
-        setLocationLabel(label);
-        const nearby = await fetchHalalDamuCompaniesNearby(
-          pos.coords.latitude,
-          pos.coords.longitude,
-          radiusKm,
-          { perPage: 100, skipMediaEnrich: true }
-        );
-        if (cancelled) return;
-        if (nearby.items.length > 0) {
-          setCatalogItems((prev) => dedupeHalalCompanyCards([...nearby.items, ...prev]));
+        if (cancelled || myGen !== gen) return;
+        if (last?.coords) {
+          applyCoords(last.coords.latitude, last.coords.longitude, { clearBusy: true });
+        }
+
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (cancelled || myGen !== gen) return;
+        applyCoords(pos.coords.latitude, pos.coords.longitude, { clearBusy: true });
+
+        try {
+          const geo = await Location.reverseGeocodeAsync({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+          });
+          if (cancelled || myGen !== gen) return;
+          const tokens = extractLocalCityTokens(geo);
+          if (tokens.length) {
+            setCityTokens((prev) => [...new Set([...prev, ...tokens])]);
+          }
+          const label = geo[0]?.city ?? geo[0]?.subregion ?? geo[0]?.region ?? null;
+          if (label) setLocationLabel(label);
+        } catch {
+          /* nearest city label жеткілікті */
         }
       } catch {
         if (!cancelled) setLocationDenied(true);
@@ -149,8 +208,10 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
         if (!cancelled) setLocationBusy(false);
       }
     })();
+
     return () => {
       cancelled = true;
+      gen += 1;
     };
   }, [active, radiusKm]);
 
@@ -160,24 +221,12 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
 
   const localEstablishments = useMemo((): HalalCompanyWithDistance[] => {
     const base = catalogItems.filter(isHalalCatalogEstablishment);
-    if (centerLat != null && centerLon != null) {
-      const local = filterHalalCompaniesLocal(base, {
-        centerLat,
-        centerLon,
-        radiusKm,
-        cityTokens,
-      });
-      if (local.length > 0) return local;
-    }
-    if (cityTokens.length > 0) {
-      return filterHalalCompaniesLocal(base, {
-        centerLat: null,
-        centerLon: null,
-        radiusKm,
-        cityTokens,
-      });
-    }
-    return [];
+    return filterHalalCompaniesLocal(base, {
+      centerLat,
+      centerLon,
+      radiusKm,
+      cityTokens,
+    });
   }, [catalogItems, centerLat, centerLon, radiusKm, cityTokens]);
 
   const filteredCatalog = useMemo((): HalalCompanyWithDistance[] => {
@@ -241,17 +290,19 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
           <Text style={[styles.locationWarn, { color: colors.error }]}>{kk.features.halalNearbyPermDenied}</Text>
         ) : null}
         {locationBusy ? (
-          <Text style={[styles.locationWarn, { color: colors.muted }]}>{kk.features.halalHubLoading}</Text>
+          <Text style={[styles.locationWarn, { color: colors.muted }]}>
+            {filteredCatalog.length > 0
+              ? kk.features.halalCatalogLocatingMore
+              : kk.features.halalHubLoading}
+          </Text>
         ) : null}
-        {centerLat != null ? (
-          <HalalFilterChipRow
-            chips={radiusChips}
-            value={String(radiusKm)}
-            onChange={(v) => setRadiusKm(Number(v) || LOCAL_RADIUS_OPTIONS_KM[1])}
-            colors={colors}
-            accessibilityGroupLabel={kk.features.halalCatalogRadiusLabel}
-          />
-        ) : null}
+        <HalalFilterChipRow
+          chips={radiusChips}
+          value={String(radiusKm)}
+          onChange={(v) => setRadiusKm(Number(v) || DEFAULT_LOCAL_RADIUS_KM)}
+          colors={colors}
+          accessibilityGroupLabel={kk.features.halalCatalogRadiusLabel}
+        />
         <View style={[styles.searchRow, { borderColor: colors.border, backgroundColor: colors.bg }]}>
           <MaterialIcons name="search" size={20} color={colors.muted} />
           <TextInput

@@ -9,6 +9,7 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { LearningModule, LearningStep, RecitationBlock } from "../content/namazLearningContent";
 import { NAMAZ_WUDU_LEARNING_MODULES } from "../content/namazLearningContent";
 import { NAMAZ_PHASE2_QUIZ_BANK } from "../content/namazCourseRoadmap";
+import { useAppLocale } from "../i18n/runtime";
 import {
   loadNamazLearningProgress,
   saveNamazLearningStepProgress,
@@ -130,6 +131,7 @@ export function NamazGuidePoseRecitationBlocks({
   blocks: RecitationBlock[];
   colors: ThemeColors;
 }) {
+  useAppLocale();
   const styles = makeLearnStyles(colors);
   const { tr } = useKkAutoTranslator();
   if (!blocks.length) return null;

@@ -8,6 +8,7 @@ import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import type { ContentStatsPayload, ReadinessPayload } from "../../services/platformApiClient";
 import type { OfflineQualitySnapshot } from "../../hooks/useContentDataSettings";
+import { useAppLocale } from "../../i18n/runtime";
 
 export type ContentDataScope = "quran";
 
@@ -38,6 +39,7 @@ export function SettingsContentDataSection({
   offlineQualityLoading,
   onRefreshOffline,
 }: Props) {
+  useAppLocale();
   const styles = makeSettingsStyles(colors);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 

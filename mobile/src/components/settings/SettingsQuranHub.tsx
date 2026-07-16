@@ -1,4 +1,5 @@
 import React, { useCallback, useState } from "react";
+import { useAppLocale } from "../../i18n/runtime";
 import { View, Text } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -13,7 +14,7 @@ import {
 import {
   QURAN_RECITER_GROUP_ORDER,
   QURAN_RECITER_OPTIONS,
-  type QuranReciterGroup,
+  quranReciterGroupLabelKk,
 } from "../../config/quranReciters";
 import {
   MUSHAF_TEXT_SCALE_MAX,
@@ -54,6 +55,8 @@ import {
   setQuranAudioAutoDownloadEnabled,
 } from "../../services/quranAudioDownloadManager";
 import type { QuranAudioDownloadStatus } from "../../storage/quranAudioDownloadPrefs";
+import { aggregateQuranAudioDownloadStatus } from "../../storage/quranAudioDownloadPrefs";
+import { TOTAL_AYAHS } from "../../data/quranAyahCounts";
 import { SettingsSection, SettingsCard, SettingsRow, makeSettingsStyles } from "./settingsUi";
 import {
   SettingsAccordion,
@@ -88,6 +91,7 @@ function quranAudioStatusLabel(status: QuranAudioDownloadStatus): string {
 }
 
 export function SettingsQuranHub({ colors }: Props) {
+  useAppLocale();
   const styles = makeSettingsStyles(colors);
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [prefs, setPrefs] = useState<QuranReaderPrefsSnapshot | null>(null);
@@ -132,9 +136,16 @@ export function SettingsQuranHub({ colors }: Props) {
   const mushafPct = Math.round(prefs.mushafTextScale * 100);
   const audioState = audioDash?.state;
   const audioPrefs = audioDash?.prefs;
-  const audioDone = audioState?.cursorIndex ?? 0;
-  const audioTotal = audioState?.total ?? 0;
-  const audioStatus = audioState ? quranAudioStatusLabel(audioState.status) : kk.settings.quranAudioStatusIdle;
+  const activeEdition = audioState?.currentEdition ?? prefs.reciterEdition;
+  const editionState = activeEdition ? audioState?.editions[activeEdition] : undefined;
+  const audioDone = editionState?.cursorIndex ?? 0;
+  const audioTotal = TOTAL_AYAHS;
+  const aggregateStatus =
+    audioDash?.aggregateStatus ??
+    (audioPrefs && audioState
+      ? aggregateQuranAudioDownloadStatus(audioPrefs, audioState)
+      : "idle");
+  const audioStatus = quranAudioStatusLabel(aggregateStatus);
 
   return (
     <>
@@ -289,28 +300,34 @@ export function SettingsQuranHub({ colors }: Props) {
           {QURAN_RECITER_GROUP_ORDER.map((group) => {
             const items = QURAN_RECITER_OPTIONS.filter((r) => r.group === group);
             if (!items.length) return null;
-            const groupLabel: Record<QuranReciterGroup, string> = {
-              kk: kk.quran.readerReciterGroupKk,
-              ru: kk.quran.readerReciterGroupRu,
-              ar: kk.quran.readerReciterGroupAr,
-            };
             return (
               <View key={group}>
                 <Text style={[styles.label, { marginTop: 8, fontSize: 13, color: colors.muted }]}>
-                  {groupLabel[group]}
+                  {quranReciterGroupLabelKk(group)}
                 </Text>
-                {items.map((r) => (
-                  <SettingsChoiceRow
-                    key={r.edition}
-                    colors={colors}
-                    label={r.labelKk}
-                    selected={prefs.reciterEdition === r.edition}
-                    onPress={() => {
-                      patch({ reciterEdition: r.edition });
-                      void setQuranReciterEdition(r.edition);
-                    }}
-                  />
-                ))}
+                {items.map((r) => {
+                  const available = r.audioAvailable !== false;
+                  const label = available
+                    ? r.labelKk
+                    : `${r.labelKk} (${kk.quran.readerReciterSoon})`;
+                  return (
+                    <SettingsChoiceRow
+                      key={r.edition}
+                      colors={colors}
+                      label={label}
+                      selected={prefs.reciterEdition === r.edition}
+                      disabled={!available}
+                      accessibilityLabel={
+                        available ? label : kk.quran.readerReciterUnavailableA11y(r.labelKk)
+                      }
+                      onPress={() => {
+                        if (!available) return;
+                        patch({ reciterEdition: r.edition });
+                        void setQuranReciterEdition(r.edition);
+                      }}
+                    />
+                  );
+                })}
               </View>
             );
           })}
@@ -322,12 +339,13 @@ export function SettingsQuranHub({ colors }: Props) {
             colors={colors}
             label={kk.settings.quranAudioAutoDownload}
             hint={kk.settings.quranAudioAutoDownloadHint}
-            value={audioPrefs?.enabled ?? true}
+            value={!audioPrefs?.paused}
             onChange={(v) => {
               void setQuranAudioAutoDownloadEnabled(v).then((snap) => {
                 setAudioDash((prev) => ({
-                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0, aggregateStatus: "idle" as const }),
                   ...snap,
+                  aggregateStatus: aggregateQuranAudioDownloadStatus(snap.prefs, snap.state),
                   cacheFiles: prev?.cacheFiles ?? 0,
                   cacheBytes: prev?.cacheBytes ?? 0,
                 }));
@@ -340,12 +358,13 @@ export function SettingsQuranHub({ colors }: Props) {
             label={kk.settings.quranAudioAllowMobileData}
             hint={kk.settings.quranAudioAllowMobileDataHint}
             value={audioPrefs?.allowMobileData ?? false}
-            disabled={!(audioPrefs?.enabled ?? true)}
+            disabled={audioPrefs?.paused ?? false}
             onChange={(v) => {
               void setQuranAudioAllowMobileData(v).then((snap) => {
                 setAudioDash((prev) => ({
-                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0, aggregateStatus: "idle" as const }),
                   ...snap,
+                  aggregateStatus: aggregateQuranAudioDownloadStatus(snap.prefs, snap.state),
                   cacheFiles: prev?.cacheFiles ?? 0,
                   cacheBytes: prev?.cacheBytes ?? 0,
                 }));
@@ -356,7 +375,7 @@ export function SettingsQuranHub({ colors }: Props) {
           <SettingsRow
             colors={colors}
             label={kk.settings.quranAudioStatus}
-            value={`${audioStatus} · ${kk.settings.quranAudioProgress(audioDone, audioTotal, mb(audioDash?.cacheBytes ?? audioState?.bytes ?? 0))}`}
+            value={`${audioStatus} · ${kk.settings.quranAudioProgress(audioDone, audioTotal, mb(audioDash?.cacheBytes ?? editionState?.bytes ?? 0))}`}
           />
           <Text style={styles.hint}>
             {kk.settings.quranAudioCacheStats(audioDash?.cacheFiles ?? 0, mb(audioDash?.cacheBytes ?? 0))}
@@ -364,19 +383,20 @@ export function SettingsQuranHub({ colors }: Props) {
           {audioState?.currentLabel ? (
             <Text style={styles.hint}>{kk.settings.quranAudioCurrent(audioState.currentLabel)}</Text>
           ) : null}
-          {audioState?.lastError ? <Text style={styles.hint}>{audioState.lastError}</Text> : null}
+          {editionState?.lastError ? <Text style={styles.hint}>{editionState.lastError}</Text> : null}
           <SettingsRow
             colors={colors}
-            label={audioPrefs?.paused || audioState?.status !== "running" ? kk.settings.quranAudioResume : kk.settings.quranAudioPause}
+            label={audioPrefs?.paused || aggregateStatus !== "running" ? kk.settings.quranAudioResume : kk.settings.quranAudioPause}
             onPress={() => {
               const action =
-                audioPrefs?.paused || audioState?.status !== "running"
+                audioPrefs?.paused || aggregateStatus !== "running"
                   ? resumeQuranAudioDownloadsFromSettings()
                   : pauseQuranAudioDownloads();
               void action.then((snap) => {
                 setAudioDash((prev) => ({
-                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0 }),
+                  ...(prev ?? { cacheFiles: 0, cacheBytes: 0, aggregateStatus: "idle" as const }),
                   ...snap,
+                  aggregateStatus: aggregateQuranAudioDownloadStatus(snap.prefs, snap.state),
                   cacheFiles: prev?.cacheFiles ?? 0,
                   cacheBytes: prev?.cacheBytes ?? 0,
                 }));
@@ -389,7 +409,12 @@ export function SettingsQuranHub({ colors }: Props) {
             label={kk.settings.quranAudioClear}
             onPress={() => {
               void resetQuranAudioDownloadsAndCache().then((snap) => {
-                setAudioDash({ ...snap, cacheFiles: 0, cacheBytes: 0 });
+                setAudioDash({
+                  ...snap,
+                  cacheFiles: 0,
+                  cacheBytes: 0,
+                  aggregateStatus: aggregateQuranAudioDownloadStatus(snap.prefs, snap.state),
+                });
                 void reloadAudio();
               });
             }}

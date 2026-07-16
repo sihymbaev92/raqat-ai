@@ -6,7 +6,7 @@ import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { ensureBundledQuranTajweedLoaded } from "../services/bundledQuranTajweed";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
-import { buildMushafPagesGlobal, clearMushafPagesGlobalCache } from "./buildMushafPagesGlobal";
+import { buildMushafPagesGlobal, buildQcf4MushafPagesGlobal } from "./buildMushafPagesGlobal";
 import { loadQcf4FontMap, loadQcf4Page } from "./loadQcf4Page";
 import {
   setQuranArabicFontPreset,
@@ -68,11 +68,18 @@ export async function preloadHatimOfflineAssets(): Promise<void> {
   preloadPromise = (async () => {
     await Promise.all([
       loadQuranBookFonts().catch(() => {}),
-      ensureBundledQuranReaderLoaded(),
-      ensureBundledQuranTajweedLoaded(),
+      ensureBundledQuranReaderLoaded().catch(() => {}),
+      ensureBundledQuranTajweedLoaded().catch(() => {}),
     ]);
-    clearMushafPagesGlobalCache();
-    buildMushafPagesGlobal();
+    try {
+      if (hatimBookUsesBundledTextHafsOffline()) {
+        buildMushafPagesGlobal();
+      } else {
+        buildQcf4MushafPagesGlobal();
+      }
+    } catch {
+      /* жеңіл/QCF4 беттер жұмыс істейді — enrich сәтсіз болса блоктамаймыз */
+    }
     if (!hatimBookUsesBundledTextHafsOffline()) {
       void Promise.all([
         loadQcf4FontMap().catch(() => null),

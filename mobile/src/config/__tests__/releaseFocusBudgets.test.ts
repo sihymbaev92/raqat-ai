@@ -18,6 +18,7 @@ describe("release focus budgets", () => {
   });
 
   it("defines release size warning budgets", () => {
+    expect(RELEASE_SIZE_BUDGETS.apkTargetMb).toBeLessThanOrEqual(80);
     expect(RELEASE_SIZE_BUDGETS.apkWarnMb).toBeLessThanOrEqual(145);
     expect(RELEASE_SIZE_BUDGETS.bundledAssetsWarnMb).toBeLessThanOrEqual(400);
     expect(RELEASE_SIZE_BUDGETS.largestSingleAssetWarnMb).toBeLessThanOrEqual(35);

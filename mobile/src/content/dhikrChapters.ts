@@ -17,7 +17,7 @@ const r = (from: number, to: number) =>
 /** Барлық id 1..220 дәл бір рет қамтылады. */
 export const DHIKR_CHAPTERS: DhikrChapterMeta[] = [
   {
-    titleKk: "",
+    titleKk: "1. Намаздан кейінгі тәспих",
     ids: [1],
   },
   {

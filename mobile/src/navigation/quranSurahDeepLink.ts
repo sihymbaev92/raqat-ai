@@ -169,6 +169,7 @@ export function mushafBookParamsFromSurahLink(parsed: ParsedMushafSurahLink): Mu
   return {
     focusSurah: parsed.surahNumber,
     focusAyah: parsed.initialAyah ?? 1,
+    continuousMushaf: true,
   };
 }
 

@@ -4,7 +4,7 @@ import { InteractionManager, Platform } from "react-native";
  * InteractionManager.runAfterInteractions вебте Reanimated анимациялардан кейін
  * callback шақырмауы мүмкін — launcher/навигация «тұрып» қалады.
  */
-export function runAfterInteractions(fn: () => void): { cancel: () => void } {
+export function runAfterInteractions(fn: () => void, maxWaitMs = 800): { cancel: () => void } {
   if (Platform.OS === "web") {
     let cancelled = false;
     const id = requestAnimationFrame(() => {
@@ -19,7 +19,22 @@ export function runAfterInteractions(fn: () => void): { cancel: () => void } {
       },
     };
   }
-  return InteractionManager.runAfterInteractions(fn);
+  let done = false;
+  let cancelled = false;
+  const run = () => {
+    if (done || cancelled) return;
+    done = true;
+    fn();
+  };
+  const handle = InteractionManager.runAfterInteractions(run);
+  const timer = setTimeout(run, Math.max(0, maxWaitMs));
+  return {
+    cancel: () => {
+      cancelled = true;
+      clearTimeout(timer);
+      handle.cancel?.();
+    },
+  };
 }
 
 /**

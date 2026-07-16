@@ -7,7 +7,7 @@ import { HAJJ_MUFTYAT_PAGES } from "./hajjMuftyatPages";
 import { TRADITION_TOPICS } from "./traditionTopicsCatalog";
 import { SEERAH_LESSONS, SEERAH_PHASES, seerahOfflineCharCount } from "./seerahCurriculum";
 import { SEERAH_LESSON_COUNT } from "../config/seerahVideos";
-import { getKmdbHadithExcerptItems } from "./kmdbHadithExcerptCatalog";
+import { getKzTrustedHadithItems } from "./kzTrustedHadithCatalog";
 import { loadDhikrItems } from "../screens/tasbihShared";
 
 export type GuidanceModuleId =
@@ -69,7 +69,7 @@ export function getModuleDepthSnapshot(moduleId: GuidanceModuleId): ModuleDepthS
       return {
         moduleId,
         labelKk: "Қажылық",
-        depthLineKk: `${HAJJ_BOOK_SECTIONS.length} тарау · ${HAJJ_MUFTYAT_PAGES.length} бет · офлайн`,
+        depthLineKk: `${HAJJ_BOOK_SECTIONS.length} тарау · ${HAJJ_MUFTYAT_PAGES.length} бет · мәтін офлайн`,
         sections: HAJJ_BOOK_SECTIONS.length,
         pages: HAJJ_MUFTYAT_PAGES.length,
         offlineChars: HAJJ_BOOK_SECTIONS.reduce((s, x) => s + x.title.length, 0) + HAJJ_MUFTYAT_PAGES.length * 80,
@@ -114,13 +114,13 @@ export function getModuleDepthSnapshot(moduleId: GuidanceModuleId): ModuleDepthS
       };
     }
     case "hadith": {
-      const items = getKmdbHadithExcerptItems();
+      const items = getKzTrustedHadithItems();
       return {
         moduleId,
         labelKk: "Хадис",
-        depthLineKk: `${items.length} хадис · офлайн`,
+        depthLineKk: `${items.length} сахих хадис · офлайн`,
         items: items.length,
-        offlineChars: items.reduce((s, h) => s + (h.meaningKk?.length ?? 0) + h.text.length, 0),
+        offlineChars: items.reduce((s, h) => s + h.textKk.length + h.arabic.length, 0),
       };
     }
     default:
@@ -158,5 +158,5 @@ export function assertGuidanceDepthParity(): void {
 
   expect(loadDhikrItems().length).toBeGreaterThanOrEqual(mins.tasbih.items);
   expect(loadAsmaRows().length).toBeGreaterThanOrEqual(mins.asma.names);
-  expect(getKmdbHadithExcerptItems().length).toBeGreaterThanOrEqual(mins.hadith.items);
+  expect(getKzTrustedHadithItems().length).toBeGreaterThanOrEqual(mins.hadith.items);
 }

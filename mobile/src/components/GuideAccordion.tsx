@@ -4,6 +4,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   title: string;
@@ -25,6 +26,7 @@ export function GuideAccordionSection({
   children,
   colors,
 }: Props) {
+  useAppLocale();
   const styles = makeStyles(colors);
   const a11y = expanded
     ? `${title} — ${kk.common.guideAccordionCollapse}`

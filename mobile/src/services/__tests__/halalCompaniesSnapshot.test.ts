@@ -9,11 +9,13 @@ describe("halalCompaniesSnapshot", () => {
     const card = snapshotRowToCompanyCard({
       id: 1,
       title: "A",
+      address: "Алматы қаласы, Абай 1",
       lat: 1,
       lon: 2,
     });
     expect(card.id).toBe(1);
     expect(card.title).toBe("A");
+    expect(card.address).toBe("Алматы қаласы, Абай 1");
     expect(card.lat).toBe(1);
     expect(card.lon).toBe(2);
     expect(card.galleryUrls).toEqual([]);

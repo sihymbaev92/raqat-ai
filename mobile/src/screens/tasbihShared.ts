@@ -26,8 +26,14 @@ export function loadDhikrItems(): DhikrItem[] {
   }
 }
 
-export function phaseLabel(count: number, goal: number, rule: DhikrItem["phaseRule"]): string {
-  if (rule !== "triple_salah" || goal !== 99) return "";
+/** null goal = шексіз (∞). 33×3 фазалар ∞ және 100-де көрінеді. */
+export function phaseLabel(
+  count: number,
+  goal: number | null,
+  rule: DhikrItem["phaseRule"]
+): string {
+  if (rule !== "triple_salah") return "";
+  if (goal === 33) return "";
   if (count === 0) return kk.tasbih.phaseSubhan;
   const idx = Math.floor((count - 1) / 33) % 3;
   if (idx === 0) return kk.tasbih.phaseSubhan;
@@ -37,18 +43,19 @@ export function phaseLabel(count: number, goal: number, rule: DhikrItem["phaseRu
 
 export function manualToMode(manual: number | null): TasbihGoalMode {
   if (manual === 33) return "33";
-  if (manual === 99) return "99";
-  return "default";
+  if (manual === 100) return "100";
+  return "infinite";
 }
 
-export function effectiveGoalForItem(item: DhikrItem | undefined, manual: number | null): number {
-  if (!item) return 33;
-  /** Намаздан кейінгі 33×3: әдепкі 99, бірақ 33/99 түймелері нақты мақсатты ауыстыруы керек */
-  if (item.phaseRule === "triple_salah") {
-    if (manual === 33 || manual === 99) return manual;
-    return 99;
-  }
-  if (manual === 33 || manual === 99) return manual;
-  const d = item.defaultTarget || 33;
-  return Math.max(1, Math.min(d, 999));
+/** null = шексіз санау (∞). */
+export function effectiveGoalForItem(
+  _item: DhikrItem | undefined,
+  manual: number | null
+): number | null {
+  if (manual === 33 || manual === 100) return manual;
+  return null;
+}
+
+export function formatTasbihProgress(count: number, goal: number | null): string {
+  return goal == null ? `${count} / ∞` : `${count} / ${goal}`;
 }

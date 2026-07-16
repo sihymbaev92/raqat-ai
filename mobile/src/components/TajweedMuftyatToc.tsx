@@ -12,6 +12,7 @@ import {
   type TajweedTocGroup,
 } from "../content/tajweedMuftyatScope";
 import type { TajweedMuftyatSection } from "../content/tajweedMuftyatCatalog";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   onPickPage: (page: number) => void;
@@ -66,6 +67,7 @@ function ChapterRow({
 }
 
 export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
+  useAppLocale();
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const groups = useMemo(() => buildTajweedTocGroups(TAJWEED_APP_SECTIONS), []);

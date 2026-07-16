@@ -8,7 +8,10 @@ import { lazyScreen } from "./lazyScreen";
 
 const Stack = createNativeStackNavigator<MainTabParamList>();
 
-const DashboardScreen = lazyScreen(() => import("../screens/DashboardScreen").then((m) => ({ default: m.DashboardScreen })));
+const DashboardScreen = lazyScreen(() =>
+  import("../screens/DashboardScreen").then((m) => ({ default: m.DashboardScreen }))
+);
+
 const OfficialKnowledgePortalScreen = lazyScreen(() => import("../screens/OfficialKnowledgePortalScreen").then((m) => ({ default: m.OfficialKnowledgePortalScreen })));
 const PrayerTimesScreen = lazyScreen(() => import("../screens/PrayerTimesScreen").then((m) => ({ default: m.PrayerTimesScreen })));
 const SavedTabScreen = lazyScreen(() => import("../screens/SavedTabScreen").then((m) => ({ default: m.SavedTabScreen })));

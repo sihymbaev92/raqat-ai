@@ -6,17 +6,20 @@ import {
 describe("findNearestKzCityPreset", () => {
   it("returns Almaty near city center", () => {
     const hit = findNearestKzCityPreset(43.24, 76.89);
-    expect(hit.city).toBe("Almaty");
+    expect(hit).not.toBeNull();
+    expect(hit!.city).toBe("Almaty");
   });
 
   it("returns Astana near city center", () => {
     const hit = findNearestKzCityPreset(51.17, 71.45);
-    expect(hit.city).toBe("Astana");
+    expect(hit).not.toBeNull();
+    expect(hit!.city).toBe("Astana");
   });
 
   it("returns Shymkent near city center", () => {
     const hit = findNearestKzCityPreset(42.34, 69.59);
-    expect(hit.city).toBe("Shymkent");
+    expect(hit).not.toBeNull();
+    expect(hit!.city).toBe("Shymkent");
   });
 });
 

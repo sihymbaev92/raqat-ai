@@ -5,10 +5,12 @@ import { SettingsSection, SettingsCard, SettingsRow, makeSettingsStyles } from "
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import { getQiblaMotionMode, setQiblaMotionMode, type QiblaMotionMode } from "../../storage/prefs";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = { colors: ThemeColors; onOpenQibla: () => void };
 
 export function SettingsQiblaSection({ colors, onOpenQibla }: Props) {
+  useAppLocale();
   const styles = makeSettingsStyles(colors);
   const [mode, setMode] = useState<QiblaMotionMode>("balanced");
 

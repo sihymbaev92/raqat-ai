@@ -94,3 +94,15 @@ export function findNearestKzCityPreset(
   }
   return best ? { ...best, distanceM: bestD } : null;
 }
+
+/** Геокод / IP атауы бойынша ҚР қала пресеті. */
+export function findKzCityPresetByName(name: string, _country?: string): KzCityPreset | null {
+  const norm = name.trim().toLowerCase();
+  if (!norm) return null;
+  for (const preset of KZ_CITY_PRESETS_LIST) {
+    if (preset.city.toLowerCase() === norm) return preset;
+    if (preset.label.toLowerCase() === norm) return preset;
+    if (cityLabelKkForApiName(preset.city).toLowerCase() === norm) return preset;
+  }
+  return null;
+}

@@ -10,10 +10,12 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { EmbeddedSiteSheet } from "../components/EmbeddedSiteSheet";
 import type { MoreStackParamList } from "../navigation/types";
 import { getOfficialBookRecord } from "../content/officialBooksCatalog";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "OfficialFatuaBook">;
 
 export function OfficialFatuaBookScreen({ route, navigation }: Props) {
+  useAppLocale();
   const { bookId } = route.params;
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);

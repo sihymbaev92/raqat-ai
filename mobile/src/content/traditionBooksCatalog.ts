@@ -235,7 +235,7 @@ export const TRADITION_BOOK_GROUPS: { id: TraditionBookGroup; label: string; hin
   {
     id: "faith",
     label: "Дін оқулықтары",
-    hint: "Құран, намаз уақыты, құбыла, хадис, дұға, тәспі, 99 есім, хатим, сира, қажылық, халал, сұрақ-жауап",
+    hint: "Құран, намаз уақыты, құбыла, хадис, дұға, тәспі, 99 есім, хатым, сира, қажылық, халал, сұрақ-жауап",
   },
   {
     id: "ait",
@@ -273,7 +273,6 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
     action: { kind: "screen", screen: "KazakhGreatWords" },
   },
   ...KAZAKH_WONDERFUL_BOOK_HIGHLIGHTS,
-  ...buildWisdomAuthorBooks(),
   {
     id: "tradition-topics",
     group: "tradition",
@@ -288,7 +287,7 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
       "Іздеу, санат сүзгісі, таңдаулы тақырыптар",
     ],
     religionLink:
-      "Әр тақырыпта аят/сүннет бағыты берілеген; нақты фиқһ пен ресми норманы мешіт пен ұстазбен толықтырыңыз.",
+      "Әр тақырыпта аят/сүннет бағыты берілген; нақты фиқһ пен ресми норманы мешіт пен ұстазбен толықтырыңыз.",
     howToRead: [
       "Бір уақытта бір тақырыпты ашып, ішкі қалталарды ретімен оқыңыз.",
       "Күнделікті жағдай талдауымен байланыстырып қолданыңыз.",
@@ -396,16 +395,16 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
     title: "Құран Кәрім",
     subtitle: "Мұсафа оқу · қазақша мағына · кітап беті",
     summary:
-      "114 сүре, араб мәтін, қазақша аударма, транслитерация. Мұсафа режимінде 604-беттік баспа бойынша беттер; хатиммен байланысты оқу.",
+      "114 сүре, араб мәтін, қазақша аударма, транслитерация. Мұсаф режимінде 604-беттік баспа бойынша беттер; хатыммен байланысты оқу.",
     contents: [
       "Сүре тізімі және іздеу",
       "Мұсафа/скролл режимі, оқу баптамалары",
-      "Бетбелгі, хатимге жалғастыру",
+      "Бетбелгі, хатымге жалғастыру",
     ],
     religionLink: "Құран — мұсылманның негізгі кітабы; оқу, тыңдау және үйрену — иман мен әдептің ортасы.",
     howToRead: [
       "Күндік мөлшерді кіші бастап, тұрақты ұстау.",
-      "Мұсафа режимінде тек араб мәтініне назар аударуға болады.",
+      "Мұсаф режимінде тек араб мәтініне назар аударуға болады.",
       "Түсінік үшін тәфсир мен ұстаз кеңесін қосу.",
     ],
     action: { kind: "screen", screen: "QuranList" },
@@ -443,9 +442,9 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
     id: "hatim",
     group: "faith",
     title: "Хатм кітабы",
-    subtitle: "Жоспар · прогресс · мұсафа оқу",
+    subtitle: "Жоспар · прогресс · мұсаф оқу",
     summary:
-      "Құранды аяқтау жоспары, күнделікті мөлшер, оқылған беттерді белгілеу; мұсафа көрінісімен жалғастыру.",
+      "Құранды аяқтау жоспары, күнделікті мөлшер, оқылған беттерді белгілеу; мұсаф көрінісімен жалғастыру.",
     contents: ["Хатим жоспары", "Күнделікті мөлшер", "Оқу прогрессі", "Мұсафадан жалғастыру"],
     religionLink: "Құранды түгел оқу — ұзақ мерзімді ғибадат; сабыр мен тұрақтылық керек.",
     howToRead: ["Реалистік күндік мөлшер таңдау.", "Қолданбадағы ескертулерді қосу.", "Үзіліс болса қайта бастамау, жалғастыру."],
@@ -621,6 +620,12 @@ export function traditionBookSearchBlob(book: TraditionBookEntry): string {
 }
 
 export function getTraditionBooksByGroup(group: TraditionBookGroup): TraditionBookEntry[] {
+  if (group === "wisdom") {
+    return [
+      ...TRADITION_BOOKS.filter((b) => b.group === "wisdom"),
+      ...buildWisdomAuthorBooks(),
+    ];
+  }
   return TRADITION_BOOKS.filter((b) => b.group === group);
 }
 
@@ -695,7 +700,7 @@ export function getFaithAitBooks(): TraditionBookEntry[] {
 }
 
 export function getWisdomBooks(): TraditionBookEntry[] {
-  return TRADITION_BOOKS.filter((b) => b.group === "wisdom");
+  return getTraditionBooksByGroup("wisdom");
 }
 
 /** Экранда көрсету: алдымен жинақ хабы, керемет шығармалар, содан автор кітаптары. */
@@ -730,7 +735,7 @@ export function getGreatWordsCatalogBook(): TraditionBookEntry | undefined {
 }
 
 export function getWisdomAuthorBooks(): TraditionBookEntry[] {
-  return TRADITION_BOOKS.filter((b) => b.group === "wisdom" && b.id.startsWith("wisdom-"));
+  return buildWisdomAuthorBooks();
 }
 
 export function traditionBooksCountByGroup(): Record<TraditionBookGroup, number> {

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Platform,
   AppState,
-  ImageBackground,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import * as Haptics from "expo-haptics";
@@ -27,13 +26,11 @@ import { typography, uiFontStyle, uiText } from "../theme/typography";
 import {
   getIftarEnabled,
   getNotifEnabled,
-  getOnboardingDone,
   getPrayerMosqueShiftMin,
   getPrayerSourceMode,
   setOnboardingDone,
 } from "../storage/prefs";
 import { resolvePrayerScheduleLocation } from "../services/devicePrayerLocation";
-import { OnboardingModal } from "../components/OnboardingModal";
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import { fireInAppPrayerAlert } from "../services/prayerNotifications";
@@ -46,10 +43,10 @@ import { shortPrayerName } from "../components/CompactPrayerTimesRow";
 import { nextSalatRow, parseMinutes } from "../utils/prayerSchedule";
 import { DashboardPrayerWidget } from "../components/DashboardPrayerWidget";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
+import { DashboardQaumDuaBanner } from "../components/dashboard/DashboardQaumDuaBanner";
 import { DashboardHomeServicesGrid } from "../components/dashboard/DashboardHomeServicesGrid";
 import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../config/dashboardHomeServices";
-import { warmHalalHubScreen, warmHotHubScreens, warmKmdbHubScreen } from "../services/hubScreenWarmup";
-import { PRAYER_TIMES_HERO_NEXT_BG } from "../config/dashboardPrayerHero";
+import { awaitKmdbHubWarm, warmHalalHubScreen, warmKmdbHubScreen } from "../services/hubScreenWarmup";
 import { QiblaSensorProvider, useQiblaStable } from "../context/QiblaSensorContext";
 import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
 import { useAppLocale } from "../i18n/runtime";
@@ -332,8 +329,8 @@ function DashboardScreenContent({
   const [prayerNotifEnabled, setPrayerNotifEnabled] = useState(true);
   /** Намаз минуты кіргенде (экран ашық) — қысқа баннер */
   const [momentBanner, setMomentBanner] = useState<string | null>(null);
+  const momentBannerRef = useRef<string | null>(null);
   const momentPulseId = useRef<string>("");
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const lastFocusPrayerLoadAt = useRef(0);
   const appActiveSinceRef = useRef(Date.now());
   const mountedRef = useRef(true);
@@ -514,19 +511,7 @@ function DashboardScreenContent({
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      if (Platform.OS === "web") {
-        await setOnboardingDone();
-        if (!cancelled) setShowOnboarding(false);
-        return;
-      }
-      const done = await getOnboardingDone();
-      if (!cancelled && !done) setShowOnboarding(true);
-    })();
-    return () => {
-      cancelled = true;
-    };
+    void setOnboardingDone();
   }, []);
 
   useEffect(() => {
@@ -638,7 +623,10 @@ function DashboardScreenContent({
           }
         }
         if (!hit) {
-          setMomentBanner(null);
+          if (momentBannerRef.current !== null) {
+            momentBannerRef.current = null;
+            setMomentBanner(null);
+          }
           return;
         }
         const y = now.getFullYear();
@@ -647,25 +635,32 @@ function DashboardScreenContent({
         const h = now.getHours();
         const mi = now.getMinutes();
         const pulse = `${y}-${mo}-${d}-${hit.key}-${h}:${mi}`;
-        setMomentBanner(kk.prayer.momentBanner(shortPrayerName(hit.key)));
-        if (momentPulseId.current !== pulse) {
+        const banner = kk.prayer.momentBanner(shortPrayerName(hit.key));
+        if (momentBannerRef.current !== banner) {
+          momentBannerRef.current = banner;
+          setMomentBanner(banner);
+        }
+        /** Pulse тек fire терезесінде бекітіледі — ерте тексеру 8с терезені өткізіп алмасын. */
+        if (
+          momentPulseId.current !== pulse &&
+          shouldFireInAppPrayerMoment(now, hit.time, appActiveSinceRef.current)
+        ) {
           momentPulseId.current = pulse;
-          if (shouldFireInAppPrayerMoment(now, hit.time, appActiveSinceRef.current)) {
-            void fireInAppPrayerAlert(hit.label, hit.time, hit.key)
-              .then((fired) => {
-                if (fired) {
-                  return Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                }
-                return undefined;
-              })
-              .catch(() => {});
-          }
+          void fireInAppPrayerAlert(hit.label, hit.time, hit.key)
+            .then((fired) => {
+              if (fired) {
+                return Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              }
+              return undefined;
+            })
+            .catch(() => {});
         }
       };
       tick();
-      const iv = setInterval(tick, 5_000);
+      const iv = setInterval(tick, 15_000);
       return () => {
         clearInterval(iv);
+        momentBannerRef.current = null;
         setMomentBanner(null);
       };
     }, [rows, tomorrowRows])
@@ -706,14 +701,19 @@ function DashboardScreenContent({
   const goKmdbHub = useCallback(
     () => {
       if (openWebRoute("/more/kmdb")) return;
-      navigateToMoreStackScreen("KmdbHub", undefined, navigation);
+      void (async () => {
+        warmKmdbHubScreen();
+        await awaitKmdbHubWarm(350);
+        navigateToMoreStackScreen("KmdbHub", undefined, navigation);
+      })();
     },
     [navigation]
   );
   const goHalal = useCallback(
     () => {
       if (openWebRoute("/more/halal")) return;
-      navigateToMoreStackScreen("Halal", undefined, navigation);
+      warmHalalHubScreen();
+      navigateToMoreStackScreen("Halal", { initialTab: "site" }, navigation);
     },
     [navigation]
   );
@@ -750,18 +750,18 @@ function DashboardScreenContent({
     [navigation]
   );
 
-  useFocusEffect(
-    useCallback(() => {
-      const timer = setTimeout(() => {
-        runAfterInteractions(() => warmHotHubScreens());
-      }, 900);
-      return () => clearTimeout(timer);
-    }, [])
-  );
-
   const onHomeServicePressIn = useCallback((key: DashboardHomeServiceKey) => {
-    if (key === "ai") warmKmdbHubScreen();
-    else if (key === "halal") warmHalalHubScreen();
+    if (key === "quran") {
+      void import("../screens/QuranListScreen");
+      void import("../services/bundledQuranSeed").then((m) => m.scheduleBundledQuranSeed());
+    } else if (key === "hadith") {
+      void import("../screens/HadithHubScreen");
+    } else if (key === "ai") {
+      warmKmdbHubScreen();
+      void awaitKmdbHubWarm(500);
+    } else if (key === "halal") {
+      warmHalalHubScreen();
+    }
   }, []);
 
   const onHomeServicePress = useCallback(
@@ -897,15 +897,7 @@ function DashboardScreenContent({
           <View style={styles.dashboardContentColumn}>
             {dashboardFocused ? (
               <View style={styles.prayerHeroWrap}>
-                <ImageBackground
-                  source={PRAYER_TIMES_HERO_NEXT_BG}
-                  style={styles.prayerHeroBg}
-                  imageStyle={styles.prayerHeroBgImage}
-                  resizeMode="cover"
-                  resizeMethod={Platform.OS === "android" ? "resize" : undefined}
-                  accessibilityIgnoresInvertColors
-                >
-                  <View pointerEvents="none" style={styles.prayerHeroTint} />
+                <View style={styles.prayerHeroBg}>
                   <DashboardPrayerWidget
                     colors={colors}
                     isDark={isDark}
@@ -923,8 +915,19 @@ function DashboardScreenContent({
                     homeMockup
                     onPress={goPrayerTimes}
                   />
-                </ImageBackground>
+                </View>
               </View>
+            ) : null}
+
+            {dashboardFocused ? (
+              <DashboardQaumDuaBanner
+                colors={colors}
+                isDark={isDark}
+                onOpenList={() => {
+                  if (openWebRoute("/more/community-dua")) return;
+                  navigateToMoreStackScreen("CommunityDua", undefined, navigation);
+                }}
+              />
             ) : null}
 
             {dashboardFocused ? (
@@ -938,12 +941,6 @@ function DashboardScreenContent({
           </View>
         </ScreenFitScrollView>
       </View>
-      {Platform.OS !== "web" ? (
-        <OnboardingModal
-          visible={showOnboarding}
-          onClose={() => setShowOnboarding(false)}
-        />
-      ) : null}
     </>
   );
 }
@@ -976,7 +973,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean, scrollTopPad: number) 
       minHeight: 0,
       width: "100%",
     },
-    /** Намаз hero: `prayer_times_hero_next.png` (мешіт аркасы) + glass үсті */
+    /** Намаз hero: бұрынғы үй батырмасы қатынасы (~2.5:1 — ені кең, биіктігі ықшам) */
     prayerHeroWrap: {
       marginTop: 0,
       marginBottom: 4,
@@ -998,16 +995,12 @@ function makeStyles(colors: ThemeColors, isDark: boolean, scrollTopPad: number) 
     },
     prayerHeroBg: {
       width: "100%",
-      backgroundColor: isDark ? "#10201d" : "#d7efe4",
-    },
-    prayerHeroBgImage: {
+      /** Скриншоттағы үй намаз батырмасы: ені/биіктігі ≈ 5:2 */
+      aspectRatio: 5 / 2,
+      justifyContent: "flex-end",
+      backgroundColor: isDark ? "#0a1520" : "#1E3A55",
       borderRadius: 18,
-      opacity: isDark ? 0.92 : 1,
-      transform: [{ scaleX: 1.18 }, { scaleY: 1.04 }],
-    },
-    prayerHeroTint: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: isDark ? "rgba(4, 18, 16, 0.24)" : "rgba(8, 42, 32, 0.07)",
+      overflow: "hidden",
     },
     prayerHeroMorningGlow: {
       position: "absolute",

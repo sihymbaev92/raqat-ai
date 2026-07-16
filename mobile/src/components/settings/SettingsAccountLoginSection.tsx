@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { SettingsCard } from "./settingsUi";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
+import { setWindowSecureFlag } from "../../services/windowSecureFlag";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -53,11 +55,19 @@ export function SettingsAccountLoginSection({
   oauthMsg,
   loginMsg,
 }: Props) {
+  useAppLocale();
   const styles = makeStyles(colors);
   const [phoneOpen, setPhoneOpen] = useState(false);
   const showGoogle = isGoogleSignInConfigured();
   const showApple = Platform.OS === "ios";
   const showPasswordLogin = __DEV__;
+
+  useEffect(() => {
+    void setWindowSecureFlag(phoneOpen);
+    return () => {
+      void setWindowSecureFlag(false);
+    };
+  }, [phoneOpen]);
 
   const clearMessages = () => {
     onOAuthMessage(null);

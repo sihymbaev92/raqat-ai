@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -12,6 +13,7 @@ type Props = {
 
 /** Ақпараттық құрал экрандары: ресми пәтуа/қол қою жоқ ескертуі. */
 export function InformationalToolBanner({ colors, hint, badge = kk.common.informationalToolBadge }: Props) {
+  useAppLocale();
   return (
     <View
       style={[styles.wrap, { backgroundColor: colors.card, borderColor: colors.border }]}

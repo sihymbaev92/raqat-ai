@@ -1,21 +1,121 @@
 /**
  * Қолданба фонға кеткенде немесе экрандардан шыққанда RAM-дағы ауыр кэштерді босату.
+ * Құран кэштері жақында mushaf қолданылған болса сақталады (қайта ашуда қатып қалмау).
  */
 export async function releaseAppHeavyMemory(): Promise<void> {
+  const keepQuranCaches = (() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mushaf = require("../quran/mushafMemoryRelease") as typeof import("../quran/mushafMemoryRelease");
+      return mushaf.mushafWasUsedRecently();
+    } catch {
+      return false;
+    }
+  })();
+  let locale = "kk";
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const runtime = require("../i18n/runtime") as typeof import("../i18n/runtime");
+    locale = runtime.getCurrentLocale();
+  } catch {
+    locale = "kk";
+  }
+
+  const safe = async (label: string, fn: () => void | Promise<void>): Promise<void> => {
+    try {
+      await fn();
+    } catch (e) {
+      if (process.env.NODE_ENV === "test") return;
+      if (__DEV__) console.warn(`[memoryRelease:${label}]`, e);
+    }
+  };
+
   await Promise.allSettled([
-    import("../utils/loadBundledJson").then((m) => m.releaseBundledJsonMemory()),
-    import("../services/offlineAutoTranslations").then((m) => m.releaseOfflineAutoTranslationsMemory()),
-    import("../services/bundledQuranReader").then((m) =>
-      m.releaseBundledQuranReaderMemory({ keepSurahList: true })
-    ),
-    import("../services/quranOfflineTranslations").then((m) => m.releaseBundledQuranTranslationsMemory()),
-    import("../storage/hadithCorpus").then((m) => m.releaseHadithCorpusMemoryCache()),
-    import("../quran/qcf4FontLoader").then((m) => m.clearQcf4FontLoaderCache()),
-    import("../quran/loadQcf4Page").then((m) => m.clearQcf4PageCache()),
-    import("../quran/buildMushafPagesGlobal").then((m) => m.clearMushafPagesGlobalCache()),
-    import("../quran/mushafAyahMap").then((m) => m.clearMushafAyahMapCache()),
-    import("../services/quranComAudioSegments").then((m) => m.clearQuranComAudioSegmentsCache()),
-    import("../services/halalProductsSeedKz").then((m) => m.releaseHalalProductsSeedMemory()),
-    import("../api/halalDamuWp").then((m) => m.releaseHalalDamuMemoryCache()),
+    safe("bundledJson", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../utils/loadBundledJson").releaseBundledJsonMemory();
+    }),
+    safe("quranReader", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/bundledQuranReader").releaseBundledQuranReaderMemory({ keepSurahList: true });
+    }),
+    safe("quranTranslations", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/quranOfflineTranslations").releaseBundledQuranTranslationsMemory();
+    }),
+    safe("quranTajweed", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/bundledQuranTajweed").releaseBundledQuranTajweedMemory();
+    }),
+    safe("hadith", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../storage/hadithCorpus").releaseHadithCorpusMemoryCache();
+    }),
+    safe("qcf4Fonts", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/qcf4FontLoader").clearQcf4FontLoaderCache();
+    }),
+    safe("qcf4Pages", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/loadQcf4Page").clearQcf4PageCache();
+    }),
+    safe("mushafPages", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/buildMushafPagesGlobal").clearMushafPagesGlobalCache();
+    }),
+    safe("mushafAyahMap", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/mushafAyahMap").clearMushafAyahMapCache();
+    }),
+    safe("kkSearch", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/quranKkSearchIndex").releaseQuranKkSearchIndexMemory();
+    }),
+    safe("audioSegments", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/quranComAudioSegments").clearQuranComAudioSegmentsCache();
+    }),
+    safe("halalSeed", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/halalProductsSeedKz").releaseHalalProductsSeedMemory();
+    }),
+    safe("halalCompanies", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/halalCompaniesSnapshot").releaseHalalCompaniesSnapshotMemory();
+    }),
+    safe("halalDamu", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../api/halalDamuWp").releaseHalalDamuMemoryCache();
+    }),
+    safe("mosques", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../data/mosques2gisCatalog").releaseMosques2gisCatalogMemory();
+    }),
+    safe("greatWords", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../content/greatWordsCatalog").releaseGreatWordsCatalogMemory();
+    }),
+    safe("i18n", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const i18n = require("../services/offlineAutoTranslations") as typeof import("../services/offlineAutoTranslations");
+      if (locale === "kk") {
+        i18n.releaseOfflineAutoTranslationsMemory();
+      } else {
+        i18n.pruneOfflineAutoTranslationsToLocale(
+          locale as import("../services/offlineAutoTranslations").OfflineAutoTranslateTarget
+        );
+      }
+    }),
+    safe("i18nTree", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../i18n/runtime").invalidateOfflineLocaleTreeCache();
+    }),
   ]);
 }

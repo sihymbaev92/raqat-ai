@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import {
   View,
   Text,
@@ -27,6 +28,7 @@ import {
   phaseLabel,
   manualToMode,
   effectiveGoalForItem,
+  formatTasbihProgress,
 } from "./tasbihShared";
 import { pickBestTranslit } from "../utils/translitKk";
 
@@ -42,6 +44,7 @@ function flushTasbih(
 }
 
 export function TasbihCounterScreen({ navigation, route }: Props) {
+  useAppLocale();
   const { dhikrId, titleKk } = route.params;
   const items = useMemo(() => loadDhikrItems(), []);
   const active = useMemo(() => items.find((i) => i.id === dhikrId) ?? null, [items, dhikrId]);
@@ -83,16 +86,18 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
       const p = await getTasbihPrefs();
       if (cancelled || !active) return;
 
-      let manual: number | null = null;
+      let manual: number | null = 33;
       if (p.dhikrId === dhikrId) {
         if (p.goalMode === "33") manual = 33;
-        else if (p.goalMode === "99") manual = 99;
+        else if (p.goalMode === "100") manual = 100;
+        else manual = null; // infinite
       }
       const goal = effectiveGoalForItem(active, manual);
       const fromMap = map[dhikrId];
       const baseCount =
         fromMap !== undefined ? fromMap : p.dhikrId === dhikrId ? p.count : 0;
-      let nextCount = Math.min(baseCount, Math.max(0, goal - 1));
+      const nextCount =
+        goal == null ? Math.max(0, baseCount) : Math.min(baseCount, Math.max(0, goal - 1));
       setManualGoal(manual);
       setCount(nextCount);
       setPrefsReady(true);
@@ -103,7 +108,7 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
   }, [active, dhikrId]);
 
   const effectiveGoal = useMemo(() => {
-    if (!active) return 33;
+    if (!active) return 33 as number | null;
     return effectiveGoalForItem(active, manualGoal);
   }, [active, manualGoal]);
 
@@ -149,7 +154,7 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
     pulseTapFlash();
     setCount((c) => {
       const n = c + 1;
-      if (n >= effectiveGoal) {
+      if (effectiveGoal != null && n >= effectiveGoal) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         return 0;
       }
@@ -170,7 +175,7 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
   }
 
   const phase = phaseLabel(count, effectiveGoal, active.phaseRule);
-  const remaining = Math.max(0, effectiveGoal - count);
+  const remaining = effectiveGoal == null ? 0 : Math.max(0, effectiveGoal - count);
   const translitLine = pickBestTranslit(active.textAr || "", active.translitKk);
 
   const flashOpacity = flash.interpolate({
@@ -191,33 +196,36 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
           <Pressable
             onPress={() => onPickGoal(33)}
             style={[styles.goalBtn, manualGoal === 33 && styles.goalBtnOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: manualGoal === 33 }}
+            accessibilityLabel="33"
           >
             <Text style={[styles.goalTxt, manualGoal === 33 && styles.goalTxtOn]}>33</Text>
           </Pressable>
           <Pressable
-            onPress={() => onPickGoal(99)}
-            style={[styles.goalBtn, manualGoal === 99 && styles.goalBtnOn]}
+            onPress={() => onPickGoal(100)}
+            style={[styles.goalBtn, manualGoal === 100 && styles.goalBtnOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: manualGoal === 100 }}
+            accessibilityLabel="100"
           >
-            <Text style={[styles.goalTxt, manualGoal === 99 && styles.goalTxtOn]}>99</Text>
+            <Text style={[styles.goalTxt, manualGoal === 100 && styles.goalTxtOn]}>100</Text>
           </Pressable>
-          {active.phaseRule !== "triple_salah" ? (
-            <Pressable
-              onPress={() => onPickGoal(null)}
-              style={[styles.goalBtn, manualGoal === null && styles.goalBtnOn]}
-            >
-              <Text style={[styles.goalTxt, manualGoal === null && styles.goalTxtOn]}>
-                {active.defaultTarget}
-              </Text>
-            </Pressable>
-          ) : null}
+          <Pressable
+            onPress={() => onPickGoal(null)}
+            style={[styles.goalBtn, manualGoal === null && styles.goalBtnOn]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: manualGoal === null }}
+            accessibilityLabel={kk.tasbih.goalInfiniteA11y}
+          >
+            <Text style={[styles.goalTxt, manualGoal === null && styles.goalTxtOn]}>∞</Text>
+          </Pressable>
         </View>
 
         <View style={styles.aboveCircle}>
           <Text style={styles.arCompact}>{active.textAr}</Text>
           {translitLine ? <Text style={styles.translitCompact}>{translitLine}</Text> : null}
-          <Text style={styles.progressLine}>
-            {count} / {effectiveGoal}
-          </Text>
+          <Text style={styles.progressLine}>{formatTasbihProgress(count, effectiveGoal)}</Text>
           {phase ? <Text style={styles.phaseAbove}>{phase}</Text> : null}
         </View>
 
@@ -229,7 +237,9 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
         ) : null}
 
         <Text style={styles.footerProgressInline}>
-          {count} / {effectiveGoal} · {remaining} {kk.tasbih.left}
+          {effectiveGoal == null
+            ? formatTasbihProgress(count, effectiveGoal)
+            : `${formatTasbihProgress(count, effectiveGoal)} · ${remaining} ${kk.tasbih.left}`}
         </Text>
       </ScrollView>
 

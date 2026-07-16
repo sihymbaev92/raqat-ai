@@ -60,7 +60,7 @@ export function useMushafAppLocaleTranslations(
     if (!missing.length) return;
 
     let alive = true;
-    void ensureBundledQuranTranslationsLoaded();
+    void ensureBundledQuranTranslationsLoaded(appLocale);
 
     for (const surah of missing) {
       const key = `${appLocale}:${surah}`;

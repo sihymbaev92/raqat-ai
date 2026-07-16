@@ -32,8 +32,6 @@ export const hubIcons = {
   comm: "hands-pray" as MciName,
   eco: "leaf" as MciName,
   tg: "telegram" as MciName,
-  /** Мазмұн орталығы: Siri / Жарлықтар нұсқауы */
-  siriShortcut: "microphone-message" as MciName,
 } as const;
 
 /** Төменгі таб: focused / blurred жұптары */

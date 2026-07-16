@@ -14,8 +14,13 @@ object PrayerLegacyNotificationCleaner {
   private const val tag = "PrayerLegacyNotifCleaner"
   private const val legacyAzanNotificationIdStart = 904310
   private const val legacyAzanNotificationIdEnd = 905309
+  private val nativeServiceNotificationIds = intArrayOf(904223, 904224)
   private val prayerKeys = arrayOf("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")
   private val legacyChannelIds = arrayOf(
+    "raqat_native_azan_delivery_v1",
+    "raqat_azan_fullscreen_v3",
+    "raqat_azan_fullscreen_v2",
+    "raqat_azan_fullscreen_v1",
     "prayer_azan_fullscreen_v2",
     "prayer_azan_fullscreen_v1",
     "prayer_azan_fullscreen",
@@ -32,6 +37,9 @@ object PrayerLegacyNotificationCleaner {
     try {
       mgr.cancelAll()
       for (id in legacyAzanNotificationIdStart..legacyAzanNotificationIdEnd) {
+        mgr.cancel(id)
+      }
+      for (id in nativeServiceNotificationIds) {
         mgr.cancel(id)
       }
       clearExpoPrayerTags(mgr)

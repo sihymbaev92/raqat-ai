@@ -14,6 +14,8 @@ type Props = {
   /** Quran.com: беттің сол/оң жиектері */
   readingThemeId?: QuranReadingThemeId | null;
   ornate?: boolean;
+  /** Хатым QCF4: glyph кесілмесін — әдепкі hidden */
+  overflowVisible?: boolean;
 };
 
 /** Мұсаф беті — Quran.com оқу темасы (Original: ақ бет, к вертикаль жиек). */
@@ -24,6 +26,7 @@ export function IlluminatedManuscriptFrame({
   innerStyle,
   readingThemeId,
   ornate: _ornate = false,
+  overflowVisible = false,
 }: Props) {
   void isDark;
   const theme = resolveQuranReadingTheme(readingThemeId);
@@ -36,13 +39,20 @@ export function IlluminatedManuscriptFrame({
       style={[
         {
           backgroundColor: theme.pageFace,
-          overflow: "hidden",
+          overflow: overflowVisible ? "visible" : "hidden",
         },
         border,
         style,
       ]}
     >
-      <View style={[{ flex: 1, minHeight: 0 }, innerStyle]}>{children}</View>
+      <View
+        style={[
+          { flex: 1, minHeight: 0, overflow: overflowVisible ? "visible" : "hidden" },
+          innerStyle,
+        ]}
+      >
+        {children}
+      </View>
     </View>
   );
 }

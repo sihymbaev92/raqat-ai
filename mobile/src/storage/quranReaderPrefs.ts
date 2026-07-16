@@ -19,6 +19,7 @@ import {
   normalizeReciterEdition,
 } from "../config/quranReciters";
 import { clampMushafTextScale } from "../quran/mushafTextScale";
+import { QURAN_READER_ARABIC_ONLY } from "../quran/quranReaderModePolicy";
 import {
   DEFAULT_QURAN_READING_THEME,
   normalizeQuranReadingTheme,
@@ -133,19 +134,21 @@ export async function setQuranReaderShowArabic(on: boolean): Promise<void> {
 }
 
 export async function getQuranReaderShowTranslit(): Promise<boolean> {
+  if (QURAN_READER_ARABIC_ONLY) return false;
   return readBoolKey(QURAN_READER_SHOW_TRANSLIT_KEY);
 }
 
 export async function setQuranReaderShowTranslit(on: boolean): Promise<void> {
-  await writeBoolKey(QURAN_READER_SHOW_TRANSLIT_KEY, on);
+  await writeBoolKey(QURAN_READER_SHOW_TRANSLIT_KEY, QURAN_READER_ARABIC_ONLY ? false : on);
 }
 
 export async function getQuranReaderShowMeaning(): Promise<boolean> {
+  if (QURAN_READER_ARABIC_ONLY) return false;
   return readBoolKey(QURAN_READER_SHOW_MEANING_KEY);
 }
 
 export async function setQuranReaderShowMeaning(on: boolean): Promise<void> {
-  await writeBoolKey(QURAN_READER_SHOW_MEANING_KEY, on);
+  await writeBoolKey(QURAN_READER_SHOW_MEANING_KEY, QURAN_READER_ARABIC_ONLY ? false : on);
 }
 
 export async function getQuranTajweedColorsEnabled(): Promise<boolean> {
@@ -183,7 +186,8 @@ export async function setQuranArabicFontPreset(preset: QuranArabicFontPresetId):
 }
 
 export async function getQuranReaderAllowRotation(): Promise<boolean> {
-  return readBoolKey(QURAN_READER_ALLOW_ROTATION_KEY, false);
+  /** Әдепкі: қосулы — хатым/құран оқығанда телефон бұрылса экран да бұрылады. */
+  return readBoolKey(QURAN_READER_ALLOW_ROTATION_KEY, true);
 }
 
 export async function setQuranReaderAllowRotation(on: boolean): Promise<void> {

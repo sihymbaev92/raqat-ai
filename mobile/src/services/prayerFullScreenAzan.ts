@@ -10,12 +10,10 @@ type PrayerWidgetNativeModule = {
     identifiers?: string[];
     lastError?: string | null;
     exactAlarmPermissionGranted?: boolean;
-    fullScreenIntentPermissionGranted?: boolean;
   } | void>;
   scheduleTestAzanAlarm?: (delaySeconds: number) => Promise<{
     scheduledCount?: number;
     exactAlarmPermissionGranted?: boolean;
-    fullScreenIntentPermissionGranted?: boolean;
     delaySeconds?: number;
   }>;
   cancelFullScreenAzanAlarms?: () => void;
@@ -23,11 +21,29 @@ type PrayerWidgetNativeModule = {
     scheduledCount?: number;
     lastError?: string | null;
     exactAlarmPermissionGranted?: boolean;
-    fullScreenIntentPermissionGranted?: boolean;
   }>;
   stopNativeAzanAudio?: () => void;
   playNativeAzanAudio?: (soundId: string) => void;
+  playNativeAzanDuaAudio?: () => void;
+  getNativeAzanPlaybackStatus?: () => Promise<{
+    positionMs?: number;
+    durationMs?: number;
+    isPlaying?: boolean;
+    completed?: boolean;
+    isDua?: boolean;
+    fullyFinished?: boolean;
+  }>;
   clearLegacyAzanNotifications?: () => void;
+  finishAzanDelivery?: () => void;
+};
+
+export type AzanPlaybackStatus = {
+  positionMs: number;
+  durationMs: number;
+  isPlaying: boolean;
+  completed?: boolean;
+  isDua?: boolean;
+  fullyFinished?: boolean;
 };
 
 type FullScreenAzanSlot = {
@@ -40,7 +56,8 @@ type FullScreenAzanSlot = {
   soundId: PrayerNotifSoundId;
 };
 
-const PrayerWidget = NativeModules.PrayerWidget as PrayerWidgetNativeModule | undefined;
+const PrayerWidget = (NativeModules as { PrayerWidget?: PrayerWidgetNativeModule } | undefined)
+  ?.PrayerWidget;
 
 export type FullScreenAzanScheduleResult = {
   accepted: boolean;
@@ -97,7 +114,7 @@ export function scheduleFullScreenAzanAlarms(
   soundIdForSlot: (slot: PrayerScheduleSlot) => PrayerNotifSoundId
 ): Promise<FullScreenAzanScheduleResult> {
   const rejected: FullScreenAzanScheduleResult = { accepted: false, identifiers: new Set() };
-  if (Platform.OS !== "android") return Promise.resolve(rejected);
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return Promise.resolve(rejected);
   const payload = buildFullScreenAzanSlots(slots, soundIdForSlot);
   if (payload.length === 0) return Promise.resolve(rejected);
   const schedule = PrayerWidget?.scheduleFullScreenAzanAlarms;
@@ -115,11 +132,15 @@ export function scheduleFullScreenAzanAlarmsForResult(
         scheduledCount?: number;
         identifiers?: string[];
         exactAlarmPermissionGranted?: boolean;
-        fullScreenIntentPermissionGranted?: boolean;
       }
     | void
 ): FullScreenAzanScheduleResult {
   const rejected: FullScreenAzanScheduleResult = { accepted: false, identifiers: new Set() };
+  if (Platform.OS === "android" && Number(Platform.Version) >= 31) {
+    if (result?.exactAlarmPermissionGranted === false) {
+      return rejected;
+    }
+  }
   const nativeIds = Array.isArray(result?.identifiers)
     ? result.identifiers.filter((id): id is string => typeof id === "string" && id.length > 0)
     : [];
@@ -143,20 +164,18 @@ export type AzanQaScheduleResult = {
   ok: boolean;
   delaySeconds: number;
   exactAlarmPermissionGranted: boolean | null;
-  fullScreenIntentPermissionGranted: boolean | null;
   error?: string;
 };
 
 /** Locked-screen QA: native AlarmManager арқылы N секундтан кейін азan. */
 export async function scheduleTestAzanAlarmForQa(delaySeconds = 90): Promise<AzanQaScheduleResult> {
   const delay = Math.min(600, Math.max(15, Math.trunc(delaySeconds)));
-  if (Platform.OS !== "android") {
+  if (Platform.OS !== "android" && Platform.OS !== "ios") {
     return {
       ok: false,
       delaySeconds: delay,
       exactAlarmPermissionGranted: null,
-      fullScreenIntentPermissionGranted: null,
-      error: "android_only",
+      error: "native_only",
     };
   }
   const schedule = PrayerWidget?.scheduleTestAzanAlarm;
@@ -165,7 +184,6 @@ export async function scheduleTestAzanAlarmForQa(delaySeconds = 90): Promise<Aza
       ok: false,
       delaySeconds: delay,
       exactAlarmPermissionGranted: null,
-      fullScreenIntentPermissionGranted: null,
       error: "native_module_missing",
     };
   }
@@ -179,10 +197,6 @@ export async function scheduleTestAzanAlarmForQa(delaySeconds = 90): Promise<Aza
         typeof result?.exactAlarmPermissionGranted === "boolean"
           ? result.exactAlarmPermissionGranted
           : null,
-      fullScreenIntentPermissionGranted:
-        typeof result?.fullScreenIntentPermissionGranted === "boolean"
-          ? result.fullScreenIntentPermissionGranted
-          : null,
       error: scheduledCount > 0 ? undefined : "schedule_empty",
     };
   } catch (e) {
@@ -190,14 +204,13 @@ export async function scheduleTestAzanAlarmForQa(delaySeconds = 90): Promise<Aza
       ok: false,
       delaySeconds: delay,
       exactAlarmPermissionGranted: null,
-      fullScreenIntentPermissionGranted: null,
       error: e instanceof Error ? e.message : "schedule_failed",
     };
   }
 }
 
 export function cancelFullScreenAzanAlarms(): void {
-  if (Platform.OS !== "android") return;
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return;
   try {
     PrayerWidget?.cancelFullScreenAzanAlarms?.();
   } catch {
@@ -218,14 +231,12 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
   scheduledCount: number;
   lastError: string | null;
   exactAlarmPermissionGranted: boolean | null;
-  fullScreenIntentPermissionGranted: boolean | null;
 }> {
-  if (Platform.OS !== "android") {
+  if (Platform.OS !== "android" && Platform.OS !== "ios") {
     return {
       scheduledCount: 0,
       lastError: null,
       exactAlarmPermissionGranted: null,
-      fullScreenIntentPermissionGranted: null,
     };
   }
   try {
@@ -235,17 +246,12 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
       lastError: typeof diag?.lastError === "string" && diag.lastError ? diag.lastError : null,
       exactAlarmPermissionGranted:
         typeof diag?.exactAlarmPermissionGranted === "boolean" ? diag.exactAlarmPermissionGranted : null,
-      fullScreenIntentPermissionGranted:
-        typeof diag?.fullScreenIntentPermissionGranted === "boolean"
-          ? diag.fullScreenIntentPermissionGranted
-          : null,
     };
   } catch (e) {
     return {
       scheduledCount: 0,
       lastError: e instanceof Error ? e.message : "Native diagnostics unavailable",
       exactAlarmPermissionGranted: null,
-      fullScreenIntentPermissionGranted: null,
     };
   }
 }
@@ -310,6 +316,19 @@ export function stopNativePrayerAzanAudio(): void {
   }
 }
 
+/** Азанды тоқтату: дыбыс және жабу — толық жабу. */
+export function finishAzanDelivery(): void {
+  if (Platform.OS === "android") {
+    try {
+      PrayerWidget?.finishAzanDelivery?.();
+    } catch {
+      /* no-op */
+    }
+  }
+  stopNativePrayerAzanAudio();
+  clearLegacyNativeAzanNotifications();
+}
+
 export function playNativePrayerAzanAudio(soundId: PrayerNotifSoundId): boolean {
   if (Platform.OS !== "android" || soundId === "off") return false;
   const play = PrayerWidget?.playNativeAzanAudio;
@@ -319,5 +338,36 @@ export function playNativePrayerAzanAudio(soundId: PrayerNotifSoundId): boolean 
     return true;
   } catch {
     return false;
+  }
+}
+
+export function playNativePrayerAzanDuaAudio(): boolean {
+  if (Platform.OS !== "android") return false;
+  const play = PrayerWidget?.playNativeAzanDuaAudio;
+  if (typeof play !== "function") return false;
+  try {
+    play();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getNativeAzanPlaybackStatus(): Promise<AzanPlaybackStatus | null> {
+  if (Platform.OS !== "android") return null;
+  const read = PrayerWidget?.getNativeAzanPlaybackStatus;
+  if (typeof read !== "function") return null;
+  try {
+    const status = await read();
+    return {
+      positionMs: Math.max(0, Math.trunc(Number(status?.positionMs ?? 0))),
+      durationMs: Math.max(0, Math.trunc(Number(status?.durationMs ?? 0))),
+      isPlaying: status?.isPlaying === true,
+      completed: status?.completed === true,
+      isDua: status?.isDua === true,
+      fullyFinished: status?.fullyFinished === true,
+    };
+  } catch {
+    return null;
   }
 }

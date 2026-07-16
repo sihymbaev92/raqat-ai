@@ -1,4 +1,19 @@
+import { Linking } from "react-native";
+import { halalDamuSiteHomeUrl } from "../api/halalDamuWp";
+import {
+  navigateToMoreStackScreen,
+  type StackNavLike,
+} from "../navigation/navigateToMoreStack";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { MoreStackParamList } from "../navigation/types";
+import {
+  openOfficialIslamicWeb,
+  officialIslamicSiteFromUrl,
+} from "../navigation/openOfficialIslamicWeb";
+import type { KmdbHubWebTabId } from "./kmdbHubWebTabs";
 import { getBundledRaqatApiBase } from "./raqatApiBase";
+import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "./officialIslamicSources";
+import { warmOfficialSiteUrl } from "../services/hubScreenWarmup";
 
 const OFFICIAL_HOSTS = new Set(["fatua.kz", "muftyat.kz", "imgs.muftyat.kz"]);
 
@@ -54,3 +69,90 @@ export function coerceOfficialSiteNavigationUrl(
 }
 
 export const OFFICIAL_SITE_PROXY_HOSTS = ["api.rahatomir.com", "rahatomir.com"] as const;
+
+function normalizeSiteHost(url: string): string {
+  try {
+    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
+export function isHalalDamuSiteUrl(url: string): boolean {
+  const h = normalizeSiteHost(url);
+  return h === "halaldamu.kz" || h.endsWith(".halaldamu.kz");
+}
+
+export function isFatuaSiteUrl(url: string): boolean {
+  const h = normalizeSiteHost(url);
+  return h === "fatua.kz" || h.endsWith(".fatua.kz");
+}
+
+export function isMuftyatSiteUrl(url: string): boolean {
+  const h = normalizeSiteHost(url);
+  return h === "muftyat.kz" || h.endsWith(".muftyat.kz");
+}
+
+function isOfficialPartnerHomeUrl(url: string): boolean {
+  const raw = url.trim().replace(/\/+$/, "");
+  return (
+    raw === FATUA_KK_HOME_URL.replace(/\/+$/, "") ||
+    raw === MUFTYAT_KK_HOME_URL.replace(/\/+$/, "") ||
+    raw === halalDamuSiteHomeUrl().replace(/\/+$/, "")
+  );
+}
+
+function kmdbHubTabForUrl(url: string): KmdbHubWebTabId {
+  return isFatuaSiteUrl(url) ? "fatua" : "muftyat";
+}
+
+/** Сыртқы браузер — header «open-in-new» үшін. */
+export function openOfficialSiteExternally(url: string): void {
+  const raw = (url ?? "").trim();
+  if (!raw) return;
+  void Linking.openURL(raw).catch(() => {});
+}
+
+/**
+ * Fatua.kz / Muftyat.kz / halaldamu.kz — қолданба ішіндегі WebView (жылдам, жарнамасыз).
+ * Navigation жоқ болса — сыртқы браузер.
+ */
+export function openOfficialSiteInApp(url: string, navigation?: StackNavLike): void {
+  const raw = (url ?? "").trim();
+  if (!raw) return;
+
+  if (!navigation) {
+    openOfficialSiteExternally(raw);
+    return;
+  }
+
+  void warmOfficialSiteUrl(raw);
+
+  if (isHalalDamuSiteUrl(raw)) {
+    navigateToMoreStackScreen(
+      "Halal",
+      { initialTab: "site", siteUrl: raw },
+      navigation
+    );
+    return;
+  }
+
+  if (isFatuaSiteUrl(raw) || isMuftyatSiteUrl(raw)) {
+    if (isOfficialPartnerHomeUrl(raw)) {
+      navigateToMoreStackScreen(
+        "KmdbHub",
+        { initialTab: kmdbHubTabForUrl(raw) },
+        navigation
+      );
+      return;
+    }
+    openOfficialIslamicWeb(
+      navigation as NativeStackNavigationProp<MoreStackParamList>,
+      officialIslamicSiteFromUrl(raw),
+      raw
+    );
+    return;
+  }
+
+  openOfficialSiteExternally(raw);
+}

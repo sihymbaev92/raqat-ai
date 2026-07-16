@@ -4,14 +4,23 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 
-/** Жүйе қайта қосылғанда соңғы сақталған кестемен виджетті жаңарту. */
+/** Жүйе қайта қосылғанда / APK жаңарғанда соңғы кестемен виджет + азан оятқыштарын қалпына келтіру. */
 class PrayerWidgetBootReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {
-    if (intent?.action != Intent.ACTION_BOOT_COMPLETED) return
+    val action = intent?.action ?: return
+    if (
+      action != Intent.ACTION_BOOT_COMPLETED &&
+      action != Intent.ACTION_MY_PACKAGE_REPLACED &&
+      action != Intent.ACTION_LOCKED_BOOT_COMPLETED &&
+      action != "android.intent.action.QUICKBOOT_POWERON" &&
+      action != "com.htc.intent.action.QUICKBOOT_POWERON"
+    ) {
+      return
+    }
     val app = context.applicationContext
+    PrayerAzanDeliveryService.stopRunning(app)
     PrayerWidgetViews.updateAllWidgets(app)
     PrayerWidgetAlarmScheduler.scheduleNext(app)
     PrayerAzanAlarmScheduler.restore(app)
-    QiblaWidgetSensorService.ensureRunning(app)
   }
 }

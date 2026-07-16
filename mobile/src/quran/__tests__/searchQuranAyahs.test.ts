@@ -1,6 +1,7 @@
 import {
   resetQuranKkSearchIndexForTests,
   searchQuranKkIndex,
+  tokenizeKkSearchQuery,
 } from "../quranKkSearchIndex";
 import { searchQuranAyahsLocal, quranSearchLangForLocale } from "../searchQuranAyahs";
 import {
@@ -17,15 +18,27 @@ jest.mock("../../utils/loadBundledJson", () => ({
             {
               number: 2,
               ayahs: [
-                { numberInSurah: 183, text_kk: "Әй мүміндер! ... ораза парыз қылынды." },
-                { numberInSurah: 184, text_kk: "Санаулы күндерде." },
+                {
+                  numberInSurah: 183,
+                  text_kk: "Әй мүміндер! ... ораза парыз қылынды.",
+                  translit: "йә әйюһәлләзина әмәну кутибә ъаләйкумус сийәм",
+                },
+                { numberInSurah: 184, text_kk: "Санаулы күндерде.", translit: "әййәмән мәъдуудат" },
               ],
             },
             {
               number: 4,
               ayahs: [
-                { numberInSurah: 15, text_kk: "Сондай әйелдеріңнен зина қылғandar..." },
-                { numberInSurah: 103, text_kk: "Намаз уақытында абайлаңдар" },
+                {
+                  numberInSurah: 15,
+                  text_kk: "Сондай әйелдеріңнен зина қылғandar...",
+                  translit: "вәлләти йәътинә",
+                },
+                {
+                  numberInSurah: 103,
+                  text_kk: "Намаз уақытында абайлаңдар",
+                  translit: "фәхзамус саләуат",
+                },
               ],
             },
           ],
@@ -87,6 +100,20 @@ describe("searchQuranKkIndex", () => {
     const hits = await searchQuranKkIndex("намаз", 20);
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.every((h) => h.meaning.toLowerCase().includes("намаз"))).toBe(true);
+  });
+
+  it("finds ayahs by multi-word Kazakh query", async () => {
+    const hits = await searchQuranKkIndex("намаз уақыты", 20);
+    expect(hits.some((h) => h.surah === 4 && h.ayah === 103)).toBe(true);
+  });
+
+  it("finds ayahs by transliteration keyword", async () => {
+    const hits = await searchQuranKkIndex("саләуат", 20);
+    expect(hits.some((h) => h.surah === 4 && h.ayah === 103)).toBe(true);
+  });
+
+  it("tokenizes multi-word queries", () => {
+    expect(tokenizeKkSearchQuery("намаз уақыты")).toEqual(["намаз", "уақыты"]);
   });
 });
 

@@ -1,5 +1,7 @@
 import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
+import { prefetchMosques2gisCatalog } from "../data/mosques2gisCatalog";
 import { halalDamuSiteHomeUrl } from "../api/halalDamuWp";
+import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 
 let moreStackWarm: Promise<void> | null = null;
 let kmdbWarm: Promise<void> | null = null;
@@ -7,49 +9,108 @@ let halalWarm: Promise<void> | null = null;
 
 function warmMoreStack(): Promise<void> {
   if (!moreStackWarm) {
-    moreStackWarm = import("../navigation/MoreStack").then(() => undefined);
+    moreStackWarm = Promise.all([
+      import("../navigation/MoreStack"),
+      import("../components/OfficialSiteFullWebView"),
+      import("../screens/OfficialIslamicWebScreen"),
+    ]).then(() => undefined);
   }
   return moreStackWarm;
 }
 
-/** Dashboard «ҚМДБ» батырмасын basу алдында — chunk + muftyat/fatua DNS/TLS. */
+/** Бір URL үшін DNS/TLS + WebView chunk (basу алдында). */
+export function warmOfficialSiteUrl(url: string): void {
+  const raw = url.trim();
+  if (!raw) return;
+  const lower = raw.toLowerCase();
+  if (lower.includes("halaldamu.kz")) {
+    warmHalalHubScreen();
+    void import("../components/officialSiteWebViewReload").then((m) =>
+      m.prefetchOfficialSiteWebPages([raw])
+    );
+    return;
+  }
+  if (lower.includes("fatua.kz") || lower.includes("muftyat.kz")) {
+    warmKmdbHubScreen();
+    void import("../components/officialSiteWebViewReload").then((m) =>
+      m.prefetchOfficialSiteWebPages([raw])
+    );
+  }
+}
+
+function ensureKmdbWarm(): Promise<void> {
+  if (!kmdbWarm) {
+    kmdbWarm = warmMoreStack()
+      .then(() =>
+        Promise.all([
+          import("../screens/KmdbHubScreen"),
+          import("../components/OfficialSiteFullWebView"),
+          import("../components/kmdb/NearbyMosquesPanel"),
+          import("../components/officialSiteWebViewReload").then((m) =>
+            m.prefetchOfficialSiteWebPages([MUFTYAT_KK_HOME_URL, FATUA_KK_HOME_URL])
+          ),
+          prefetchMosques2gisCatalog(),
+        ])
+      )
+      .then(() => undefined)
+      .catch(() => undefined);
+  }
+  return kmdbWarm;
+}
+
+/** Dashboard «ҚМДБ» батырмасын basу алдында — chunk + muftyat/fatua DNS/TLS + мешіт каталогы. */
 export function warmKmdbHubScreen(): void {
-  if (kmdbWarm) return;
-  kmdbWarm = warmMoreStack()
-    .then(() =>
-      Promise.all([
-        import("../screens/KmdbHubScreen"),
-        import("../components/officialSiteWebViewReload").then((m) =>
-          m.prefetchOfficialSiteWebPages([MUFTYAT_KK_HOME_URL, FATUA_KK_HOME_URL])
-        ),
-      ])
-    )
-    .then(() => undefined)
-    .catch(() => undefined);
+  void ensureKmdbWarm();
 }
 
-/** Dashboard «Halal Damu» батырмасын basу алдында — chunk + bundled каталог + сайт warm-up. */
+/** Навигация алдында қысқа күту — Suspense спиннерін азайту. */
+export function awaitKmdbHubWarm(maxWaitMs = 400): Promise<void> {
+  const warm = ensureKmdbWarm();
+  return Promise.race([
+    warm,
+    new Promise<void>((resolve) => setTimeout(resolve, maxWaitMs)),
+  ]);
+}
+
+function ensureHalalWarm(): Promise<void> {
+  if (!halalWarm) {
+    const siteUrl = halalDamuSiteHomeUrl();
+    void import("../components/officialSiteWebViewReload").then((m) =>
+      m.prefetchOfficialSiteWebPages([siteUrl])
+    );
+    halalWarm = warmMoreStack()
+      .then(() =>
+        Promise.all([
+          import("../screens/HalalScreen"),
+          import("../components/OfficialSiteFullWebView"),
+          import("../services/halalHubBootstrap").then(async (m) => {
+            await runWhenHeavyWorkAllowed();
+            m.getHalalHubInstantCatalog();
+            void m.prefetchHalalDamuHub();
+          }),
+        ])
+      )
+      .then(() => undefined)
+      .catch(() => undefined);
+  }
+  return halalWarm;
+}
+
+/** Dashboard «Halal Damu» батырмасын basу алдында. */
 export function warmHalalHubScreen(): void {
-  if (halalWarm) return;
-  halalWarm = warmMoreStack()
-    .then(() =>
-      Promise.all([
-        import("../screens/HalalScreen"),
-        import("../services/halalHubBootstrap").then((m) => {
-          m.getHalalHubInstantCatalog();
-          void m.prefetchHalalDamuHub();
-        }),
-        import("../components/officialSiteWebViewReload").then((m) =>
-          m.prefetchOfficialSiteWebPages([halalDamuSiteHomeUrl()])
-        ),
-      ])
-    )
-    .then(() => undefined)
-    .catch(() => undefined);
+  void ensureHalalWarm();
 }
 
-/** Boot: екі хабты да алдын ала дайындау (dashboard ашылғаннан кейін). */
+export function awaitHalalHubWarm(maxWaitMs = 400): Promise<void> {
+  const warm = ensureHalalWarm();
+  return Promise.race([
+    warm,
+    new Promise<void>((resolve) => setTimeout(resolve, maxWaitMs)),
+  ]);
+}
+
+/** Boot: KMDB бірден, Halal кейін — тек қолмен шақыру үшін (авто-warmup өшірілген). */
 export function warmHotHubScreens(): void {
   warmKmdbHubScreen();
-  warmHalalHubScreen();
+  setTimeout(() => warmHalalHubScreen(), 5_000);
 }

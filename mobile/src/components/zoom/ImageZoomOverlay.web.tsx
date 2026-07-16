@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { ZoomableImageContent } from "./ZoomableImageContent";
 import { kk } from "../../i18n/kk";
+import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
   visible: boolean;
@@ -35,6 +36,7 @@ export function ImageZoomOverlay({
   closeLabel = kk.common.closeImageZoom,
   pinchHint = kk.common.imagePinchZoomHint,
 }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
 

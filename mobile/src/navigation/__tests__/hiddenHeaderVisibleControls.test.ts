@@ -22,8 +22,9 @@ describe("hidden-header visible controls", () => {
   it("keeps Tajweed book back navigation visible without relying on headerLeft", () => {
     const src = source("src/screens/TajweedGuideScreen.tsx");
 
-    expect(src).toContain("styles.bookHeader");
-    expect(src).toContain("styles.bookBackButton");
-    expect(src).toContain("goHome");
+    expect(src).toContain("styles.readerTopBar");
+    expect(src).toContain("styles.backBtn");
+    expect(src).toContain("exitReader");
+    expect(src).toContain("useHardwareBackPress");
   });
 });

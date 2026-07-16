@@ -121,6 +121,27 @@ export async function deleteQuranAudioCache(): Promise<void> {
   await deleteAsync(QURAN_AUDIO_CACHE_DIR, { idempotent: true });
 }
 
+/** Бір қари MP3 кэшін тазалау (edition slug бойынша). */
+export async function deleteQuranAudioCacheForEdition(
+  edition: string,
+  urlForGlobalAyah: (globalAyah: number, ed: string) => string
+): Promise<void> {
+  if (!documentDirectory) return;
+  const ed = edition.trim();
+  if (!ed) return;
+  const { TOTAL_AYAHS } = await import("../data/quranAyahCounts");
+  for (let g = 1; g <= TOTAL_AYAHS; g += 1) {
+    const remote = urlForGlobalAyah(g, ed);
+    const path = quranAudioCachePathForUrl(remote);
+    if (!path) continue;
+    try {
+      await deleteAsync(path, { idempotent: true });
+    } catch {
+      /* ignore one file */
+    }
+  }
+}
+
 /**
  * Құран аудиосы үлкен болғандықтан app bundle-ға кірмейді.
  * Бір рет тыңдалған MP3 локал cache-ке түседі де, кейін интернетсіз ойналады.

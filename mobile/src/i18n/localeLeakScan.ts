@@ -52,6 +52,7 @@ export const LOCALE_LEAK_SKIP_PATH_PREFIXES = [
   "onboarding.title", // brand
   "features.raqatAiTitle",
   "dashboard.heroAiStripTitle",
+  "settings.languageKk",
 ];
 
 export type LocaleLeak = { path: string; value: string };

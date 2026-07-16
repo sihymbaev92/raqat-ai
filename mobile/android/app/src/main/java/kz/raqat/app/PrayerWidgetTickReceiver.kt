@@ -11,7 +11,6 @@ class PrayerWidgetTickReceiver : BroadcastReceiver() {
     val app = context.applicationContext
     try {
       PrayerWidgetViews.updateAllWidgets(app)
-      QiblaWidgetSensorService.ensureRunning(app)
       PrayerWidgetAlarmScheduler.scheduleNext(app)
     } catch (_: Throwable) {
       /* виджет жаңарту */

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useAppLocale } from "../i18n/runtime";
 import {
   ScrollView,
   Text,
@@ -44,6 +45,7 @@ function duaArabicTextStyle() {
 }
 
 export function DuasScreen({ navigation }: Props) {
+  useAppLocale();
   const insets = useSafeAreaInsets();
   const { colors } = useAppTheme();
   useTabHomeBackHeader(navigation, colors);

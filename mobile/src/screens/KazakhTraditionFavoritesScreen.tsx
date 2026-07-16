@@ -15,7 +15,7 @@ import {
 import { listTraditionFavorites, type TraditionFavorite } from "../storage/traditionFavorites";
 import { TraditionOrnamentDivider } from "../components/tradition/TraditionRedesignCards";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
 
@@ -40,9 +40,10 @@ export function KazakhTraditionFavoritesScreen() {
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const nav = useNavigation<Nav>();
   const { tr, translated } = useKkAutoTranslator();
+  const t = useI18n();
   useLayoutEffect(() => {
-    nav.setOptions({ title: tr("Таңдаулылар") });
-  }, [nav, tr]);
+    nav.setOptions({ title: t.features.traditionGuide.favoritesTitle });
+  }, [nav, t.features.traditionGuide.favoritesTitle]);
   const [items, setItems] = useState<TraditionFavorite[]>([]);
 
   useFocusEffect(
@@ -60,8 +61,8 @@ export function KazakhTraditionFavoritesScreen() {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator>
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>{tr("Таңдаулылар")}</Text>
-        <Text style={styles.heroSub}>{tr("Сақталған дәстүрлер және мақалалар")}</Text>
+        <Text style={styles.heroTitle}>{t.features.traditionGuide.favoritesTitle}</Text>
+        <Text style={styles.heroSub}>{t.features.traditionGuide.favoritesLead}</Text>
       </View>
 
       {items.length ? (
@@ -87,15 +88,15 @@ export function KazakhTraditionFavoritesScreen() {
       ) : (
         <View style={styles.emptyCard}>
           <MaterialIcons name="bookmark-border" size={34} color={palette.goldMuted} />
-          <Text style={styles.emptyTitle}>{tr("Әзірге таңдаулы жоқ")}</Text>
-          <Text style={styles.emptyText}>{tr("Дәстүр немесе мақаланы bookmark арқылы сақтап қойыңыз.")}</Text>
+          <Text style={styles.emptyTitle}>{t.features.traditionGuide.favoritesEmpty}</Text>
+          <Text style={styles.emptyText}>{t.features.traditionGuide.favoritesEmptyHint}</Text>
         </View>
       )}
       <TraditionOrnamentDivider palette={palette} />
       {translated ? (
         <View style={styles.autoBanner}>
           <MaterialIcons name="translate" size={15} color={palette.goldMuted} />
-          <Text style={styles.autoBannerText}>{kk.common.autoTranslateNotice}</Text>
+          <Text style={styles.autoBannerText}>{t.common.autoTranslateNotice}</Text>
         </View>
       ) : null}
     </ScrollView>

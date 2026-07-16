@@ -9,18 +9,17 @@ STASH="${ROOT}/.tmp-apk-slim-stash"
 # paths relative to mobile/
 CDN_ONLY_PATHS=(
   "assets/quran/qcf4/fonts"
+  "assets/quran/qcf4/fonts-woff2"
+  "assets/hajj/muftyat"
+  "assets/tajweed/letters"
+  "assets/tajweed/muftyat"
   "assets/bundled/offline-auto-translations-core.json"
   "assets/bundled/quran-translations-offline.json"
-  "assets/bundled/quran-kk-from-db.json"
   "assets/bundled/quran-en-transliteration-full.json"
   "assets/bundled/quran-tajweed-offline.json"
-  "assets/bundled/scraped-hadith-muftyat.json"
-  "assets/bundled/extracted-hadith-muftyat.json"
-  "assets/bundled/external-hadith-kk.json"
   "assets/bundled/hadith-from-db-seed.json"
   "assets/bundled/great-words-catalog.json"
   "assets/bundled/halal-companies-snapshot.json"
-  "assets/bundled/mosques-2gis-kz.json"
 )
 
 apk_slim_stash() {

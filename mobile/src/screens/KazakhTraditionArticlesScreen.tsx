@@ -16,7 +16,7 @@ import {
 import { TraditionArticleCard, TraditionOrnamentDivider } from "../components/tradition/TraditionRedesignCards";
 import { isTraditionFavorite, toggleTraditionFavorite } from "../storage/traditionFavorites";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "KazakhTraditionArticles">;
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
@@ -27,9 +27,10 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
   const styles = useMemo(() => makeStyles(palette), [palette]);
   const nav = useNavigation<Nav>();
   const { tr, translated } = useKkAutoTranslator();
+  const t = useI18n();
   useLayoutEffect(() => {
-    nav.setOptions({ title: tr("Мақалалар") });
-  }, [nav, tr]);
+    nav.setOptions({ title: t.features.traditionGuide.articlesTitle });
+  }, [nav, t.features.traditionGuide.articlesTitle]);
   const [selectedId, setSelectedId] = useState(route.params?.articleId ?? TRADITION_ARTICLES[0]?.id);
   const selected = getTraditionArticleById(selectedId);
   const [favorite, setFavorite] = useState(false);
@@ -51,9 +52,9 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content} showsVerticalScrollIndicator>
       <View style={styles.hero}>
-        <Text style={styles.kicker}>{tr("Мақалалар")}</Text>
-        <Text style={styles.heroTitle}>{tr("Қазақ дәстүрі мен ислам құндылықтары")}</Text>
-        <Text style={styles.heroSub}>{tr("Қысқа түсіндірме, отбасылық оқу және практикалық бағыт")}</Text>
+        <Text style={styles.kicker}>{t.features.traditionGuide.articlesTitle}</Text>
+        <Text style={styles.heroTitle}>{t.features.traditionGuide.articlesLead}</Text>
+        <Text style={styles.heroSub}>{t.features.traditionGuide.articlesSub}</Text>
       </View>
 
       {selected ? (
@@ -83,14 +84,14 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
                 onPress={() => void Linking.openURL(selected.url!)}
                 style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
               >
-                <Text style={styles.actionBtnText}>{tr("Сайтта ашу")}</Text>
+                <Text style={styles.actionBtnText}>{t.features.traditionGuide.openOnSite}</Text>
               </Pressable>
             ) : null}
           </View>
         </View>
       ) : null}
 
-      <Text style={styles.sectionTitle}>{tr("Барлық мақалалар")}</Text>
+      <Text style={styles.sectionTitle}>{t.features.traditionGuide.allArticles}</Text>
       {TRADITION_ARTICLES.map((article) => (
         <TraditionArticleCard
           key={article.id}
@@ -105,7 +106,7 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
       {translated ? (
         <View style={styles.autoBanner}>
           <MaterialIcons name="translate" size={15} color={palette.goldMuted} />
-          <Text style={styles.autoBannerText}>{kk.common.autoTranslateNotice}</Text>
+          <Text style={styles.autoBannerText}>{t.common.autoTranslateNotice}</Text>
         </View>
       ) : null}
     </ScrollView>

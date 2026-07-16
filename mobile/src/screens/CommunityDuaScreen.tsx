@@ -133,7 +133,13 @@ export function CommunityDuaScreen(_props: Props) {
       keyboardShouldPersistTaps="handled"
       ListHeaderComponent={<Text style={styles.hint}>{kk.communityDua.listIntro}</Text>}
       ListEmptyComponent={
-        !loading ? <Text style={styles.empty}>{kk.communityDua.empty}</Text> : null
+        !loading ? (
+          <Text style={styles.empty}>
+            {error === "api_missing" || error === "network"
+              ? kk.communityDua.emptyOffline
+              : kk.communityDua.empty}
+          </Text>
+        ) : null
       }
       renderItem={({ item }) => (
         <Pressable

@@ -67,14 +67,13 @@ describe("prayerFullScreenAzan", () => {
     ).toBe(true);
   });
 
-  it("still accepts native scheduling when full-screen permission is missing but alarms were scheduled", () => {
+  it("still accepts native scheduling when alarms were scheduled", () => {
     const payload = buildFullScreenAzanSlots([slot({ identifier: "fajr" })], () => "adhan_haramain");
 
     expect(
       scheduleFullScreenAzanAlarmsForResult(payload, {
         scheduledCount: 1,
         identifiers: ["fajr"],
-        fullScreenIntentPermissionGranted: false,
       }).accepted
     ).toBe(true);
     expect(
@@ -86,9 +85,9 @@ describe("prayerFullScreenAzan", () => {
     ).toBe(false);
   });
 
-  it("scheduleTestAzanAlarmForQa is android-only", async () => {
+  it("scheduleTestAzanAlarmForQa requires native module on non-android test env", async () => {
     const result = await scheduleTestAzanAlarmForQa(90);
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("android_only");
+    expect(["native_module_missing", "schedule_empty"]).toContain(result.error);
   });
 });

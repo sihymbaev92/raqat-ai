@@ -50,7 +50,6 @@ function buildMushafPagesFromQcf4Ranges(enrich: boolean): MushafBookPageSlice[] 
  * Аят мәтіні `buildMushafPagesGlobal()` фонда толықтырылады.
  */
 export function buildMushafPagesGlobalLight(): MushafBookPageSlice[] {
-  if (cachedMushafPages) return cachedMushafPages;
   if (cachedMushafPagesLight) return cachedMushafPagesLight;
 
   const pages: MushafBookPageSlice[] = [];
@@ -78,7 +77,6 @@ export function buildMushafPagesGlobalLight(): MushafBookPageSlice[] {
  * Тап/highlight/audio mapping дәл болу үшін QCF4 JSON-нан алынған compact range table қолданылады.
  */
 export function buildQcf4MushafPagesGlobalLight(): MushafBookPageSlice[] {
-  if (cachedQcf4MushafPages) return cachedQcf4MushafPages;
   if (cachedQcf4MushafPagesLight) return cachedQcf4MushafPagesLight;
   cachedQcf4MushafPagesLight = buildMushafPagesFromQcf4Ranges(false);
   return cachedQcf4MushafPagesLight;

@@ -3,6 +3,7 @@
  * Дерек: data/halal_products_seed_kz.csv → assets/bundled/halal-products-seed-kz.json
  */
 import type { HalalDamuProductItem } from "../api/halalDamuWp";
+import { halalBarcodeLookupKeys, normalizeHalalBarcodeDigits } from "../utils/halalBarcodeLookup";
 
 export type HalalProductSeedEntry = {
   gtin: string;
@@ -35,17 +36,11 @@ function getSeedBundle(): HalalProductsSeedBundle {
 }
 
 function normalizeBarcodeDigits(raw: string): string {
-  return (raw || "").replace(/\D/g, "");
+  return normalizeHalalBarcodeDigits(raw);
 }
 
 function barcodeLookupKeys(digits: string): string[] {
-  const d = normalizeBarcodeDigits(digits);
-  if (!d) return [];
-  const keys = new Set<string>([d]);
-  if (d.length === 13 && d.startsWith("0")) keys.add(d.slice(1));
-  if (d.length === 12) keys.add(`0${d}`);
-  if (d.length >= 8) keys.add(d.slice(-8));
-  return [...keys];
+  return halalBarcodeLookupKeys(digits);
 }
 
 function ensureIndex(): void {
@@ -103,6 +98,15 @@ export function lookupHalalProductsSeedByBarcode(barcode: string): HalalDamuProd
   return out;
 }
 
+/** Halal экраны ашылғанда seed индексін алдын ала құру. */
+export function prefetchHalalProductsSeedIndex(): void {
+  try {
+    ensureIndex();
+  } catch {
+    /* best-effort */
+  }
+}
+
 function normalizeSearchQuery(q: string): string {
   return q
     .trim()
@@ -111,11 +115,18 @@ function normalizeSearchQuery(q: string): string {
     .replace(/\s+/g, " ");
 }
 
-/** Атау / бренд / құрам бойынша seed іздеу (2+ таңба). */
+/** Атау / бренд / құрам / GTIN бойынша seed іздеу (2+ таңба). */
 export function searchHalalProductsSeed(query: string, limit = 20): HalalDamuProductItem[] {
   const q = normalizeSearchQuery(query);
   if (q.length < 2) return [];
   ensureIndex();
+
+  const digits = normalizeBarcodeDigits(query);
+  if (digits.length >= 4) {
+    const exact = lookupHalalProductsSeedByBarcode(digits);
+    if (exact.length > 0) return exact.slice(0, limit);
+  }
+
   const tokens = q.split(" ").filter((t) => t.length >= 2);
   const scored: { entry: HalalProductSeedEntry; score: number; idx: number }[] = [];
   (titleSearchRows ?? []).forEach(({ entry, haystack: hay, idx }) => {

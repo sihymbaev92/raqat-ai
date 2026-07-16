@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { QURAN_HATIM_COMPACT_MIN_FONT } from "./quranResponsiveLayout";
+import { HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE, QURAN_HATIM_COMPACT_MIN_FONT } from "./quranResponsiveLayout";
 
 export const MUSHAF_PAGE_AUTO_FIT_MAX_ITERATIONS = 14;
 
 /** Хатым: минималды оқуға болатын fitScale (18px floor). */
 export function mushafPageMinFitScale(baseFontSize: number): number {
-  return Math.max(0.62, QURAN_HATIM_COMPACT_MIN_FONT / Math.max(14, baseFontSize));
+  return Math.max(
+    HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE,
+    QURAN_HATIM_COMPACT_MIN_FONT / Math.max(14, baseFontSize)
+  );
 }
 
 /** Келесі fitScale — мазмұн биіктігі maxHeight-тен асса. */

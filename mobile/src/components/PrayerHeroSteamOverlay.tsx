@@ -14,7 +14,11 @@ export function PrayerHeroSteamOverlay({ variant = "prayerScreen" }: Props) {
   return (
     <View style={styles.root} pointerEvents="none">
       <LinearGradient
-        colors={["rgba(255,255,255,0.12)", "rgba(255,255,255,0)"]}
+        colors={
+          variant === "prayerScreen"
+            ? ["rgba(255, 185, 130, 0.14)", "rgba(255, 255, 255, 0)"]
+            : ["rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]
+        }
         style={styles.topMist}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
@@ -32,7 +36,7 @@ export function PrayerHeroSteamOverlay({ variant = "prayerScreen" }: Props) {
 const styles = StyleSheet.create({
   root: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 1,
+    zIndex: 2,
   },
   topMist: {
     position: "absolute",

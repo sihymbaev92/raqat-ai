@@ -36,11 +36,15 @@ describe("quranComReadingTheme", () => {
 
 
 
-  it("мәзірде original, dark, muftyat", () => {
+  it("мәзірде original және dark ғана", () => {
 
-    expect(QURAN_READING_THEMES.length).toBeGreaterThanOrEqual(1);
+    expect(QURAN_READING_THEMES).toHaveLength(2);
 
     expect(QURAN_READING_THEMES.some((t) => t.id === "original")).toBe(true);
+
+    expect(QURAN_READING_THEMES.some((t) => t.id === "dark")).toBe(true);
+
+    expect(QURAN_READING_THEMES.some((t) => t.id === "muftyat")).toBe(false);
 
     expect(QURAN_READING_THEMES.find((t) => t.id === "original")?.labelKk).toBe("Жұмсақ сүт");
 
@@ -57,6 +61,8 @@ describe("quranComReadingTheme", () => {
     expect(normalizeQuranReadingTheme("paper")).toBe("original");
 
     expect(normalizeQuranReadingTheme("sepia")).toBe("original");
+
+    expect(normalizeQuranReadingTheme("muftyat")).toBe("original");
 
     expect(normalizeQuranReadingTheme("dark")).toBe("dark");
 

@@ -13,6 +13,7 @@ import { Accelerometer, Magnetometer } from "expo-sensors";
 import { angleDiff, bearingToKaaba } from "../lib/qibla";
 import { headingFromLocationHeading, normHeadingDeg } from "../lib/qiblaLocationHeading";
 import { magneticDeclinationEastDeg } from "../lib/qiblaDeclinationApprox";
+import { resolveMagneticDeclinationEastDeg } from "../lib/qiblaMagneticDeclination";
 import { magnetometerHeadingDeg, type Vec3 } from "../lib/qiblaHeadingFromSensors";
 import { getCityApproxCoords } from "../constants/kzCities";
 import { readDeviceCoords } from "../services/devicePrayerLocation";
@@ -22,10 +23,12 @@ import {
   getSelectedCity,
   setQiblaMotionMode,
 } from "../storage/prefs";
-import { pushAndroidWidgetQiblaHeading } from "../storage/prayerCache";
+import { pushNativeWidgetQiblaHeading } from "../storage/prayerCache";
 import { getRootNavReady, getRootNavState, subscribeRootNavState } from "../voice/rootNavStateStore";
 import { shouldRunQiblaMotionSensors } from "../voice/deriveGlobalVoiceEntry";
-import { canUseNativeDeviceHeading, startNativeDeviceHeading, stopNativeDeviceHeading } from "../lib/qiblaNativeDeviceHeading";
+import { canUseNativeDeviceHeading, compassQualityFromAndroidSensorAccuracy, startNativeDeviceHeading, stopNativeDeviceHeading } from "../lib/qiblaNativeDeviceHeading";
+import { smoothHeading } from "../lib/qiblaHeadingSmooth";
+import { runAfterInteractions } from "../utils/uiDefer";
 
 export type QiblaPerm = "unknown" | "granted" | "denied" | "services_disabled";
 
@@ -51,6 +54,8 @@ export type QiblaMotionValue = {
   rotateDeg: number;
   motionMode: "balanced" | "fast";
   setMotionMode: (mode: "balanced" | "fast") => void;
+  /** Калибрлеу / сенсор қайта іске қосқанда EMA-ны нөлдеу. */
+  resetHeadingSmoothing: () => void;
 };
 
 export type QiblaSensorValue = QiblaStableValue & QiblaMotionValue;
@@ -60,33 +65,6 @@ const QiblaMotionDataContext = createContext<QiblaMotionValue | null>(null);
 
 function shouldRunSensorsFromStore(): boolean {
   return shouldRunQiblaMotionSensors(getRootNavState(), getRootNavReady());
-}
-
-function smoothHeading(
-  mode: "balanced" | "fast",
-  prev: number,
-  next: number
-): number {
-  if (!Number.isFinite(next)) {
-    return prev;
-  }
-  if (!Number.isFinite(prev)) {
-    return ((next % 360) + 360) % 360;
-  }
-  /** 359° -> 1° шекарасында "кері секіру" болмауы үшін шеңберлік тегістеу. */
-  const rawStep = angleDiff(prev, next);
-  const absStep = Math.abs(rawStep);
-  /** Fast режим: стрелка қолға бірден ерсін; balanced — dashboard-та жеңіл тұрақтылық. */
-  const deadZone = mode === "fast" ? 0.06 : 0.16;
-  if (absStep <= deadZone) {
-    return prev;
-  }
-  /** Бір кадрда тым үлкен секіруді шектейміз (магнит шу/қолдың дірілі). */
-  const maxStep = mode === "fast" ? 96 : 22;
-  const clampedStep = Math.max(-maxStep, Math.min(maxStep, rawStep));
-  const alpha = mode === "fast" ? 0.88 : 0.5;
-  const blended = prev + clampedStep * alpha;
-  return ((blended % 360) + 360) % 360;
 }
 
 function compassQualityFromHeadingAccuracy(acc?: number): QiblaCompassQuality {
@@ -236,9 +214,12 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMotionMode = useCallback((m: "balanced" | "fast") => {
-    const next = m === "fast" ? "balanced" : m;
-    setMotionModeState(next);
-    void setQiblaMotionMode(next);
+    setMotionModeState(m);
+    void setQiblaMotionMode(m);
+  }, []);
+
+  const resetHeadingSmoothing = useCallback(() => {
+    smHeadRef.current = Number.NaN;
   }, []);
 
   useEffect(() => {
@@ -323,8 +304,18 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
       rotateDeg: bearing == null || !headingHasSample ? 0 : angleDiff(heading, bearing),
       motionMode,
       setMotionMode,
+      resetHeadingSmoothing,
     }),
-    [heading, headingHasSample, headingAccuracyDeg, compassQuality, bearing, motionMode, setMotionMode]
+    [
+      heading,
+      headingHasSample,
+      headingAccuracyDeg,
+      compassQuality,
+      bearing,
+      motionMode,
+      setMotionMode,
+      resetHeadingSmoothing,
+    ]
   );
 
   const stable = useMemo<QiblaStableValue>(
@@ -354,6 +345,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   const [locationSource, setLocationSource] = useState<"gps" | "city" | "none">("none");
   const [locationAccuracyM, setLocationAccuracyM] = useState<number | null>(null);
   const [resumeTick, setResumeTick] = useState(0);
+  const [locationBootReady, setLocationBootReady] = useState(false);
 
   const [heading, setHeading] = useState(0);
   const [headingHasSample, setHeadingHasSample] = useState(false);
@@ -366,10 +358,12 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   const bearingRef = useRef<number | null>(null);
   bearingRef.current = bearing;
 
-  const smHeadRef = useRef(0);
+  const smHeadRef = useRef(Number.NaN);
   const lastAutoBearingAtRef = useRef(0);
   /** Орын белгілі болғанда: магниттік→гео түзету (° шығыс оң). */
   const declRef = useRef(0);
+  const headingRafRef = useRef<number | null>(null);
+  const pendingHeadingRef = useRef<number | null>(null);
 
   const refreshBearing = useCallback(async () => {
     setPositionFailed(false);
@@ -396,8 +390,8 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     }
     setPerm("granted");
 
-    const apply = (lat: number, lng: number, source: "gps" | "city", accuracyM?: number | null) => {
-      declRef.current = magneticDeclinationEastDeg(lat, lng);
+    const apply = async (lat: number, lng: number, source: "gps" | "city", accuracyM?: number | null) => {
+      declRef.current = await resolveMagneticDeclinationEastDeg(lat, lng);
       setBearing(bearingToKaaba(lat, lng));
       setLocationSource(source);
       setLocationAccuracyM(source === "gps" && typeof accuracyM === "number" ? accuracyM : null);
@@ -409,7 +403,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         const { city } = await getSelectedCity();
         const cityCoords = getCityApproxCoords(city);
         if (cityCoords) {
-          apply(cityCoords.lat, cityCoords.lon, "city");
+          await apply(cityCoords.lat, cityCoords.lon, "city");
           return true;
         }
       } catch {
@@ -435,7 +429,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     try {
       const device = await readDeviceCoords();
       if (device) {
-        apply(device.lat, device.lon, "gps", device.accuracyM);
+        await apply(device.lat, device.lon, "gps", device.accuracyM);
         if (device.accuracyM != null && device.accuracyM <= 80) {
           return;
         }
@@ -453,7 +447,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         const la = last.coords.accuracy;
         /** Соңғы нақты орын болса, GPS күткенше бірден сол бойынша көрсетеміз. */
         if (la == null || la <= 2_500) {
-          apply(last.coords.latitude, last.coords.longitude, "gps", la);
+          await apply(last.coords.latitude, last.coords.longitude, "gps", la);
         }
       }
     } catch {
@@ -466,7 +460,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         accuracy: Location.LocationAccuracy.Balanced,
         mayShowUserSettingsDialog: true,
       });
-      apply(pos.coords.latitude, pos.coords.longitude, "gps", pos.coords.accuracy);
+      await apply(pos.coords.latitude, pos.coords.longitude, "gps", pos.coords.accuracy);
       if (pos.coords.accuracy != null && pos.coords.accuracy <= 80) {
         return;
       }
@@ -480,7 +474,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         accuracy: Location.LocationAccuracy.BestForNavigation,
         mayShowUserSettingsDialog: true,
       });
-      apply(pos.coords.latitude, pos.coords.longitude, "gps", pos.coords.accuracy);
+      await apply(pos.coords.latitude, pos.coords.longitude, "gps", pos.coords.accuracy);
       return;
     } catch {
       /* last */
@@ -501,6 +495,12 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    const task = runAfterInteractions(() => setLocationBootReady(true), 2_500);
+    return () => task.cancel();
+  }, []);
+
+  useEffect(() => {
+    if (!locationBootReady) return;
     let alive = true;
     void (async () => {
       if (perm !== "unknown") {
@@ -538,10 +538,11 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [perm, refreshBearing]);
+  }, [locationBootReady, perm, refreshBearing]);
 
   /** Басты бет/Qibla ашық кезде bearing автоматты жаңарып тұрсын. */
   useEffect(() => {
+    if (!locationBootReady) return;
     if (Platform.OS === "web") {
       return;
     }
@@ -566,7 +567,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       unNav();
       clearInterval(iv);
     };
-  }, [refreshBearing]);
+  }, [locationBootReady, refreshBearing]);
 
   useEffect(() => {
     const s = (next: AppStateStatus) => {
@@ -583,9 +584,12 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMotionMode = useCallback((m: "balanced" | "fast") => {
-    const next = m === "fast" ? "balanced" : m;
-    setMotionModeState(next);
-    void setQiblaMotionMode(next);
+    setMotionModeState(m);
+    void setQiblaMotionMode(m);
+  }, []);
+
+  const resetHeadingSmoothing = useCallback(() => {
+    smHeadRef.current = Number.NaN;
   }, []);
 
   const motionValue = useMemo<QiblaMotionValue>(
@@ -598,8 +602,18 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         bearing == null || !headingHasSample ? 0 : angleDiff(heading, bearing),
       motionMode,
       setMotionMode,
+      resetHeadingSmoothing,
     }),
-    [heading, headingHasSample, headingAccuracyDeg, compassQuality, bearing, motionMode, setMotionMode]
+    [
+      heading,
+      headingHasSample,
+      headingAccuracyDeg,
+      compassQuality,
+      bearing,
+      motionMode,
+      setMotionMode,
+      resetHeadingSmoothing,
+    ]
   );
 
   const lastWidgetHeadingPushRef = useRef(0);
@@ -614,7 +628,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     lastWidgetHeadingPushRef.current = now;
-    pushAndroidWidgetQiblaHeading(heading);
+    pushNativeWidgetQiblaHeading(heading);
   }, [heading, headingHasSample]);
 
   const headingSubRef = useRef<Location.LocationSubscription | null>(null);
@@ -636,6 +650,10 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
 
     const off = () => {
       startSeq += 1;
+      if (headingRafRef.current != null) {
+        cancelAnimationFrame(headingRafRef.current);
+        headingRafRef.current = null;
+      }
       headingSubRef.current?.remove();
       headingSubRef.current = null;
       nativeHeadingStopRef.current?.();
@@ -674,9 +692,9 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
           if (Math.hypot(v.x, v.y, v.z) > 0.35) {
             const prev = accelRef.current;
             accelRef.current = {
-              x: prev.x * 0.86 + v.x * 0.14,
-              y: prev.y * 0.86 + v.y * 0.14,
-              z: prev.z * 0.86 + v.z * 0.14,
+              x: prev.x * 0.72 + v.x * 0.28,
+              y: prev.y * 0.72 + v.y * 0.28,
+              z: prev.z * 0.72 + v.z * 0.28,
             };
             accelReadyRef.current = true;
           }
@@ -688,24 +706,28 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
         const m: Vec3 = { x: e.x, y: e.y, z: e.z };
         const rawMag = magnetometerHeadingDeg(m, accelRef.current, accelReadyRef.current, Platform.OS);
         const raw = normHeadingDeg(rawMag + declRef.current);
-        const mode = motionModeRef.current;
-        smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
-        setHeading(smHeadRef.current);
-        setHeadingHasSample(true);
-        setHeadingAccuracyDeg(null);
-        setCompassQuality(compassQualityFromMagneticField(m));
+        applyHeadingSample(raw, null, compassQualityFromMagneticField(m));
       });
       magSubRef.current = sub;
       lastSubscribed.current = true;
     };
 
+    const flushHeadingFrame = () => {
+      headingRafRef.current = null;
+      const h = pendingHeadingRef.current;
+      if (h != null) setHeading(h);
+    };
+
     const applyHeadingSample = (raw: number, accuracy: number | null, quality: QiblaCompassQuality) => {
       const mode = motionModeRef.current;
       smHeadRef.current = smoothHeading(mode, smHeadRef.current, raw);
-      setHeading(smHeadRef.current);
+      pendingHeadingRef.current = smHeadRef.current;
       setHeadingHasSample(true);
       setHeadingAccuracyDeg(accuracy);
       setCompassQuality(quality);
+      if (headingRafRef.current == null) {
+        headingRafRef.current = requestAnimationFrame(flushHeadingFrame);
+      }
     };
 
     const startNativeHeading = async (seq: number): Promise<boolean> => {
@@ -714,10 +736,21 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       }
       if (disposed || seq !== startSeq || !canRun()) return false;
       const stop =
-        (await startNativeDeviceHeading((magneticHeadingDeg) => {
+        (await startNativeDeviceHeading((sample) => {
           if (disposed || seq !== startSeq) return;
-          const raw = normHeadingDeg(magneticHeadingDeg + declRef.current);
-          applyHeadingSample(raw, null, "high");
+          const raw = normHeadingDeg(sample.magneticHeadingDeg + declRef.current);
+          const quality = compassQualityFromAndroidSensorAccuracy(sample.sensorAccuracy);
+          applyHeadingSample(
+            raw,
+            sample.sensorAccuracy == null
+              ? null
+              : sample.sensorAccuracy >= 3
+                ? 4
+                : sample.sensorAccuracy === 2
+                  ? 12
+                  : 28,
+            quality === "unknown" ? "medium" : quality
+          );
         })) ?? (() => undefined);
       if (disposed || seq !== startSeq || !canRun()) {
         stop();

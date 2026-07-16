@@ -23,8 +23,16 @@ type Props = {
   nestedInText?: boolean;
 };
 
-/** Тәжуид span-дарына width/flex шектеулерін алу — мәтін ағынымен бірге wrap. */
-function inlineTajweedSpanStyle(baseStyle: TextStyle, color?: string): TextStyle {
+/** Тәжуид span-дарына width/flex шектеулерін алу — мәтін ағынымен wrap; әріп шеті кесілмесін. */
+export function inlineTajweedSpanStyle(
+  baseStyle: TextStyle,
+  color?: string,
+  opts?: { compact?: boolean }
+): TextStyle {
+  const fontSize = typeof baseStyle.fontSize === "number" ? baseStyle.fontSize : 24;
+  const spanPad = opts?.compact
+    ? 0
+    : Math.max(1, Math.ceil(fontSize * (Platform.OS === "android" ? 0.055 : 0.035)));
   return {
     ...baseStyle,
     flexGrow: undefined,
@@ -34,6 +42,9 @@ function inlineTajweedSpanStyle(baseStyle: TextStyle, color?: string): TextStyle
     minWidth: undefined,
     maxWidth: undefined,
     alignSelf: undefined,
+    marginHorizontal: 0,
+    paddingHorizontal: spanPad,
+    includeFontPadding: true,
     textAlign: "right",
     writingDirection: "rtl",
     ...(Platform.OS === "android" ? { textBreakStrategy: "highQuality" as const } : null),
@@ -95,7 +106,7 @@ export function TajweedColoredArabicText({
     () => (!htmlMode && raw.includes("[") ? tajweedColoredRuns(raw) : []),
     [htmlMode, raw]
   );
-  const htmlRuns = useMemo(() => (htmlMode ? htmlFontTajweedRuns(raw) : []), [htmlMode, raw]);
+  const htmlRuns = useMemo(() => (htmlMode ? htmlFontTajweedRuns(raw, isDark) : []), [htmlMode, raw, isDark]);
 
   if (!raw) return null;
 

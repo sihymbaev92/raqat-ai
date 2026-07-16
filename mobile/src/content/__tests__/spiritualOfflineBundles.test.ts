@@ -19,7 +19,7 @@ describe("spiritual offline bundles", () => {
       expect(d.id).toBeGreaterThan(0);
       expect(d.textAr.trim().length).toBeGreaterThan(0);
       expect(d.textKk.trim().length).toBeGreaterThan(0);
-      expect(d.goal).toBeGreaterThan(0);
+      expect(d.defaultTarget).toBeGreaterThan(0);
     }
   });
 

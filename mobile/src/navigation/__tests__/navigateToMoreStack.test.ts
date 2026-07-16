@@ -61,7 +61,7 @@ describe("navigateToMoreStackScreen", () => {
 
     expect(rootRef.navigate).toHaveBeenCalledWith("MoreStack", {
       screen: "QuranMushafBook",
-      params: { focusSurah: 2, focusAyah: 1 },
+      params: { focusSurah: 2, focusAyah: 1, continuousMushaf: true },
     });
   });
 
@@ -77,6 +77,7 @@ describe("navigateToMoreStackScreen", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("QuranMushafBook", {
       focusSurah: 1,
       focusAyah: 1,
+      continuousMushaf: true,
     });
     expect(rootRef.navigate).not.toHaveBeenCalled();
   });

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useAppLocale } from "../../i18n/runtime";
 import {
   View,
   Text,
@@ -20,16 +21,23 @@ import { AYAH_MARKER_COLOR_HEX, type AyahMarkerColorId } from "../../storage/qur
 import {
   QURAN_RECITER_GROUP_ORDER,
   QURAN_RECITER_OPTIONS,
-  type QuranReciterGroup,
+  quranReciterGroupLabelKk,
 } from "../../config/quranReciters";
 import {
   HatimReaderSettingsMenuSection,
   type HatimReaderSettingsHandlers,
   type HatimReaderSettingsSnapshot,
 } from "./HatimReaderSettingsMenuSection";
+import type { HatimAudioPlayUntil } from "../../storage/hatimPrefs";
 
 const AYAH_MARKER_COLOR_IDS = Object.keys(AYAH_MARKER_COLOR_HEX) as AyahMarkerColorId[];
 const QUICK_HIGHLIGHT_COLOR: AyahMarkerColorId = "rose";
+
+function playUntilMenuHint(scope: HatimAudioPlayUntil): string {
+  if (scope === "surah") return `${kk.hatim.settingsPlayUntilSurah} соңына дейін`;
+  if (scope === "ayah") return kk.quran.ayahMenuPlaySelectedHint;
+  return kk.quran.ayahMenuPlayUntilJuzHint;
+}
 
 export type AyahContextMenuSheetStyles = Record<string, never>;
 
@@ -60,6 +68,8 @@ type Props = {
     values: HatimReaderSettingsSnapshot;
     handlers: HatimReaderSettingsHandlers;
   };
+  /** Хатым: «Ойнату … дейін» жолы playUntil баптауымен сәйкес. */
+  playUntilScope?: HatimAudioPlayUntil;
 };
 
 type MenuStyles = {
@@ -85,62 +95,7 @@ type MenuStyles = {
   reciterOptionText: TextStyle;
   reciterOptionTextSelected: TextStyle;
   divider: ViewStyle;
-  tajweedRainbowIcon: ViewStyle;
-  tajweedRainbowStripe: ViewStyle;
-  tajweedRainbowCheck: ViewStyle;
-  tajweedPanel: ViewStyle;
-  tajweedPanelTopRow: ViewStyle;
-  tajweedPanelTitle: TextStyle;
-  tajweedPanelText: TextStyle;
-  tajweedPanelToggle: ViewStyle;
-  tajweedPanelToggleText: TextStyle;
-  tajweedLegendChips: ViewStyle;
-  tajweedLegendChip: ViewStyle;
-  tajweedLegendDot: ViewStyle;
-  tajweedLegendText: TextStyle;
 };
-
-const TAJWEED_RAINBOW_COLORS = ["#EF4444", "#F59E0B", "#22C55E", "#0EA5E9", "#8B5CF6"] as const;
-const TAJWEED_HINT_CHIPS = [
-  { label: "Медд", color: "#537fff" },
-  { label: "Ғунна/ихфа", color: "#16a34a" },
-  { label: "Қалқала", color: "#dc2626" },
-  { label: "Оқылмайды", color: "#6b7280" },
-] as const;
-
-function TajweedRainbowIcon({
-  active,
-  disabled,
-  s,
-  colors,
-}: {
-  active: boolean;
-  disabled: boolean;
-  s: MenuStyles;
-  colors: ThemeColors;
-}) {
-  return (
-    <View
-      style={[
-        s.tajweedRainbowIcon,
-        {
-          opacity: disabled ? 0.42 : 1,
-          borderColor: active ? colors.accent : colors.border,
-          backgroundColor: colors.bg,
-        },
-      ]}
-    >
-      {TAJWEED_RAINBOW_COLORS.map((color) => (
-        <View key={color} style={[s.tajweedRainbowStripe, { backgroundColor: color }]} />
-      ))}
-      {active ? (
-        <View style={[s.tajweedRainbowCheck, { backgroundColor: colors.card }]}>
-          <MaterialIcons name="check-circle" size={11} color={colors.accent} />
-        </View>
-      ) : null}
-    </View>
-  );
-}
 
 function MenuRow({
   icon,
@@ -206,13 +161,15 @@ export function AyahContextMenuSheet({
   onRemoveMarker,
   hasMarkerForAyah,
   hatimReaderSettings,
+  playUntilScope = "juz",
 }: Props) {
+  useAppLocale();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [reciterOpen, setReciterOpen] = useState(false);
-  const [tajweedPanelOpen, setTajweedPanelOpen] = useState(false);
   const { tr } = useKkAutoTranslator();
 
   const s = useMemo(() => makeMenuStyles(colors, isDark, windowWidth), [colors, isDark, windowWidth]);
+  const playUntilHint = playUntilMenuHint(playUntilScope);
   const selectedReciterLabel = useMemo(
     () => QURAN_RECITER_OPTIONS.find((r) => r.edition === reciterEdition)?.labelKk ?? kk.quran.readerReciterTitle,
     [reciterEdition]
@@ -221,7 +178,6 @@ export function AyahContextMenuSheet({
   const closeAll = () => {
     setColorPickerOpen(false);
     setReciterOpen(false);
-    setTajweedPanelOpen(false);
     onClose();
   };
 
@@ -233,7 +189,7 @@ export function AyahContextMenuSheet({
           <View
             style={[
               s.popover,
-              { maxHeight: Math.min(windowHeight * 0.82, hatimReaderSettings ? 640 : 520) },
+              { maxHeight: Math.min(windowHeight * 0.82, hatimReaderSettings ? 560 : 520) },
             ]}
           >
             <ScrollView
@@ -259,8 +215,8 @@ export function AyahContextMenuSheet({
                 colors={colors}
                 icon={<MaterialIcons name="play-arrow" size={22} color={colors.text} />}
                 title={tr(kk.quran.ayahMenuPlayUntilJuz)}
-                subtitle={tr(kk.quran.ayahMenuPlayUntilJuzHint)}
-                a11y={kk.quran.ayahMenuPlayUntilJuz}
+                subtitle={tr(playUntilHint)}
+                a11y={`${kk.quran.ayahMenuPlayUntilJuz} ${playUntilHint}`}
                 onPress={() => {
                   onPlayUntilJuz(ayahMenuItem.numberInSurah);
                   closeAll();
@@ -293,28 +249,34 @@ export function AyahContextMenuSheet({
                   {QURAN_RECITER_GROUP_ORDER.map((group) => {
                     const items = QURAN_RECITER_OPTIONS.filter((r) => r.group === group);
                     if (!items.length) return null;
-                    const groupLabel: Record<QuranReciterGroup, string> = {
-                      kk: kk.quran.readerReciterGroupKk,
-                      ru: kk.quran.readerReciterGroupRu,
-                      ar: kk.quran.readerReciterGroupAr,
-                    };
                     return (
                       <View key={group}>
-                        <Text style={s.reciterGroup}>{tr(groupLabel[group])}</Text>
+                        <Text style={s.reciterGroup}>{tr(quranReciterGroupLabelKk(group))}</Text>
                         {items.map((r) => {
+                          const available = r.audioAvailable !== false;
                           const selected = reciterEdition === r.edition;
+                          const label = available
+                            ? r.labelKk
+                            : `${r.labelKk} (${kk.quran.readerReciterSoon})`;
                           return (
                             <Pressable
                               key={r.edition}
                               oyuBackdrop={false}
-                              onPress={() => onPickReciter(r.edition)}
+                              onPress={() => {
+                                if (!available) return;
+                                onPickReciter(r.edition);
+                              }}
+                              disabled={!available}
                               accessibilityRole="button"
-                              accessibilityState={{ selected }}
-                              accessibilityLabel={r.labelKk}
+                              accessibilityState={{ selected, disabled: !available }}
+                              accessibilityLabel={
+                                available ? label : kk.quran.readerReciterUnavailableA11y(r.labelKk)
+                              }
                               style={({ pressed }) => [
                                 s.reciterOption,
                                 selected && s.reciterOptionSelected,
-                                pressed && { opacity: 0.88 },
+                                pressed && available && { opacity: 0.88 },
+                                !available && { opacity: 0.55 },
                               ]}
                             >
                               <MaterialIcons
@@ -326,7 +288,7 @@ export function AyahContextMenuSheet({
                                 style={[s.reciterOptionText, selected && s.reciterOptionTextSelected]}
                                 numberOfLines={2}
                               >
-                                {r.labelKk}
+                                {label}
                               </Text>
                             </Pressable>
                           );
@@ -421,105 +383,6 @@ export function AyahContextMenuSheet({
                   closeAll();
                 }}
               />
-              {hatimReaderSettings ? (
-                <MenuRow
-                  s={s}
-                  colors={colors}
-                  icon={
-                    <TajweedRainbowIcon
-                      active={
-                        hatimReaderSettings.values.showTajweedColors &&
-                        hatimReaderSettings.values.arabicScriptEdition === "madinah"
-                      }
-                      disabled={hatimReaderSettings.values.arabicScriptEdition !== "madinah"}
-                      s={s}
-                      colors={colors}
-                    />
-                  }
-                  title={tr(kk.quran.tajweedModeLabel)}
-                  a11y={kk.quran.tajweedModeLabel}
-                  onPress={() => {
-                    setTajweedPanelOpen((v) => !v);
-                  }}
-                />
-              ) : null}
-              {hatimReaderSettings && tajweedPanelOpen ? (
-                <View style={s.tajweedPanel}>
-                  <View style={s.tajweedPanelTopRow}>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={s.tajweedPanelTitle}>{tr(kk.quran.tajweedLegendTitle)}</Text>
-                      <Text style={s.tajweedPanelText}>{tr(kk.quran.readerTajweedExplainShort)}</Text>
-                    </View>
-                    <Pressable
-                      oyuBackdrop={false}
-                      disabled={hatimReaderSettings.values.arabicScriptEdition !== "madinah"}
-                      onPress={() => {
-                        hatimReaderSettings.handlers.onShowTajweedColors(
-                          !hatimReaderSettings.values.showTajweedColors
-                        );
-                      }}
-                      accessibilityRole="switch"
-                      accessibilityState={{
-                        checked: hatimReaderSettings.values.showTajweedColors,
-                        disabled: hatimReaderSettings.values.arabicScriptEdition !== "madinah",
-                      }}
-                      accessibilityLabel={kk.quran.tajweedModeLabel}
-                      style={({ pressed }) => [
-                        s.tajweedPanelToggle,
-                        {
-                          borderColor: hatimReaderSettings.values.showTajweedColors
-                            ? colors.accent
-                            : colors.border,
-                          backgroundColor: hatimReaderSettings.values.showTajweedColors
-                            ? colors.accentSurface
-                            : colors.bg,
-                          opacity:
-                            hatimReaderSettings.values.arabicScriptEdition !== "madinah"
-                              ? 0.48
-                              : pressed
-                                ? 0.88
-                                : 1,
-                        },
-                      ]}
-                    >
-                      <MaterialIcons
-                        name={hatimReaderSettings.values.showTajweedColors ? "toggle-on" : "toggle-off"}
-                        size={28}
-                        color={
-                          hatimReaderSettings.values.showTajweedColors ? colors.accent : colors.muted
-                        }
-                      />
-                      <Text
-                        style={[
-                          s.tajweedPanelToggleText,
-                          {
-                            color: hatimReaderSettings.values.showTajweedColors
-                              ? colors.accent
-                              : colors.text,
-                          },
-                        ]}
-                      >
-                        {tr(
-                          hatimReaderSettings.values.showTajweedColors
-                            ? kk.quran.tajweedPanelOff
-                            : kk.quran.tajweedPanelOn
-                        )}
-                      </Text>
-                    </Pressable>
-                  </View>
-                  <View style={s.tajweedLegendChips}>
-                    {TAJWEED_HINT_CHIPS.map((chip) => (
-                      <View key={chip.label} style={s.tajweedLegendChip}>
-                        <View style={[s.tajweedLegendDot, { backgroundColor: chip.color }]} />
-                        <Text style={s.tajweedLegendText}>{chip.label}</Text>
-                      </View>
-                    ))}
-                  </View>
-                  {hatimReaderSettings.values.arabicScriptEdition !== "madinah" ? (
-                    <Text style={s.tajweedPanelText}>{tr(kk.quran.tajweedModeHint)}</Text>
-                  ) : null}
-                </View>
-              ) : null}
               <MenuRow
                 s={s}
                 colors={colors}
@@ -717,99 +580,6 @@ function makeMenuStyles(colors: ThemeColors, isDark: boolean, windowWidth: numbe
       backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)",
       marginHorizontal: 12,
       marginVertical: 2,
-    },
-    tajweedRainbowIcon: {
-      width: 25,
-      height: 25,
-      borderRadius: 13,
-      borderWidth: StyleSheet.hairlineWidth,
-      overflow: "hidden",
-      flexDirection: "row",
-      alignItems: "stretch",
-      justifyContent: "center",
-    },
-    tajweedRainbowStripe: {
-      flex: 1,
-      minWidth: 3,
-    },
-    tajweedRainbowCheck: {
-      position: "absolute",
-      right: -1,
-      bottom: -1,
-      width: 13,
-      height: 13,
-      borderRadius: 7,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    tajweedPanel: {
-      marginHorizontal: 14,
-      marginBottom: 8,
-      padding: 10,
-      borderRadius: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
-      backgroundColor: isDark ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.025)",
-      gap: 9,
-    },
-    tajweedPanelTopRow: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 10,
-    },
-    tajweedPanelTitle: {
-      color: ink,
-      fontSize: 13,
-      lineHeight: 17,
-      fontWeight: "900",
-      marginBottom: 3,
-    },
-    tajweedPanelText: {
-      color: muted,
-      fontSize: 11,
-      lineHeight: 16,
-      fontWeight: "600",
-    },
-    tajweedPanelToggle: {
-      minWidth: 82,
-      minHeight: 36,
-      paddingHorizontal: 8,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 4,
-    },
-    tajweedPanelToggleText: {
-      fontSize: 12,
-      lineHeight: 16,
-      fontWeight: "900",
-    },
-    tajweedLegendChips: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: 6,
-    },
-    tajweedLegendChip: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 5,
-      paddingHorizontal: 7,
-      paddingVertical: 4,
-      borderRadius: 999,
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.72)",
-    },
-    tajweedLegendDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-    },
-    tajweedLegendText: {
-      color: ink,
-      fontSize: 10,
-      lineHeight: 13,
-      fontWeight: "800",
     },
   });
 }

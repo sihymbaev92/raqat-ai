@@ -1,4 +1,4 @@
-﻿import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { findNodeHandle, Text, View, type ScrollView, type TextStyle } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { AyahArabicKaraokeText } from "./AyahArabicKaraokeText";
@@ -20,6 +20,7 @@ import {
 import { resolveMushafBookAyah } from "../../quran/buildMushafPagesGlobal";
 import type { MushafBookAyah } from "../../quran/mushafBookTypes";
 import { AYAH_MARKER_COLOR_HEX, type AyahMarkerRecord } from "../../storage/quranAyahMarkers";
+import { hatimUnifiedAyahMarkerFontSize, hatimUnifiedAyahMarkerHeight } from "../../quran/mushafAyahMarkerStyle";
 import {
   resolveQuranReadingTheme,
   type QuranReadingThemeId,
@@ -91,8 +92,7 @@ function ayahHighlightStyle(
 }
 
 function markerHeight(lineHeight: number, compact: boolean, centerFlow: boolean, isDark: boolean): number {
-  if (compact) return Math.min(22, Math.max(16, lineHeight * 0.46));
-  if (centerFlow) return Math.min(28, Math.max(22, lineHeight * 0.42));
+  if (compact || centerFlow) return hatimUnifiedAyahMarkerHeight();
   return isDark
     ? Math.min(40, Math.max(30, lineHeight * 0.68))
     : Math.min(42, Math.max(32, lineHeight * 0.72));
@@ -217,14 +217,13 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
     const theme = resolveQuranReadingTheme(readingThemeId);
     const centerFlow = theme.minimalPageChrome || compactBookPage;
     const compactFlow = compactBookPage && centerFlow;
-    const fitScale = compactFlow ? Math.min(1, Math.max(0.58, bookFitScale)) : 1;
 
     const metrics = buildQuranArabicFlowMetrics({
       contentWidth: layoutWidth,
       baseFontSize: baseFs,
       baseTextStyle: mushafAyahTxt,
       compact: compactFlow,
-      fitScale,
+      fitScale: compactFlow ? bookFitScale : 1,
     });
 
     const markerStroke = theme.markerRingOuter;
@@ -232,6 +231,108 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
     const markerInk = theme.markerInk;
     const markerH = markerHeight(metrics.lineHeight, compactFlow, centerFlow, isDark);
     const segmentGap = compactFlow ? Math.max(4, Math.round(metrics.fontSize * 0.2)) : 8;
+    const markerTextSize = hatimUnifiedAyahMarkerFontSize();
+    const highlightBg = isDark ? "rgba(255,255,255,0.08)" : "rgba(245, 158, 11, 0.15)";
+    const highlightInk = isDark ? theme.markerInk : "#B45309";
+
+    if (compactFlow) {
+      return (
+        <View
+          style={{
+            width: layoutWidth,
+            maxWidth: "100%",
+            alignSelf: "stretch",
+            overflow: "visible",
+          }}
+          onLayout={
+            contentWidthProp
+              ? undefined
+              : (e) => setMeasuredWidth(Math.max(280, e.nativeEvent.layout.width))
+          }
+        >
+          <Text
+            selectable={false}
+            style={[
+              metrics.baseTextStyle,
+              {
+                writingDirection: "rtl",
+                textAlign: "center",
+                width: "100%",
+                lineHeight:
+                  typeof metrics.baseTextStyle.lineHeight === "number"
+                    ? metrics.baseTextStyle.lineHeight
+                    : Math.round(metrics.fontSize * 1.85),
+              },
+            ]}
+          >
+            {ayahs.map((raw) => {
+              const item = resolveAyahItem(raw);
+              const ayahN = item.numberInSurah;
+              const plain = displayCachedAyahArabic(item, arabicScriptEdition);
+              if (!plain.trim()) return null;
+              const markerKey = `${surahNumber}:${ayahN}`;
+              const markerRec = ayahMarkers[markerKey];
+              const bookmarkHex = markerRec ? AYAH_MARKER_COLOR_HEX[markerRec.colorId] : null;
+              const isResume = resumeHighlightAyah === ayahN;
+              const isPlay = playingAyahInSurah === ayahN && ayahAudioIsPlaying;
+              const isLoad = loadingAyahAudio === ayahN;
+              const isHighlighted = isResume || isPlay || playingAyahInSurah === ayahN;
+              const ayahStyle = ayahHighlightStyle(
+                metrics.baseTextStyle,
+                plain,
+                isDark,
+                isResume,
+                isPlay,
+                isLoad
+              );
+              return (
+                <Text
+                  key={`ar-${surahNumber}:${ayahN}`}
+                  onPress={() => onPressArabic(ayahN)}
+                  onLongPress={() => onLongPressAyah(item)}
+                  suppressHighlighting
+                  style={[
+                    ayahStyle,
+                    isHighlighted
+                      ? { color: highlightInk, backgroundColor: highlightBg }
+                      : null,
+                  ]}
+                >
+                  <AyahArabicKaraokeText
+                    plainText={plain}
+                    taggedText={showTajweedColors ? item.textTajweed : undefined}
+                    showTajweedColors={showTajweedColors}
+                    isDark={isDark}
+                    baseStyle={ayahStyle}
+                    nestedInText
+                    audioFocus={playingAyahInSurah === ayahN}
+                    audioLoading={loadingAyahAudio === ayahN}
+                  />
+                  <Text
+                    style={{
+                      fontSize: markerTextSize,
+                      lineHeight: markerTextSize + 4,
+                      color: markerInk,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {` ﴿${toEasternArabicIndic(ayahN)}﴾ `}
+                  </Text>
+                  {bookmarkHex ? (
+                    <Text style={{ color: bookmarkHex, fontWeight: "800" }}> ●</Text>
+                  ) : null}
+                  {isLoad ? (
+                    <Text style={{ opacity: 0.75, fontSize: Math.max(10, metrics.fontSize * 0.55) }}>
+                      {" …"}
+                    </Text>
+                  ) : null}
+                </Text>
+              );
+            })}
+          </Text>
+        </View>
+      );
+    }
 
     const ayahShowsArab = (item: CachedAyah | MushafBookAyah) => {
       const resolved = resolveAyahItem(item);
@@ -271,7 +372,9 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
           style={{
             marginHorizontal: compactFlow ? 1 : 2,
             marginBottom: centerFlow ? Math.max(2, Math.round(segmentGap * 0.5)) : segmentGap,
-            ...(centerFlow ? null : { width: "100%", maxWidth: "100%" }),
+            width: "100%",
+            maxWidth: "100%",
+            alignSelf: "stretch",
           }}
         >
           <Pressable
@@ -283,7 +386,11 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
             accessibilityState={{ busy: isLoad }}
             style={quranAyahRowStyle()}
           >
-            <QuranArabicFlowInlineText metrics={metrics} highlightStyle={highlightStyle}>
+            <QuranArabicFlowInlineText
+              metrics={metrics}
+              highlightStyle={highlightStyle}
+              hatimAutoFit={false}
+            >
               <AyahArabicKaraokeText
                 plainText={plain}
                 taggedText={showTajweedColors ? item.textTajweed : undefined}
@@ -312,6 +419,7 @@ export const MushafContinuousArabicBlock = forwardRef<MushafContinuousArabicHand
               fill={markerFill}
               textColor={ayahNumberColor}
               height={markerH}
+              numberFontSize={centerFlow || compactFlow ? hatimUnifiedAyahMarkerFontSize() : undefined}
               variant={centerFlow ? "qcom" : "default"}
             />
             {bookmarkHex ? (

@@ -1,4 +1,6 @@
+import { Platform } from "react-native";
 import type { Qcf4PageJson, Qcf4Word, Qcf4WordType } from "./qcf4Types";
+import { HATIM_UNIFIED_ARABIC_FONT_SIZE } from "./mushafTextScale";
 
 export const QCF4_RENDER_LINE_COUNT = 15;
 export const QCF4_QCOM_LINE_GAP = 5;
@@ -7,12 +9,38 @@ export const QCF4_PHONE_WEB_SAFE_INSET = 10;
 export const QCF4_PHONE_NATIVE_SAFE_INSET = 14;
 export const QCF4_PHONE_LINE_PADDING = 18;
 export const QCF4_PHONE_LINE_SCALE_X = 0.78;
-export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.6;
-export const QCF4_PHONE_GLYPH_MAX_QCOM = 30;
+export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.72;
+export const QCF4_PHONE_GLYPH_MAX_QCOM = 40;
 export const QCF4_PHONE_VERTICAL_STRETCH_FACTOR = 1.44;
 /** Телефонда QCF4 glyph ascender/descender line box-тан шығып, бірінші/соңғы жол кесілмесін. */
 export const QCF4_PHONE_VERTICAL_SAFE_PADDING = 14;
+/** Альбом: ен толық, glyph үлкенірек — портреттегі «кішкентай жолақ» қалмасын. */
+export const QCF4_LANDSCAPE_PHONE_LINE_PADDING = 10;
+export const QCF4_LANDSCAPE_PHONE_LINE_SCALE_X = 1;
+export const QCF4_LANDSCAPE_PHONE_GLYPH_SCALE_QCOM = 0.9;
+export const QCF4_LANDSCAPE_PHONE_GLYPH_MAX_QCOM = 52;
+export const QCF4_LANDSCAPE_PHONE_VERTICAL_SAFE_PADDING = 4;
+export const QCF4_LANDSCAPE_QCOM_LINE_GAP = 2;
 export const QCF4_SPARSE_PAGE_RENDER_LINE_THRESHOLD = 10;
+
+const HATIM_QCF4_SLOT_PADDING = Platform.OS === "web" ? 2 : 4;
+
+/** Хатым QCF4: glyph lineHeight слоттан асырмайды — харакат кесілмеуі. */
+export function hatimQcf4GlyphMetrics(
+  lineSlotHeight: number,
+  unifiedFontSize = HATIM_UNIFIED_ARABIC_FONT_SIZE
+): { glyphSize: number; glyphLineHeight: number } {
+  const safeSlot = Math.max(14, lineSlotHeight - HATIM_QCF4_SLOT_PADDING);
+  const glyphSize = Math.min(
+    unifiedFontSize,
+    Math.max(1, Math.floor(safeSlot / 1.28))
+  );
+  const glyphLineHeight = Math.min(
+    safeSlot,
+    Math.max(glyphSize + 4, Math.ceil(glyphSize * 1.32))
+  );
+  return { glyphSize, glyphLineHeight };
+}
 
 export type Qcf4RenderableLine = {
   line: number;
@@ -70,9 +98,16 @@ export function computeQcf4LineMetrics(args: {
   renderLineCount: number;
   fitOneScreen: boolean;
   qcomPurePage: boolean;
+  /** Альбом: gap кішірейтіп glyph биіктігін арттыру. */
+  landscape?: boolean;
 }): { lineGap: number; lineHeight: number } {
   const safeLineCount = Math.max(1, args.renderLineCount);
-  const lineGap = args.fitOneScreen && args.qcomPurePage ? QCF4_QCOM_LINE_GAP : 0;
+  const lineGap =
+    args.fitOneScreen && args.qcomPurePage
+      ? args.landscape
+        ? QCF4_LANDSCAPE_QCOM_LINE_GAP
+        : QCF4_QCOM_LINE_GAP
+      : 0;
   const lineHeight = args.fitOneScreen
     ? Math.max(14, Math.floor((args.linesAreaH - lineGap * (safeLineCount - 1)) / safeLineCount))
     : args.linesAreaH / safeLineCount;

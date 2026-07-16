@@ -2,6 +2,7 @@ import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
 import { kk } from "../i18n/kk";
 import { reportClientError } from "../services/clientErrorReporter";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = { children: ReactNode };
 type State = { err: Error | null };
@@ -60,6 +61,7 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.err) {
+  useAppLocale();
       const diagnosticText = appErrorDiagnosticText(this.state.err);
       return (
         <View style={styles.root}>

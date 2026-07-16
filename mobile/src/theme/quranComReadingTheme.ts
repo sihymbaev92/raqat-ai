@@ -141,8 +141,8 @@ const MUFTYAT: QuranReadingThemeSpec = {
   titlePaperBorder: "rgba(27,115,64,0.15)",
 };
 
-/** Баптаулар/хатым мәзірінде көрсетілетін темалар. */
-export const QURAN_READING_THEMES: QuranReadingThemeSpec[] = [ORIGINAL, DARK, MUFTYAT];
+/** Баптаулар/хатым мәзірінде көрсетілетін темалар — тек ақ (original) және қара (dark). */
+export const QURAN_READING_THEMES: QuranReadingThemeSpec[] = [ORIGINAL, DARK];
 
 const BY_ID: Record<QuranReadingThemeId, QuranReadingThemeSpec> = {
   original: ORIGINAL,
@@ -154,7 +154,7 @@ const BY_ID: Record<QuranReadingThemeId, QuranReadingThemeSpec> = {
 
 export function normalizeQuranReadingTheme(raw: string | null | undefined): QuranReadingThemeId {
   const s = (raw ?? "").trim();
-  if (s === "paper" || s === "sepia") return DEFAULT_QURAN_READING_THEME;
+  if (s === "paper" || s === "sepia" || s === "muftyat") return DEFAULT_QURAN_READING_THEME;
   if (s in BY_ID) return s as QuranReadingThemeId;
   return DEFAULT_QURAN_READING_THEME;
 }

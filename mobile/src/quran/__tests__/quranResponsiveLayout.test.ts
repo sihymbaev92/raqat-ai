@@ -1,6 +1,10 @@
 import {
+  HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE,
+  HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE,
   QURAN_AYAH_MIN_HORIZONTAL_PADDING,
   QURAN_SCREEN_HORIZONTAL_PADDING,
+  hatimAyahAutoFitTextProps,
+  hatimAyahAutoFitTextStyle,
   responsiveQuranFontSize,
   responsiveQuranLineHeight,
 } from "../quranResponsiveLayout";
@@ -31,5 +35,15 @@ describe("quranResponsiveLayout", () => {
   it("uses generous line height for harakat (1.8×)", () => {
     expect(responsiveQuranLineHeight(22)).toBeGreaterThanOrEqual(39);
     expect(responsiveQuranLineHeight(26)).toBe(47);
+  });
+
+  it("exposes hatim ayah auto-fit text props", () => {
+    const props = hatimAyahAutoFitTextProps();
+    expect(props.numberOfLines).toBe(1);
+    expect(props.adjustsFontSizeToFit).toBe(true);
+    expect(props.minimumFontScale).toBe(HATIM_AYAH_AUTO_FIT_MIN_FONT_SCALE);
+    const style = hatimAyahAutoFitTextStyle();
+    expect(style.fontSize).toBe(HATIM_AYAH_AUTO_FIT_BASE_FONT_SIZE);
+    expect(style.width).toBe("100%");
   });
 });

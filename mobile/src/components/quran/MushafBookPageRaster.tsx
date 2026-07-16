@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, ScrollView } from "react-native";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import { WebView } from "react-native-webview";
 import { Pressable } from "@/ui/Pressable";
@@ -15,7 +15,11 @@ import {
   getMushafAyahMapHotspots,
 } from "../../quran/mushafAyahMap";
 import { mushafPageAspectRatio } from "../../config/mushafPagesBase";
-import { computeMushafBookPageBox } from "../../quran/mushafBookPageLayout";
+import {
+  MUSHAF_BOOK_PAGE_EDGE_INSET,
+  computeQcomHatimPageBox,
+} from "../../quran/mushafBookPageLayout";
+import { HATIM_PAGE_HORIZONTAL_SAFE_INSET } from "../../quran/quranResponsiveLayout";
 import { mushafRasterActiveImageUri } from "../../quran/mushafRasterActiveImage";
 import {
   resolveQuranReadingTheme,
@@ -23,6 +27,9 @@ import {
 } from "../../theme/quranComReadingTheme";
 import { mushafHotspotActive } from "./mushafBookPageHotspots";
 import { MushafBookPageSecondaryAyahs } from "./MushafBookPageSecondaryAyahs";
+import {
+  SECURE_MUSHAF_SVG_ORIGIN_WHITELIST,
+} from "../webviewAndroidSecurity";
 
 export type MushafBookPageRasterProps = {
   page: MushafBookPageSlice;
@@ -49,8 +56,6 @@ export type MushafBookPageRasterProps = {
   onToggleAudio: (ref: MushafAyahRef, item: CachedAyah) => void;
   onLoadFailed?: () => void;
 };
-
-const MUSHAF_BOOK_RASTER_PHONE_SAFE_INSET = 30;
 
 function findAyahItem(page: MushafBookPageSlice, surah: number, ayah: number): CachedAyah | null {
   const row = page.ayahs.find((a) => a.surahNumber === surah && a.numberInSurah === ayah);
@@ -86,22 +91,39 @@ export function MushafBookPageRaster({
     setImageErr(true);
     onLoadFailed?.();
   };
-  const fullPage = resolveQuranReadingTheme(readingThemeId).minimalPageChrome;
+  const theme = resolveQuranReadingTheme(readingThemeId);
+  const fullPage = theme.minimalPageChrome;
   const fitOneScreen = fullPage && viewportHeight != null && viewportHeight > 0;
-  const phoneSafeInset = fullPage && Platform.OS !== "web" ? MUSHAF_BOOK_RASTER_PHONE_SAFE_INSET : 0;
+  const landscapeFill =
+    fitOneScreen && viewportHeight != null && viewportHeight > 0 && pagerWidth > viewportHeight;
 
-  const { pageWidth, pageHeight } = useMemo(
-    () =>
-      fitOneScreen
-        ? computeMushafBookPageBox(pagerWidth, viewportHeight, paddingBottom, true, {
-            horizontalSafeInset: phoneSafeInset,
-          })
-        : {
-            pageWidth: pagerWidth,
-            pageHeight: pagerWidth / mushafPageAspectRatio(),
-          },
-    [fitOneScreen, pagerWidth, viewportHeight, paddingBottom, phoneSafeInset]
-  );
+  const qcomHatimBox = useMemo(() => {
+    if (!fitOneScreen) return null;
+    return computeQcomHatimPageBox(pagerWidth, viewportHeight, paddingBottom, {
+      horizontalSafeInset: HATIM_PAGE_HORIZONTAL_SAFE_INSET,
+    });
+  }, [fitOneScreen, pagerWidth, viewportHeight, paddingBottom]);
+
+  const { pageWidth, pageHeight } = useMemo(() => {
+    if (fitOneScreen && qcomHatimBox) {
+      if (landscapeFill) {
+        return {
+          pageWidth: Math.max(
+            qcomHatimBox.pageWidth,
+            Math.max(1, pagerWidth - HATIM_PAGE_HORIZONTAL_SAFE_INSET * 2)
+          ),
+          pageHeight: qcomHatimBox.pageHeight,
+        };
+      }
+      return { pageWidth: qcomHatimBox.pageWidth, pageHeight: qcomHatimBox.pageHeight };
+    }
+    return {
+      pageWidth: pagerWidth,
+      pageHeight: pagerWidth / mushafPageAspectRatio(),
+    };
+  }, [fitOneScreen, landscapeFill, pagerWidth, qcomHatimBox]);
+
+  const allowVerticalScroll = qcomHatimBox?.allowVerticalScroll ?? false;
 
   const hotspots = useMemo(() => {
     const mapped = getMushafAyahMapHotspots(ayahMap, page.mushafPageNumber);
@@ -123,7 +145,13 @@ export function MushafBookPageRaster({
           scrollEnabled={false}
           showsVerticalScrollIndicator={false}
           showsHorizontalScrollIndicator={false}
-          originWhitelist={["*"]}
+          originWhitelist={[...SECURE_MUSHAF_SVG_ORIGIN_WHITELIST]}
+          allowFileAccess={activeImageUri.startsWith("file:")}
+          allowFileAccessFromFileURLs={false}
+          allowUniversalAccessFromFileURLs={false}
+          geolocationEnabled={false}
+          setSupportMultipleWindows={false}
+          mixedContentMode="never"
           onError={markFailed}
         />
       ) : (
@@ -185,28 +213,51 @@ export function MushafBookPageRaster({
   if (fitOneScreen) {
     return (
       <View
-        style={{
-          flex: 1,
-          width: pagerWidth,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: resolveQuranReadingTheme(readingThemeId).pageFace,
-        }}
+        style={[
+          st.mushafPageInner,
+          {
+            flex: 1,
+            minHeight: 0,
+            backgroundColor: theme.pageFace,
+          },
+        ]}
       >
-        {pageImage}
-        {showSecondary ? (
-          <MushafBookPageSecondaryAyahs
-            ayahs={page.ayahs}
-            styles={st}
-            showReaderMeaning={showReaderMeaning}
-            showReaderTranslit={showReaderTranslit}
-            playingRef={playingRef}
-            ayahAudioIsPlaying={ayahAudioIsPlaying}
-            loadingAyahAudio={loadingAyahAudio}
-            accentColor={colors.accent}
-            onToggleAudio={onToggleAudio}
-          />
-        ) : null}
+        <ScrollView
+          style={{ flex: 1, width: "100%", alignSelf: "stretch" }}
+          scrollEnabled={allowVerticalScroll}
+          contentContainerStyle={{
+            flexGrow: 1,
+            alignItems: landscapeFill ? "stretch" : "center",
+            justifyContent: "flex-start",
+            paddingTop: MUSHAF_BOOK_PAGE_EDGE_INSET,
+            paddingBottom,
+          }}
+          showsVerticalScrollIndicator={allowVerticalScroll}
+        >
+          <View
+            style={{
+              width: landscapeFill ? "100%" : pageWidth,
+              maxWidth: landscapeFill ? "100%" : pageWidth,
+              alignSelf: landscapeFill ? "stretch" : "center",
+              minHeight: allowVerticalScroll ? pageHeight : undefined,
+            }}
+          >
+            {pageImage}
+          </View>
+          {showSecondary ? (
+            <MushafBookPageSecondaryAyahs
+              ayahs={page.ayahs}
+              styles={st}
+              showReaderMeaning={showReaderMeaning}
+              showReaderTranslit={showReaderTranslit}
+              playingRef={playingRef}
+              ayahAudioIsPlaying={ayahAudioIsPlaying}
+              loadingAyahAudio={loadingAyahAudio}
+              accentColor={colors.accent}
+              onToggleAudio={onToggleAudio}
+            />
+          ) : null}
+        </ScrollView>
       </View>
     );
   }

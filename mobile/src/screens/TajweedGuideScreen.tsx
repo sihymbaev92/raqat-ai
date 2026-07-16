@@ -11,8 +11,10 @@ import { TabHomeBackButton, useTabHomeBackHeader } from "../navigation/useTabHom
 import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
 import type { MoreStackParamList } from "../navigation/types";
 import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
 
 export function TajweedGuideScreen() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [readerPage, setReaderPage] = useState<number | null>(null);

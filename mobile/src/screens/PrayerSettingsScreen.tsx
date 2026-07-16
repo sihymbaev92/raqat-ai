@@ -12,12 +12,15 @@ import {
   cityLabelFor,
 } from "../components/settings/SettingsPrayerLocationSection";
 import { SettingsPrayerNotificationsSection } from "../components/settings/SettingsPrayerNotificationsSection";
+import { SettingsPrayerWidgetSection } from "../components/settings/SettingsPrayerWidgetSection";
 import { usePrayerSettingsSchedule } from "../hooks/usePrayerSettingsSchedule";
 import { makeSettingsScreenShell } from "./settings/settingsScreenShell";
 import { useScreenFitMetrics } from "../theme/screenFit";
 import { ScreenFitScrollView } from "../components/ScreenFit";
+import { useAppLocale } from "../i18n/runtime";
 
 export function PrayerSettingsScreen() {
+  useAppLocale();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const screenFit = useScreenFitMetrics();
@@ -99,6 +102,8 @@ export function PrayerSettingsScreen() {
         onIftarChange={(v) => void onIftarChange(v)}
         onPrayerSoundIdChange={(id) => void onPrayerSoundIdChange(id)}
       />
+
+      <SettingsPrayerWidgetSection colors={colors} />
     </ScreenFitScrollView>
   );
 }

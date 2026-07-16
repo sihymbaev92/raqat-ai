@@ -22,7 +22,7 @@ export const mushafBookPagerListProps = {
   showsHorizontalScrollIndicator: false as const,
   decelerationRate: "fast" as const,
   disableIntervalMomentum: true as const,
-  style: { flex: 1, direction: "ltr" as const },
+  style: { flex: 1, direction: "ltr" as const, overflow: "visible" as const },
 };
 
 export function clampMushafBookPageIndex(index: number, pageCount: number): number {
@@ -54,7 +54,7 @@ export function mushafBookPageIndexForSwipe(
   vx: number,
   viewportWidth: number
 ): number {
-  const threshold = Math.min(82, Math.max(42, viewportWidth * 0.14));
+  const threshold = Math.min(72, Math.max(36, viewportWidth * 0.11));
   const fastSwipe = Math.abs(vx) >= 0.55;
   if (dx >= threshold || (fastSwipe && vx > 0)) {
     return clampMushafBookPageIndex(currentIndex + 1, pageCount);

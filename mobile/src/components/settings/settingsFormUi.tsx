@@ -80,11 +80,15 @@ export function SettingsChoiceRow({
   label,
   selected,
   onPress,
+  disabled,
+  accessibilityLabel,
 }: {
   colors: ThemeColors;
   label: string;
   selected: boolean;
   onPress: () => void;
+  disabled?: boolean;
+  accessibilityLabel?: string;
 }) {
   const styles = makeSettingsStyles(colors);
   return (
@@ -92,12 +96,14 @@ export function SettingsChoiceRow({
       style={({ pressed }) => [
         styles.row,
         selected && { borderColor: colors.accent, backgroundColor: colors.accentSurface },
-        pressed && { opacity: 0.88 },
+        pressed && !disabled && { opacity: 0.88 },
+        disabled && { opacity: 0.55 },
       ]}
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={label}
+      accessibilityState={{ selected, disabled: !!disabled }}
+      accessibilityLabel={accessibilityLabel ?? label}
     >
       <MaterialIcons
         name={selected ? "check-circle" : "radio-button-unchecked"}

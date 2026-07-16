@@ -9,6 +9,7 @@ export type CoreBackendDependencyPolicy = {
 };
 
 export const RELEASE_SIZE_BUDGETS = {
+  apkTargetMb: 80,
   apkWarnMb: 145,
   bundledAssetsWarnMb: 400,
   largestSingleAssetWarnMb: 35,

@@ -8,6 +8,11 @@ import {
 
 jest.mock("react-native", () => ({ Platform: { OS: "android" } }));
 
+jest.mock("expo-constants", () => ({
+  __esModule: true,
+  default: { expoConfig: { extra: {} }, manifest: { extra: {} } },
+}));
+
 jest.mock("expo-file-system/legacy", () => ({
   documentDirectory: "file:///mock/",
   downloadAsync: jest.fn(),
@@ -29,12 +34,12 @@ describe("qcf4AssetCache paths", () => {
     expect(qcf4FontFileName("QCF4_QBSML", "woff2")).toBe("QCF4_QBSML.woff2");
   });
 
-  it("lists CDN then upstream URLs", () => {
+  it("lists upstream then CDN URLs", () => {
     const pages = qcf4RemotePageJsonUrls(42);
-    expect(pages[0]).toContain("rahatomir.com");
-    expect(pages[1]).toContain("githubusercontent.com");
+    expect(pages[0]).toContain("githubusercontent.com");
+    expect(pages[1]).toContain("rahatomir.com");
     const fonts = qcf4RemoteFontUrls("QCF4_Hafs_02", "ttf");
-    expect(fonts[0]).toContain("qcf4/fonts/QCF4_Hafs_02_W.ttf");
-    expect(fonts[1]).toContain("fonts/QCF4_Hafs_02_W.ttf");
+    expect(fonts[0]).toContain("fonts/QCF4_Hafs_02_W.ttf");
+    expect(fonts[1]).toContain("qcf4/fonts/QCF4_Hafs_02_W.ttf");
   });
 });

@@ -59,6 +59,56 @@ export function azimuthRadFromRotationMatrix9(R: ArrayLike<number>): number {
   return Math.atan2(R[1], R[4]);
 }
 
+/**
+ * Android SensorManager.remapCoordinateSystem(inR, AXIS_X, AXIS_Z, outR) — AOSP порты.
+ * AXIS_X=1, AXIS_Z=3.
+ */
+export function remapRotationMatrixAxisXAxisZ(inR: ArrayLike<number>): Float32Array | null {
+  if (inR.length < 9) return null;
+  const X = 1;
+  const Y = 3;
+  let Z = X ^ Y;
+  const x = (X & 0x3) - 1;
+  const y = (Y & 0x3) - 1;
+  const z = (Z & 0x3) - 1;
+  const axisY = (z + 1) % 3;
+  const axisZ = (z + 2) % 3;
+  if (((x ^ axisY) | (y ^ axisZ)) !== 0) {
+    Z ^= 0x80;
+  }
+  const sx = X >= 0x80;
+  const sy = Y >= 0x80;
+  const sz = Z >= 0x80;
+  const out = new Float32Array(9);
+  for (let j = 0; j < 3; j++) {
+    const offset = j * 3;
+    for (let i = 0; i < 3; i++) {
+      if (x === i) out[offset + i] = sx ? -(inR[offset]! ) : inR[offset]!;
+      if (y === i) out[offset + i] = sy ? -(inR[offset + 1]!) : inR[offset + 1]!;
+      if (z === i) out[offset + i] = sz ? -(inR[offset + 2]!) : inR[offset + 2]!;
+    }
+  }
+  return out;
+}
+
+/** R[8] ≈ device Z · world Up; жазыққа жақын болса remap керек емес. */
+export function isRotationMatrixMostlyFlat(R: ArrayLike<number>): boolean {
+  const r8 = Math.max(-1, Math.min(1, R[8] ?? 0));
+  const inclinationRad = Math.acos(r8);
+  return inclinationRad < (25 * Math.PI) / 180 || inclinationRad > (155 * Math.PI) / 180;
+}
+
+export function headingDegFromRotationMatrix9(R: ArrayLike<number>): number | null {
+  const matrix = isRotationMatrixMostlyFlat(R) ? R : remapRotationMatrixAxisXAxisZ(R) ?? R;
+  const rad = azimuthRadFromRotationMatrix9(matrix);
+  let deg = (rad * 180) / Math.PI;
+  if (!Number.isFinite(deg)) {
+    return null;
+  }
+  deg = (deg + 360) % 360;
+  return deg;
+}
+
 export function headingDegFromGravityMagnetic(
   gravity: Vec3,
   geomagnetic: Vec3
@@ -67,11 +117,5 @@ export function headingDegFromGravityMagnetic(
   if (!R) {
     return null;
   }
-  const rad = azimuthRadFromRotationMatrix9(R);
-  let deg = (rad * 180) / Math.PI;
-  if (!Number.isFinite(deg)) {
-    return null;
-  }
-  deg = (deg + 360) % 360;
-  return deg;
+  return headingDegFromRotationMatrix9(R);
 }

@@ -8,12 +8,6 @@ import {
 
 } from "../../theme/illuminatedMushafManuscript";
 
-import {
-
-  MUFTYAT_QURAN_ARABIC_INK_LIGHT,
-
-} from "../../theme/muftyatQuranStyle";
-
 import { QURAN_BOOK_FONT_FACE } from "../../fonts/quranBookFonts";
 
 import { quranArabicAyahTextMetrics } from "../../config/quranArabicFontPresets";
@@ -36,7 +30,7 @@ describe("computeMushafTypography (mushaf book reader)", () => {
 
 
 
-  it("uses muftyat green ink when muftyat theme + book_muftyat preset", () => {
+  it("uses original ink when muftyat theme is normalized for book mushaf", () => {
 
     const lightBook = computeMushafTypography("book_muftyat", 1, false, "medium", {
 
@@ -46,7 +40,7 @@ describe("computeMushafTypography (mushaf book reader)", () => {
 
     });
 
-    expect(lightBook.mushafPageInk).toBe(MUFTYAT_QURAN_ARABIC_INK_LIGHT);
+    expect(lightBook.mushafPageInk).toBe("#1A1714");
 
   });
 

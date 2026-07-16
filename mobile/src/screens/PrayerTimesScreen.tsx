@@ -54,6 +54,7 @@ import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import { PRAYER_TIMES_SCREEN_HERO_BG } from "../config/dashboardPrayerHero";
 import { PrayerHeroSteamOverlay } from "../components/PrayerHeroSteamOverlay";
+import { PrayerHeroDaylightOverlay } from "../components/PrayerHeroDaylightOverlay";
 import { shortPrayerName } from "../components/CompactPrayerTimesRow";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import {
@@ -658,7 +659,7 @@ export function PrayerTimesScreen() {
             accessibilityIgnoresInvertColors
             accessibilityLabel={kk.prayer.timesHeroKaabaA11y}
           >
-            <View style={styles.kaabaScrim} pointerEvents="none" />
+            <PrayerHeroDaylightOverlay rows={carouselCells} />
             <PrayerHeroSteamOverlay variant="prayerScreen" />
             <View style={styles.frostedCard}>
               {hasData && result ? (
@@ -830,10 +831,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     kaabaPrayerPanelImage: {
       borderRadius: 18,
-    },
-    kaabaScrim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0, 0, 0, 0.4)",
     },
     frostedCard: {
       margin: 10,

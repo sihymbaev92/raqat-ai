@@ -6,6 +6,8 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
 
@@ -15,11 +17,17 @@ object PrayerAzanNativePlayer {
   @Volatile private var focusRequest: AudioFocusRequest? = null
   @Volatile private var lastSoundId: String? = null
   @Volatile private var lastContext: Context? = null
+  @Volatile private var lastDurationMs: Int = 0
+  @Volatile private var completed: Boolean = false
+  @Volatile private var playingDua: Boolean = false
+  /** Азан + бата толық бітті — JS экраны жабуы керек. */
+  @Volatile private var sessionFullyFinished: Boolean = false
 
   private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
     when (change) {
       AudioManager.AUDIOFOCUS_GAIN,
       AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> {
+        if (!PrayerAzanActiveSession.active) return@OnAudioFocusChangeListener
         val ctx = lastContext ?: return@OnAudioFocusChangeListener
         val soundId = lastSoundId ?: return@OnAudioFocusChangeListener
         val current = player
@@ -29,7 +37,7 @@ object PrayerAzanNativePlayer {
           } catch (t: Throwable) {
             Log.w("PrayerAzanNativePlayer", "Unable to resume azan after focus gain", t)
           }
-        } else {
+        } else if (!playingDua && !completed && !sessionFullyFinished) {
           play(ctx, soundId)
         }
       }
@@ -48,11 +56,31 @@ object PrayerAzanNativePlayer {
   @Synchronized
   fun play(context: Context, soundId: String) {
     if (soundId.isBlank() || soundId == "off") return
-    stop()
+    stopInternal(keepSession = false, clearFullyFinished = true)
     val app = context.applicationContext
     lastContext = app
     lastSoundId = soundId
-    val resId = rawResourceId(soundId)
+    completed = false
+    playingDua = false
+    sessionFullyFinished = false
+    startPlayer(app, R.raw.prayer_azan_user_01, isDua = false)
+  }
+
+  /** Азан біткеннен кейін азан батасы (дуа). */
+  @Synchronized
+  fun playDua(context: Context) {
+    if (sessionFullyFinished) return
+    val app = context.applicationContext
+    stopInternal(keepSession = true, clearFullyFinished = false)
+    lastContext = app
+    completed = true
+    playingDua = true
+    sessionFullyFinished = false
+    PrayerAzanActiveSession.active = true
+    startPlayer(app, R.raw.prayer_azan_dua_01, isDua = true)
+  }
+
+  private fun startPlayer(app: Context, resId: Int, isDua: Boolean) {
     try {
       val afd = app.resources.openRawResourceFd(resId)
       val next = MediaPlayer()
@@ -65,43 +93,134 @@ object PrayerAzanNativePlayer {
       next.setWakeMode(app, PowerManager.PARTIAL_WAKE_LOCK)
       next.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
       afd.close()
-      next.setOnCompletionListener { stop() }
+      next.setOnCompletionListener {
+        if (isDua) {
+          markSessionFullyFinished(next)
+        } else {
+          markAzanCompleted(next)
+        }
+      }
       next.setOnErrorListener { _, what, extra ->
         Log.w("PrayerAzanNativePlayer", "Azan playback error what=$what extra=$extra")
         stop()
         true
       }
       next.prepare()
+      lastDurationMs = next.duration.coerceAtLeast(0)
       player = next
       PrayerAzanActiveSession.active = true
       next.start()
-      Log.i("PrayerAzanNativePlayer", "Started native azan audio: $soundId")
+      Log.i(
+        "PrayerAzanNativePlayer",
+        if (isDua) "Started native azan dua audio" else "Started native azan audio: $lastSoundId"
+      )
     } catch (t: Throwable) {
-      Log.w("PrayerAzanNativePlayer", "Unable to play native azan audio: $soundId", t)
+      Log.w("PrayerAzanNativePlayer", "Unable to play native azan audio", t)
       stop()
+    }
+  }
+
+  private fun markAzanCompleted(finished: MediaPlayer) {
+    try {
+      lastDurationMs = finished.duration.coerceAtLeast(lastDurationMs)
+    } catch (_: Throwable) {
+      /* */
+    }
+    completed = true
+    playingDua = false
+    if (player === finished) {
+      player = null
+      try {
+        finished.release()
+      } catch (_: Throwable) {
+        /* */
+      }
+    }
+    // Session active until dua plays or user stops — karaoke can detect finish.
+    PrayerAzanActiveSession.active = true
+    val ctx = lastContext
+    if (ctx != null && !sessionFullyFinished) {
+      Handler(Looper.getMainLooper()).postDelayed(
+        {
+          if (!playingDua && !sessionFullyFinished && PrayerAzanActiveSession.active) {
+            playDua(ctx)
+          }
+        },
+        280L
+      )
+    }
+  }
+
+  private fun markSessionFullyFinished(finished: MediaPlayer) {
+    try {
+      lastDurationMs = finished.duration.coerceAtLeast(lastDurationMs)
+    } catch (_: Throwable) {
+      /* */
+    }
+    if (player === finished) {
+      player = null
+      try {
+        finished.release()
+      } catch (_: Throwable) {
+        /* */
+      }
+    }
+    playingDua = false
+    completed = true
+    sessionFullyFinished = true
+    abandonAudioFocus()
+    // Keep active until JS closes screen / finishAzanDelivery.
+    PrayerAzanActiveSession.active = true
+    Log.i("PrayerAzanNativePlayer", "Azan + dua fully finished")
+    val ctx = lastContext
+    if (ctx != null) {
+      Handler(Looper.getMainLooper()).postDelayed(
+        {
+          try {
+            PrayerAzanDelivery.dismissAzanDelivery(ctx)
+          } catch (_: Throwable) {
+            /* best effort */
+          }
+        },
+        1_200L
+      )
     }
   }
 
   @Synchronized
   fun stop() {
-    val current = player ?: run {
+    stopInternal(keepSession = false, clearFullyFinished = true)
+  }
+
+  private fun stopInternal(keepSession: Boolean, clearFullyFinished: Boolean) {
+    val current = player
+    player = null
+    if (current != null) {
+      try {
+        if (current.isPlaying) current.stop()
+      } catch (_: Throwable) {
+        /* best effort */
+      }
+      try {
+        current.release()
+      } catch (_: Throwable) {
+        /* best effort */
+      }
+    }
+    if (!keepSession) {
+      clearReplayState()
+      completed = false
+      playingDua = false
+      lastDurationMs = 0
+      if (clearFullyFinished) sessionFullyFinished = false
       abandonAudioFocus()
       PrayerAzanActiveSession.active = false
-      return
     }
-    player = null
-    try {
-      if (current.isPlaying) current.stop()
-    } catch (_: Throwable) {
-      /* best effort */
-    }
-    try {
-      current.release()
-    } catch (_: Throwable) {
-      /* best effort */
-    }
-    abandonAudioFocus()
-    PrayerAzanActiveSession.active = false
+  }
+
+  private fun clearReplayState() {
+    lastContext = null
+    lastSoundId = null
   }
 
   @Synchronized
@@ -110,6 +229,62 @@ object PrayerAzanNativePlayer {
       player?.isPlaying == true
     } catch (_: Throwable) {
       false
+    }
+  }
+
+  @Synchronized
+  fun playbackStatus(): Map<String, Any> {
+    val current = player
+    if (sessionFullyFinished && current == null) {
+      return mapOf(
+        "positionMs" to lastDurationMs,
+        "durationMs" to lastDurationMs,
+        "isPlaying" to false,
+        "completed" to true,
+        "isDua" to false,
+        "fullyFinished" to true,
+      )
+    }
+    if (current == null) {
+      if (completed && !playingDua && lastDurationMs > 0) {
+        return mapOf(
+          "positionMs" to lastDurationMs,
+          "durationMs" to lastDurationMs,
+          "isPlaying" to false,
+          "completed" to true,
+          "isDua" to false,
+          "fullyFinished" to false,
+        )
+      }
+      return mapOf(
+        "positionMs" to 0,
+        "durationMs" to 0,
+        "isPlaying" to false,
+        "completed" to completed,
+        "isDua" to playingDua,
+        "fullyFinished" to sessionFullyFinished,
+      )
+    }
+    return try {
+      val duration = current.duration.coerceAtLeast(0)
+      if (duration > 0) lastDurationMs = duration
+      mapOf(
+        "positionMs" to current.currentPosition.coerceAtLeast(0),
+        "durationMs" to duration,
+        "isPlaying" to current.isPlaying,
+        "completed" to completed,
+        "isDua" to playingDua,
+        "fullyFinished" to false,
+      )
+    } catch (_: Throwable) {
+      mapOf(
+        "positionMs" to 0,
+        "durationMs" to lastDurationMs,
+        "isPlaying" to false,
+        "completed" to completed,
+        "isDua" to playingDua,
+        "fullyFinished" to sessionFullyFinished,
+      )
     }
   }
 
@@ -152,9 +327,5 @@ object PrayerAzanNativePlayer {
       focusRequest = null
       audioManager = null
     }
-  }
-
-  private fun rawResourceId(@Suppress("UNUSED_PARAMETER") soundId: String): Int {
-    return R.raw.prayer_azan_user_01
   }
 }

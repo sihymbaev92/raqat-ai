@@ -1,6 +1,5 @@
 package kz.raqat.app
 
-import android.app.KeyguardManager
 import android.content.Intent
 import android.os.Bundle
 import android.os.Build
@@ -20,6 +19,9 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     applyAzanWindowFlags(intent)
+    if (isTrustedAzanIntent(intent)) {
+      PrayerAzanDelivery.clearFullScreenAzanLaunch(this)
+    }
     super.onCreate(null)
   }
 
@@ -27,23 +29,47 @@ class MainActivity : ReactActivity() {
     super.onNewIntent(intent)
     setIntent(intent)
     applyAzanWindowFlags(intent)
+    if (isTrustedAzanIntent(intent)) {
+      PrayerAzanDelivery.clearFullScreenAzanLaunch(this)
+    }
+  }
+
+  override fun onResume() {
+    super.onResume()
+    if (isTrustedAzanIntent(intent)) {
+      applyAzanWindowFlags(intent)
+    }
+  }
+
+  private fun isTrustedAzanIntent(intent: Intent?): Boolean {
+    return intent?.data?.host == "azan" &&
+      intent.getBooleanExtra(PrayerAzanDelivery.EXTRA_AZAN_TRUSTED, false)
+  }
+
+  fun clearAzanLaunchState() {
+    setIntent(
+      Intent(this, MainActivity::class.java).apply {
+        action = Intent.ACTION_MAIN
+        addCategory(Intent.CATEGORY_LAUNCHER)
+      }
+    )
+    applyAzanWindowFlags(intent)
   }
 
   private fun applyAzanWindowFlags(intent: Intent?) {
-    if (intent?.data?.host == "azan") {
+    // Тек өз PendingIntent-тен (EXTRA_AZAN_TRUSTED) — сыртқы imamai://azan VIEW құлып экранын ашпайды.
+    val trusted = intent?.getBooleanExtra(PrayerAzanDelivery.EXTRA_AZAN_TRUSTED, false) == true
+    if (intent?.data?.host == "azan" && trusted) {
       window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
         setShowWhenLocked(true)
         setTurnScreenOn(true)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
-        }
+        // requestDismissKeyguard PIN/құлып сұрайды — азан беті құлып ҮСТІНДЕ көрінуі керек.
       } else {
         @Suppress("DEPRECATION")
         window.addFlags(
           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-            WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
         )
       }
     } else {
@@ -51,8 +77,7 @@ class MainActivity : ReactActivity() {
       window.clearFlags(
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
-          WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
       )
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
         setShowWhenLocked(false)

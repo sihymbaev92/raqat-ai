@@ -27,19 +27,28 @@ function ayahsToMap(ayahs) {
   return map;
 }
 
+function parseCleanSurahs(surahsRaw) {
+  const surahs = {};
+  for (const surah of surahsRaw ?? []) {
+    const n = surah.number;
+    if (typeof n !== "number" || n < 1 || n > 114) continue;
+    surahs[String(n)] = ayahsToMap(surah.ayahs);
+  }
+  return surahs;
+}
+
 function parseSource(raw) {
   const body = JSON.parse(raw);
   if (body.code !== 200 || !body.data) {
+    if (Array.isArray(body.surahs)) {
+      return parseCleanSurahs(body.surahs);
+    }
     throw new Error("Expected Al Quran Cloud payload with code 200 and data");
   }
 
   const surahs = {};
   if (Array.isArray(body.data.surahs)) {
-    for (const surah of body.data.surahs) {
-      const n = surah.number;
-      if (typeof n !== "number" || n < 1 || n > 114) continue;
-      surahs[String(n)] = ayahsToMap(surah.ayahs);
-    }
+    return parseCleanSurahs(body.data.surahs);
   } else if (Array.isArray(body.data.ayahs)) {
     const n = body.data.number ?? body.data.surah?.number;
     if (typeof n !== "number") throw new Error("Single-surah payload missing surah number");

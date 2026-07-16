@@ -181,7 +181,7 @@ export const NAMAZ_WUDU_LEARNING_MODULES: LearningModule[] = [
       {
         id: "namaz-1-niyyah-takbir",
         title: "Ниет және алғашқы тәкбір",
-        action: "Қыблаға қарап тұрып, намазға кіріңіз: қолды көтеріп «Аллаһу әкбар» деңіз.",
+        action: "Құбылаға қарап тұрып, намазға кіріңіз: қолды көтеріп «Аллаһу әкбар» деңіз.",
         bodyPositionHint: "Ер адам қолын құлақ деңгейіне, әйел иық тұсына дейін көтереді.",
         genderNoteHanafi: "Ханафиде әйелдің қимылы жинақы болады.",
         recitations: [

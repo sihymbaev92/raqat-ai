@@ -4,6 +4,15 @@ import {
 } from "../tajweedMuftyatSpeech";
 import { prepareTajweedArabicSpeech } from "../tajweedArabicTts";
 
+jest.mock("expo-av", () => ({
+  Audio: {
+    Sound: { createAsync: jest.fn() },
+    setAudioModeAsync: jest.fn(async () => undefined),
+  },
+  InterruptionModeAndroid: { DuckOthers: 1 },
+  InterruptionModeIOS: { DuckOthers: 1 },
+}));
+
 describe("prepareMuftyatKkSpeech", () => {
   it("trims and collapses duplicate dots", () => {
     expect(prepareMuftyatKkSpeech("  мәтін. .  ")).toBe("мәтін.");
@@ -30,16 +39,17 @@ describe("tajweed letter speech text", () => {
     expect(prepareTajweedArabicSpeech("  خَبَر  ")).toBe("خَبَر");
   });
 
-  it("speaks short letter sounds without extra name suffixes", () => {
-    expect(prepareTajweedLetterSpeech("ا")).toBe("أَ");
-    expect(prepareTajweedLetterSpeech("ب")).toBe("بَ");
-    expect(prepareTajweedLetterSpeech("س")).toBe("سَ");
-    expect(prepareTajweedLetterSpeech("ش")).toBe("شَ");
-    expect(prepareTajweedLetterSpeech("غ")).toBe("غَ");
+  it("speaks full Kazakh letter names (TTS fallback)", () => {
+    expect(prepareTajweedLetterSpeech("ا", "алиф")).toBe("алиф");
+    expect(prepareTajweedLetterSpeech("ب", "бә")).toBe("бә");
+    expect(prepareTajweedLetterSpeech("ت", "тә")).toBe("тә");
+    expect(prepareTajweedLetterSpeech("ث", "сә")).toBe("сә");
+    expect(prepareTajweedLetterSpeech("ا")).toBe("алиф");
+    expect(prepareTajweedLetterSpeech("ب")).toBe("бә");
   });
 
-  it("does not feed full Arabic letter names to TTS", () => {
-    const spoken = ["ب", "ت", "س", "ش", "ق", "ك", "ي"].map(prepareTajweedLetterSpeech).join(" ");
-    expect(spoken).not.toMatch(/اء|ين|اف|ام|ون/u);
+  it("uses Kazakh names rather than Arabic letter spellings", () => {
+    const spoken = ["ب", "ت", "ث", "س"].map((ar) => prepareTajweedLetterSpeech(ar)).join(" ");
+    expect(spoken).toBe("бә тә сә син");
   });
 });

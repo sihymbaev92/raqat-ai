@@ -173,7 +173,7 @@ export async function getQuranSurahTranslation(
   surah: number,
   locale: QuranTranslationLocale
 ): Promise<TranslationMap | null> {
-  await ensureBundledQuranTranslationsLoaded();
+  await ensureBundledQuranTranslationsLoaded(locale);
   const bundled = getBundledQuranSurahTranslation(surah, locale);
   if (bundled) return bundled;
 

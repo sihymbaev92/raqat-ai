@@ -65,3 +65,14 @@ export function quranAudioDownloadTaskAt(index: number, edition?: string): Quran
 export function quranAudioDownloadTaskLabel(task: QuranAudioDownloadTask): string {
   return `${task.reciterLabel} · ${task.surah}:${task.ayah}`;
 }
+
+export function quranAudioDownloadEditionAyahTotal(): number {
+  return TOTAL_AYAHS;
+}
+
+export function quranAudioDownloadTaskForEditionAt(
+  edition: string,
+  index: number
+): QuranAudioDownloadTask | null {
+  return quranAudioDownloadTaskAt(index, edition);
+}

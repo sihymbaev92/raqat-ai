@@ -1,8 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  ensureBundledSurahListLoaded,
-  getBundledSurahList,
-} from "../services/bundledQuranReader";
+import surahListApi from "../../assets/bundled/surah-list-api.json";
 
 const KEY = "raqat_quran_surah_list_v1";
 
@@ -66,7 +63,16 @@ function normalize(raw: unknown[]): CachedSurah[] {
   return normalizeRaw(raw);
 }
 
+/** APK bundled surah-list-api.json — синхрон, UI бірден ашу үшін. */
+export function offlineBundledSurahList(): CachedSurah[] {
+  return parseSurahsFromApiJson(surahListApi) ?? [];
+}
+
 export async function loadQuranListCache(): Promise<QuranListCachePayload | null> {
+  /** Dynamic import — static cycle with bundledQuranSurahList (parseSurahsFromApiJson). */
+  const { ensureBundledSurahListLoaded, getBundledSurahList } = await import(
+    "../services/bundledQuranSurahList"
+  );
   await ensureBundledSurahListLoaded().catch(() => {});
   const bundled = getBundledSurahList();
   try {

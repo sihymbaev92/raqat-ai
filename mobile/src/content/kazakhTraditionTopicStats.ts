@@ -1,5 +1,5 @@
-/** KazakhTraditionScreen TRADITION_BLOCKS — санат бойынша тақырып саны (кітап белгілері үшін). */
-export const TRADITION_TOPIC_BLOCK_COUNT = 37;
+/** KazakhTraditionScreen — салт-дәстүр тақырыптарының саны. */
+export const TRADITION_TOPIC_BLOCK_COUNT = 38;
 
 export type TraditionTopicCategory = "family" | "social" | "ceremony" | "faith";
 

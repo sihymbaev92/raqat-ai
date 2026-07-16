@@ -1,4 +1,5 @@
 import type { QuranReaderNavMode } from "../storage/quranReaderPrefs";
+import { MUSHAF_BOOK_PAGER_NATIVE_SCROLL_ENABLED } from "./mushafBookPager";
 
 /**
  * Хатым mushaf: бір бетке толық сию — тек араб (June 29 референс).
@@ -19,9 +20,6 @@ export function hatimMushafReaderLayers(): {
   };
 }
 
-/** @deprecated hatimMushafReaderLayers алиасы */
-export const quranReaderArabicOnlyLayers = hatimMushafReaderLayers;
-
 export function resolveEffectiveQuranReaderNavMode(opts: {
   platformOS: string;
   mushafLayout: boolean;
@@ -36,4 +34,13 @@ export function resolveEffectiveQuranReaderNavMode(opts: {
 
 export function shouldRenderSingleMushafBookPageOnWeb(platformOS: string): boolean {
   return platformOS === "web";
+}
+
+/**
+ * Native хатым: FlatList + scrollEnabled=false + isActive gate QCF4-ті жүктемейді → ақ экран.
+ * PanResponder бет ауыстырады — тек ағымдағы бетті салады (web сияқты).
+ */
+export function shouldRenderSingleMushafBookPage(platformOS: string): boolean {
+  if (platformOS === "web") return true;
+  return !MUSHAF_BOOK_PAGER_NATIVE_SCROLL_ENABLED;
 }

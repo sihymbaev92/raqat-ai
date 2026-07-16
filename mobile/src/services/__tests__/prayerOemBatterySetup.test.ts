@@ -18,21 +18,20 @@ describe("ensureOemPowerSetupForAzan", () => {
     resetOemPowerPromptCooldown();
     Object.defineProperty(Platform, "OS", { configurable: true, value: "android" });
     NativeModules.PrayerWidget = {
-      getOemPowerDiagnostics: jest
-        .fn()
-        .mockResolvedValueOnce({
-          batteryOptimizationIgnored: false,
-          oemManufacturer: "Xiaomi",
-          oemNeedsBackgroundSetup: true,
-        })
-        .mockResolvedValueOnce({
-          batteryOptimizationIgnored: true,
-          oemManufacturer: "Xiaomi",
-          oemNeedsBackgroundSetup: true,
-        }),
+      getOemPowerDiagnostics: jest.fn(async () => ({
+        batteryOptimizationIgnored: true,
+        oemManufacturer: "Xiaomi",
+        oemNeedsBackgroundSetup: true,
+      })),
       requestIgnoreBatteryOptimizationIfNeeded: jest.fn(async () => true),
       openOemBackgroundSettings: jest.fn(async () => true),
     };
+    // Бірінші оқу — батарея әлі whitelist-те емес.
+    (NativeModules.PrayerWidget.getOemPowerDiagnostics as jest.Mock).mockResolvedValueOnce({
+      batteryOptimizationIgnored: false,
+      oemManufacturer: "Xiaomi",
+      oemNeedsBackgroundSetup: true,
+    });
   });
 
   it("opens battery whitelist then OEM background screen on aggressive OEM", async () => {

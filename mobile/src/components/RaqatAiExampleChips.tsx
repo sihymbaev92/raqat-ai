@@ -4,6 +4,7 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { RAQAT_AI_EXAMPLE_QUESTIONS } from "../config/raqatAiExampleQuestions";
+import { useAppLocale } from "../i18n/runtime";
 
 type Props = {
   colors: ThemeColors;
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function RaqatAiExampleChips({ colors, disabled, onSelect }: Props) {
+  useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (

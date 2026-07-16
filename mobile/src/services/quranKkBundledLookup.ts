@@ -1,4 +1,5 @@
 import type { CachedAyah } from "../storage/quranSurahCache";
+import { hasCyrillicScript } from "../utils/quranTranslitDisplay";
 import {
   ensureBundledQuranReaderLoaded,
   getBundledBookTranslitForAyah,
@@ -7,7 +8,6 @@ import {
 } from "./bundledQuranReader";
 
 async function ensureKkMapsReady(): Promise<void> {
-  if (isBundledQuranReaderLoaded()) return;
   await ensureBundledQuranReaderLoaded();
 }
 
@@ -26,13 +26,19 @@ export function mergeBundledKkMeaningsIfMissing(surahNumber: number, ayahs: Cach
 
 /**
  * v13 кэшінде латын translit болса да, бандлдағы кітаптық кирилді қояды (хатим/қатым).
+ * Кирилл жоқ болса латынды өшіреді — экран арабтан KK генерациялайды.
  */
 export function mergeBundledBookTranslitFromDb(surahNumber: number, ayahs: CachedAyah[]): CachedAyah[] {
   if (!ayahs.length || !isBundledQuranReaderLoaded()) return ayahs;
   return ayahs.map((a) => {
     const book = getBundledBookTranslitForAyah(surahNumber, a.numberInSurah);
-    if (!book) return a;
-    return { ...a, translit: book };
+    if (book) return { ...a, translit: book };
+    const tr = (a.translit ?? "").trim();
+    if (tr && !hasCyrillicScript(tr)) {
+      const { translit: _drop, ...rest } = a;
+      return rest;
+    }
+    return a;
   });
 }
 
