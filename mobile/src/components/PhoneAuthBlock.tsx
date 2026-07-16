@@ -111,7 +111,7 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError, compact }: P
   if (smsAvailable === false) {
     return (
       <View style={styles.smsDisabledWrap}>
-        <Text style={[styles.smsDisabledTxt, { color: colors.textMuted }]}>{kk.account.phoneSmsUnavailable}</Text>
+        <Text style={[styles.smsDisabledTxt, { color: colors.muted }]}>{kk.account.phoneSmsUnavailable}</Text>
       </View>
     );
   }

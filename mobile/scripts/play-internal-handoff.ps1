@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$mobile = Join-Path (Split-Path $PSScriptRoot -Parent) "mobile"
+$mobile = Split-Path $PSScriptRoot -Parent
 if (-not $Aab) {
   $Aab = Join-Path $mobile "android\app\build\outputs\bundle\release\app-release.aab"
 }
