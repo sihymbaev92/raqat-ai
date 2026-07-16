@@ -1,4 +1,4 @@
-# Mushaf QCF4 fonts + heavy bundled JSON → rahatomir.com CDN (slim APK prerequisite).
+# Slim APK CDN asset deploy — QCF4, bundled JSON, tajweed, hatim JSON.
 # Usage: powershell -ExecutionPolicy Bypass -File scripts/deploy_mushaf_cdn_assets.ps1
 param(
   [switch]$DryRun
@@ -28,18 +28,29 @@ $Mobile = Join-Path $RepoRoot "mobile"
 $Pairs = @(
   @{ Local = Join-Path $Mobile "assets\quran\qcf4\fonts"; Remote = "$WebRoot/assets/quran/qcf4/fonts" }
   @{ Local = Join-Path $Mobile "assets\quran\qcf4\pages"; Remote = "$WebRoot/assets/quran/qcf4/pages" }
+  @{ Local = Join-Path $Mobile "assets\tajweed\letters"; Remote = "$WebRoot/assets/tajweed/letters" }
+  @{ Local = Join-Path $Mobile "assets\tajweed\muftyat"; Remote = "$WebRoot/assets/tajweed/muftyat" }
+  @{ Local = Join-Path $Mobile "assets\hajj\muftyat"; Remote = "$WebRoot/assets/hajj/muftyat" }
   @{ Local = Join-Path $Mobile "assets\bundled\offline-auto-translations-core.json"; Remote = "$WebRoot/assets/bundled/offline-auto-translations-core.json" }
   @{ Local = Join-Path $Mobile "assets\bundled\quran-translations-offline.json"; Remote = "$WebRoot/assets/bundled/quran-translations-offline.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\quran-uthmani-full.json"; Remote = "$WebRoot/assets/bundled/quran-uthmani-full.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\quran-kk-from-db.json"; Remote = "$WebRoot/assets/bundled/quran-kk-from-db.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\quran-en-transliteration-full.json"; Remote = "$WebRoot/assets/bundled/quran-en-transliteration-full.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\quran-tajweed-offline.json"; Remote = "$WebRoot/assets/bundled/quran-tajweed-offline.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\hadith-from-db-seed.json"; Remote = "$WebRoot/assets/bundled/hadith-from-db-seed.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\great-words-catalog.json"; Remote = "$WebRoot/assets/bundled/great-words-catalog.json" }
+  @{ Local = Join-Path $Mobile "assets\bundled\halal-companies-snapshot.json"; Remote = "$WebRoot/assets/bundled/halal-companies-snapshot.json" }
+  @{ Local = Join-Path $Mobile "assets\quran_tajweed.json"; Remote = "$WebRoot/assets/quran_tajweed.json" }
 )
 
-foreach ($p in $Pairs) {
+function Sync-Pair($p) {
   if (-not (Test-Path $p.Local)) {
     Write-Host "SKIP missing: $($p.Local)"
-    continue
+    return
   }
   if ($DryRun) {
     Write-Host "DRY $($p.Local) -> $($p.Remote)"
-    continue
+    return
   }
   if (Test-Path $p.Local -PathType Container) {
     Write-Host "== rsync dir: $($p.Local) -> $($p.Remote)"
@@ -64,20 +75,37 @@ foreach ($p in $Pairs) {
 }
 
 if (-not $DryRun) {
+  Write-Host "== SSH probe =="
+  ssh @SshOpts $Target "echo deploy-ok" 2>&1 | Out-Host
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error "SSH failed ($Target). .env.deploy ішінде RAQAT_VPS_SSH_KEY тексеріңіз; host key өзгерсе: ssh-keygen -R $Host_"
+    exit 1
+  }
+}
+
+foreach ($p in $Pairs) { Sync-Pair $p }
+
+if (-not $DryRun) {
   ssh @SshOpts $Target "chown -R www-data:www-data /var/www/raqat-web 2>/dev/null || true"
   Write-Host "== smoke HEAD =="
   $checks = @(
-    "https://rahatomir.com/assets/quran/qcf4/fonts/QCF4_Hafs_001_W.ttf",
-    "https://rahatomir.com/assets/bundled/offline-auto-translations-core.json"
+    "https://rahatomir.com/assets/quran/qcf4/pages/001.json",
+    "https://rahatomir.com/assets/bundled/quran-uthmani-full.json",
+    "https://rahatomir.com/assets/quran_tajweed.json",
+    "https://rahatomir.com/assets/tajweed/letters/alif.mp3",
+    "https://rahatomir.com/assets/tajweed/muftyat/page-001.jpg"
   )
+  $ok = 0
   foreach ($u in $checks) {
     try {
       $r = Invoke-WebRequest -Uri $u -Method Head -UseBasicParsing -TimeoutSec 20
       Write-Host "OK $($r.StatusCode) $u"
+      $ok++
     } catch {
-      Write-Warning "FAIL $u"
+      Write-Warning "FAIL $u :: $($_.Exception.Message)"
     }
   }
+  if ($ok -lt $checks.Count) { exit 1 }
 }
 
 Write-Host "Done."

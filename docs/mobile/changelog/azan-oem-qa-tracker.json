@@ -1,9 +1,26 @@
 {
   "schema": "azan-oem-3day-v1",
-  "updated_at": "2026-07-16T00:00:00.000Z",
+  "updated_at": "2026-07-17T03:42:31+05:00",
   "target_oems": ["samsung", "xiaomi", "huawei"],
   "days": 3,
-  "runs": [],
+  "runs": [
+    {
+      "day": 1,
+      "oem": "samsung",
+      "pass": true,
+      "timestamp": "2026-07-17T03:42:31+05:00",
+      "device": {
+        "serial": "398476606c0d7ece",
+        "brand": "samsung",
+        "manufacturer": "samsung",
+        "model": "SM-G965F",
+        "api": 29
+      },
+      "delaySeconds": 45,
+      "immediateBroadcast": true,
+      "note": "Immediate broadcast QA — native audio + activity started (API 29 legacy exact alarm)"
+    }
+  ],
   "instructions": {
     "kk": "Әр күнде әр OEM телефонын USB қосып: npm run qa:azan:oem -- -Day 1|2|3. Samsung/Xiaomi/Huawei үшін жүйе баптауларында full-screen intent + battery whitelist тексеріңіз.",
     "script": "mobile/scripts/azan-oem-3day-qa.ps1"

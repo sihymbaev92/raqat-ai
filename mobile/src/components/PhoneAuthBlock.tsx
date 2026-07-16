@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -80,6 +80,41 @@ export function PhoneAuthBlock({ busy, setBusy, onSuccess, onError, compact }: P
   const [otp, setOtp] = useState("");
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [localMsg, setLocalMsg] = useState<string | null>(null);
+  const [smsAvailable, setSmsAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const base = getRaqatApiBase();
+      if (!base) {
+        if (!cancelled) setSmsAvailable(false);
+        return;
+      }
+      try {
+        const url = `${base.replace(/\/+$/, "")}/api/v1/info`;
+        const r = await fetch(url, { method: "GET" });
+        if (!r.ok) {
+          if (!cancelled) setSmsAvailable(null);
+          return;
+        }
+        const body = (await r.json()) as { auth?: { sms_phone_login?: boolean } };
+        if (!cancelled) setSmsAvailable(Boolean(body.auth?.sms_phone_login));
+      } catch {
+        if (!cancelled) setSmsAvailable(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (smsAvailable === false) {
+    return (
+      <View style={styles.smsDisabledWrap}>
+        <Text style={[styles.smsDisabledTxt, { color: colors.textMuted }]}>{kk.account.phoneSmsUnavailable}</Text>
+      </View>
+    );
+  }
 
   const onSendOtp = useCallback(async () => {
     const base = getRaqatApiBase();
@@ -303,5 +338,7 @@ function makeStyles(colors: ThemeColors) {
     },
     btnSecondaryTxt: { color: colors.accent, fontWeight: "700", fontSize: 14 },
     msgOk: { color: colors.accent, fontSize: 13, marginTop: 8, lineHeight: 18 },
+    smsDisabledWrap: { paddingVertical: 8 },
+    smsDisabledTxt: { fontSize: 13, lineHeight: 18 },
   });
 }

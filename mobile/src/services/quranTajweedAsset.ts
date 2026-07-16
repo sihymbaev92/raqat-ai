@@ -1,8 +1,17 @@
 /**
- * Offline quran-tajweed — `assets/quran_tajweed.json` (Flutter rootBundle эквиваленті).
+ * Offline quran-tajweed — release APK: CDN + cache; Jest: assets/quran_tajweed.json.
  */
+import {
+  documentDirectory,
+  getInfoAsync,
+  makeDirectoryAsync,
+  readAsStringAsync,
+  writeAsStringAsync,
+} from "expo-file-system/legacy";
 import type { CachedAyah } from "../storage/quranSurahCache";
+import { getQuranTajweedAssetUrl } from "../config/quranTajweedAssetBase";
 import { stripTajweedTags } from "../utils/alquranTajweedParse";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 export type QuranTajweedAyah = {
   number: number;
@@ -42,6 +51,8 @@ let doc: QuranTajweedAssetDoc | null = null;
 let surahMap: SurahMap | null = null;
 let loadPromise: Promise<void> | null = null;
 
+const CACHE_PATH = `${documentDirectory ?? ""}quran-tajweed-asset.json`;
+
 function parseDoc(raw: unknown): QuranTajweedAssetDoc {
   const body = raw as Record<string, unknown>;
   const surahs = Array.isArray(body.surahs)
@@ -80,21 +91,70 @@ function buildSurahMap(surahs: QuranTajweedSurah[]): SurahMap {
   return out;
 }
 
-/** Metro/APK asset — Flutter `rootBundle.loadString('assets/quran_tajweed.json')`. */
-function loadAssetModule(): unknown {
+function loadFromBundledAssetModule(): unknown {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require("../../assets/quran_tajweed.json");
+}
+
+async function readCachedDocRaw(): Promise<string | null> {
+  if (!documentDirectory) return null;
+  const info = await getInfoAsync(CACHE_PATH);
+  if (!info.exists || !info.size) return null;
+  try {
+    return await readAsStringAsync(CACHE_PATH);
+  } catch {
+    return null;
+  }
+}
+
+async function writeCachedDocRaw(raw: string): Promise<void> {
+  if (!documentDirectory) return;
+  const dir = documentDirectory;
+  const dirInfo = await getInfoAsync(dir);
+  if (!dirInfo.exists) {
+    await makeDirectoryAsync(dir, { intermediates: true });
+  }
+  await writeAsStringAsync(CACHE_PATH, raw);
+}
+
+async function fetchRemoteDoc(): Promise<QuranTajweedAssetDoc> {
+  const url = getQuranTajweedAssetUrl();
+  const r = await fetchWithTimeout(url, { timeoutMs: 120_000 });
+  if (!r.ok) throw new Error(`quran_tajweed HTTP ${r.status}`);
+  const raw = await r.text();
+  const parsed = parseDoc(JSON.parse(raw) as unknown);
+  await writeCachedDocRaw(raw);
+  return parsed;
+}
+
+async function resolveDoc(): Promise<QuranTajweedAssetDoc> {
+  if (process.env.NODE_ENV === "test") {
+    return parseDoc(loadFromBundledAssetModule());
+  }
+
+  const cachedRaw = await readCachedDocRaw();
+  if (cachedRaw) {
+    try {
+      return parseDoc(JSON.parse(cachedRaw) as unknown);
+    } catch {
+      /* refetch */
+    }
+  }
+
+  return fetchRemoteDoc();
 }
 
 export async function ensureQuranTajweedAssetLoaded(): Promise<void> {
   if (doc) return;
   if (!loadPromise) {
-    loadPromise = Promise.resolve().then(() => {
-      doc = parseDoc(loadAssetModule());
-      surahMap = buildSurahMap(doc.surahs);
-    }).finally(() => {
-      loadPromise = null;
-    });
+    loadPromise = Promise.resolve()
+      .then(async () => {
+        doc = await resolveDoc();
+        surahMap = buildSurahMap(doc.surahs);
+      })
+      .finally(() => {
+        loadPromise = null;
+      });
   }
   return loadPromise;
 }
@@ -147,7 +207,7 @@ export async function loadQuranTajweedCachedAyahs(surah: number): Promise<Cached
   return quranTajweedSurahToCachedAyahs(surah);
 }
 
-/** Хатым/тәжуид экранынан шыққанда parsed doc + map босату (require модулі қалуы мүмкін). */
+/** Хатым/тәжуид экранынан шыққанда parsed doc + map босату. */
 export function releaseQuranTajweedAssetMemory(): void {
   if (process.env.NODE_ENV === "test") return;
   doc = null;

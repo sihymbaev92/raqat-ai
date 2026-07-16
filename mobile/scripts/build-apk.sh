@@ -174,10 +174,18 @@ _apk_slim_restore() {
   bash "$ROOT/scripts/apk-slim-assets.sh" restore 2>/dev/null || true
 }
 
+_apk_invalidate_release_bundle() {
+  # Metro JS bundle қайта жиналсын (QCF4 CDN stub); native .so clean-сыз.
+  rm -rf "$ROOT/android/app/build/generated/assets" \
+    "$ROOT/android/app/build/intermediates/assets/release" \
+    "$ROOT/android/app/build/intermediates/compressed_assets/release" \
+    "$ROOT/android/app/build/intermediates/sourcemaps/react/release" 2>/dev/null || true
+}
+
 if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
   trap _apk_slim_restore EXIT
-  echo "=== QCF4 bundled page map (offline Hatim) ==="
-  node "$ROOT/scripts/generate-qcf4-bundled-page-map.cjs"
+  echo "=== QCF4 page map (release: CDN-only — Metro bundle-ға 604 JSON кірмейді) ==="
+  node "$ROOT/scripts/generate-qcf4-bundled-page-map.cjs" --cdn-only
   echo "=== APK slim: CDN-only asset-терді stash (Metro/APK-ға кірмейді) ==="
   _apk_slim_restore
   bash "$ROOT/scripts/apk-slim-assets.sh" stash
@@ -211,12 +219,14 @@ if [[ "$TARGET" == "debug" ]]; then
   artifact_info "$ROOT/android/app/build/outputs/apk/debug/app-debug.apk"
 elif [[ "$TARGET" == "aab" ]]; then
   echo "=== bundleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
+  _apk_invalidate_release_bundle
   ./gradlew --stop >/dev/null 2>&1 || true
   ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 bundleRelease
   echo "AAB: $ROOT/android/app/build/outputs/bundle/release/app-release.aab"
   artifact_info "$ROOT/android/app/build/outputs/bundle/release/app-release.aab"
 else
   echo "=== assembleRelease (JAVA_HOME=${JAVA_HOME:-auto}) ==="
+  _apk_invalidate_release_bundle
   ./gradlew --stop >/dev/null 2>&1 || true
   ./gradlew --no-daemon -Dorg.gradle.parallel=false -Dorg.gradle.workers.max=2 assembleRelease
   echo "APK: $ROOT/android/app/build/outputs/apk/release/app-release.apk"

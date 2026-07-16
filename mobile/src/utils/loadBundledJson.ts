@@ -30,8 +30,6 @@ const inflight = new Map<string, Promise<unknown>>();
 /** APK asset (JS bundle-ға inline емес — Asset resource). */
 const APK_JSON_ASSET_MODULES: Partial<Record<BundledJsonName, number>> = {
   "surah-list-api.json": require("../../assets/bundled/surah-list-api.json"),
-  "quran-uthmani-full.json": require("../../assets/bundled/quran-uthmani-full.json"),
-  "quran-kk-from-db.json": require("../../assets/bundled/quran-kk-from-db.json"),
   "mosques-2gis-kz.json": require("../../assets/bundled/mosques-2gis-kz.json"),
 };
 
@@ -243,7 +241,7 @@ async function resolveJson<T>(name: BundledJsonName, opts?: { optional?: boolean
       return data;
     }
 
-    /** Хатым Arabic: APK asset әрқашан алды — бұзылған CDN/FileSystem кэш placeholder қалдырmasın. */
+    /** APK asset (surah-list, mosques) — бұзылған CDN/FileSystem кэш placeholder қалдырmasın. */
     if (isApkBundledJson(name)) {
       const native = await loadFromNativeAssetFallback(name);
       if (native != null && isValidApkBundledPayload(name, native)) {

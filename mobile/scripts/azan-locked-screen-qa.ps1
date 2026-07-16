@@ -81,7 +81,13 @@ if ($WhitelistBattery) {
   & $adb shell cmd deviceidle whitelist +$Package 2>$null
 }
 
-$exactAlarmOps = (& $adb shell appops get $Package SCHEDULE_EXACT_ALARM).Trim()
+$exactAlarmOps = "n/a (API $api)"
+if ($api -ge 31) {
+  $rawOps = & $adb shell appops get $Package SCHEDULE_EXACT_ALARM 2>$null
+  if ($rawOps) { $exactAlarmOps = ($rawOps | Out-String).Trim() }
+} elseif ($api -ge 23) {
+  $exactAlarmOps = "legacy (pre-API-31; AlarmManager setExactAndAllowWhileIdle)"
+}
 Write-Host "Exact alarm appops: $exactAlarmOps"
 
 Write-Host ""

@@ -212,10 +212,15 @@ def ready():
 
 @app.get("/api/v1/info")
 def info():
+    from sms_twilio import twilio_sms_configured
+
     return {
         "name": APP_NAME,
         "version": VERSION,
         "time_utc": datetime.now(timezone.utc).isoformat(),
+        "auth": {
+            "sms_phone_login": twilio_sms_configured(),
+        },
         "links": {
             "telegram_bot": BOT_URL.strip(),
             **({"docs": DOCS_URL} if DOCS_URL else {}),

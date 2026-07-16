@@ -22,10 +22,10 @@ export type ContentPackDef = {
 export const CONTENT_PACKS: readonly ContentPackDef[] = [
   {
     id: "hatim-arabic",
-    bundledInApk: true,
+    bundledInApk: false,
     jsonFiles: ["surah-list-api.json", "quran-uthmani-full.json"],
     labelKk: "Хатым Arabic (Uthmani)",
-    hintKk: "604 бет араб мәтіні — орнатудан кейін офлайн.",
+    hintKk: "604 бет араб мәтіні — бірінші ашқанда CDN/cache (APK slim).",
     approxMb: 5,
   },
   {

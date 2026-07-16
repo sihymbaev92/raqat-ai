@@ -1,0 +1,19 @@
+﻿{
+    "activityStarted":  true,
+    "delaySeconds":  45,
+    "screenshot":  "D:\\opt\\raqat-ai\\mobile\\qa-azan-locked-20260717-034206\\screen.png",
+    "pass":  true,
+    "apk":  "D:\\opt\\raqat-ai\\mobile\\raqat-release-latest.apk",
+    "logcat":  "D:\\opt\\raqat-ai\\mobile\\qa-azan-locked-20260717-034206\\logcat-prayer-azan.txt",
+    "exactAlarmAppops":  "legacy (pre-API-31; AlarmManager setExactAndAllowWhileIdle)",
+    "timestamp":  "2026-07-17T03:42:31.4943545+05:00",
+    "exactAlarmBlockedInLog":  false,
+    "device":  {
+                   "serial":  "398476606c0d7ece",
+                   "api":  29,
+                   "model":  "SM-G965F",
+                   "brand":  "samsung"
+               },
+    "nativeAudio":  true,
+    "alarms":  "D:\\opt\\raqat-ai\\mobile\\qa-azan-locked-20260717-034206\\dumpsys-alarm.txt"
+}
