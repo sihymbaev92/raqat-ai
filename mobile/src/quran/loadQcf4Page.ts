@@ -45,9 +45,9 @@ function isQcf4Page(data: unknown): data is Qcf4PageJson {
 
 function qcf4RemotePageJsonUrls(page: number): string[] {
   const padded = mushafPagePadded(page);
-  const cdn = mushafQcf4PageJsonUrl(page);
   const upstream = `${getQcf4UpstreamBaseUrl()}/pages/${padded}.json`;
-  return [cdn, upstream];
+  const cdn = mushafQcf4PageJsonUrl(page);
+  return [upstream, cdn];
 }
 
 async function loadQcf4PageFromWebStatic(page: number): Promise<Qcf4PageJson | null> {

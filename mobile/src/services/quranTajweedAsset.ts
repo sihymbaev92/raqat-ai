@@ -10,6 +10,8 @@ import {
 } from "expo-file-system/legacy";
 import type { CachedAyah } from "../storage/quranSurahCache";
 import { getQuranTajweedAssetUrl } from "../config/quranTajweedAssetBase";
+import { ALQURAN_TAJWEED_API_URL } from "../config/bundledJsonFallbacks";
+import { quranTajweedDocFromAlquranApi } from "./quranTajweedFromAlquran";
 import { stripTajweedTags } from "../utils/alquranTajweedParse";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
@@ -118,13 +120,28 @@ async function writeCachedDocRaw(raw: string): Promise<void> {
 }
 
 async function fetchRemoteDoc(): Promise<QuranTajweedAssetDoc> {
-  const url = getQuranTajweedAssetUrl();
-  const r = await fetchWithTimeout(url, { timeoutMs: 120_000 });
-  if (!r.ok) throw new Error(`quran_tajweed HTTP ${r.status}`);
-  const raw = await r.text();
-  const parsed = parseDoc(JSON.parse(raw) as unknown);
-  await writeCachedDocRaw(raw);
-  return parsed;
+  const urls = [ALQURAN_TAJWEED_API_URL, getQuranTajweedAssetUrl()];
+  let lastErr = "no url";
+  for (const url of urls) {
+    try {
+      const r = await fetchWithTimeout(url, { timeoutMs: 120_000 });
+      if (!r.ok) {
+        lastErr = `HTTP ${r.status}`;
+        continue;
+      }
+      const body = (await r.json()) as unknown;
+      const parsed =
+        url === ALQURAN_TAJWEED_API_URL
+          ? quranTajweedDocFromAlquranApi(body)
+          : parseDoc(body);
+      const raw = JSON.stringify(parsed);
+      await writeCachedDocRaw(raw);
+      return parsed;
+    } catch (err) {
+      lastErr = String(err);
+    }
+  }
+  throw new Error(`quran_tajweed: ${lastErr}`);
 }
 
 async function resolveDoc(): Promise<QuranTajweedAssetDoc> {

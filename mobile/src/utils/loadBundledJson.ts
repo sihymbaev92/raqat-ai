@@ -12,6 +12,7 @@ import {
   writeAsStringAsync,
 } from "expo-file-system/legacy";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
+import { bundledJsonDownloadUrls } from "../config/bundledJsonFallbacks";
 import type { BundledJsonName } from "./bundledJsonTypes";
 import { isApkBundledJson, isRemoteBundledJson } from "./bundledJsonTypes";
 
@@ -190,19 +191,32 @@ export async function downloadBundledJsonToCache<T>(
   name: BundledJsonName,
   timeoutMs = 180_000
 ): Promise<T> {
-  const url = bundledJsonRemoteUrl(name);
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const r = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const data = (await r.json()) as T;
-    await saveCachedBundledJsonFile(name, data);
-    memory.set(name, data);
-    return data;
-  } finally {
-    clearTimeout(timer);
+  const urls = bundledJsonDownloadUrls(name);
+  let lastErr = "no url";
+  for (const url of urls) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal, cache: "no-store" });
+      if (!r.ok) {
+        lastErr = `HTTP ${r.status} ${url}`;
+        continue;
+      }
+      const data = (await r.json()) as T;
+      if (!isValidApkBundledPayload(name, data)) {
+        lastErr = `invalid payload ${url}`;
+        continue;
+      }
+      await saveCachedBundledJsonFile(name, data);
+      memory.set(name, data);
+      return data;
+    } catch (err) {
+      lastErr = `${url}: ${String(err)}`;
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  throw new Error(lastErr);
 }
 
 function isValidApkBundledPayload(name: BundledJsonName, data: unknown): boolean {
