@@ -17,7 +17,6 @@ const REMOTE_JSON = [
   "quran-en-transliteration-full.json",
   "quran-tajweed-offline.json",
   "quran-uthmani-full.json",
-  "quran-kk-from-db.json",
   "hadith-from-db-seed.json",
   "great-words-catalog.json",
   "halal-companies-snapshot.json",

@@ -30,10 +30,10 @@ export const CONTENT_PACKS: readonly ContentPackDef[] = [
   },
   {
     id: "quran-kk",
-    bundledInApk: false,
+    bundledInApk: true,
     jsonFiles: ["quran-kk-from-db.json"],
     labelKk: "Құран қазақша мағына",
-    hintKk: "Сүрелер мен оқу экранындағы қазақша аударма.",
+    hintKk: "Сүрелер мен оқу экранындағы қазақша аударма + кирилл транскрипция (APK ішінде).",
     approxMb: 3,
   },
   {

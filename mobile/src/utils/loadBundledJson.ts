@@ -32,6 +32,7 @@ const inflight = new Map<string, Promise<unknown>>();
 const APK_JSON_ASSET_MODULES: Partial<Record<BundledJsonName, number>> = {
   "surah-list-api.json": require("../../assets/bundled/surah-list-api.json"),
   "mosques-2gis-kz.json": require("../../assets/bundled/mosques-2gis-kz.json"),
+  "quran-kk-from-db.json": require("../../assets/bundled/quran-kk-from-db.json"),
 };
 
 export class BundledJsonMissingError extends Error {

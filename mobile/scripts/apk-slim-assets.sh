@@ -15,7 +15,6 @@ CDN_ONLY_PATHS=(
   "assets/hajj/muftyat"
   "assets/tajweed/muftyat"
   "assets/bundled/quran-uthmani-full.json"
-  "assets/bundled/quran-kk-from-db.json"
   "assets/bundled/offline-auto-translations-core.json"
   "assets/bundled/quran-translations-offline.json"
   "assets/bundled/quran-en-transliteration-full.json"
