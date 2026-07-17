@@ -13,7 +13,6 @@ CDN_ONLY_PATHS=(
   "assets/quran/qcf4/pages"
   "assets/quran_tajweed.json"
   "assets/hajj/muftyat"
-  "assets/tajweed/letters"
   "assets/tajweed/muftyat"
   "assets/bundled/quran-uthmani-full.json"
   "assets/bundled/quran-kk-from-db.json"

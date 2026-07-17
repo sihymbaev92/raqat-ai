@@ -39,6 +39,7 @@
     "build:apk:debug": "node scripts/build-apk-node.cjs debug",
     "release:play:check": "powershell -ExecutionPolicy Bypass -File scripts/validate-play-release.ps1",
     "verify:cdn-assets": "powershell -ExecutionPolicy Bypass -File scripts/verify-cdn-assets.ps1",
+    "release:minuses-preflight": "powershell -ExecutionPolicy Bypass -File scripts/release-minuses-preflight.ps1",
     "play:internal:handoff": "powershell -ExecutionPolicy Bypass -File scripts/play-internal-handoff.ps1",
     "size:assets": "node scripts/print-asset-size-report.cjs",
     "size:assets:budget": "node scripts/print-asset-size-report.cjs --max-total-mb 400",

@@ -33,10 +33,12 @@ Decisions that cannot be faked in code. Engineering implements UX around these g
 
 | Field | Value |
 |-------|--------|
-| **Decision** | Release APK **45 MB** — heavy assets on `https://rahatomir.com/assets/...` |
+| **Decision** | Release APK **~46 MB** — heavy assets on CDN; **tajweed letters bundled** (~0.5 MB) |
+| **Fallbacks** | AlQuran API + GitHub QCF4 when `rahatomir.com` 521 |
 | **Owner** | DevOps |
 | **Deploy** | `powershell -File scripts/deploy_mushaf_cdn_assets.ps1` after VPS/SSH fix |
-| **Verify** | `cd mobile && npm run verify:cdn-assets` |
+| **Verify** | `cd mobile && npm run verify:cdn-assets` (primary + fallbacks) |
+| **Preflight** | `cd mobile && npm run release:minuses-preflight` |
 
 ## 5. Play Internal Testing
 

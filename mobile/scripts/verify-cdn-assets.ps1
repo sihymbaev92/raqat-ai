@@ -68,9 +68,15 @@ foreach ($label in $coreLabels) {
 }
 
 if ($coreOk) {
+  $lettersBundled = Test-Path (Join-Path $PSScriptRoot "..\assets\tajweed\letters\alif.mp3")
   Write-Host ""
   Write-Host "OK: core hatim/tajweed fallbacks reachable (AlQuran API + GitHub QCF4)." -ForegroundColor Green
-  Write-Host "WARN: rahatomir.com CDN still down — letter audio / muftyat images need VPS deploy." -ForegroundColor Yellow
+  if ($lettersBundled) {
+    Write-Host "OK: tajweed letter audio bundled in slim APK (~0.5 MB) — CDN optional for letters." -ForegroundColor Green
+  } else {
+    Write-Host "WARN: tajweed letter mp3 not on disk — build with assets/tajweed/letters" -ForegroundColor Yellow
+  }
+  Write-Host "WARN: muftyat JPG + offline-i18n still need CDN/VPS (or FileSystem cache after first load)." -ForegroundColor Yellow
   Write-Host "Fix VPS: powershell -File scripts/vps_install_ssh_key.ps1 then scripts/deploy_mushaf_cdn_assets.ps1"
   exit 0
 }

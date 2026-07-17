@@ -21,10 +21,23 @@ export function getTajweedAssetsBaseUrl(): string {
 }
 
 export function tajweedLetterAudioUri(filename: string): string {
-  return `${getTajweedAssetsBaseUrl()}/letters/${filename}`;
+  return tajweedLetterAudioUris(filename)[0] ?? `${getTajweedAssetsBaseUrl()}/letters/${filename}`;
+}
+
+/** CDN URL тізімі (primary → rahatomir). */
+export function tajweedLetterAudioUris(filename: string): string[] {
+  const base = getTajweedAssetsBaseUrl();
+  return [`${base}/letters/${filename}`];
 }
 
 export function tajweedMuftyatPageImageUri(page: number): string {
+  return tajweedMuftyatPageImageUris(page)[0] ?? "";
+}
+
+/** Muftyat JPG — CDN URL тізімі. */
+export function tajweedMuftyatPageImageUris(page: number): string[] {
   const p = Math.max(1, Math.min(104, Math.floor(page)));
-  return `${getTajweedAssetsBaseUrl()}/muftyat/page-${String(p).padStart(3, "0")}.jpg`;
+  const name = `page-${String(p).padStart(3, "0")}.jpg`;
+  const base = getTajweedAssetsBaseUrl();
+  return [`${base}/muftyat/${name}`];
 }

@@ -186,6 +186,8 @@ if [[ "$TARGET" == "aab" || "$TARGET" == "release" ]]; then
   trap _apk_slim_restore EXIT
   echo "=== QCF4 page map (release: CDN-only — Metro bundle-ға 604 JSON кірмейді) ==="
   node "$ROOT/scripts/generate-qcf4-bundled-page-map.cjs" --cdn-only
+  echo "=== Tajweed letter audio map (APK bundle ~0.5 MB) ==="
+  node "$ROOT/scripts/generate-tajweed-letter-asset-map.cjs"
   echo "=== APK slim: CDN-only asset-терді stash (Metro/APK-ға кірмейді) ==="
   _apk_slim_restore
   bash "$ROOT/scripts/apk-slim-assets.sh" stash

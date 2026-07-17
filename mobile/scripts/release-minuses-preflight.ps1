@@ -1,0 +1,22 @@
+# Release minuses preflight — automated checks (VPS deploy still manual).
+$ErrorActionPreference = "Stop"
+$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Set-Location (Join-Path $RepoRoot "mobile")
+
+Write-Host "== Release minuses preflight ==" -ForegroundColor Cyan
+
+npm run verify:cdn-assets
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+npm run release:play:check
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+Write-Host ""
+Write-Host "Manual gates (cannot automate here):" -ForegroundColor Yellow
+Write-Host "  - VPS SSH + CDN deploy (RAQAT_VPS_SSH_PASSWORD in .env.deploy)"
+Write-Host "  - Play Internal upload (mobile/raqat-play-release-latest.aab)"
+Write-Host "  - Scholar sign-off (namazLearningContent approvedForPublicRelease)"
+Write-Host "  - Hadith KK import (1200 sourceOnly rows)"
+Write-Host "  - Azan 3 OEM x 3 day QA"
+Write-Host ""
+Write-Host "OK: automated preflight passed." -ForegroundColor Green
