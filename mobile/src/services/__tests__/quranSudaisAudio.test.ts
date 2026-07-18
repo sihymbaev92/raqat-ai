@@ -8,15 +8,23 @@ import {
 import {
   QURAN_ABDULRAHMAN_MOSSAD_EDITION,
   QURAN_ALAFASY_EDITION,
+  QURAN_EN_WALK_EDITION,
   QURAN_HUSARY_EDITION,
   QURAN_KK_HALIFAH_ALTAI_EDITION,
+  QURAN_KY_HAKIMOV_AUDIO_EDITION,
   QURAN_RU_KULIEV_EDITION,
+  QURAN_UZ_RWWAD_AUDIO_EDITION,
 } from "../../config/quranReciters";
 
 describe("cdnAyahBitrateKbps", () => {
   it("қазақ және орыс редакциялары 128", () => {
     expect(cdnAyahBitrateKbps(QURAN_KK_HALIFAH_ALTAI_EDITION)).toBe(128);
     expect(cdnAyahBitrateKbps(QURAN_RU_KULIEV_EDITION)).toBe(128);
+  });
+
+  it("ағылшын Walk — 192 kbps (CDN-де 128 жоқ)", () => {
+    expect(cdnAyahBitrateKbps(QURAN_EN_WALK_EDITION)).toBe(192);
+    expect(cdnAyahBitrateKbps("en.walk")).toBe(192);
   });
 
   it("Судәис сияқты кейбір араб қарилары 192", () => {
@@ -29,6 +37,11 @@ describe("cdnAyahBitrateKbps", () => {
 });
 
 describe("quranAyahMp3Url", () => {
+  it("ағылшын Walk үшін CDN 192 kbps жолын қолданады", () => {
+    const u = quranAyahMp3Url(1, QURAN_EN_WALK_EDITION);
+    expect(u).toBe(`https://cdn.islamic.network/quran/audio/192/${QURAN_EN_WALK_EDITION}/1.mp3`);
+  });
+
   it("қазақ редакциясы үшін CDN 128 kbps жолын қолданады", () => {
     const u = quranAyahMp3Url(1, QURAN_KK_HALIFAH_ALTAI_EDITION);
     expect(u).toContain("/quran/audio/128/");
@@ -39,6 +52,17 @@ describe("quranAyahMp3Url", () => {
     const u = quranAyahMp3Url(42, QURAN_RU_KULIEV_EDITION);
     expect(u).toBe(
       `https://cdn.islamic.network/quran/audio/128/${QURAN_RU_KULIEV_EDITION}/42.mp3`,
+    );
+  });
+
+  it("қырғыз/өзбек аударма дауысы — RAQAT CDN", () => {
+    expect(cdnAyahBitrateKbps(QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(128);
+    expect(cdnAyahBitrateKbps(QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(128);
+    expect(quranAyahMp3Url(1, QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(
+      `https://rahatomir.com/assets/quran/audio/128/${QURAN_KY_HAKIMOV_AUDIO_EDITION}/1.mp3`,
+    );
+    expect(quranAyahMp3Url(42, QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(
+      `https://rahatomir.com/assets/quran/audio/128/${QURAN_UZ_RWWAD_AUDIO_EDITION}/42.mp3`,
     );
   });
 

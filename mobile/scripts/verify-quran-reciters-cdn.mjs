@@ -1,19 +1,31 @@
 /**
- * Verifies every picker reciter resolves to a playable MP3 (same URLs as the app).
+ * Verifies every playable picker reciter resolves to a playable MP3 (same URLs as the app).
  * Usage: node mobile/scripts/verify-quran-reciters-cdn.mjs
  */
 
+/** Keep in sync with `src/config/quranReciters.ts` playable editions. */
 const EDITIONS = [
   "kk.khalifahaltai-audio",
   "ru.kuliev-audio",
   "en.walk",
+  "tr.vakfi-audio",
+  "ky.hakimov-audio",
+  "uz.rwwad-audio",
   "ar.abdurrahmaansudais",
   "ar.abdulbasitmurattal",
   "ar.husary",
   "ar.alafasy",
+  "ar.mahermuaiqly",
+  "ar.minshawi",
+  "ar.hudhaify",
+  "ar.ahmedajamy",
+  "ar.shaatree",
+  "ar.muhammadayyoub",
 ];
 
-const CDN_AYAH_192 = new Set(["ar.abdurrahmaansudais", "ar.abdulbasitmurattal"]);
+const RAQAT_HOSTED = new Set(["ky.hakimov-audio", "uz.rwwad-audio"]);
+const RAQAT_AUDIO_BASE = "https://rahatomir.com/assets/quran/audio";
+const CDN_AYAH_192 = new Set(["ar.abdurrahmaansudais", "ar.abdulbasitmurattal", "en.walk"]);
 const SAMPLE_AYAHS = [1, 8, 255, 6236];
 
 const QURAN_COM_TIMED = {
@@ -38,9 +50,16 @@ function paddedAyahKey(globalAyahOneBased) {
 
 function cdnAyahBitrateKbps(edition) {
   const e = edition.trim().toLowerCase();
-  if (e.startsWith("en.")) return 192;
-  if (e.startsWith("kk.") || e.startsWith("ru.") || e.startsWith("tr.")) return 128;
-  if (CDN_AYAH_192.has(e)) return 192;
+  if (e.startsWith("en.") || CDN_AYAH_192.has(e)) return 192;
+  if (
+    e.startsWith("kk.") ||
+    e.startsWith("ru.") ||
+    e.startsWith("tr.") ||
+    e.startsWith("ky.") ||
+    e.startsWith("uz.")
+  ) {
+    return 128;
+  }
   return 128;
 }
 
@@ -49,6 +68,9 @@ function quranAyahMp3Url(globalAyah, edition) {
   const timed = QURAN_COM_TIMED[edition];
   if (timed) return timed(key);
   const br = cdnAyahBitrateKbps(edition);
+  if (RAQAT_HOSTED.has(edition)) {
+    return `${RAQAT_AUDIO_BASE}/${br}/${edition}/${globalAyah}.mp3`;
+  }
   return `https://cdn.islamic.network/quran/audio/${br}/${edition}/${globalAyah}.mp3`;
 }
 
