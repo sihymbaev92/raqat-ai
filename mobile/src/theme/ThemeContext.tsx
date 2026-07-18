@@ -36,7 +36,7 @@ type Ctx = {
   setColorPalette: (p: ColorPaletteId) => void;
 };
 
-const ThemeContext = createContext<Ctx | null>(null);
+export const ThemeContext = createContext<Ctx | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>(DEFAULT_THEME_SCHEME);

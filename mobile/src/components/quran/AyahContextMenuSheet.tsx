@@ -29,12 +29,19 @@ import {
   type HatimReaderSettingsSnapshot,
 } from "./HatimReaderSettingsMenuSection";
 import type { HatimAudioPlayUntil } from "../../storage/hatimPrefs";
+import {
+  QURAN_READING_LOCALES,
+  setQuranReadingLocale,
+  useQuranReadingLocale,
+  type QuranReadingLocale,
+} from "../../quran/quranReadingLocale";
+import { quranTranslationLocaleChoiceLabel } from "../../quran/quranTranslationLocaleOptions";
 
 const AYAH_MARKER_COLOR_IDS = Object.keys(AYAH_MARKER_COLOR_HEX) as AyahMarkerColorId[];
 const QUICK_HIGHLIGHT_COLOR: AyahMarkerColorId = "rose";
 
 function playUntilMenuHint(scope: HatimAudioPlayUntil): string {
-  if (scope === "surah") return `${kk.hatim.settingsPlayUntilSurah} соңына дейін`;
+  if (scope === "surah") return kk.quran.ayahMenuPlayUntilSurahHint;
   if (scope === "ayah") return kk.quran.ayahMenuPlaySelectedHint;
   return kk.quran.ayahMenuPlayUntilJuzHint;
 }
@@ -166,18 +173,29 @@ export function AyahContextMenuSheet({
   useAppLocale();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [reciterOpen, setReciterOpen] = useState(false);
+  const [translationLocaleOpen, setTranslationLocaleOpen] = useState(false);
   const { tr } = useKkAutoTranslator();
+  const readingLocale = useQuranReadingLocale();
 
   const s = useMemo(() => makeMenuStyles(colors, isDark, windowWidth), [colors, isDark, windowWidth]);
   const playUntilHint = playUntilMenuHint(playUntilScope);
   const selectedReciterLabel = useMemo(
-    () => QURAN_RECITER_OPTIONS.find((r) => r.edition === reciterEdition)?.labelKk ?? kk.quran.readerReciterTitle,
-    [reciterEdition]
+    () =>
+      tr(
+        QURAN_RECITER_OPTIONS.find((r) => r.edition === reciterEdition)?.labelKk ??
+          kk.quran.readerReciterTitle
+      ),
+    [reciterEdition, tr]
+  );
+  const selectedTranslationLocaleLabel = useMemo(
+    () => quranTranslationLocaleChoiceLabel(readingLocale),
+    [readingLocale]
   );
 
   const closeAll = () => {
     setColorPickerOpen(false);
     setReciterOpen(false);
+    setTranslationLocaleOpen(false);
     onClose();
   };
 
@@ -242,7 +260,11 @@ export function AyahContextMenuSheet({
                 title={tr(kk.quran.readerReciterTitle)}
                 subtitle={selectedReciterLabel}
                 a11y={kk.quran.readerReciterTitle}
-                onPress={() => setReciterOpen((v) => !v)}
+                onPress={() => {
+                  setColorPickerOpen(false);
+                  setTranslationLocaleOpen(false);
+                  setReciterOpen((v) => !v);
+                }}
               />
               {reciterOpen ? (
                 <View style={s.reciterWrap}>
@@ -256,8 +278,8 @@ export function AyahContextMenuSheet({
                           const available = r.audioAvailable !== false;
                           const selected = reciterEdition === r.edition;
                           const label = available
-                            ? r.labelKk
-                            : `${r.labelKk} (${kk.quran.readerReciterSoon})`;
+                            ? tr(r.labelKk)
+                            : `${tr(r.labelKk)} (${kk.quran.readerReciterSoon})`;
                           return (
                             <Pressable
                               key={r.edition}
@@ -270,7 +292,7 @@ export function AyahContextMenuSheet({
                               accessibilityRole="button"
                               accessibilityState={{ selected, disabled: !available }}
                               accessibilityLabel={
-                                available ? label : kk.quran.readerReciterUnavailableA11y(r.labelKk)
+                                available ? label : kk.quran.readerReciterUnavailableA11y(tr(r.labelKk))
                               }
                               style={({ pressed }) => [
                                 s.reciterOption,
@@ -383,6 +405,57 @@ export function AyahContextMenuSheet({
                   closeAll();
                 }}
               />
+              <MenuRow
+                s={s}
+                colors={colors}
+                icon={<MaterialIcons name="translate" size={21} color={colors.text} />}
+                title={tr(kk.settings.quranTranslationLocaleTitle)}
+                subtitle={selectedTranslationLocaleLabel}
+                a11y={kk.settings.quranTranslationLocaleTitle}
+                onPress={() => {
+                  setColorPickerOpen(false);
+                  setReciterOpen(false);
+                  setTranslationLocaleOpen((v) => !v);
+                }}
+              />
+              {translationLocaleOpen ? (
+                <View style={s.reciterWrap}>
+                  {QURAN_READING_LOCALES.map((id) => {
+                    const selected = readingLocale === id;
+                    const label = quranTranslationLocaleChoiceLabel(id);
+                    return (
+                      <Pressable
+                        key={id}
+                        oyuBackdrop={false}
+                        onPress={() => {
+                          void setQuranReadingLocale(id as QuranReadingLocale);
+                          setTranslationLocaleOpen(false);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={label}
+                        style={({ pressed }) => [
+                          s.reciterOption,
+                          selected && s.reciterOptionSelected,
+                          pressed && { opacity: 0.88 },
+                        ]}
+                      >
+                        <MaterialIcons
+                          name={selected ? "radio-button-checked" : "radio-button-unchecked"}
+                          size={18}
+                          color={selected ? colors.accent : colors.muted}
+                        />
+                        <Text
+                          style={[s.reciterOptionText, selected && s.reciterOptionTextSelected]}
+                          numberOfLines={2}
+                        >
+                          {label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
               <MenuRow
                 s={s}
                 colors={colors}

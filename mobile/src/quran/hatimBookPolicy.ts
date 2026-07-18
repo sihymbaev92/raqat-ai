@@ -81,7 +81,8 @@ export async function preloadHatimOfflineAssets(): Promise<void> {
       /* жеңіл/QCF4 беттер жұмыс істейді — enrich сәтсіз болса блоктамаймыз */
     }
     if (!hatimBookUsesBundledTextHafsOffline()) {
-      void Promise.all([
+      // Await so callers/tests don't tear down while CDN fetches still run.
+      await Promise.all([
         loadQcf4FontMap().catch(() => null),
         loadQcf4Page(1).catch(() => null),
         loadQcf4Page(2).catch(() => null),

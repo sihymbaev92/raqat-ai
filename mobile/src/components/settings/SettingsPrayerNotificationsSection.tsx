@@ -16,6 +16,7 @@ import { PRAYER_NOTIF_SOUND_UI_ORDER, type PrayerNotifSoundId } from "../../stor
 import {
   openAndroidBatteryOptimizationSettings,
   openAndroidExactAlarmSettings,
+  openAndroidFullScreenIntentSettings,
   type PrayerNotificationDiagnostics,
 } from "../../services/prayerNotifications";
 import { scheduleTestAzanAlarmForQa } from "../../services/prayerFullScreenAzan";
@@ -63,16 +64,22 @@ export function SettingsPrayerNotificationsSection({
     const result = await scheduleTestAzanAlarmForQa(90);
     onRefreshDiagnostics();
     if (result.ok) {
-      const permBits = [
-        result.exactAlarmPermissionGranted === false ? "exact alarm жабық" : null,
-      ].filter(Boolean);
       setAzanQaMessage(
-        permBits.length
-          ? `QA азan ${result.delaySeconds} сек кейін. ${permBits.join(" · ")} — баптаудан қосыңыз.`
-          : `QA азan ${result.delaySeconds} сек кейін. Экранды құлыптап, қолданбаны фонға жіберіңіз.`
+        result.exactAlarmPermissionGranted === false
+          ? kk.settings.prayerAzanQaSuccessExactAlarmOff(result.delaySeconds)
+          : kk.settings.prayerAzanQaSuccess(result.delaySeconds)
       );
     } else {
-      setAzanQaMessage(result.error ?? kk.settings.prayerAzanQaFailed);
+      const err = result.error;
+      const mapped =
+        err === "native_only"
+          ? kk.settings.prayerAzanQaErrorNativeOnly
+          : err === "schedule_empty"
+            ? kk.settings.prayerAzanQaErrorScheduleEmpty
+            : err === "native_module_missing"
+              ? kk.settings.prayerAzanQaErrorModuleMissing
+              : kk.settings.prayerAzanQaFailed;
+      setAzanQaMessage(mapped);
     }
     setAzanQaBusy(false);
   }, [azanQaBusy, onRefreshDiagnostics]);
@@ -146,6 +153,12 @@ export function SettingsPrayerNotificationsSection({
                 <Text style={styles.diagnosticLine}>
                   Exact alarm: {formatPermissionFlag(diagnostics.nativeAzanExactAlarmPermissionGranted)}
                 </Text>
+                {diagnostics.fullScreenIntentSettingsAvailable ? (
+                  <Text style={styles.diagnosticLine}>
+                    Full-screen intent:{" "}
+                    {formatPermissionFlag(diagnostics.nativeAzanFullScreenIntentAllowed)}
+                  </Text>
+                ) : null}
               </>
             ) : null}
             <Text style={styles.diagnosticLine}>
@@ -158,7 +171,7 @@ export function SettingsPrayerNotificationsSection({
             ) : null}
             <Text style={styles.diagnosticLine}>
               {kk.settings.prayerNotifDiagnosticMuted}:{" "}
-              {diagnostics.mutedSalatKeys.length ? diagnostics.mutedSalatKeys.join(", ") : "жоқ"}
+              {diagnostics.mutedSalatKeys.length ? diagnostics.mutedSalatKeys.join(", ") : kk.common.none}
             </Text>
           </View>
         ) : (
@@ -168,6 +181,7 @@ export function SettingsPrayerNotificationsSection({
           <View style={styles.batteryBox}>
             <Text style={styles.batteryTitle}>{kk.settings.prayerAzanBatteryTitle}</Text>
             <Text style={styles.batteryHint}>{kk.settings.prayerAzanBatteryHint}</Text>
+            <Text style={styles.batteryStep}>{kk.settings.prayerAzanScreenOnHint}</Text>
             <Text style={styles.batteryStep}>{kk.settings.prayerAzanBatterySamsungSteps}</Text>
             <Text style={styles.batteryStep}>{kk.settings.prayerAzanBatteryXiaomiSteps}</Text>
             <Pressable
@@ -178,6 +192,21 @@ export function SettingsPrayerNotificationsSection({
             >
               <Text style={styles.warnLinkTxt}>{kk.settings.prayerAzanOpenBatterySettings}</Text>
             </Pressable>
+            {diagnostics?.fullScreenIntentSettingsAvailable ? (
+              <>
+                {diagnostics.nativeAzanFullScreenIntentAllowed === false ? (
+                  <Text style={styles.warn}>{kk.settings.prayerAzanFullScreenDeniedHint}</Text>
+                ) : null}
+                <Pressable
+                  onPress={() => void openAndroidFullScreenIntentSettings()}
+                  style={({ pressed }) => [styles.warnLinkBtn, pressed && { opacity: 0.88 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel={kk.settings.prayerAzanOpenFullScreenSettingsA11y}
+                >
+                  <Text style={styles.warnLinkTxt}>{kk.settings.prayerAzanOpenFullScreenSettings}</Text>
+                </Pressable>
+              </>
+            ) : null}
           </View>
         ) : null}
         {Platform.OS === "android" ? (

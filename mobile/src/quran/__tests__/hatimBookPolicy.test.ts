@@ -13,6 +13,11 @@ import {
 } from "../hatimBookPolicy";
 import { clearMushafPagesGlobalCache } from "../buildMushafPagesGlobal";
 
+jest.mock("../loadQcf4Page", () => ({
+  loadQcf4FontMap: jest.fn(async () => null),
+  loadQcf4Page: jest.fn(async () => null),
+}));
+
 describe("hatimBookPolicy", () => {
   afterEach(() => {
     resetHatimOfflinePreloadCache();

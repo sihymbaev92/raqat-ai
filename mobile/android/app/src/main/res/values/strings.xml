@@ -35,6 +35,14 @@
   <string name="widget_qibla_service_title">RAHAT OMIR — құбыла</string>
   <string name="widget_qibla_service_text">Негізгі экран виджеті үшін компас</string>
   <string name="prayer_azan_fullscreen_title">Намаз уақыты кірді</string>
+  <string name="prayer_azan_default_label">Намаз</string>
+  <string name="prayer_azan_entered_for_label">%1$s намазы кірді</string>
+  <string name="prayer_azan_channel_name">Азан</string>
+  <string name="prayer_azan_channel_desc">Намаз уақыты кіргенде азан экранын автоматты көрсету</string>
+  <string name="prayer_azan_notif_body_no_time">Азан · ашу үшін басыңыз</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Азан · ашу үшін басыңыз</string>
+  <string name="prayer_azan_notif_body_fsi_denied">Азан беті ашылмады — хабарламаны басыңыз</string>
+  <string name="prayer_azan_notif_body_fsi_denied_with_time">%1$s · Азан беті үшін хабарламаны басыңыз</string>
 
   <string name="widget_prayer_row_fajr">Таң</string>
   <string name="widget_prayer_row_sun">Күн</string>

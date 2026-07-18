@@ -3,14 +3,14 @@
 /** Таңбалауыш атауы — басты бет, тақырыптар (үй экраны атауымен бірдей). */
 export const APP_BRAND_KK = "RAHAT OMIR";
 
-/** AI бөлімі: бренд, астындағы белгі, біріктірілген бір жол (тайл, a11y) */
-export const IMAM_AI_BRAND_KK = "ҚМДБ";
+/** AI / KB хаб белгісі — «ҚМДБ» деп ресми қолданба болып көрінбеуі үшін. */
+export const IMAM_AI_BRAND_KK = "Дереккөз хаб";
 export const IMAM_AI_TAGLINE_KK = "Ханафи мәзһабы";
 export const FATUA_KZ_LABEL_KK = "Fatua.kz";
 export const MUFTYAT_KZ_LABEL_KK = "Muftyat.kz";
 export const ISLAM_KZ_LABEL_KK = "Islam.kz";
 export const MUSLIM_KZ_LABEL_KK = "Muslim.kz";
-export const IMAM_AI_LEAD_KK = `Қазақстандағы дәстүрлі Ханафи мәзһабы, Матуриди ақидасы және ${FATUA_KZ_LABEL_KK} / ${MUFTYAT_KZ_LABEL_KK} дереккөздері — бір хабта.`;
+export const IMAM_AI_LEAD_KK = `Қазақстандағы дәстүрлі Ханафи мәзһабы, Матуриди ақидасы және ${FATUA_KZ_LABEL_KK} / ${MUFTYAT_KZ_LABEL_KK} дереккөздері — бір хабта. RAHAT OMIR ҚМДБ ресми қолданбасы емес.`;
 export const IMAM_AI_ASSISTANT_KK = `${IMAM_AI_BRAND_KK} · ${IMAM_AI_TAGLINE_KK}`;
 /** @deprecated Imam Ai переход үшін мұрагер константа */
 export const RAQAT_AI_ASSISTANT_KK = IMAM_AI_ASSISTANT_KK;
@@ -35,6 +35,7 @@ export const kk = {
     next: "Келесі",
     skip: "Кейінірек",
     done: "Дайын",
+    none: "жоқ",
     /** Артқа қайту (скринридер) */
     back: "Артқа",
     /** Оқулық аккордеоны: тарау түймесінің скринридер сипаттамасы */
@@ -50,6 +51,8 @@ export const kk = {
     autoTranslateNotice: "Автоматты аударма — дәл болмауы мүмкін. Түпнұсқа мәтін қазақша.",
     appErrorTitle: "Қолданба қатесі",
     appErrorHint: "«Қайта» — қайта сынау. Себепті көшіру: лог / экран.",
+    /** Қашықтық бірлігі (карта / радиус чиптері) */
+    distanceKmUnit: "км",
   },
   contentSource: {
     hadith: "Хадис",
@@ -65,7 +68,7 @@ export const kk = {
   onboarding: {
     title: `${APP_BRAND_KK}-ға қош келдіңіз`,
     step1:
-      "Қолданбада намаз уақыты, Құран, хатым, дұғалар, құбыла, хадистер және діни оқулықтар бар. Құбыла мен намаз уақыты дұрыс жұмыс істеуі үшін орын рұқсаты керек болуы мүмкін. Кейін қала, хабарлама және басқа баптауларды «Баптаулар» бөлімінен өзгерте аласыз.",
+      "Қолданбада намаз уақыты, Құран, хатым, дұғалар, құбыла, хадистер және діни оқулықтар бар. RAHAT OMIR — тәуелсіз жоба: ҚМДБ / Fatua.kz / Muftyat.kz ресми қолданбасы емес. Құбыла мен намаз уақыты үшін орын рұқсаты керек болуы мүмкін.",
     step2:
       "Құбыла көрсеткіші үшін магнит өрісін калибрлеу керек: телефонды баяу «сегіз» пішінінде бір рет айналдырыңыз.",
     step3:
@@ -229,8 +232,8 @@ export const kk = {
     prayerTrackerTitle: "Бүгінгі намаз",
     prayerTrackerStreak: (days: number) => `Серия: ${days} күн`,
     prayerTrackerProgress: (done: number, total: number) => `${done}/${total} намаз`,
-    dailyAiLabel: "Имам AI сұрағы",
-    dailyAiA11y: "Күнделікті AI сұраққа өту",
+    dailyAiLabel: "Дереккөз хаб",
+    dailyAiA11y: "Fatua.kz және Muftyat.kz дереккөздеріне өту",
     dailyAyahLabel: "Күнделікті аят",
     dailyAyahA11y: (surah: string, ayah: number) => `Күнделікті аят: ${surah}, ${ayah}`,
     dailyHadithLabel: "Күнделікті хадис",
@@ -251,7 +254,7 @@ export const kk = {
     quranCardSub: "Сүрелер, аяттар",
     hadithCardSub: "Пайғамбар ﷺ өнегесі",
     hajjCardSub: "Үмра, қажылық",
-    tajweedCardSub: "ҚМДБ · тәжуид ережелері",
+    tajweedCardSub: "Тәжуид ережелері · оқулық",
     namazCardSub: "Дәрет · қадамдар · уақыт",
     namazTileLongPressA11y: "Ұзақ басу — намаз уақыты кестесін ашу",
     formatApproxTimeLeft: (totalMinutes: number) => {
@@ -361,7 +364,7 @@ export const kk = {
     intro:
       "Намазды кезең-кезеңімен үйреніңіз: алдымен дәрет, кейін ниеттен сәлемге дейінгі қадамдар. Фиқһтық нақты шешімді ұстазбен растаңыз.",
     scholarReviewBanner:
-      "Мазмұн Ханафи фиқһы бойынша дайындалды; ресми ұстаз мақұлдауы алынғанша оқулық ретінде ғана қолданыңыз.",
+      "Мазмұн Ханафи фиқһы бойынша дайындалды; ресми ұстаз мақұлдауы алынғанша — тек оқу материалы. Пәтуа/үкім берілмейді; RAHAT OMIR ҚМДБ ресми қолданбасы емес.",
     hubTitle: "Намаз орталығы",
     hubSub: "Жылдам сілтемелер және оқу прогрессі",
     quickPrayerTimes: "Намаз уақыты",
@@ -451,7 +454,7 @@ export const kk = {
     expandAllParts: "Барлық топты ашу",
     collapseAllParts: "Барлық топты жабу",
     quranColorsHint:
-      "4 халықаралық түс: #DD2C00 мәдд · #00C853 ғунна/ихфа · #1A237E қалқала · #FFD600 идғам. Хатымда 17 API тегі осы топтарға жиналады.",
+      "4 халықаралық түс: #DD2C00 мәдд · #00C853 ғунна/ихфа/иқлаб · #1A237E қалқала · #FFD600 идғам. Хатымда 17 API тегі осы топтарға жиналады.",
     tocHeading: "Мазмұны",
     pagesHeading: "Тәжуид оқулығы",
     pageUnit: "бет",
@@ -483,8 +486,8 @@ export const kk = {
     duaCount: (n: number) => `${n} дұға`,
     categoryExpandHint: "Бөлімдегі дұғаларды көрсету",
     categoryCollapseHint: "Дұғалар тізімін жасыру",
-    translitCaption: "Оқылуы (қазақша транскрипция)",
-    meaningCaption: "Мағына (қазақша)",
+    translitCaption: "Оқылуы (транскрипция)",
+    meaningCaption: "Мағына (аударма)",
     /** Карточка қысқартылғанда — толығын ашу */
     expandTapHint: "Оқылуы мен мағынаны ашу үшін басыңыз",
     /** Карточка толық ашылғанда — қалтаға қысқарту */
@@ -539,6 +542,8 @@ export const kk = {
       return acc === "—" ? `Компас сапасы: ${label}` : `Компас сапасы: ${label} · дәлдік ${acc}°`;
     },
     locationAccuracyReadout: (accuracy: string) => `Орын дәлдігі: ${accuracy}`,
+    accuracyKm: (km: string) => `±${km} км`,
+    accuracyM: (m: number) => `±${m} м`,
     locationSourceCity: "Орын: таңдалған қала бойынша шамамен",
     webCompassTitle: "Сайтта компасты қосу",
     webCompassBody:
@@ -579,18 +584,20 @@ export const kk = {
     heroA11y: "Дұға ету суреті",
     stripTitle: "Қауым дұғасы",
     stripSub:
-      "Платформадағы барлық пайдаланушылар экранында көрінеді; шын ниетпен «әмин» — бірге дұғаласу.",
+      "Оқу және «әмин» — бірге дұғаласу. Жаңа мәтін жариялау модерациясыз өшірілген.",
     /** Басты бет баннері */
     bannerTitle: "Қауым дұғасы",
     bannerOpenA11y: "Қауым дұғасы тізімін ашу",
     /** Тізім үстіндегі түсінік (stripSub-пен үйлесімді, толығырақ) */
     listIntro:
-      "Өз дұғаңызды төменге жазыңыз — мәтін барлық қолданушыларға көрінеді. Басқа адамдар «Әмин» батырмасымен тілектеседі (әр аккаунттан бір рет).",
+      "Қауым дұғаларын оқып, «Әмин» деп тілектесуге болады. Жаңа дұға жариялау модерациясыз өшірілген — экстремизм/тақфир тәуекелін болдырмау үшін.",
+    postingDisabled:
+      "Жариялау уақытша жабық: тек оқу және «Әмин». Модерацияланған арна дайындалғанша жаңа мәтін қабылданбайды.",
     openFull: "Барлығын қарау",
-    empty: "Әзірге жазба жоқ. Төменде өз дұғаңызды қалдырыңыз.",
+    empty: "Әзірге жазба жоқ.",
     emptyOffline:
-      "Қауым дұғасы интернет қажет. Желі қосылғанда тізім көрінеді; дұға жіберу де сол кезде қолжетімді.",
-    placeholder: "Жеке дұғаңызды жазыңыз (барлығына көрінеді)…",
+      "Қауым дұғасы интернет қажет. Желі қосылғанда тізім көрінеді.",
+    placeholder: "Жариялау өшірілген",
     submit: "Жіберу",
     amen: "Әмин",
     amenDone: "Сен әмин дедің",
@@ -722,7 +729,7 @@ export const kk = {
       "Мысал: «Ханафи бойынша зекет мөлшері», «Дәрет бұзылуы», «Ораза уақыты». Жауап тек индекстегі пәтуаға сүйенеді; табылмаса ресми сайтқа жібереміз.",
     settingsPanelTitle: "Сұрақ-жауап баптаулары",
     settingsPanelA11y: "Сұрақ-жауап баптауларын ашу немесе жию",
-    kbOnlyModeBadge: "ҚМДБ · Ханафи бағыты",
+    kbOnlyModeBadge: "Ханафи · дереккөз индексі",
     kbNoSourceWarning:
       "Бұл жауапқа ресми дереккөз сілтемесі қосылмаған. Fatua.kz / Muftyat.kz сайтында толық мәтінді өзіңіз растаңыз.",
     kbNoSourceIncompleteTitle: "Дереккөзсіз жауап толық емес",
@@ -777,13 +784,13 @@ export const kk = {
     sourceOpenA11y: (title: string) => `${title} — браузерде ашу`,
   },
   kmdbHub: {
-    title: IMAM_AI_BRAND_KK,
-    eyebrow: "ҚМДБ · ресми дереккөз",
+    title: "Дереккөз хаб",
+    eyebrow: "Fatua · Muftyat · ресми сайттар",
     lead: "Fatua.kz, Muftyat.kz және RAHAT OMIR оқу модульдері — бір жүйелі хабтан: іздеу, оқу, сұрау және тексеру.",
-    tileAi: "Сұрақ-жауап",
-    tileAiSub: "Пәтуа мен мақалаға сүйенген AI (дереккөзбен)",
+    tileAi: "Дереккөз іздеу",
+    tileAiSub: "Fatua/Muftyat индексінен мақала табу (пәтуа емес)",
     tilePortal: "Ресми портал",
-    tilePortalSub: "Fatua.kz + Muftyat.kz мақалалары, жаңалық және AI сұрау",
+    tilePortalSub: "Fatua.kz + Muftyat.kz мақалалары мен жаңалық",
     tileSearch: "Пәтуа іздеу",
     tileSearchSub: "Локалды Fatua/Muftyat базасынан жылдам іздеу",
     tileBooks: "Ресми кітаптар",
@@ -876,13 +883,16 @@ export const kk = {
   knowledgePortal: {
     title: "Діни білім порталы",
     screenTitle: "Fatua · Muftyat",
-    eyebrow: `${IMAM_AI_BRAND_KK} · ҚМДБ ресми дереккөздері`,
-    lead: `${FATUA_KZ_LABEL_KK} мен ${MUFTYAT_KZ_LABEL_KK} — бір ортада: жаңалықтар, пәтуалар, сұрақ-жауап. Мақаланы оқыңыз немесе AI арқылы түсіндіру сұраңыз.`,
+    eyebrow: `${IMAM_AI_BRAND_KK} · Fatua / Muftyat`,
+    lead: `${FATUA_KZ_LABEL_KK} мен ${MUFTYAT_KZ_LABEL_KK} — бір ортада: жаңалықтар, пәтуалар, сұрақ-жауап. Мақаланы оқыңыз немесе ресми сайттан толық мәтінді ашыңыз.`,
     qmdbTag: "ҚМДБ",
+    fatwaSearchTitle: "Пәтуа іздеу",
+    notifQuickActionSearchFatwa: "Фетуа іздеу",
     feedTitle: "Мақалалар",
     feedEmpty: "Мазмұн табылмады. Іздеуді өзгертіңіз немесе ресми сайттарды ашыңыз.",
     bilimTitle: "Діни білім",
-    bilimLead: "ҚМДБ-ның Fatua.kz және Muftyat.kz материалдарын бір жерден іздеп, оқыңыз.",
+    bilimLead:
+      "Fatua.kz және Muftyat.kz материалдарын бір жерден іздеп оқыңыз. RAHAT OMIR — ҚМДБ ресми қолданбасы емес; толық мәтін — бастапқы сайтта.",
     chipAll: "Барлығы",
     chipFatua: FATUA_KZ_LABEL_KK,
     chipMuftyat: MUFTYAT_KZ_LABEL_KK,
@@ -900,6 +910,10 @@ export const kk = {
     onlineFeedBadge: "Онлайн дерек",
     excerptOnlyHint: "Мұнда қысқа үзінділер берілген; толық мәтінді ресми сайттан оқыңыз.",
     cacheAgeHint: (hours: number, label: string) => `${label} · ${hours} сағат бұрын сақталған үзінділер`,
+    feedSourceApi: "ҚМДБ индекс",
+    feedSourceLive: "Ресми сайт",
+    feedSourceCache: "Сақталған тізім",
+    feedSourceSeed: "Офлайн үзінді",
     seedHint: "Қолданбаға алдын ала енгізілген офлайн үзінділер көрсетілуде.",
     askAiTitle: "RAHAT OMIR AI-ға сұрақ қою",
     askAiHint: "Fatua.kz / Muftyat.kz индексімен жауап",
@@ -939,6 +953,16 @@ export const kk = {
     hajjRoadmapTitle: "Қажылық жол картасы",
     hajjRoadmapLead:
       "Дайындықтан бастап умра, негізгі қажылық күндері және сапардан кейінгі амалдар бір ретпен берілді.",
+    hajjPhasePrepTitle: "1. Дайындық және ниет",
+    hajjPhasePrepSub: "ұғым, шарт, миқат, ихрам, тәлбия",
+    hajjPhaseUmrahTitle: "2. Умра реті",
+    hajjPhaseUmrahSub: "Мекке, тауаф, зәмзәм, сағи, шаш",
+    hajjPhaseDaysTitle: "3. Қажылық күндері",
+    hajjPhaseDaysSub: "Мина, Арафа, Муздалифа, жәмарат",
+    hajjPhaseZiyarahTitle: "4. Зиярат және ерекше жағдайлар",
+    hajjPhaseZiyarahSub: "Медина, әйелдер, қарттар, қауіпсіздік",
+    hajjPhaseAfterTitle: "5. Қажылықтан кейін",
+    hajjPhaseAfterSub: "рухани нәтиже, қорытынды, схемалар",
     hajjKaabaOnlineTitle: "Қағба онлайн",
     hajjKaabaOnlineLive: "Тікелей эфир",
     hajjKaabaOnlineA11y: "Қағба онлайн — тікелей эфир",
@@ -1057,6 +1081,9 @@ export const kk = {
     halalNearbyMosqueWebsiteLabel: "Сайт / әлеуметтік желі",
     halalNearbyMosqueScheduleLabel: "Жұмыс уақыты",
     halalNearbyMosqueSourceLabel: "Дереккөз",
+    mosqueConfidenceVerified: "Расталған дерек",
+    mosqueConfidencePartial: "Жартылай расталған",
+    mosqueConfidenceMapOnly: "Карта дерегі ғана",
     halalNearbyMosqueInfoFallback: "2GIS каталогындағы мешіт. Имам/телефон бойынша ашық дерек әзір табылмады.",
     halalNearbyMosqueOpen2GisA11y: "2GIS картасын ашу",
     halalNearbyMosqueCallA11y: (phone: string) => `Қоңырау шалу: ${phone}`,
@@ -1178,22 +1205,13 @@ export const kk = {
     halalCheckTextPlaceholder: "Өнім атауы, құрам, E‑код…",
     halalCheckRun: "Іздеу",
     halalCheckMin2: "Кемінде 2 таңба енгізіңіз.",
-    halalCheckPhotoBtn: "Камерамен сурет (мәтінді қолмен)",
-    halalCheckPhotoTitle: "Сурет",
+    halalCheckPhotoBtn: "Суреттен штрихкод оқу",
+    halalCheckGalleryBtn: "Галерея",
+    halalCheckPhotoScanBusy: "Іздеу…",
+    halalCheckPhotoNoBarcode: "Штрихкод табылмады",
+    halalCheckPhotoTitle: "Штрихкод суреті",
     halalCheckPhotoBody:
-      "Камерамен түсірген соң платформа AI суретті талдайды; көрінген штрихкод немесе атау бойынша halaldamu.kz дерегі автоматты ізделеді. Нақты халал шешімін өндіруші мен ұстазбен растаңыз.",
-    halalPhotoVisionTitle: "Жылдам талдау (сурет)",
-    halalPhotoVisionDisclaimer:
-      "Бұл құрамдық баға — фиқһтық үкім емес; соңғы мәртебе үшін ресми тізілім мен өндірушіні қараңыз.",
-    halalPhotoVisionRegistryLookup:
-      "Суреттен өнім белгісі анықталды. Қазір ресми тізілімнен автоматты тексеріліп жатыр.",
-    halalPhotoVisionNoProduct:
-      "Суреттен анық өнім атауы немесе штрихкод табылмады. Атауын қолмен енгізіп немесе штрихкодты сканерлеп көріңіз.",
-    halalPhotoVisionNeedApi:
-      "Суретті талдау қызметі уақытша қолжетімсіз. Кейінірек қайталап көріңіз.",
-    halalPhotoVisionFail: "Суретті талдау сәтсіз — желіні тексеріп қайталаңыз.",
-    halalPhotoReadFail: "Суретті оқу сәтсіз — қайта түсіріп көріңіз.",
-    halalPhotoTooLarge: "Сурет тым үлкен — камера сапасын төмендетіп қайталаңыз.",
+      "Суреттен тек штрихкод оқылады, содан кейін halaldamu.kz ресми тізілімінен іздеу жасалады.",
     halalCheckProducts: "Өнімдер",
     halalCheckAdditives: "Қосымшалар",
     halalCheckCompaniesShort: "Ұйымдар (3+ таңба)",
@@ -1213,28 +1231,12 @@ export const kk = {
     halalVerifySummaryCompanyBody: (count: number) =>
       `${count} ұйым/өндіруші табылды. Нақты өнім тізілімде болмаса, өндіруші сертификатын және өнім атауын салыстырыңыз.`,
     halalScanFlowRegistry: "Ресми тізілімнен автоматты іздеу…",
-    halalScanFlowAi: "Сурет талдануда, содан тізілімге автоматты өту…",
     halalScanTitle: "Штрихкодты сканерлеу",
     halalScanHint: "Өнімдегі сызықтық кодты шеңберге түсіріңіз.",
     halalScanWebUnavailable: "Веб нұсқада камерамен сканерлеу жоқ; мәтінді енгізіңіз.",
     halalScanCamPerm: "Камера рұқсаты қажет.",
     halalScanCamPermBtn: "Рұқсат сұрау",
     halalCheckCamPerm: "Камера рұқсаты қажет.",
-    /** RAQAT AI хабы — Halal Damu экранымен бір визуал тіл */
-    raqatAiTitle: IMAM_AI_BRAND_KK,
-    raqatAiLead: IMAM_AI_LEAD_KK,
-    raqatAiDisclaimer:
-      "Жауап Қазақстандағы дәстүрлі Ханафи мәзһабы, Матуриди ақидасы және ҚМДБ дереккөздері аясында беріледі; фиқһтық үкім емес. Толық мәтінді ресми сайтта оқыңыз.",
-    raqatAiSyncTitle: "raqat.kz — платформа API",
-    raqatAiSyncOpenSettings: "Баптауларды ашу",
-    raqatAiSyncNoApi: "API мекенжайы бапталмаған",
-    raqatAiSyncLine: (host: string) => `Байланыс: ${host}`,
-    raqatAiMarketingBanner: "Ресми веб-сайт",
-    imamAiBrand: IMAM_AI_BRAND_KK,
-    imamAiTagline: IMAM_AI_TAGLINE_KK,
-    imamAiTitle: IMAM_AI_ASSISTANT_KK,
-    imamAiMarketingWebToolbar: "Ресми веб",
-    imamAiMarketingWebA11y: "Ресми түсіндіру немесе басты веб бетті қолданба ішінде ашу",
     traditionTitle: "Дін мен дәстүр",
     kurbanAitTitle: "Құрбан айт",
     kurbanAitTopicSub: "Намаз, құрбан, қазақы ізет — толық нұсқаулық",
@@ -1400,7 +1402,14 @@ export const kk = {
       favoritesLead: "Сақталған дәстүрлер және мақалалар",
       favoritesEmpty: "Әзірге таңдаулы жоқ",
       favoritesEmptyHint: "Дәстүр немесе мақаланы bookmark арқылы сақтап қойыңыз.",
+      favoriteTypeTopic: "Дәстүр",
+      favoriteTypeArticle: "Мақала",
       topicNotFound: "Дәстүр табылмады",
+      dinDasturConnectionTitle: "Дін мен дәстүр: байланыс",
+      dinDasturRulesTitle: "5 ереже",
+      dinDasturFoundationBtn: "Негіз тақырыбы + дәлелдер",
+      dinDasturBataBtn: (n: number) => `100 бата мәтіні (${n})`,
+      bataCountLabel: (n: number) => `${n} бата`,
       aboutTraditionTitle: "Дәстүр туралы",
       originTitle: "Шығу төркіні",
       religionLinkTitle: "Дінмен байланысы",
@@ -1670,6 +1679,8 @@ export const kk = {
     juzQuickAction: "Джуз",
     tajweedOfflineQuickAction: "Тәжуид түстері",
     tajweedOfflineQuickActionA11y: "Тәжуид түстері — 114 сүре офлайн",
+    tajweedColorsExplainBtn: "Тәжуид түстеріне түсініктеме",
+    tajweedColorsExplainA11y: "Тәжуид түстерінің толық анықтамасын ашу",
     searchTitle: "Сүре іздеу",
     searchPlaceholder: "Атау немесе нөмір…",
     searchEmpty: "Сүре табылмады",
@@ -1698,7 +1709,7 @@ export const kk = {
     settingsClearTitle: "Хатым прогресін тазалау?",
     settingsClearBody: "Барлық оқылған сүре белгілері және соңғы оқу орны жойылады.",
     settingsClearConfirm: "Тазалау",
-    settingsFootnote: "Мұсаф, қаріп және қари таңдауы — «Құран баптаулары» экранында.",
+    settingsFootnote: "Мұсаф, қаріп, қари және аударма тілі — «Құран баптаулары» экранында.",
     settingsBtnA11y: "Хатым баптаулары",
     contextMenuReaderTitle: "Оқу көрінісі",
     contextMenuReaderHint: "Тақырып, өлшем, қабаттар",
@@ -1711,11 +1722,15 @@ export const kk = {
     title: "Намаз уақыттары",
     hint: "Қала мен елді таңдаңыз немесе енгізіңіз, содан жаңартыңыз.",
     sourceMode: "Уақыт көзі",
-    sourceCalc: "ҚМДБ ресми",
+    sourceCalc: "Есептеу (Muftyat / резерв)",
     sourceMosque: "Қолмен теңестіру",
+    sourceMuftyatLive: "Дерек: Muftyat.kz",
+    sourceAladhanLive: "Дерек: Aladhan резерві (ISNA · Hanafi asr)",
+    sourceMethodHint:
+      "ҚР қалаларында басым — api.muftyat.kz. Қолжетімсіз болса Aladhan (method 2 / Hanafi asr). Жергілікті мешіт кестесімен салыстырыңыз — бұл ҚМДБ ресми қолданба белгісі емес.",
     mosqueShiftLabel: (min: number) => `Мешіт ығысуы: ${min >= 0 ? `+${min}` : min} мин`,
     mosqueShiftHint:
-      "Қазақстан қалалары үшін ҚМДБ ресми кестесі қолданылады. Қажет болса, жергілікті мешіт кестесіне сәйкестеу үшін минут ығысуын қолмен өзгертіңіз.",
+      "Қазақстан қалалары үшін Muftyat.kz кестесі басым қолданылады. Қажет болса, жергілікті мешіт кестесіне сәйкестеу үшін минут ығысуын қолмен өзгертіңіз.",
     city: "Қала",
     country: "Ел",
     refresh: "Жаңарту",
@@ -1731,6 +1746,18 @@ export const kk = {
     asrShort: "Екінті",
     maghribShort: "Ақшам",
     ishaShort: "Құптан",
+    /** Push / full-screen: намаз кіргендегі тақырып */
+    enteredFajr: "Таң намазы кірді",
+    enteredDhuhr: "Бесін намазы кірді",
+    enteredAsr: "Екінті намазы кірді",
+    enteredMaghrib: "Ақшам намазы кірді",
+    enteredIsha: "Құптан намазы кірді",
+    enteredGeneric: (label: string) => `${label} намазы кірді`,
+    enteredDefault: "Намаз уақыты кірді",
+    azanToggleOn: "Азан қосулы",
+    azanToggleOff: "Азан өшірулі",
+    azanToggleDisabledBySettings: "Азан баптауларда өшірілген",
+    iftarSuffix: "Ифтар",
     presets: "Қазақстан қалалары",
     notifications: "Ескертулер",
     notifHint:
@@ -1830,6 +1857,11 @@ export const kk = {
     azanScreenStopped: "Азан тоқтатылды",
     /** body: намаз атауы + уақыт */
     notifPushBody: (salatLabel: string, time: string) => `${salatLabel}: ${time}`,
+    enteredFallbackBody: (label: string) => `${label} уақыты кірді.`,
+    nativeAzanChannelName: "Азан",
+    nativeAzanChannelDesc: "Намаз уақыты кіргенде азан экранын автоматты көрсету",
+    nativeAzanNotifBodyNoTime: "Азан · ашу үшін басыңыз",
+    nativeAzanNotifBodyWithTime: (time: string) => `${time} · Азан`,
     /** Күн шығуы ескертуі */
     notifSunriseBody: (time: string) => `Күн шықты — ${time}`,
     /** Басты бет: дәл осы минутта (қолданба ашық) */
@@ -1962,6 +1994,9 @@ export const kk = {
     hatimInQuranHint: "Құран оқу жоспары — осы бөлімнен",
     continueReadingTitle: "Соңғы оқуға оралу",
     continueReadingSubtitle: (surahTitle: string, ayah: number) => `${surahTitle} · ${ayah}-аят`,
+    /** «12-аят» сияқты қысқа аят нөмірі (SavedTab, chipter). */
+    ayahInlineSuffix: (n: number) => `${n}-аят`,
+    mushafAyahA11y: (n: number) => `Аят ${n}`,
     continueReadingA11y: (surahTitle: string, ayah: number) =>
       `Соңғы оқуға оралу: ${surahTitle}, ${ayah}-аят`,
     readingStreakDays: (days: number) => `Оқу сериясы: ${days} күн`,
@@ -1974,7 +2009,7 @@ export const kk = {
     readerSettingsTitle: "Оқу баптаулары",
     readerReadingThemeTitle: "Оқу темасы",
     readerReadingThemeHint:
-      "Ақ — ашық бет; Қараңғы — қара фон; Жасыл сия — жасыл Құран мәтіні.",
+      "Ақ — ашық бет; Қара — қара фон.",
     readerSettingsA11y: "Оқу баптамаларын ашу",
     readerShowContentTitle: "Көрсету (өзіңіз таңдаңыз)",
     readerShowContentHint:
@@ -1985,7 +2020,7 @@ export const kk = {
       "Осы тілдегі аударма дауысы әзір жоқ — қолжетімді қазақша аударма дауысы қолданылады.",
     readerShowArabicLabel: "Араб мәтіні",
     readerShowTranslitLabel: "Транскрипция (оқылуы)",
-    readerShowMeaningLabel: "Мағына (Ерлан Алимулы аудармасы)",
+    readerShowMeaningLabel: "Мағына (аударма)",
     readerAllowRotationLabel: "Экранды бұруға рұқсат (ландшафт)",
     /** Хатым мұсаф: жоғарғы панельдегі экран бұру батырмасы (a11y) */
     readerAllowRotationTopA11y:
@@ -1995,7 +2030,7 @@ export const kk = {
     readerAtLeastOneBlock: "Кем дегенде бірін қосып тұрыңыз.",
     readerReciterTitle: "Құран қариі",
     readerReciterHint:
-      "Аят сайын дыбыс интернеттен жүктеледі. Экрандағы қазақша мағына — Ерлан Алимулы аудармасы; «Аударма» аудиосы — Халифа Алтай (қазақ) немесе Эльмир Кулиев (орыс) оқылуы; «Араб қарилары» — түпнұсқа тәжуид. Қырғызша және өзбекше аударма дауысы әзір қолжетімсіз — таңдау өшірілген. Бір нұсқа ойнамаса, басқа қариге ауысып көріңіз.",
+      "Аят сайын дыбыс интернеттен жүктеледі. Экрандағы қазақша мағына — Ерлан Алимулы аудармасы; «Аударма» аудиосы — Халифа Алтай (қазақ), Эльмир Кулиев (орыс), Хакимов (қырғыз), Rowwad (өзбек) және басқа тілдер; «Араб қарилары» — түпнұсқа тәжуид. Бір нұсқа ойнамаса, басқа қариге ауысып көріңіз.",
     readerReciterGroupKk: "Қазақша аудио (аударма оқылуы)",
     readerReciterGroupRu: "Орысша аударма",
     readerReciterGroupAr: "Араб қарилары (тәжуид)",
@@ -2059,6 +2094,7 @@ export const kk = {
     ayahMenuTitle: (surah: number, ayah: number) => `Сүре ${surah} · аят ${ayah}`,
     ayahMenuPlayUntilJuz: "Ойнату",
     ayahMenuPlayUntilJuzHint: "джуз соңына дейін",
+    ayahMenuPlayUntilSurahHint: "Сүре соңына дейін",
     ayahMenuPlaySelected: "Ойнату",
     ayahMenuPlaySelectedHint: "таңдалған аят",
     ayahMenuRepeat: "Қайталау",
@@ -2107,9 +2143,9 @@ export const kk = {
     readerMushafScaleValueA11y: (pct: number) => `Масштаб шамамен ${pct} пайыз`,
     readerOpenLegend: "Тәжуид түстерінің анықтамасы",
     readerTajweedExplainShort:
-      "#DD2C00 — мәдд · #00C853 — ғунна/ихфа/изһар · #1A237E — қалқала · #FFD600 — идғам. Толық тізім — «Анықтама».",
+      "#DD2C00 — мәдд · #00C853 — ғунна/ихфа/иқлаб · #1A237E — қалқала · #FFD600 — идғам. Толық тізім — «Анықтама».",
     tajweedColorHintShort:
-      "#DD2C00 — мәдд · #00C853 — ғунна/ихфа · #1A237E — қалқала · #FFD600 — идғам",
+      "#DD2C00 — мәдд · #00C853 — ғунна/ихфа/иқлаб · #1A237E — қалқала · #FFD600 — идғам",
     tajweedPanelOn: "Қосу",
     tajweedPanelOff: "Өшіру",
     /** Mushaf «Part N» — оқу қолданбаларындағы джуз нөмірі */
@@ -2144,7 +2180,7 @@ export const kk = {
     tajweedLegendIntro:
       "Al Quran Cloud «quran-tajweed» — 17 ереже тегі ([h[, [n[, [f[ …). Түстер 4 халықаралық топқа жиналады (API HTML палитрасы). Толық теория — «Тәжуид» бөлімі.",
     tajweedHelperLegendNote:
-      "Шпаргалка: #DD2C00 — мәдд · #00C853 — ғунна, ихфа, изһар · #1A237E — қалқала · #FFD600 — идғам.",
+      "Шпаргалка: #DD2C00 — мәдд · #00C853 — ғунна, ихфа, иқлаб · #1A237E — қалқала · #FFD600 — идғам.",
     tajweedLegendClose: "Жабу",
     tajweedOpenGuide: "Тәжуид оқулығына өту",
     tajweedOpenGuideA11y: "Тәжуид бөлімінде ережелер мен жоспар",
@@ -2191,13 +2227,15 @@ export const kk = {
       searchPlaceholderShort: "Хадис іздеу…",
       searchPlaceholderExamples: "Іздеу: ниет, намаз, көрші...",
       listHint:
-        "Әр хадисте араб түпнұсқа, қазақша мағына, жинақ және нөмір бар.",
+        "Тек таңдалған тілдегі хадистер көрсетіледі. Мәтіндер сенімді дереккөзден — машиналық аударма жоқ.",
       featuredHadithTitle: "Таңдаулы хадистер",
       resultsTitle: "Нәтижелер",
       hadithUnit: "хадис",
       openHadith: "Хадисті ашу",
       emptyCategory: "Бұл тақырыпта хадис табылмады",
       emptySearch: "Іздеу бойынша хадис табылмады",
+      emptyLocalePending:
+        "Бұл тілде сенімді хадис мәтіні әзірге жоқ. Басқа тілді таңдаңыз немесе кейінірек қайта тексеріңіз.",
       moreShort: "Тағы",
       moreHadithSearchHint: "хадис бар. Нақтырақ табу үшін іздеу немесе категория қолданыңыз.",
     },
@@ -2244,6 +2282,8 @@ export const kk = {
       "«Сахих» — жеткізу тізбегі сенімді хадис. Мұнда Сахих әл-Бұхари және Сахих Муслим деректері берілген; әр хадисте нөмірі, жинағы және дереккөзі көрсетіледі. Бұл пәтуа емес: фиқһтық қорытынды үшін ҚМДБ/Ханафи түсіндірмесіне жүгініңіз.",
     tabBukhari: "Имам Бухари",
     tabMuslim: "Имам Муслим",
+    collectionBukhari: "Сахих әл-Бұхари",
+    collectionMuslim: "Сахих Муслим",
     menuTitle: "Хадистер",
     menuSub: "Сахих · қазақша · дереккөзбен · қолданба ішінде",
     detailTitle: "Хадис",
@@ -2255,10 +2295,23 @@ export const kk = {
     arabic: "Түпнұсқа (арабша)",
     /** Деталь экранындағы қазақша аударма бөлімі */
     translationKk: "Мағына (қазақша)",
-    /** Сервердегі text_en — көбіне Sahih International стиліндегі ағылшынша */
+    /** Сервердегі text_en — fawaz eng-bukhari / eng-muslim */
     translationEn: "Мағына (ағылшынша)",
     /** fawaz hadith-api rus-bukhari / rus-muslim */
     translationRu: "Мағына (орысша)",
+    /** fawaz hadith-api tur-bukhari / tur-muslim */
+    translationTr: "Мағына (түрікше)",
+    translationKy: "Мағына (кыргызча)",
+    translationUz: "Маъно (ўзбекча)",
+    /** Сенімді басылым атрибуциясы (MT емес) */
+    trustedEditionHint: (locale: string): string => {
+      if (locale === "en") return "Дереккөз: fawazahmed0/hadith-api (eng) — MIT. Машиналық аударма емес.";
+      if (locale === "ru") return "Дереккөз: fawazahmed0/hadith-api (rus) және/немесе HadeethEnc.com — MIT/энциклопедия. Машиналық аударма емес.";
+      if (locale === "tr") return "Дереккөз: fawazahmed0/hadith-api (tur) — MIT. Машиналық аударма емес.";
+      if (locale === "ky" || locale === "uz")
+        return "Дереккөз: HadeethEnc.com — сенімді энциклопедия. Мәтін өзгертілмейді; машиналық аударма емес.";
+      return "Дереккөз: сенімді басылым. Машиналық аударма емес.";
+    },
     narrator: "Риуаят еткен",
     provenance: "Түпнұсқа және дәлел",
     /** Хадис деталында — қазақша аударма қай сайттан алынғаны */
@@ -2274,6 +2327,7 @@ export const kk = {
     importBlurb:
       "Офлайн корпус: араб түпнұсқа + дереккөз. Қазақша аударма жарияланбайды.",
     refLabel: "Сілтеме:",
+    citationFallback: (collectionName: string, ref: string) => `${collectionName}, хадис № ${ref}`,
     apiLinked: "Онлайн жаңарту қосулы — толық мәтін жаңарып тұрады.",
     apiOffline: "Онлайн жаңарту қолжетімсіз — офлайн корпус көрсетілуде.",
     apiLinkedShort: "Мәтін онлайн жаңартылды.",
@@ -2298,13 +2352,14 @@ export const kk = {
     sourceBadge: (v: string) => `Дерек: ${v}`,
     gradeBadge: (v: string) => `Дәреже: ${v}`,
     gradeUnknown: "көрсетілмеген",
+    gradeSahih: "сахих",
     gradeDefaultSahih: "сахих жинақ (Бұхари/Муслим)",
     translationBadgeReady: "Қазақша мағына бар",
     translationBadgeMissing: "Қазақша мағына жоқ",
     openHadithList: "Хадис тізімі",
-    fullCorpusTitle: "Толық корпус (араб + дереккөз)",
+    fullCorpusTitle: "Толық тізім",
     fullCorpusSub:
-      "Бұхари мен Муслим — офлайн каталог. Көп жазбада қазақша мағына әзір жоқ; негізгі аудармалар — жоғарыдағы сахих тізімінде.",
+      "Бұхари мен Муслим — офлайн. Таңдалған тілдегі мәтіндер ғана көрсетіледі; сенімді дереккөз, машиналық аударма жоқ.",
   },
   settings: {
     title: "Баптаулар",
@@ -2318,7 +2373,29 @@ export const kk = {
     hadithSettingsSubtitle:
       "Тізім көрінісі, әдепкі жинақ, корпус күйі және платформадан жаңарту. Хадис тізіміндегі ⚙️ осы жерге ашылады.",
     quranSectionReading: "Оқу",
-    quranSectionReadingSub: "Соңғы оқылған орынды сақтау.",
+    quranSectionReadingSub: "Соңғы орын, аударма және транскрипция тілі.",
+    quranTranslationLocaleTitle: "Аударма тілі",
+    quranTranslationLocaleHint:
+      "Қолданба тілінен бөлек. Мысалы: мәзір орысша, мағына — қазақша.",
+    quranTranslationLocaleOption: (id: string) => {
+      switch (id) {
+        case "ru":
+          return "Орысша";
+        case "en":
+          return "Ағылшынша";
+        case "tr":
+          return "Түрікше";
+        case "uz":
+          return "Өзбекше";
+        case "ky":
+          return "Қырғызша";
+        default:
+          return "Қазақша";
+      }
+    },
+    quranTranslitScriptTitle: "Транскрипция жазуы",
+    quranTranslitScriptHint: "Оқылуды кирилл немесе латын әріптерімен көрсету.",
+    quranTranslitScriptOption: (id: string) => (id === "latin" ? "Латын" : "Кирилл (қазақша)"),
     quranSectionMushaf: "Мұсаф және навигация",
     quranSectionMushafSub: "Quran.com темасы, тығыздық, бет/скролл, аят белгісі, мәтін өлшемі.",
     quranSectionArabic: "Араб мәтіні",
@@ -2440,6 +2517,16 @@ export const kk = {
     diagnosticsNotifLabel: "Хабарлама",
     diagnosticsAzanLabel: "Азан",
     diagnosticsNotChecked: "Тексерілмеді",
+    diagnosticsStatusOk: "OK",
+    diagnosticsStatusBlock: "Блок",
+    diagnosticsStatusUnknown: "Белгісіз",
+    diagnosticsStatusReady: "Дайын",
+    diagnosticsStatusIdle: "Күту",
+    diagnosticsStatusUnavailable: "Жоқ",
+    diagnosticsCheckedNever: "әлі жоқ",
+    diagnosticsLoadFailed: "Диагностика жүктелмеді",
+    diagnosticsExactAlarmWarning:
+      "Exact alarm рұқсаты жабық: locked-phone Azan QA алдында жүйе баптауынан рұқсат беріңіз.",
     diagnosticsDetailSchedule: (scheduled: number, azan: number) =>
       `Намаз schedule: ${scheduled} · Native azan: ${azan}`,
     diagnosticsDetailPermissions: (exact: string) => `Exact alarm: ${exact}`,
@@ -2456,7 +2543,16 @@ export const kk = {
     sectionQiblaSub: "Компас жауап беру жылдамдығы (барлық экрандарда).",
     sectionAi: IMAM_AI_BRAND_KK,
     sectionLinks: "Бөлімдер",
-    sectionLinksSub: "Telegram, халал, Имам AI және экожүйе.",
+    sectionLinksSub: "Telegram, халал және экожүйе.",
+    sectionTransparency: "Ашықтық және құқық",
+    sectionTransparencySub: "Тәуелсіздік, құпиялылық, дерек ағындары.",
+    transparencyIndependenceTitle: "Тәуелсіздік",
+    transparencyPrivacyTitle: "Құпиялылық саясаты",
+    transparencyPrivacyOpen: "Саясатты ашу",
+    transparencyDataFlowsTitle: "Дерек ағындары",
+    transparencyUsageAnalyticsTitle: "Қолданба статистикасы",
+    transparencyUsageAnalyticsSub:
+      "Аноним сессия/экран оқиғалары api.rahatomir.com-ға (IP хэш). Өшіруге болады.",
     sectionSupport: "Қолдау",
     sectionAdvanced: "Қосымша",
     sectionAdvancedSub: "Қосылу күйі, контент синхроны және офлайн дерек.",
@@ -2482,7 +2578,12 @@ export const kk = {
     accountLinkIcloudSub:
       "Тек iOS: Apple ID / iCloud кіру терезесі ашылады (SMS кодсыз).",
     accountOrPassword: "немесе логин / құпия сөз",
-    accountLoginCompactHint: "Gmail, Apple немесе телефон — бір карточкада. Хатым және құран белгілері синхрондалады.",
+    accountLoginCompactHint:
+      "Google немесе Apple арқылы кіріңіз. Хатым және құран белгілері онлайн кезде синхрондалады.",
+    accountSecurityBlocked:
+      "Құрылғы қауіпсіздігі бұзылған (root/jailbreak немесе күдікті құрал). Аккаунт кіруі өшірілді — деректеріңізді қорғау үшін.",
+    accountAuthUnavailableHint:
+      "Бұл құрастыруда кіру батырмалары жоқ. Деректеріңіз осы құрылғыда сақталады.",
     accountPhoneExpand: "Телефон (SMS)",
     accountPasswordShort: "логин",
     phoneInvalidHint: "Телефонды E.164 форматында енгізіңіз (мысалы +77001234567).",
@@ -2612,9 +2713,22 @@ export const kk = {
       "Xiaomi / Redmi / POCO: Баптаулар → Қолданбалар → RAQAT → Батарея → «Шектеу жоқ»; қажет болса «Автозапуск» қосыңыз.",
     prayerAzanOpenBatterySettings: "Батареяны үнемдеуден босату",
     prayerAzanOpenBatterySettingsA11y: "Android батарея үнемдеу баптауын ашу",
+    prayerAzanOpenFullScreenSettings: "Full-screen intent баптауын ашу",
+    prayerAzanOpenFullScreenSettingsA11y: "Құлып экранында азан беті үшін Android рұқсатын ашу",
+    prayerAzanFullScreenDeniedHint:
+      "Құлыпта азан беті шықпаса — Full-screen intent рұқсатын қосыңыз (Android 14+). Телефон қолданыста болса Android көбіне тек хабарлама көрсетеді — азан бетін ашу үшін хабарламаны басыңыз.",
+    prayerAzanScreenOnHint:
+      "Ескерту: экран қосулы / телефон қолданыста кезде жүйе толық экранды азанды ашпауы мүмкін — хабарламаны басып азан бетін ашыңыз. Толық экран үшін экранды құлыптап/өшіріп тексеріңіз.",
     prayerAzanQaSchedule90s: "Locked-screen QA (90 сек)",
     prayerAzanQaScheduling: "Жоспарлануда…",
     prayerAzanQaFailed: "QA азan жоспарланбады — exact alarm рұқсатын тексеріңіз.",
+    prayerAzanQaSuccess: (sec: number) =>
+      `QA азan ${sec} сек кейін. Экранды құлыптап, қолданбаны фонға жіберіңіз.`,
+    prayerAzanQaSuccessExactAlarmOff: (sec: number) =>
+      `QA азan ${sec} сек кейін. Exact alarm жабық — баптаудан қосыңыз.`,
+    prayerAzanQaErrorNativeOnly: "QA тек Android native азан модулінде жұмыс істейді.",
+    prayerAzanQaErrorScheduleEmpty: "Тест азан жоспарланбады — кесте бос.",
+    prayerAzanQaErrorModuleMissing: "Native азан модулі табылмады.",
     platformApi: "Қызметке қосылу",
     platformApiNotConfigured: "Мекенжай қойылмаған — жоғарыдағы нұсқауларды қараңыз.",
     platformApiChecking: "Тексерілуде…",
@@ -2668,7 +2782,7 @@ export const kk = {
     accountPassword: "Құпия сөз",
     accountLogin: "Кіру",
     accountLogout: "Шығу",
-    accountLoginOk: "Кірдіңіз. Хатым прогресі сақталады.",
+    accountLoginOk: "Кірдіңіз. Хатым деректері онлайн болғанда синхрондалады.",
     accountLoginFail: "Кіру сәтсіз — логин мен құпия сөзді тексеріңіз.",
     accountLoggedInAs: (id: string) => `Кірулі: ${id.slice(0, 8)}…`,
     platformApiVersion: (v: string) => `Нұсқа: ${v}`,
@@ -2711,9 +2825,6 @@ export const kk = {
     supportAccountCopied: "Көшірілді",
     supportAccountDisclaimer:
       "Төлем жасамас бұрын деректерді жоба иесімен тексеріңіз; қолданба тек көрсетеді.",
-    aiLongTimeoutsTitle: "AI: ұзақ күту",
-    aiLongTimeoutsHint:
-      "Қосылғанда AI сұрауларының timeout мерзімі ұзарады (желі баяу немесе үлкен жауап үшін).",
   },
   more: {
     intro: `${APP_BRAND_KK} экожүйесінің бір бөлігі: Құран, дұғалар, баптаулар және Telegram осында.`,
@@ -2765,5 +2876,13 @@ export const kk = {
       "Сақтау: қолданбада расталған метадерек пен мазмұн сақталады.",
       "Тарату: жаңарту келгенде қолданба тек расталған деректі көрсетеді.",
     ],
+  },
+  transparency: {
+    independenceShort:
+      "RAHAT OMIR — тәуелсіз жоба. ҚМДБ / Fatua.kz / Muftyat.kz ресми қолданбасы емес.",
+    independenceFull:
+      "RAHAT OMIR — тәуелсіз исламдық сервистік жоба. ҚМДБ, Fatua.kz немесе Muftyat.kz ресми мобильді қолданбасы емес. Ресми сайттардан рұқсат бойынша үзінді/сілтеме көрсетіледі; пәтуа мен үкім берілмейді. Намаз оқуы ғылыми шолусыз — тек оқу материалы.",
+    dataFlowsBody:
+      "Үшінші тараптар: api.rahatomir.com (аккаунт/синк); Muftyat/Fatua (индекс); api.muftyat.kz және Aladhan (намаз); islamic.network / alquran.cloud (Құран); Google/Apple (OAuth); live.net.sa (Қағба HLS).",
   },
 };
