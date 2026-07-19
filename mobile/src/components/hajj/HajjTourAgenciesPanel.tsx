@@ -114,7 +114,7 @@ export function HajjTourAgenciesPanel({ colors, tr }: Props) {
         onPress={() => setExpanded((cur) => !cur)}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${tr(kk.features.hajjTourAgenciesTitle)} — ${expanded ? "жабу" : "ашу"}`}
+        accessibilityLabel={`${tr(kk.features.hajjTourAgenciesTitle)} — ${expanded ? kk.common.guideAccordionCollapse : kk.common.guideAccordionExpand}`}
         style={({ pressed }) => [styles.head, pressed && { opacity: 0.92 }]}
       >
         <View style={styles.headIcon}>

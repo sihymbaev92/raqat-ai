@@ -27,32 +27,11 @@ let ayahsBySurah: Map<number, CachedAyah[]> | null = null;
 let kkBySurah: Map<number, Map<number, string>> | null = null;
 let bookTranslitBySurah: Map<number, Map<number, string>> | null = null;
 let loadPromise: Promise<void> | null = null;
+let kkLoadPromise: Promise<void> | null = null;
 
-function buildMapsFromBundles(
-  surahListBundle: unknown,
-  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
-  _translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
-): void {
-  buildMapsFromBundlesSync(
-    surahListBundle,
-    fullQuranBundle,
-    _translitBundle,
-    kkFromDbBundle
-  );
-}
+type KkDbBundle = { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } };
 
-function buildMapsFromBundlesSync(
-  surahListBundle: unknown,
-  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
-  _translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
-): void {
-  if (surahListBundle != null) {
-    const parsed = parseSurahsFromApiJson(surahListBundle);
-    if (parsed?.length) setBundledSurahList(parsed);
-  }
-
+function buildKkMapsFromDbBundle(kkFromDbBundle: KkDbBundle): void {
   kkBySurah = new Map();
   bookTranslitBySurah = new Map();
   for (const ks of kkFromDbBundle?.data?.surahs ?? []) {
@@ -67,6 +46,38 @@ function buildMapsFromBundlesSync(
     if (m.size) kkBySurah.set(ks.number, m);
     if (trm.size) bookTranslitBySurah.set(ks.number, trm);
   }
+}
+
+function buildMapsFromBundles(
+  surahListBundle: unknown,
+  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
+  _translitBundle: { data?: { surahs?: SurahBundle[] } },
+  kkFromDbBundle: KkDbBundle | null
+): void {
+  buildMapsFromBundlesSync(
+    surahListBundle,
+    fullQuranBundle,
+    _translitBundle,
+    kkFromDbBundle
+  );
+}
+
+function buildMapsFromBundlesSync(
+  surahListBundle: unknown,
+  fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
+  _translitBundle: { data?: { surahs?: SurahBundle[] } },
+  kkFromDbBundle: KkDbBundle | null
+): void {
+  if (surahListBundle != null) {
+    const parsed = parseSurahsFromApiJson(surahListBundle);
+    if (parsed?.length) setBundledSurahList(parsed);
+  }
+
+  if (kkFromDbBundle) {
+    buildKkMapsFromDbBundle(kkFromDbBundle);
+  }
+  if (!kkBySurah) kkBySurah = new Map();
+  if (!bookTranslitBySurah) bookTranslitBySurah = new Map();
 
   ayahsBySurah = new Map();
   for (const s of fullQuranBundle?.data?.surahs ?? []) {
@@ -93,27 +104,18 @@ async function buildMapsFromBundlesAsync(
   surahListBundle: unknown,
   fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
   translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: { data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> } }
+  kkFromDbBundle: KkDbBundle | null
 ): Promise<void> {
   if (surahListBundle != null) {
     const parsed = parseSurahsFromApiJson(surahListBundle);
     if (parsed?.length) setBundledSurahList(parsed);
   }
 
-  kkBySurah = new Map();
-  bookTranslitBySurah = new Map();
-  for (const ks of kkFromDbBundle?.data?.surahs ?? []) {
-    const m = new Map<number, string>();
-    const trm = new Map<number, string>();
-    for (const a of ks.ayahs ?? []) {
-      const t = (a.text_kk ?? "").trim();
-      if (t) m.set(a.numberInSurah, t);
-      const tr = (a.translit ?? "").trim();
-      if (tr) trm.set(a.numberInSurah, tr);
-    }
-    if (m.size) kkBySurah.set(ks.number, m);
-    if (trm.size) bookTranslitBySurah.set(ks.number, trm);
+  if (kkFromDbBundle) {
+    buildKkMapsFromDbBundle(kkFromDbBundle);
   }
+  if (!kkBySurah) kkBySurah = new Map();
+  if (!bookTranslitBySurah) bookTranslitBySurah = new Map();
 
   ayahsBySurah = new Map();
   const surahs = fullQuranBundle?.data?.surahs ?? [];
@@ -145,15 +147,39 @@ function apkUsesBundledJsonLoader(): boolean {
   return Platform.OS !== "web" && process.env.NODE_ENV !== "test";
 }
 
+async function loadKkBundleAsync(): Promise<void> {
+  if (kkBySurah && kkBySurah.size > 0) return;
+  const kkFromDbBundle = await loadBundledJson<KkDbBundle>("quran-kk-from-db.json");
+  buildKkMapsFromDbBundle(kkFromDbBundle);
+  releaseBundledJsonMemory("quran-kk-from-db.json");
+}
+
+/** KK аударма/транскрипция — APK asset; uthmani CDN-ге тәуелді емес. */
+export async function ensureBundledKkReaderLoaded(): Promise<void> {
+  if (kkBySurah && kkBySurah.size > 0) return;
+  if (!kkLoadPromise) {
+    kkLoadPromise = loadKkBundleAsync().finally(() => {
+      if (!kkBySurah?.size) kkLoadPromise = null;
+    });
+  }
+  await kkLoadPromise;
+}
+
 async function loadBundlesAsync(): Promise<void> {
   const kkReady = Boolean(kkBySurah && kkBySurah.size > 0);
   if (ayahsBySurah && kkReady) return;
 
-  const [fullQuranBundle, translitBundle, kkFromDbBundle] = await Promise.all([
-    loadBundledJson("quran-uthmani-full.json"),
+  await ensureBundledKkReaderLoaded();
+
+  const [fullQuranBundle, translitBundle] = await Promise.all([
+    loadBundledJson("quran-uthmani-full.json").catch(() => null),
     tryLoadBundledJson("quran-en-transliteration-full.json"),
-    loadBundledJson("quran-kk-from-db.json"),
   ]);
+
+  if (!fullQuranBundle) {
+    if (!kkBySurah?.size) throw new Error("bundled quran load failed");
+    return;
+  }
 
   let surahListBundle: unknown = null;
   if (apkUsesBundledJsonLoader()) {
@@ -166,13 +192,10 @@ async function loadBundlesAsync(): Promise<void> {
     surahListBundle,
     fullQuranBundle as { data?: { surahs?: SurahBundle[] } },
     (translitBundle ?? { data: { surahs: [] } }) as { data?: { surahs?: SurahBundle[] } },
-    kkFromDbBundle as {
-      data?: { surahs?: Array<{ number: number; ayahs: KkAyah[] }> };
-    }
+    null
   );
   releaseBundledJsonMemory("quran-uthmani-full.json");
   releaseBundledJsonMemory("quran-en-transliteration-full.json");
-  releaseBundledJsonMemory("quran-kk-from-db.json");
 }
 
 export { ensureBundledSurahListLoaded, getBundledSurahList } from "./bundledQuranSurahList";
@@ -191,6 +214,8 @@ export async function ensureBundledQuranReaderLoaded(): Promise<void> {
     await loadPromise;
   } catch {
     loadPromise = null;
+    await ensureBundledKkReaderLoaded().catch(() => {});
+    if (kkBySurah?.size) return;
     throw new Error("bundled quran load failed");
   }
 }
@@ -311,6 +336,7 @@ export function releaseBundledQuranReaderMemory(opts?: { keepSurahList?: boolean
   kkBySurah = null;
   bookTranslitBySurah = null;
   loadPromise = null;
+  kkLoadPromise = null;
   releaseBundledJsonMemory("quran-uthmani-full.json");
   releaseBundledJsonMemory("quran-en-transliteration-full.json");
   releaseBundledJsonMemory("quran-kk-from-db.json");

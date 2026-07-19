@@ -215,6 +215,27 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun getPendingAzanLaunch(promise: Promise) {
+    try {
+      val pending = PrayerAzanPendingLaunch.read(reactApplicationContext.applicationContext)
+      if (pending == null) {
+        promise.resolve(null)
+        return
+      }
+      val map = Arguments.createMap()
+      pending.forEach { (key, value) -> map.putString(key, value) }
+      promise.resolve(map)
+    } catch (t: Throwable) {
+      promise.reject("ERR_AZAN_PENDING", t)
+    }
+  }
+
+  @ReactMethod
+  fun isAzanSessionActive(promise: Promise) {
+    promise.resolve(PrayerAzanActiveSession.isActive(reactApplicationContext.applicationContext))
+  }
+
+  @ReactMethod
   fun finishAzanDelivery() {
     val ctx = reactApplicationContext.applicationContext
     try {
@@ -279,7 +300,21 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
     map.putInt("scheduledCount", prefs.getInt(keyScheduledCount, 0))
     map.putString("lastError", prefs.getString(keyLastError, null))
     map.putBoolean("exactAlarmPermissionGranted", exactAllowed)
+    map.putBoolean("fullScreenIntentAllowed", PrayerAzanDelivery.canUseFullScreenIntent(ctx))
     promise.resolve(map)
+  }
+
+  /** Android 14+: full-screen intent (құлып экранында азан беті) рұқсатын ашу. */
+  @ReactMethod
+  fun openFullScreenIntentSettings(promise: Promise) {
+    val ctx = reactApplicationContext.applicationContext
+    android.os.Handler(android.os.Looper.getMainLooper()).post {
+      try {
+        promise.resolve(PrayerAzanDelivery.openFullScreenIntentSettings(ctx))
+      } catch (t: Throwable) {
+        promise.reject("ERR_FSI_SETTINGS", t.message, t)
+      }
+    }
   }
 
   private fun azanPermissionWarning(result: PrayerAzanAlarmScheduler.ScheduleResult): String? {
@@ -439,6 +474,100 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
       } catch (e: Throwable) {
         promise.reject("ERR_WINDOW_SECURE", e.message, e)
       }
+    }
+  }
+
+  @ReactMethod
+  fun getDeviceIntegrityReport(promise: Promise) {
+    try {
+      promise.resolve(RaqatDeviceIntegrity.report(reactApplicationContext))
+    } catch (e: Throwable) {
+      promise.reject("ERR_INTEGRITY", e.message, e)
+    }
+  }
+
+  @ReactMethod
+  fun verifyPinnedHttpsHost(host: String, pinsJson: String, promise: Promise) {
+    try {
+      val pins = org.json.JSONArray(pinsJson).let { arr ->
+        (0 until arr.length()).mapNotNull { i -> arr.optString(i, null)?.takeIf { it.isNotBlank() } }
+      }
+      promise.resolve(RaqatDeviceIntegrity.verifyPinnedHost(host.trim(), pins))
+    } catch (e: Throwable) {
+      promise.reject("ERR_TLS_PIN", e.message, e)
+    }
+  }
+
+  /** Экран сөніп қалмасын (намаз/жетектеу). */
+  @ReactMethod
+  fun setKeepScreenOn(enabled: Boolean, promise: Promise) {
+    val activity = reactApplicationContext.currentActivity
+    if (activity == null) {
+      promise.resolve(false)
+      return
+    }
+    activity.runOnUiThread {
+      try {
+        if (enabled) {
+          activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+          activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+        promise.resolve(true)
+      } catch (e: Throwable) {
+        promise.reject("ERR_KEEP_SCREEN", e.message, e)
+      }
+    }
+  }
+
+  /**
+   * Android «экран шектеуі» (screen pinning / Lock Task).
+   * Құрылғыда бір рет растау диалогы шығуы мүмкін.
+   */
+  @ReactMethod
+  fun setAppScreenRestriction(enabled: Boolean, promise: Promise) {
+    val activity = reactApplicationContext.currentActivity
+    if (activity == null) {
+      promise.resolve(false)
+      return
+    }
+    activity.runOnUiThread {
+      try {
+        if (enabled) {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            activity.startLockTask()
+          }
+        } else {
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            try {
+              activity.stopLockTask()
+            } catch (_: Throwable) {
+              /* already stopped / not in lock task */
+            }
+          }
+        }
+        promise.resolve(true)
+      } catch (e: Throwable) {
+        promise.reject("ERR_SCREEN_RESTRICTION", e.message, e)
+      }
+    }
+  }
+
+  @ReactMethod
+  fun isAppScreenRestricted(promise: Promise) {
+    try {
+      val am =
+        reactApplicationContext.getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+      val restricted =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          am.lockTaskModeState != android.app.ActivityManager.LOCK_TASK_MODE_NONE
+        } else {
+          @Suppress("DEPRECATION")
+          am.isInLockTaskMode
+        }
+      promise.resolve(restricted)
+    } catch (_: Throwable) {
+      promise.resolve(false)
     }
   }
 

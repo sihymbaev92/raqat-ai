@@ -18,14 +18,14 @@ export type ContentPackDef = {
   approxMb: number;
 };
 
-/** Хатым Arabic әрқашан APK-та; қалғаны CDN + local cache. */
+/** Хатым Arabic + KK + translit + tajweed APK-та; көптілді аудармалар CDN. */
 export const CONTENT_PACKS: readonly ContentPackDef[] = [
   {
     id: "hatim-arabic",
-    bundledInApk: false,
+    bundledInApk: true,
     jsonFiles: ["surah-list-api.json", "quran-uthmani-full.json"],
     labelKk: "Хатым Arabic (Uthmani)",
-    hintKk: "604 бет араб мәтіні — бірінші ашқанда CDN/cache (APK slim).",
+    hintKk: "604 бет араб мәтіні — APK ішінде (офлайн).",
     approxMb: 5,
   },
   {
@@ -41,32 +41,32 @@ export const CONTENT_PACKS: readonly ContentPackDef[] = [
     bundledInApk: false,
     jsonFiles: ["quran-translations-offline.json"],
     labelKk: "Құран аудармалары (барлық тіл)",
-    hintKk: "Орыс, ағылшын, түрік және басқа офлайн аудармалар.",
+    hintKk: "Орыс, ағылшын, түрік және басқа офлайн аудармалар (CDN/cache).",
     approxMb: 18,
   },
   {
     id: "quran-translit",
-    bundledInApk: false,
+    bundledInApk: true,
     jsonFiles: ["quran-en-transliteration-full.json"],
     labelKk: "Транслитерация",
-    hintKk: "Лatin әріппен оқуға арналған транслит.",
+    hintKk: "Latin әріппен оқуға арналған транслит — APK ішінде.",
     approxMb: 2,
   },
   {
     id: "quran-tajweed",
-    bundledInApk: false,
+    bundledInApk: true,
     jsonFiles: ["quran-tajweed-offline.json"],
     labelKk: "Тәжуид белгілері",
-    hintKk: "Хатым/мұсаф режимінде түсті тәжуид мәтіні.",
+    hintKk: "Хатым/мұсаф режимінде түсті тәжуид мәтіні — APK ішінде.",
     approxMb: 2,
   },
   {
     id: "i18n-offline",
-    bundledInApk: false,
-    jsonFiles: ["offline-auto-translations-core.json"],
+    bundledInApk: true,
+    jsonFiles: ["offline-auto-translations-apk.json"],
     labelKk: "Интерфейс аудармалары",
-    hintKk: "Орыс, ағылшын, қырғыз, өзбек, түрік, араб UI.",
-    approxMb: 42,
+    hintKk: "ru/en/ky/uz/tr/ar UI — APK ішінде (~0.6 MB). Толық сөздік CDN-де қосымша.",
+    approxMb: 1,
   },
 ] as const;
 

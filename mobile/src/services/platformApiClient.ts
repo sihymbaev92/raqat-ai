@@ -1,11 +1,5 @@
-import {
-  AI_HTTP_RETRY_MAX_DEFAULT,
-  AI_RETRY_BASE_DELAY_MS,
-  HALAL_PHOTO_ANALYZE_MS,
-} from "../config/aiRequestPolicy";
-
 /**
- * Imam Ai платформа API (platform_api / FastAPI) — тек оқу шақырулар.
+ * Platform API (platform_api / FastAPI) — тек оқу шақырулар.
  */
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -150,14 +144,6 @@ export async function probePlatformLiveness(
     return { ok: false, health: null, ...pick };
   }
   return { ok: false, health: null, code: "unexpected" };
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((res) => setTimeout(res, ms));
-}
-
-function isAiHttpRetriable(status: number): boolean {
-  return status === 429 || status === 502 || status === 503 || status === 504;
 }
 
 export type FetchHeaders = Record<string, string>;
@@ -440,34 +426,7 @@ export function fetchPlatformQuranAyah(
   );
 }
 
-export type AiChatSource = {
-  site?: string;
-  title?: string;
-  url?: string;
-};
-
-/** POST /api/v1/ai/chat — X-Raqat-Ai-Secret немесе Bearer JWT (scope ai) */
-export type AiChatResponse = {
-  ok?: boolean;
-  text?: string;
-  error?: string;
-  detail?: unknown;
-  sources?: AiChatSource[];
-};
-
-export type PlatformAiKbStatus = {
-  ok?: boolean;
-  enabled?: boolean;
-  /** RAQAT_AI_KB_ONLY=1 — тек Fatua/Muftyat RAG */
-  kb_only?: boolean;
-  documents?: number;
-  chunks?: number;
-  by_site?: Record<string, number>;
-  /** GET /ai/kb/status жоқ (404) — API ескі нұсқа */
-  endpointMissing?: boolean;
-};
-
-/** GET /api/v1/ai/kb/status — Fatua/Muftyat индекс күйі */
+/** GET /api/v1/ai/kb/search|browse|home-feed — Fatua/Muftyat мақалалар */
 export type PlatformIslamicKbArticle = {
   document_id: number;
   site: string;
@@ -633,203 +592,6 @@ export async function fetchPlatformIslamicKbSearch(
   } finally {
     clearTimeout(id);
   }
-}
-
-export async function fetchPlatformAiKbStatus(
-  base: string,
-  opts?: {
-    timeoutMs?: number;
-    aiSecret?: string;
-    authorizationBearer?: string;
-  }
-): Promise<PlatformAiKbStatus> {
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (opts?.aiSecret) headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
-  if (opts?.authorizationBearer) {
-    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
-  }
-  const timeoutMs = opts?.timeoutMs ?? 8_000;
-  const ctrl = new AbortController();
-  const id = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const r = await fetch(joinUrl(base, "/api/v1/ai/kb/status"), {
-      headers,
-      signal: ctrl.signal,
-    });
-    if (r.status === 404) return { ok: false, enabled: false, endpointMissing: true };
-    if (!r.ok) return { ok: false, enabled: false };
-    return (await r.json()) as PlatformAiKbStatus;
-  } catch {
-    return { ok: false, enabled: false };
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-export async function fetchPlatformAiChat(
-  base: string,
-  prompt: string,
-  opts?: {
-    timeoutMs?: number;
-    aiSecret?: string;
-    authorizationBearer?: string;
-    /** quick — қысқа жауап (алдымен жылдам); full — әдепкі толық */
-    detailLevel?: "full" | "quick";
-    /** Серверде Құран→хадис→іздеу конвейері (Imam Ai толық жауап) */
-    stagedPipeline?: boolean;
-    /** Тек ресми KB (Fatua.kz + Muftyat.kz) — серверге kb_only жіберу. */
-    kbOnly?: boolean;
-    /** HTTP 429/502/503/504 және желі қатесінде қайталау саны (әдепкі: 2 = барлығы 3 әрекет) */
-    maxRetries?: number;
-  }
-): Promise<AiChatResponse & { status?: number }> {
-  const timeoutMs = opts?.timeoutMs ?? 120_000;
-  const maxAttempts = Math.max(1, (opts?.maxRetries ?? AI_HTTP_RETRY_MAX_DEFAULT) + 1);
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-  if (opts?.aiSecret) {
-    headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
-  }
-  if (opts?.authorizationBearer) {
-    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
-  }
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const ctrl = new AbortController();
-    const id = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const r = await fetch(joinUrl(base, "/api/v1/ai/chat"), {
-        method: "POST",
-        signal: ctrl.signal,
-        headers,
-        body: JSON.stringify({
-          prompt: prompt.trim(),
-          detail_level: opts?.detailLevel ?? "full",
-          staged_pipeline: opts?.stagedPipeline ?? false,
-          ...(opts?.kbOnly != null ? { kb_only: opts.kbOnly } : {}),
-        }),
-      });
-      let j: AiChatResponse;
-      try {
-        j = (await r.json()) as AiChatResponse;
-      } catch {
-        return { ok: false, detail: "parse_error", status: r.status };
-      }
-      if (r.ok) {
-        if (j.ok === false) {
-          const failed = { ...j, ok: false, status: r.status };
-          const geminiBusy = j.error === "gemini_busy";
-          if (attempt < maxAttempts - 1 && geminiBusy) {
-            const retryAfter =
-              j.detail &&
-              typeof j.detail === "object" &&
-              "retry_after_s" in j.detail &&
-              typeof (j.detail as { retry_after_s?: unknown }).retry_after_s === "number"
-                ? Math.min(120, Math.max(2, (j.detail as { retry_after_s: number }).retry_after_s)) *
-                  1000
-                : 3_000;
-            await sleep(retryAfter);
-            continue;
-          }
-          return failed;
-        }
-        return { ...j, status: r.status };
-      }
-      const failed = { ...j, ok: false, status: r.status };
-      if (attempt >= maxAttempts - 1 || !isAiHttpRetriable(r.status)) {
-        return failed;
-      }
-      const delay = r.status === 429 ? 2_500 : AI_RETRY_BASE_DELAY_MS * 2 ** attempt;
-      await sleep(delay);
-    } catch (e) {
-      if (attempt >= maxAttempts - 1) {
-        return { ok: false, detail: String(e) };
-      }
-      await sleep(AI_RETRY_BASE_DELAY_MS * 2 ** attempt);
-    } finally {
-      clearTimeout(id);
-    }
-  }
-  return { ok: false, detail: "max_retries" };
-}
-
-/** POST /api/v1/ai/analyze-image — серверде analyze_halal_image (Gemini, жылдам режим) */
-export type AiAnalyzeImageResponse = {
-  ok?: boolean;
-  text?: string;
-  error?: string;
-  detail?: string;
-};
-
-export async function fetchPlatformAiAnalyzeImage(
-  base: string,
-  opts: {
-    imageB64: string;
-    mimeType: string;
-    lang?: string;
-    prompt?: string;
-    timeoutMs?: number;
-    aiSecret?: string;
-    authorizationBearer?: string;
-    maxRetries?: number;
-  }
-): Promise<AiAnalyzeImageResponse & { status?: number }> {
-  const timeoutMs = opts.timeoutMs ?? HALAL_PHOTO_ANALYZE_MS;
-  const maxAttempts = Math.max(1, (opts.maxRetries ?? AI_HTTP_RETRY_MAX_DEFAULT) + 1);
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
-  if (opts.aiSecret) {
-    headers["X-Raqat-Ai-Secret"] = opts.aiSecret;
-  }
-  if (opts.authorizationBearer) {
-    headers.Authorization = `Bearer ${opts.authorizationBearer}`;
-  }
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const ctrl = new AbortController();
-    const id = setTimeout(() => ctrl.abort(), timeoutMs);
-    try {
-      const r = await fetch(joinUrl(base, "/api/v1/ai/analyze-image"), {
-        method: "POST",
-        signal: ctrl.signal,
-        headers,
-        body: JSON.stringify({
-          image_b64: opts.imageB64,
-          mime_type: opts.mimeType || "image/jpeg",
-          lang: (opts.lang ?? "kk").trim() || "kk",
-          prompt: opts.prompt?.trim() || undefined,
-          async_mode: false,
-        }),
-      });
-      let j: AiAnalyzeImageResponse;
-      try {
-        j = (await r.json()) as AiAnalyzeImageResponse;
-      } catch {
-        return { ok: false, error: "parse_error", status: r.status };
-      }
-      if (r.ok) {
-        return { ...j, status: r.status };
-      }
-      const failed = { ...j, ok: false, status: r.status };
-      if (attempt >= maxAttempts - 1 || !isAiHttpRetriable(r.status)) {
-        return failed;
-      }
-      const delay = r.status === 429 ? 2_500 : AI_RETRY_BASE_DELAY_MS * 2 ** attempt;
-      await sleep(delay);
-    } catch (e) {
-      if (attempt >= maxAttempts - 1) {
-        return { ok: false, error: String(e) };
-      }
-      await sleep(AI_RETRY_BASE_DELAY_MS * 2 ** attempt);
-    } finally {
-      clearTimeout(id);
-    }
-  }
-  return { ok: false, error: "max_retries" };
 }
 
 /** GET /api/v1/hadith/{id} */

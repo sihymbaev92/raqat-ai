@@ -28,7 +28,6 @@ import {
   getNotifEnabled,
   getPrayerMosqueShiftMin,
   getPrayerSourceMode,
-  setOnboardingDone,
 } from "../storage/prefs";
 import { resolvePrayerScheduleLocation } from "../services/devicePrayerLocation";
 import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
@@ -49,7 +48,8 @@ import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../co
 import { awaitKmdbHubWarm, warmHalalHubScreen, warmKmdbHubScreen } from "../services/hubScreenWarmup";
 import { QiblaSensorProvider, useQiblaStable } from "../context/QiblaSensorContext";
 import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useI18n } from "../i18n/useI18n";
 import { getKzPresetCoords } from "../constants/kzCities";
 import { fetchOpenMeteoCurrent, type OpenMeteoCurrent } from "../services/openMeteoCurrent";
 import { ScreenFitScrollView } from "../components/ScreenFit";
@@ -312,6 +312,8 @@ function DashboardScreenContent({
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
   const locale = useAppLocale();
+  useLocaleRevision();
+  useI18n();
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const dashboardFocused = useIsFocused();
   const headerMetrics = useMemo(() => homeDashboardHeaderMetrics(insets), [insets.top]);
@@ -508,10 +510,6 @@ function DashboardScreenContent({
     setCountryLabel(country);
     setWeatherCoordOverride(null);
     setFromCache(false);
-  }, []);
-
-  useEffect(() => {
-    void setOnboardingDone();
   }, []);
 
   useEffect(() => {
@@ -756,7 +754,7 @@ function DashboardScreenContent({
       void import("../services/bundledQuranSeed").then((m) => m.scheduleBundledQuranSeed());
     } else if (key === "hadith") {
       void import("../screens/HadithHubScreen");
-    } else if (key === "ai") {
+    } else if (key === "kmdb") {
       warmKmdbHubScreen();
       void awaitKmdbHubWarm(500);
     } else if (key === "halal") {
@@ -798,7 +796,7 @@ function DashboardScreenContent({
         case "hajj":
           navigateToMoreStackScreen("Hajj", undefined, navigation);
           break;
-        case "ai":
+        case "kmdb":
           goKmdbHub();
           break;
         case "halal":

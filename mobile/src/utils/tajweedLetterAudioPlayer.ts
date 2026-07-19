@@ -36,7 +36,7 @@ export async function stopTajweedLetterAudio(): Promise<void> {
 }
 
 /**
- * CDN еркек араб әріп атауын ойнатады (баяу + анық).
+ * Bundled әріп атауы (arabic-online.ru harfNameSound) — тек атау.
  * @returns true — ойналды; false — модуль жоқ / қате (TTS fallback керек).
  */
 export async function playTajweedLetterAudio(ar: string): Promise<boolean> {

@@ -3,6 +3,8 @@
  * Kazakh-specific letters after locale hydration.
  */
 const KK_SPECIFIC = /[әғқңөұүіһӘҒҚҢӨҰҮІҺ]/;
+/** Letters in Kazakh but not Kyrgyz Cyrillic (Kyrgyz keeps ө/ү/ң). */
+const KK_ONLY_NOT_KY = /[әғқұһӘҒҚҰҺ]/;
 
 /** Substrings allowed to keep Kazakh/Latin mix (brands, URLs, technical). */
 export const LOCALE_LEAK_ALLOW_SUBSTRINGS = [
@@ -27,6 +29,9 @@ export const LOCALE_LEAK_ALLOW_SUBSTRINGS = [
   "QMDB",
   "ҚМДБ",
   "KMDMB",
+  "Дереккөз хаб",
+  "Дереккөз",
+  "дереккөз",
   "native azan",
   "Native azan",
   "http",
@@ -50,8 +55,6 @@ export const LOCALE_LEAK_SKIP_PATH_PREFIXES = [
   "features.hajj",
   "kmdbHub.title", // org acronym stays ҚМДБ in all locales
   "onboarding.title", // brand
-  "features.raqatAiTitle",
-  "dashboard.heroAiStripTitle",
   "settings.languageKk",
 ];
 
@@ -59,6 +62,13 @@ export type LocaleLeak = { path: string; value: string };
 
 export function isAllowedLocaleLeak(value: string, path: string): boolean {
   if (!KK_SPECIFIC.test(value)) return true;
+  if (LOCALE_LEAK_SKIP_PATH_PREFIXES.some((p) => path.startsWith(p))) return true;
+  return LOCALE_LEAK_ALLOW_SUBSTRINGS.some((s) => value.includes(s));
+}
+
+/** Kyrgyz: allow ө/ү/ң; flag only Kazakh-only bleed (әғқұһ). */
+export function isAllowedKyLocaleLeak(value: string, path: string): boolean {
+  if (!KK_ONLY_NOT_KY.test(value)) return true;
   if (LOCALE_LEAK_SKIP_PATH_PREFIXES.some((p) => path.startsWith(p))) return true;
   return LOCALE_LEAK_ALLOW_SUBSTRINGS.some((s) => value.includes(s));
 }
@@ -86,6 +96,12 @@ export function collectKkStringLeaves(
 export function findKkLocaleLeaks(kkRoot: unknown): LocaleLeak[] {
   return collectKkStringLeaves(kkRoot).filter(
     ({ path, value }) => !isAllowedLocaleLeak(value, path)
+  );
+}
+
+export function findKyLocaleLeaks(kkRoot: unknown): LocaleLeak[] {
+  return collectKkStringLeaves(kkRoot).filter(
+    ({ path, value }) => !isAllowedKyLocaleLeak(value, path)
   );
 }
 

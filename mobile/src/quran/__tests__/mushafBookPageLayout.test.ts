@@ -141,8 +141,11 @@ describe("computeMushafBookPageBox", () => {
 
   it("keeps QCF4 phone line width readable while leaving edge clipping room", () => {
     const pageWidth = mushafBookNativeContentWidth(390) - QCF4_PHONE_NATIVE_SAFE_INSET * 2;
-    expect(qcf4EffectiveLineWidth(pageWidth)).toBeGreaterThan(pageWidth * 0.68);
-    expect(qcf4EffectiveLineWidth(pageWidth)).toBeLessThan(pageWidth * 0.75);
+    const effective = qcf4EffectiveLineWidth(pageWidth);
+    expect(effective).toBeGreaterThan(pageWidth * 0.68);
+    // lineScaleX 0.86 − padding: ~78% of page width (readable, still inset from edges)
+    expect(effective).toBeLessThan(pageWidth * 0.82);
+    expect(effective / pageWidth).toBeGreaterThan(0.7);
   });
 
   it("keeps QCF4 phone vertical safe padding for first and last lines", () => {

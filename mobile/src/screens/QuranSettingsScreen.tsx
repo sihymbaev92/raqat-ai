@@ -6,6 +6,7 @@ import { kk } from "../i18n/kk";
 import { makeSettingsStyles } from "../components/settings/settingsUi";
 import { SettingsQuranHub } from "../components/settings/SettingsQuranHub";
 import { SettingsContentDataSection } from "../components/settings/SettingsContentDataSection";
+import { SettingsContentPackSection } from "../components/settings/SettingsContentPackSection";
 import { useContentDataSettings } from "../hooks/useContentDataSettings";
 import { makeSettingsScreenShell } from "./settings/settingsScreenShell";
 import { useAppLocale } from "../i18n/runtime";
@@ -27,6 +28,8 @@ export function QuranSettingsScreen() {
       <Text style={ui.sectionSub}>{kk.settings.quranSettingsSubtitle}</Text>
 
       <SettingsQuranHub colors={colors} />
+
+      <SettingsContentPackSection colors={colors} />
 
       <SettingsContentDataSection
         colors={colors}

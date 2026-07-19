@@ -48,6 +48,13 @@ export async function trackUsageEvent(input: {
   const base = getRaqatApiBase();
   if (!base) return;
 
+  try {
+    const { getUsageAnalyticsEnabled } = await import("../storage/prefs");
+    if (!(await getUsageAnalyticsEnabled())) return;
+  } catch {
+    /* */
+  }
+
   const now = Date.now();
   const key = `${input.eventName}|${input.path ?? ""}|${input.screen ?? ""}`;
   if (key === lastEventKey && now - lastSentAt < SEND_MIN_INTERVAL_MS) return;

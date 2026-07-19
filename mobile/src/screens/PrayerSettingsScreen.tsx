@@ -18,9 +18,11 @@ import { makeSettingsScreenShell } from "./settings/settingsScreenShell";
 import { useScreenFitMetrics } from "../theme/screenFit";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 import { useAppLocale } from "../i18n/runtime";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 
 export function PrayerSettingsScreen() {
-  useAppLocale();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const screenFit = useScreenFitMetrics();
@@ -50,8 +52,8 @@ export function PrayerSettingsScreen() {
     const c = await getSelectedCity();
     setCity(c.city);
     setCountry(c.country);
-    setCityLabel(cityLabelFor(c.city, c.country));
-  }, []);
+    setCityLabel(cityLabelFor(c.city, c.country, locale, tr));
+  }, [locale, tr]);
 
   useEffect(() => {
     void loadCity();

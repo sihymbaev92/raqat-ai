@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Modal,
   View,
@@ -11,9 +11,11 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pressable } from "@/ui/Pressable";
 import { KZ_CITY_PRESETS_LIST, type KzCityPreset } from "../../constants/kzCityPresetsList";
+import { cityLabelForLocale } from "../../constants/kzCities";
 import { getSavedCities, type SavedCity } from "../../storage/prefs";
 import { kk } from "../../i18n/kk";
 import { useAppLocale } from "../../i18n/runtime";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import type { ThemeColors } from "../../theme/colors";
 import { modalSafeAreaInsets } from "../../theme/modalSafeArea";
 
@@ -26,10 +28,6 @@ type Props = {
   onSelect: (city: string, country: string, label: string) => void;
 };
 
-function presetLabel(p: KzCityPreset): string {
-  return p.label || p.city;
-}
-
 export function CityPickerModal({
   visible,
   colors,
@@ -39,10 +37,17 @@ export function CityPickerModal({
   onSelect,
 }: Props) {
   const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState<SavedCity[]>([]);
+
+  const labelFor = useCallback(
+    (p: Pick<KzCityPreset, "city" | "label">) =>
+      cityLabelForLocale(p.city || p.label, locale, { tr }),
+    [locale, tr]
+  );
 
   React.useEffect(() => {
     if (!visible) {
@@ -55,12 +60,15 @@ export function CityPickerModal({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return KZ_CITY_PRESETS_LIST;
-    return KZ_CITY_PRESETS_LIST.filter(
-      (p) =>
+    return KZ_CITY_PRESETS_LIST.filter((p) => {
+      const localized = labelFor(p).toLowerCase();
+      return (
+        localized.includes(q) ||
         p.label.toLowerCase().includes(q) ||
         p.city.toLowerCase().includes(q)
-    );
-  }, [query]);
+      );
+    });
+  }, [labelFor, query]);
 
   const savedPresets = useMemo(() => {
     return saved
@@ -86,6 +94,7 @@ export function CityPickerModal({
 
   const renderItem = ({ item }: { item: KzCityPreset }) => {
     const sel = item.city === selectedCity && item.country === selectedCountry;
+    const label = labelFor(item);
     return (
       <Pressable
         style={({ pressed }) => [
@@ -95,11 +104,11 @@ export function CityPickerModal({
           pressed && { opacity: 0.9 },
         ]}
         onPress={() => {
-          onSelect(item.city, item.country, presetLabel(item));
+          onSelect(item.city, item.country, label);
           onClose();
         }}
       >
-        <Text style={[styles.itemTxt, { color: colors.text }]}>{presetLabel(item)}</Text>
+        <Text style={[styles.itemTxt, { color: colors.text }]}>{label}</Text>
         {sel ? <Text style={{ color: colors.accent }}>✓</Text> : null}
       </Pressable>
     );

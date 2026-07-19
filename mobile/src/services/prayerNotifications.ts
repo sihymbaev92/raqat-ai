@@ -78,7 +78,12 @@ export async function requestNotificationPermissions(): Promise<boolean> {
   let final = existing;
   if (existing !== "granted") {
     const { status } = await N.requestPermissionsAsync({
-      ios: { allowAlert: true, allowSound: true, allowBadge: false },
+      ios: {
+        allowAlert: true,
+        allowSound: true,
+        allowBadge: false,
+        allowCriticalAlerts: true,
+      },
     });
     final = status;
   }
@@ -119,6 +124,27 @@ export async function openAndroidBatteryOptimizationSettings(): Promise<void> {
     if (typeof PrayerWidget?.openBatteryOptimizationSettings === "function") {
       await PrayerWidget.openBatteryOptimizationSettings();
       return;
+    }
+  } catch {
+    /* */
+  }
+  try {
+    await Linking.openSettings();
+  } catch {
+    /* */
+  }
+}
+
+/** Android 14+: құлып экранында азан беті — full-screen intent рұқсаты. */
+export async function openAndroidFullScreenIntentSettings(): Promise<void> {
+  if (Platform.OS !== "android" || Number(Platform.Version) < 34) return;
+  const PrayerWidget = NativeModules.PrayerWidget as {
+    openFullScreenIntentSettings?: () => Promise<boolean>;
+  };
+  try {
+    if (typeof PrayerWidget?.openFullScreenIntentSettings === "function") {
+      const opened = await PrayerWidget.openFullScreenIntentSettings();
+      if (opened) return;
     }
   } catch {
     /* */
@@ -215,10 +241,12 @@ export type PrayerNotificationDiagnostics = {
   nativeAzanAlarmCount: number;
   nativeAzanAlarmLastError: string | null;
   nativeAzanExactAlarmPermissionGranted: boolean | null;
+  nativeAzanFullScreenIntentAllowed: boolean | null;
   soundId: PrayerNotifSoundId;
   androidChannelId: string | null;
   mutedSalatKeys: PrayerNotifSalatKey[];
   exactAlarmSettingsAvailable: boolean;
+  fullScreenIntentSettingsAvailable: boolean;
 };
 
 function nativeAzanReliabilityStatus(args: {
@@ -227,7 +255,7 @@ function nativeAzanReliabilityStatus(args: {
   lastError: string | null;
   exactAlarmPermissionGranted: boolean | null;
 }): PrayerNotificationDiagnostics["nativeAzanReliabilityStatus"] {
-  if (Platform.OS !== "android") return "unavailable";
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return "unavailable";
   if (!args.enabled) return "idle";
   if (args.scheduledCount > 0) return "ready";
   if (args.lastError || args.exactAlarmPermissionGranted === false) return "blocked";
@@ -254,7 +282,7 @@ async function ensurePrayerAndroidChannel(
   if (Platform.OS !== "android") return;
   const id = prayerAndroidChannelId(soundId);
   const base = {
-    name: "Намаз уақыты",
+    name: kk.prayer.notifPushTitle,
     importance: N.AndroidImportance.MAX,
     vibrationPattern: [0, 280, 200, 280] as [number, number, ...number[]],
     enableLights: true,
@@ -355,7 +383,7 @@ async function scheduleExpoPrayerSlots(
       slot.kind === "sun"
         ? kk.prayer.notifSunriseBody(slot.timeShort)
         : isMaghrib && opts.iftarExtra
-          ? `${kk.prayer.notifPushBody(slot.label, slot.timeShort)} · Ифтар`
+          ? `${kk.prayer.notifPushBody(slot.label, slot.timeShort)} · ${kk.prayer.iftarSuffix}`
           : kk.prayer.notifPushBody(slot.label, slot.timeShort);
     const title =
       slot.kind === "sun" ? kk.prayer.notifPushTitle : prayerEnteredTitleForSlot(slot.label, slot.salatKey);
@@ -384,7 +412,12 @@ async function ensureAndroidNotificationPermission(N: typeof import("expo-notifi
   const { status: existing } = await N.getPermissionsAsync();
   if (existing === "granted") return true;
   const { status } = await N.requestPermissionsAsync({
-    ios: { allowAlert: true, allowSound: true, allowBadge: false },
+    ios: {
+      allowAlert: true,
+      allowSound: true,
+      allowBadge: false,
+      allowCriticalAlerts: true,
+    },
   });
   return status === "granted";
 }
@@ -443,7 +476,12 @@ export async function reschedulePrayerNotifications(
       shouldPlayPrayerAdhanSound(slot, mutedSalatKeys) ? soundId : "off";
     const nativeAzan = await scheduleFullScreenAzanAlarms(slots, soundIdForSlot);
 
-    if (Platform.OS === "android" || Platform.OS === "ios") {
+    /** Android: тек native азан беті — Expo/хабарлама жоспарланбайды. */
+    if (Platform.OS === "android") {
+      return;
+    }
+
+    if (Platform.OS === "ios") {
       const nativeOk = nativeAzan.accepted && nativeAzan.identifiers.size > 0;
       if (nativeOk) return;
       if (N) {
@@ -551,10 +589,12 @@ export async function getPrayerNotificationDiagnostics(): Promise<PrayerNotifica
       nativeAzanAlarmCount: nativeAzan.scheduledCount,
       nativeAzanAlarmLastError: nativeAzan.lastError,
       nativeAzanExactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
+      nativeAzanFullScreenIntentAllowed: nativeAzan.fullScreenIntentAllowed,
       soundId,
       androidChannelId: null,
       mutedSalatKeys,
-      exactAlarmSettingsAvailable: false,
+      exactAlarmSettingsAvailable: Platform.OS === "ios",
+      fullScreenIntentSettingsAvailable: false,
     };
   }
   const [permission, scheduledPrayerCount, nativeAzan] = await Promise.all([
@@ -576,10 +616,13 @@ export async function getPrayerNotificationDiagnostics(): Promise<PrayerNotifica
     nativeAzanAlarmCount: nativeAzan.scheduledCount,
     nativeAzanAlarmLastError: nativeAzan.lastError,
     nativeAzanExactAlarmPermissionGranted: nativeAzan.exactAlarmPermissionGranted,
+    nativeAzanFullScreenIntentAllowed: nativeAzan.fullScreenIntentAllowed,
     soundId,
     androidChannelId: Platform.OS === "android" ? prayerAndroidChannelId(soundId) : null,
     mutedSalatKeys,
-    exactAlarmSettingsAvailable: Platform.OS === "android" && Number(Platform.Version) >= 31,
+    exactAlarmSettingsAvailable:
+      (Platform.OS === "android" && Number(Platform.Version) >= 31) || Platform.OS === "ios",
+    fullScreenIntentSettingsAvailable: Platform.OS === "android" && Number(Platform.Version) >= 34,
   };
 }
 
@@ -623,7 +666,7 @@ export async function fireInAppPrayerAlert(
   if (Platform.OS !== "android" && N) {
     const body = timeLabel
       ? kk.prayer.notifPushBody(prayerLabel, timeLabel)
-      : `${prayerLabel} уақыты кірді.`;
+      : kk.prayer.enteredFallbackBody(prayerLabel);
     await N.scheduleNotificationAsync({
       content: buildPrayerNotificationContent(alertSoundId, body, {
         title: prayerEnteredTitleForSlot(prayerLabel, salatSoundKey ?? undefined),

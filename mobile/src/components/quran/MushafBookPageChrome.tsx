@@ -1,7 +1,9 @@
 import React, { useMemo } from "react";
 import { Text, View } from "react-native";
-import { surahDisplayTitle } from "../../constants/surahTitleKk";
-import { kk } from "../../i18n/kk";
+import { surahTitleForLocale } from "../../constants/surahTitleKk";
+import { useAppLocale } from "../../i18n/runtime";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
+import { useI18n } from "../../i18n/useI18n";
 import type { MushafBookPageStyles } from "../../quran/mushafBookPageStyles";
 
 type Props = {
@@ -17,17 +19,20 @@ export function MushafBookPageChrome({
   mushafPageNumber,
   styles: st,
 }: Props) {
+  const t = useI18n();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const surahLine = useMemo(
-    () => surahDisplayTitle(primarySurah, ""),
-    [primarySurah]
+    () => surahTitleForLocale(primarySurah, locale, { tr }),
+    [primarySurah, locale, tr]
   );
   const pageLine = useMemo(
-    () => kk.quran.mushafChromePage(mushafPageNumber),
-    [mushafPageNumber]
+    () => t.quran.mushafChromePage(mushafPageNumber),
+    [mushafPageNumber, t]
   );
   const pageA11y = useMemo(
-    () => kk.quran.mushafChromePage(mushafPageNumber),
-    [mushafPageNumber]
+    () => t.quran.mushafChromePage(mushafPageNumber),
+    [mushafPageNumber, t]
   );
 
   return (

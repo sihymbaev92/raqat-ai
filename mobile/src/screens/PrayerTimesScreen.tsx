@@ -271,6 +271,7 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
   prayerSoundId,
   onTogglePrayerSound,
 }: PrayerTimesLiveRowsProps) {
+  useAppLocale();
   const [nowTick, setNowTick] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNowTick(new Date()), 1000);
@@ -319,9 +320,11 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !soundToggleEnabled, selected: soundActive }}
-                accessibilityLabel={`${shortPrayerName(cell.key)} азаны ${
-                  !soundToggleEnabled ? "жалпы баптауда өшірулі" : soundActive ? "қосулы" : "өшірулі"
-                }`}
+                accessibilityLabel={`${shortPrayerName(cell.key)} ${!soundToggleEnabled
+                  ? kk.prayer.azanToggleDisabledBySettings
+                  : soundActive
+                    ? kk.prayer.azanToggleOn
+                    : kk.prayer.azanToggleOff}`}
                 style={({ pressed }) => [
                   styles.ptIconBtn,
                   soundActive && styles.ptIconBtnActive,

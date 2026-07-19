@@ -68,7 +68,7 @@ export function quranAyahMeaningForSurah(
     | "textHi"
     | "textKu"
   >,
-  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar"
 ): string {
   return quranAyahMeaningForLocale({ ...item, surahNumber }, locale);
 }
@@ -90,7 +90,7 @@ export function quranAyahMeaningForLocale(
     | "textHi"
     | "textKu"
   > & { surahNumber?: number },
-  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar"
 ): string {
   const pick = (v: string | undefined) => (v ?? "").trim();
   const bundled = () => {
@@ -113,18 +113,6 @@ export function quranAyahMeaningForLocale(
       return pick(item.textUz) || bundled() || pick(item.textKk);
     case "ky":
       return pick(item.textKy) || bundled() || pick(item.textKk);
-    case "zh":
-      return pick(item.textZh) || bundled() || pick(item.textKk);
-    case "fa":
-      return pick(item.textFa) || bundled() || pick(item.textKk);
-    case "id":
-      return pick(item.textId) || bundled() || pick(item.textKk);
-    case "ms":
-      return pick(item.textMs) || bundled() || pick(item.textKk);
-    case "hi":
-      return pick(item.textHi) || bundled() || pick(item.textKk);
-    case "ku":
-      return pick(item.textKu) || bundled() || pick(item.textKk);
     case "ar":
       return "";
     default:

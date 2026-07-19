@@ -26,11 +26,11 @@ describe("dashboardLauncherTileImage", () => {
     expect(tasbih.scale).toBe(0.94);
   });
 
-  it("halal and ai tiles use contain (no crop)", () => {
+  it("halal and kmdb tiles use contain (no crop)", () => {
     expect(launcherTileImageStyle("halal").resizeMode).toBe("contain");
-    expect(launcherTileImageStyle("ai").resizeMode).toBe("contain");
+    expect(launcherTileImageStyle("kmdb").resizeMode).toBe("contain");
     expect(launcherTileImageStyle("halal").scale).toBe(0.92);
-    expect(launcherTileImageStyle("ai").scale).toBe(1.12);
+    expect(launcherTileImageStyle("kmdb").scale).toBe(1.12);
   });
 
   it("hajj tile is slightly enlarged", () => {

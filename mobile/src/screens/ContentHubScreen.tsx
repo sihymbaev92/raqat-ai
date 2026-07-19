@@ -85,14 +85,7 @@ function hubSections(): HubSectionDef[] {
         key: "knowledge-portal",
         label: kk.knowledgePortal.screenTitle,
         screen: "OfficialKnowledgePortal",
-        image: menuIconAssets.promoAi,
-      },
-      {
-        kind: "more",
-        key: "ai",
-        label: kk.features.raqatAiTitle,
-        screen: "ImamAI",
-        image: menuIconAssets.promoAi,
+        image: menuIconAssets.promoKmdb,
       },
       {
         kind: "more",
@@ -259,7 +252,6 @@ export function ContentHubScreen({ navigation }: Props) {
                       styles.label,
                       it.key === "quran" && styles.hubQuranHadithLabel,
                       it.key === "halal" && styles.halalHubLabel,
-                      it.key === "ai" && styles.aiHubLabel,
                     ]}
                     numberOfLines={3}
                     ellipsizeMode="tail"
@@ -390,13 +382,6 @@ function makeStyles(colors: ThemeColors, _isDark: boolean) {
       fontSize: 11,
       fontWeight: "800",
       letterSpacing: 0.18,
-      lineHeight: 15,
-      minHeight: 30,
-    },
-    aiHubLabel: {
-      fontSize: 11,
-      fontWeight: "700",
-      letterSpacing: 0.16,
       lineHeight: 15,
       minHeight: 30,
     },

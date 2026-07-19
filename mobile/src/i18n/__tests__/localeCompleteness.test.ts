@@ -6,6 +6,7 @@ import {
   CRITICAL_RU_UI_KEYS,
   assertNoKazakhLetters,
   findKkLocaleLeaks,
+  findKyLocaleLeaks,
 } from "../localeLeakScan";
 
 const OFFLINE_BUNDLE_PATH = path.join(
@@ -30,7 +31,6 @@ jest.mock("../../utils/loadBundledJson", () => ({
   releaseBundledJsonMemory: jest.fn(),
 }));
 
-/** kk→ky MT often keeps Kazakh-specific letters (қ, ғ, ұ…) — full-tree scan is noisy for ky. */
 const FULL_OFFLINE_LOCALES: AppLocale[] = ["ru", "en", "uz", "tr", "ar"];
 
 describe("global locale completeness", () => {
@@ -56,6 +56,22 @@ describe("global locale completeness", () => {
       }
     }
   );
+
+  it("hydrates ky without Kazakh-only letter bleed (әғқұһ)", async () => {
+    await setCurrentLocale("ky");
+    const leaks = findKyLocaleLeaks(kk);
+    if (leaks.length > 0) {
+      const sample = leaks
+        .slice(0, 25)
+        .map((l) => `  ${l.path}: ${l.value.slice(0, 80)}`)
+        .join("\n");
+      throw new Error(
+        `[ky] ${leaks.length} strings still have Kazakh-only letters:\n${sample}${
+          leaks.length > 25 ? `\n  … +${leaks.length - 25} more` : ""
+        }`
+      );
+    }
+  });
 
   it("translates critical Russian UI keys away from Kazakh", async () => {
     await setCurrentLocale("ru");

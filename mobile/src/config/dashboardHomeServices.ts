@@ -23,7 +23,7 @@ const DASHBOARD_HOME_SERVICE_BASE: Omit<DashboardHomeServiceDef, "label" | "imag
   { key: "tasbih", color: "#16A34A" },
   { key: "duas", color: "#DB2777" },
   { key: "asma", color: "#4F46E5" },
-  { key: "ai", color: "#6366F1" },
+  { key: "kmdb", color: "#6366F1" },
   { key: "halal", color: "#10B981" },
   { key: "tradition", color: "#D97706" },
 ];
@@ -50,8 +50,8 @@ function dashboardHomeLabelForKey(key: DashboardHomeServiceKey): string {
       return kk.features.hajjTitle;
     case "asma":
       return kk.tabs.asma;
-    case "ai":
-      return kk.dashboard.heroAiStripTitle;
+    case "kmdb":
+      return kk.kmdbHub.title;
     case "halal":
       return kk.features.halalTitle;
     default: {
@@ -93,7 +93,7 @@ export function dashboardHomeServiceWebPath(key: DashboardRadialItemKey): string
       return "/asma";
     case "hajj":
       return "/more/hajj";
-    case "ai":
+    case "kmdb":
       return "/more/kmdb";
     case "halal":
       return "/more/halal";

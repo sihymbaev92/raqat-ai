@@ -3,10 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
-import { useI18n } from "../../i18n/useI18n";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import type { MushafDensityId } from "../../config/mushafConfig";
-import type { QuranArabicFontPresetId } from "../../config/quranArabicFontPresets";
-import { QURAN_ARABIC_FONT_PRESETS } from "../../config/quranArabicFontPresets";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import {
   QURAN_READING_THEMES,
@@ -16,7 +14,6 @@ import type { HatimAudioPlayUntil } from "../../storage/hatimPrefs";
 
 export type HatimReaderSettingsSnapshot = {
   readingThemeId: QuranReadingThemeId;
-  arabicFontPreset: QuranArabicFontPresetId;
   mushafTextScale: number;
   mushafTextScaleLocked?: boolean;
   mushafDensity: MushafDensityId;
@@ -30,7 +27,6 @@ export type HatimReaderSettingsSnapshot = {
 
 export type HatimReaderSettingsHandlers = {
   onReadingTheme: (id: QuranReadingThemeId) => void;
-  onArabicFontPreset: (id: QuranArabicFontPresetId) => void;
   onMushafTextScale: (scale: number) => void;
   onMushafDensity: (id: MushafDensityId) => void;
   onShowReaderArabic: (v: boolean) => void;
@@ -93,9 +89,9 @@ function CompactChip<T extends string>({
   );
 }
 
-/** Хатым аят мәзірі — оқу темасы + баспа стилі (шрифт). */
+/** Хатым аят мәзірі — оқу тақырыбы және аудио ауқымы. */
 export function HatimReaderSettingsMenuSection({ colors, values, handlers }: Props) {
-  useI18n();
+  const { tr } = useKkAutoTranslator();
   return (
     <View style={styles.panel}>
       <View style={styles.flatGroup}>
@@ -106,23 +102,10 @@ export function HatimReaderSettingsMenuSection({ colors, values, handlers }: Pro
             <CompactChip
               key={theme.id}
               colors={colors}
-              label={theme.labelKk}
+              label={tr(theme.labelKk)}
               value={theme.id}
               selected={values.readingThemeId === theme.id}
               onPress={handlers.onReadingTheme}
-            />
-          ))}
-        </View>
-        <Text style={[styles.inlineLabel, { color: colors.muted }]}>{kk.quran.readerArabicFontTitle}</Text>
-        <View style={styles.chipRow}>
-          {QURAN_ARABIC_FONT_PRESETS.map((preset) => (
-            <CompactChip
-              key={preset.id}
-              colors={colors}
-              label={preset.labelKk}
-              value={preset.id}
-              selected={values.arabicFontPreset === preset.id}
-              onPress={handlers.onArabicFontPreset}
             />
           ))}
         </View>

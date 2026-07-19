@@ -53,9 +53,21 @@ export const KZ_CITY_PRESETS: KzCityPreset[] = [...KZ_CITY_PRESETS_LIST].sort((a
 
 /** Аладханға жіберетін ағылшынша атау → басты экранда көрсетілетін қазақша атау */
 export function cityLabelKkForApiName(city: string): string {
+  return cityLabelForLocale(city, "kk");
+}
+
+/** API атауы немесе сақталған жазба → UI тіліне сәйкес қала атауы. */
+export function cityLabelForLocale(
+  city: string,
+  locale: string,
+  opts?: { tr?: (text: string) => string }
+): string {
   const want = canonicalCityKey(city);
   const hit = KZ_CITY_PRESETS.find((p) => p.city.toLowerCase() === want.toLowerCase());
-  return hit?.label ?? city.trim();
+  if (locale === "en") return hit?.city ?? city.trim();
+  if (locale === "kk") return hit?.label ?? city.trim();
+  const kkLabel = hit?.label ?? city.trim();
+  return opts?.tr ? opts.tr(kkLabel) : kkLabel;
 }
 
 /** Намаз / құбыла: тізімдегі қала үшін WGS84 координат (null — қолмен қаланы іздеу). */

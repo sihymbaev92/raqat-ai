@@ -17,12 +17,6 @@ const editions = {
   tr: "tr.diyanet",
   uz: "uz.sodik",
   ky: "quranenc:kyrgyz_hakimov",
-  zh: "zh.jian",
-  fa: "fa.makarem",
-  id: "id.indonesian",
-  ms: "ms.basmeih",
-  hi: "hi.hindi",
-  ku: "ku.asan",
 };
 
 const fieldByLocale = {
@@ -31,12 +25,6 @@ const fieldByLocale = {
   tr: "textTr",
   uz: "textUz",
   ky: "textKy",
-  zh: "textZh",
-  fa: "textFa",
-  id: "textId",
-  ms: "textMs",
-  hi: "textHi",
-  ku: "textKu",
 };
 
 const verifiedFallbacks = [

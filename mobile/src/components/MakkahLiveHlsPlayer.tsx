@@ -265,9 +265,7 @@ export function MakkahLiveHlsPlayer({
 
   const appBar = (
     <View style={[styles.appBar, { paddingHorizontal: Math.max(insets.left, 8) }]}>
-      <Pressable onPress={handleBack} accessibilityRole="button" accessibilityLabel={backLabel} style={styles.chromeBtn}>
-        <MaterialIcons name="arrow-back" size={24} color="#fff" />
-      </Pressable>
+      <View style={styles.chromeBtn} />
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>

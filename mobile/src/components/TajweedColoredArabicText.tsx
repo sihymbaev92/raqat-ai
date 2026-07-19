@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Platform, Text, type TextStyle } from "react-native";
+import { Platform, Text, View, type TextStyle } from "react-native";
 import { tajweedColorForRule } from "../content/tajweedRulesCatalog";
 import {
   stripTajweedTags,
@@ -89,9 +89,15 @@ function plainFallback(raw: string, plainText: string | undefined): string {
   return raw.trim();
 }
 
+const rtlHostStyle = {
+  width: "100%" as const,
+  alignSelf: "stretch" as const,
+  direction: "rtl" as const,
+};
+
 /**
  * Тәжуид түстері — Al Quran `[g[` тегтері немесе HTML `<font color>` енін шектемей,
- * негізгі Text ағынымен wrap рендер.
+ * негізгі Text ағынымен wrap рендер (оңнан солға).
  */
 export function TajweedColoredArabicText({
   taggedText,
@@ -110,7 +116,12 @@ export function TajweedColoredArabicText({
 
   if (!raw) return null;
 
-  const rtlStyle = inlineTajweedSpanStyle(baseStyle);
+  const rtlStyle: TextStyle = {
+    ...inlineTajweedSpanStyle(baseStyle),
+    width: "100%",
+    textAlign: "right",
+    writingDirection: "rtl",
+  };
 
   const spans = htmlMode
     ? htmlRuns.length
@@ -123,9 +134,17 @@ export function TajweedColoredArabicText({
   if (!spans) {
     const plain = plainFallback(raw, plainText);
     if (nestedInText) return plain;
-    return <Text style={rtlStyle}>{plain}</Text>;
+    return (
+      <View style={rtlHostStyle}>
+        <Text style={rtlStyle}>{plain}</Text>
+      </View>
+    );
   }
 
   if (nestedInText) return spans;
-  return <Text style={rtlStyle}>{spans}</Text>;
+  return (
+    <View style={rtlHostStyle}>
+      <Text style={rtlStyle}>{spans}</Text>
+    </View>
+  );
 }

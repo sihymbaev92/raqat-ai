@@ -38,11 +38,11 @@ export const QURAN_READING_CREAM = "#FDFBF7";
 
 const ORIGINAL: QuranReadingThemeSpec = {
   id: "original",
-  labelKk: "Жұмсақ сүт",
+  labelKk: "Ақ",
   minimalPageChrome: true,
   pageFace: QURAN_READING_CREAM,
   desk: QURAN_READING_CREAM,
-  arabicInk: "#1A1714",
+  arabicInk: "#0E0C0A",
   chromeInk: "#9C8E7E",
   titleInk: "#8A7B6C",
   pageBorderVertical: false,
@@ -101,7 +101,7 @@ const SEPIA: QuranReadingThemeSpec = {
 
 const DARK: QuranReadingThemeSpec = {
   id: "dark",
-  labelKk: "Қараңғы",
+  labelKk: "Қара",
   minimalPageChrome: true,
   pageFace: "#121212",
   desk: "#000000",
@@ -175,4 +175,9 @@ export function lookupQuranReadingTheme(id: QuranReadingThemeId): QuranReadingTh
 
 export function quranReadingThemeLabelKk(id: QuranReadingThemeId): string {
   return BY_ID[id].labelKk;
+}
+
+export function readingThemeLabel(id: QuranReadingThemeId, tr?: (text: string) => string): string {
+  const label = BY_ID[id]?.labelKk ?? id;
+  return tr ? tr(label) : label;
 }

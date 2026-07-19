@@ -1,5 +1,6 @@
 import {
   buildFullScreenAzanSlots,
+  prayerAzanParamsFromUrl,
   prayerEnteredTitleForSlot,
   scheduleFullScreenAzanAlarmsForResult,
   scheduleTestAzanAlarmForQa,
@@ -52,7 +53,7 @@ describe("prayerFullScreenAzan", () => {
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "adhan_haramain", "android")).toBe(true);
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "sun" }), "adhan_haramain", "android")).toBe(false);
     expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "off", "android")).toBe(false);
-    expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "adhan_haramain", "ios")).toBe(false);
+    expect(shouldRoutePrayerSoundToFullScreenAzan(slot({ kind: "salat" }), "adhan_haramain", "ios")).toBe(true);
   });
 
   it("accepts native scheduling only when the bridge confirms scheduled alarms", () => {
@@ -78,11 +79,32 @@ describe("prayerFullScreenAzan", () => {
     ).toBe(true);
     expect(
       scheduleFullScreenAzanAlarmsForResult(payload, {
+        scheduledCount: 1,
+        identifiers: [],
+        exactAlarmPermissionGranted: false,
+      }).accepted
+    ).toBe(true);
+    expect(
+      scheduleFullScreenAzanAlarmsForResult(payload, {
         scheduledCount: 0,
         identifiers: [],
         exactAlarmPermissionGranted: false,
       }).accepted
     ).toBe(false);
+  });
+
+  it("parses azan deep link params from launch url", () => {
+    expect(
+      prayerAzanParamsFromUrl(
+        "raqat://azan?label=Fajr&time=05%3A12&soundId=adhan_haramain&salatKey=fajr&nativeAudio=1"
+      )
+    ).toMatchObject({
+      label: "Fajr",
+      time: "05:12",
+      soundId: "adhan_haramain",
+      salatKey: "fajr",
+      nativeAudio: true,
+    });
   });
 
   it("scheduleTestAzanAlarmForQa requires native module on non-android test env", async () => {

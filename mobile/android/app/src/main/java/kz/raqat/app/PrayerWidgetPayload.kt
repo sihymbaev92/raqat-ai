@@ -19,7 +19,9 @@ internal data class PrayerDayParsed(
   val weatherTempC: Double?,
   val weatherCode: Int?,
   val latitude: Double?,
-  val longitude: Double?
+  val longitude: Double?,
+  /** Қолданба тілінен келген «Келесі намаз» тақырыбы (бос болса string res). */
+  val nextHeading: String = ""
 ) {
   /** Таң, бесін, аср, шам, хуптен — күн шығуынсыз (5 парыз). */
   fun salatRowsFive(): List<PrayerRow> =
@@ -92,13 +94,20 @@ internal object PrayerWidgetPayload {
       val asr = o.optString("asr", "").trim()
       val mag = o.optString("maghrib", "").trim()
       val isha = o.optString("isha", "").trim()
+      val labels = o.optJSONObject("labels")
+      fun label(key: String, fallbackRes: Int): String {
+        val fromPayload = labels?.optString(key, "")?.trim().orEmpty()
+        if (fromPayload.isNotEmpty()) return fromPayload
+        return localizedString(context, o.optString("locale", ""), fallbackRes)
+      }
+      val nextHeading = labels?.optString("nextHeading", "")?.trim().orEmpty()
       val rows = listOf(
-        PrayerRow(context.getString(R.string.widget_prayer_row_fajr), f, parseMinutes(f)),
-        PrayerRow(context.getString(R.string.widget_prayer_row_sun), sun, parseMinutes(sun)),
-        PrayerRow(context.getString(R.string.widget_prayer_row_dhuhr), dh, parseMinutes(dh)),
-        PrayerRow(context.getString(R.string.widget_prayer_row_asr), asr, parseMinutes(asr)),
-        PrayerRow(context.getString(R.string.widget_prayer_row_maghrib), mag, parseMinutes(mag)),
-        PrayerRow(context.getString(R.string.widget_prayer_row_isha), isha, parseMinutes(isha))
+        PrayerRow(label("fajr", R.string.widget_prayer_row_fajr), f, parseMinutes(f)),
+        PrayerRow(label("sunrise", R.string.widget_prayer_row_sun), sun, parseMinutes(sun)),
+        PrayerRow(label("dhuhr", R.string.widget_prayer_row_dhuhr), dh, parseMinutes(dh)),
+        PrayerRow(label("asr", R.string.widget_prayer_row_asr), asr, parseMinutes(asr)),
+        PrayerRow(label("maghrib", R.string.widget_prayer_row_maghrib), mag, parseMinutes(mag)),
+        PrayerRow(label("isha", R.string.widget_prayer_row_isha), isha, parseMinutes(isha))
       )
       val weatherTempC =
         if (o.has("weatherTempC") && !o.isNull("weatherTempC")) o.optDouble("weatherTempC") else null
@@ -109,9 +118,36 @@ internal object PrayerWidgetPayload {
       val longitude =
         if (o.has("longitude") && !o.isNull("longitude")) o.optDouble("longitude") else null
       if (!isPayloadForToday(date)) return null
-      PrayerDayParsed(city, country, date, rows, weatherTempC, weatherCode, latitude, longitude)
+      PrayerDayParsed(
+        city,
+        country,
+        date,
+        rows,
+        weatherTempC,
+        weatherCode,
+        latitude,
+        longitude,
+        nextHeading
+      )
     } catch (_: Exception) {
       null
+    }
+  }
+
+  /** Қолданба тілі (`locale` өрісі) бойынша string — жүйе тіліне тәуелді емес. */
+  private fun localizedString(context: Context, localeTag: String, resId: Int): String {
+    val tag = localeTag.trim().lowercase().replace('_', '-')
+    val locale =
+      when {
+        tag.isEmpty() || tag == "kk" || tag.startsWith("kk-") -> java.util.Locale("kk", "KZ")
+        else -> java.util.Locale.forLanguageTag(tag)
+      }
+    return try {
+      val config = android.content.res.Configuration(context.resources.configuration)
+      config.setLocale(locale)
+      context.createConfigurationContext(config).getString(resId)
+    } catch (_: Exception) {
+      context.getString(resId)
     }
   }
 }

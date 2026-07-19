@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -34,6 +34,11 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
   const [selectedId, setSelectedId] = useState(route.params?.articleId ?? TRADITION_ARTICLES[0]?.id);
   const selected = getTraditionArticleById(selectedId);
   const [favorite, setFavorite] = useState(false);
+
+  useEffect(() => {
+    const nextId = route.params?.articleId;
+    if (nextId) setSelectedId(nextId);
+  }, [route.params?.articleId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -75,7 +80,12 @@ export function KazakhTraditionArticlesScreen({ route }: Props) {
                 onPress={() => nav.navigate("KazakhTraditionTopicDetail", { topicId: selected.topicId! })}
                 style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.9 }]}
               >
-                <Text style={styles.actionBtnText}>{tr(getTraditionTopicById(selected.topicId)?.title ?? "Дәстүр")}</Text>
+                <Text style={styles.actionBtnText}>
+                  {tr(
+                    getTraditionTopicById(selected.topicId)?.title ??
+                      t.features.traditionGuide.favoriteTypeTopic
+                  )}
+                </Text>
               </Pressable>
             ) : null}
             {selected.url ? (

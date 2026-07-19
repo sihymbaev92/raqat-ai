@@ -16,6 +16,7 @@ import {
   parseMushafBookQueryParams,
   parseQuranSurahDeepPath,
 } from "./quranSurahDeepLink";
+import { isTrustedAppDeepLinkPath } from "../security/appSecurityShield";
 
 type PrayerAzanParams = NonNullable<RootStackParamList["PrayerAzan"]>;
 
@@ -67,9 +68,9 @@ function webPrefixes(): string[] {
   return [base, origin + "/"];
 }
 
-/** Терең сілтемелер — `imamai://` әдепкі; `raqat://` мұрагер сілтемелер үшін. */
+/** Терең сілтемелер — `raqat://` әдепкі; `imamai://` мұрагер / ескі alarm сілтемелері. */
 export const appDeepLinking: LinkingOptions<RootStackParamList> = {
-  prefixes: [...webPrefixes(), "imamai://", "raqat://"],
+  prefixes: [...webPrefixes(), "raqat://", "imamai://"],
   config: {
     screens: {
       Main: {
@@ -164,7 +165,6 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
           HadithHub: "hadith",
           HadithList: "hadith/list",
           HadithDetail: "hadith/detail/:hadithId",
-          ImamAI: "ai",
           OfficialKnowledgePortal: "knowledge",
           IslamicKbSearch: "knowledge/search",
           Ecosystem: "ecosystem",
@@ -187,7 +187,23 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
   },
   getStateFromPath(path, options) {
     const normalized = normalizeDeepLinkPath(path);
-    const mushafSurah = parseQuranSurahDeepPath(normalized);
+    // Аккаунт/логин deep link — сыртқы қолданбадан мәжбүрлемеу
+    if (!isTrustedAppDeepLinkPath(normalized)) {
+      return undefined;
+    }
+    // Legacy imamai://tabs/* → current Main tab paths
+    const legacyTabs = normalized.match(/^tabs\/([^/?#]+)/);
+    const pathForState = legacyTabs
+      ? (() => {
+          const tab = legacyTabs[1]!;
+          if (tab === "home") return "";
+          if (tab === "saved" || tab === "articles" || tab === "prayer" || tab === "profile" || tab === "duas" || tab === "tasbih") {
+            return tab;
+          }
+          return normalized;
+        })()
+      : normalized;
+    const mushafSurah = parseQuranSurahDeepPath(pathForState);
     if (mushafSurah != null) {
       const built = RNGetStateFromPath("more/mushaf-book", options);
       if (built) {
@@ -198,13 +214,19 @@ export const appDeepLinking: LinkingOptions<RootStackParamList> = {
       }
     }
     const query = parseMushafBookQueryParams(path);
-    const built = RNGetStateFromPath(normalized, options);
+    const built = RNGetStateFromPath(pathForState, options);
     const prayerAzanParams = parsePrayerAzanQueryParams(path);
     if (prayerAzanParams) {
-      return applyPrayerAzanParams(
-        built as NavigationState | PartialState<NavigationState> | undefined,
-        prayerAzanParams
-      ) as typeof built;
+      if (built) {
+        return applyPrayerAzanParams(
+          built as NavigationState | PartialState<NavigationState>,
+          prayerAzanParams
+        ) as NonNullable<typeof built>;
+      }
+      return {
+        routes: [{ name: "PrayerAzan", params: prayerAzanParams }],
+        index: 0,
+      } as PartialState<NavigationState>;
     }
     if (built && (query.focusSurah || query.focusAyah || query.initialPage)) {
       return applyQuranMushafBookParamsFromDeepLink(

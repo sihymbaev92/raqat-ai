@@ -10,12 +10,6 @@ export const APP_LOCALE_FLAG: Record<AppLocale, string> = {
   uz: "🇺🇿",
   tr: "🇹🇷",
   ar: "🇸🇦",
-  zh: "🇨🇳",
-  fa: "🇮🇷",
-  id: "🇮🇩",
-  ms: "🇲🇾",
-  hi: "🇮🇳",
-  ku: "",
 };
 
 export function appLocaleFlag(locale: AppLocale): string {
@@ -23,7 +17,7 @@ export function appLocaleFlag(locale: AppLocale): string {
 }
 
 export function quranReciterGroupFlag(group: QuranReciterGroup): string {
-  return appLocaleFlag(group);
+  return APP_LOCALE_FLAG[group as AppLocale] ?? "";
 }
 
 export function formatFlagLabel(flag: string, label: string): string {

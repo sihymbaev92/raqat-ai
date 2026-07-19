@@ -21,6 +21,10 @@
       }
     },
     "ios-device": {
+      "env": {
+        "RAQAT_INCLUDE_NATIVE_EXPO_CONFIG": "1",
+        "RAQAT_EXPO_RELEASE_BUILD": "1"
+      },
       "ios": {
         "resourceClass": "m-medium",
         "distribution": "internal"

@@ -63,6 +63,7 @@ object PrayerAzanNativePlayer {
     completed = false
     playingDua = false
     sessionFullyFinished = false
+    PrayerAzanActiveSession.markActive(app)
     startPlayer(app, R.raw.prayer_azan_user_01, isDua = false)
   }
 
@@ -76,7 +77,7 @@ object PrayerAzanNativePlayer {
     completed = true
     playingDua = true
     sessionFullyFinished = false
-    PrayerAzanActiveSession.active = true
+    PrayerAzanActiveSession.markActive(app)
     startPlayer(app, R.raw.prayer_azan_dua_01, isDua = true)
   }
 
@@ -108,7 +109,7 @@ object PrayerAzanNativePlayer {
       next.prepare()
       lastDurationMs = next.duration.coerceAtLeast(0)
       player = next
-      PrayerAzanActiveSession.active = true
+      PrayerAzanActiveSession.markActive(app)
       next.start()
       Log.i(
         "PrayerAzanNativePlayer",
@@ -137,12 +138,12 @@ object PrayerAzanNativePlayer {
       }
     }
     // Session active until dua plays or user stops — karaoke can detect finish.
-    PrayerAzanActiveSession.active = true
+    lastContext?.let { PrayerAzanActiveSession.markActive(it) }
     val ctx = lastContext
     if (ctx != null && !sessionFullyFinished) {
       Handler(Looper.getMainLooper()).postDelayed(
         {
-          if (!playingDua && !sessionFullyFinished && PrayerAzanActiveSession.active) {
+          if (!playingDua && !sessionFullyFinished && PrayerAzanActiveSession.isActive(ctx)) {
             playDua(ctx)
           }
         },
@@ -170,21 +171,10 @@ object PrayerAzanNativePlayer {
     sessionFullyFinished = true
     abandonAudioFocus()
     // Keep active until JS closes screen / finishAzanDelivery.
-    PrayerAzanActiveSession.active = true
+    lastContext?.let { PrayerAzanActiveSession.markActive(it) }
     Log.i("PrayerAzanNativePlayer", "Azan + dua fully finished")
-    val ctx = lastContext
-    if (ctx != null) {
-      Handler(Looper.getMainLooper()).postDelayed(
-        {
-          try {
-            PrayerAzanDelivery.dismissAzanDelivery(ctx)
-          } catch (_: Throwable) {
-            /* best effort */
-          }
-        },
-        1_200L
-      )
-    }
+    // FSI/экранды мұнда жаппаймыз — JS PrayerAzanScreen / finishAzanDelivery жабады.
+    // Ерте dismissAzanDelivery құлып экранындағы FSI-ді өшіріп, PIN сұратуға әкелуі мүмкін.
   }
 
   @Synchronized
@@ -214,7 +204,8 @@ object PrayerAzanNativePlayer {
       lastDurationMs = 0
       if (clearFullyFinished) sessionFullyFinished = false
       abandonAudioFocus()
-      PrayerAzanActiveSession.active = false
+      lastContext?.let { PrayerAzanActiveSession.clear(it) }
+        ?: run { PrayerAzanActiveSession.active = false }
     }
   }
 

@@ -40,12 +40,9 @@ describe("offlineAutoTranslations", () => {
       autoTranslationUnavailableText("ru"),
       autoTranslationUnavailableText("en"),
       autoTranslationUnavailableText("tr"),
-      autoTranslationUnavailableText("zh"),
-      autoTranslationUnavailableText("fa"),
-      autoTranslationUnavailableText("id"),
-      autoTranslationUnavailableText("ms"),
-      autoTranslationUnavailableText("hi"),
-      autoTranslationUnavailableText("ku"),
+      autoTranslationUnavailableText("ky"),
+      autoTranslationUnavailableText("uz"),
+      autoTranslationUnavailableText("ar"),
     ].join("\n");
 
     expect(text).not.toMatch(/internet|интернет|offline|офлайн|çevrimdışı|离线|آفلاین|ऑफ़लाइन|ئینتەرنێت/i);

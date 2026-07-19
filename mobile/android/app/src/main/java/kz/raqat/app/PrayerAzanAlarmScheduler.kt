@@ -153,10 +153,12 @@ object PrayerAzanAlarmScheduler {
   }
 
   private fun pendingIntent(context: Context, requestCode: Int, item: JSONObject): PendingIntent {
+    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+    val enteredDefault = context.getString(R.string.prayer_azan_fullscreen_title)
     val intent = Intent(context, PrayerAzanAlarmReceiver::class.java).apply {
       action = ACTION_AZAN
-      putExtra(EXTRA_LABEL, item.optString("label", "Намаз"))
-      putExtra(EXTRA_ENTERED_TITLE, item.optString("enteredTitle", "Намаз уақыты кірді"))
+      putExtra(EXTRA_LABEL, item.optString("label", defaultLabel))
+      putExtra(EXTRA_ENTERED_TITLE, item.optString("enteredTitle", enteredDefault))
       putExtra(EXTRA_TIME, item.optString("timeShort", ""))
       putExtra(EXTRA_SOUND_ID, item.optString("soundId", "adhan_haramain"))
       putExtra(EXTRA_SALAT_KEY, item.optString("salatKey", ""))
@@ -171,26 +173,13 @@ object PrayerAzanAlarmScheduler {
   }
 
   private fun openActivityPendingIntent(context: Context, requestCode: Int, item: JSONObject): PendingIntent {
-    val label = item.optString("label", "Намаз")
-    val enteredTitle = item.optString("enteredTitle", enteredTitleForLabel(label))
+    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+    val label = item.optString("label", defaultLabel)
+    val enteredTitle = item.optString("enteredTitle", enteredTitleForLabel(context, label))
     val time = item.optString("timeShort", "")
     val soundId = item.optString("soundId", "adhan_haramain")
     val salatKey = item.optString("salatKey", "")
-    val uri = Uri.parse(
-      "imamai://azan?label=${enc(label)}&enteredTitle=${enc(enteredTitle)}&time=${enc(time)}&soundId=${enc(soundId)}&salatKey=${enc(salatKey)}"
-    )
-    var launchFlags =
-      Intent.FLAG_ACTIVITY_NEW_TASK or
-        Intent.FLAG_ACTIVITY_CLEAR_TOP or
-        Intent.FLAG_ACTIVITY_SINGLE_TOP or
-        Intent.FLAG_ACTIVITY_NO_USER_ACTION
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-      launchFlags = launchFlags or 0x00080000 or 0x00200000
-    }
-    val intent = Intent(Intent.ACTION_VIEW, uri, context, MainActivity::class.java).apply {
-      putExtra(PrayerAzanDelivery.EXTRA_AZAN_TRUSTED, true)
-      flags = launchFlags
-    }
+    val intent = PrayerAzanDelivery.azanActivityIntent(context, label, enteredTitle, time, soundId, salatKey)
     return PendingIntent.getActivity(
       context,
       requestCode,
@@ -216,7 +205,12 @@ object PrayerAzanAlarmScheduler {
 
   private fun enc(value: String): String = URLEncoder.encode(value, "UTF-8")
 
-  private fun enteredTitleForLabel(label: String): String {
-    return if (label.isBlank() || label == "Намаз") "Намаз уақыты кірді" else "$label намазы кірді"
+  private fun enteredTitleForLabel(context: Context, label: String): String {
+    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+    return if (label.isBlank() || label == defaultLabel) {
+      context.getString(R.string.prayer_azan_fullscreen_title)
+    } else {
+      context.getString(R.string.prayer_azan_entered_for_label, label)
+    }
   }
 }

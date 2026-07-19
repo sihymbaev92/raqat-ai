@@ -7,7 +7,7 @@ import type { MoreStackParamList } from "../../navigation/types";
 import type { ThemeColors } from "../../theme/colors";
 import { useAppTheme } from "../../theme/ThemeContext";
 import { isThemeSchemeDark, type ThemeSchemeId } from "../../theme/themeSchemes";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
 import {
   getHatimAudioPlayUntil,
   setHatimAudioPlayUntil,
@@ -29,10 +29,6 @@ import {
   makeSettingsStyles,
 } from "./settingsUi";
 import { SettingsBoolRow, SettingsChoiceRow } from "./settingsFormUi";
-import {
-  getQuranTajweedColorsEnabled,
-  setQuranTajweedColorsEnabled,
-} from "../../storage/quranReaderPrefs";
 
 type Props = { colors: ThemeColors };
 
@@ -42,13 +38,14 @@ function themeQuickFromScheme(scheme: ThemeSchemeId): ThemeQuickId {
   return isThemeSchemeDark(scheme) ? "dark" : "light";
 }
 
-function playUntilLabel(scope: HatimAudioPlayUntil): string {
-  if (scope === "juz") return kk.hatim.settingsPlayUntilJuz;
-  if (scope === "surah") return kk.hatim.settingsPlayUntilSurah;
-  return kk.hatim.settingsPlayUntilAyah;
+function playUntilLabel(scope: HatimAudioPlayUntil, t: ReturnType<typeof useI18n>): string {
+  if (scope === "juz") return t.hatim.settingsPlayUntilJuz;
+  if (scope === "surah") return t.hatim.settingsPlayUntilSurah;
+  return t.hatim.settingsPlayUntilAyah;
 }
 
 export function SettingsHatimHub({ colors }: Props) {
+  const t = useI18n();
   const styles = makeSettingsStyles(colors);
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const { themeScheme, setThemeScheme } = useAppTheme();
@@ -59,20 +56,16 @@ export function SettingsHatimHub({ colors }: Props) {
   const [reminderHour, setReminderHour] = useState(20);
   const [reminderMinute, setReminderMinute] = useState(0);
   const [reminderErr, setReminderErr] = useState<string | null>(null);
-  const [tajweedColorsEnabled, setTajweedColorsEnabled] = useState(false);
-
   const reload = useCallback(async () => {
-    const [scope, en, clock, tajweedOn] = await Promise.all([
+    const [scope, en, clock] = await Promise.all([
       getHatimAudioPlayUntil(),
       getHatimReminderEnabled(),
       getHatimReminderClock(),
-      getQuranTajweedColorsEnabled(),
     ]);
     setPlayUntil(scope);
     setReminderEnabled(en);
     setReminderHour(clock.hour);
     setReminderMinute(clock.minute);
-    setTajweedColorsEnabled(tajweedOn);
   }, []);
 
   useFocusEffect(
@@ -91,11 +84,6 @@ export function SettingsHatimHub({ colors }: Props) {
     setPlayUntil(scope);
     void setHatimAudioPlayUntil(scope);
     setPlayUntilOpen(false);
-  };
-
-  const onTajweedColorsToggle = (v: boolean) => {
-    setTajweedColorsEnabled(v);
-    void setQuranTajweedColorsEnabled(v);
   };
 
   const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -119,7 +107,7 @@ export function SettingsHatimHub({ colors }: Props) {
     if (v) {
       const ok = await requestNotificationPermissions();
       if (!ok) {
-        setReminderErr(kk.hatim.reminderPermNeeded);
+        setReminderErr(t.hatim.reminderPermNeeded);
         return;
       }
     }
@@ -129,10 +117,10 @@ export function SettingsHatimHub({ colors }: Props) {
   };
 
   const onClearProgress = () => {
-    Alert.alert(kk.hatim.settingsClearTitle, kk.hatim.settingsClearBody, [
-      { text: kk.common.cancel, style: "cancel" },
+    Alert.alert(t.hatim.settingsClearTitle, t.hatim.settingsClearBody, [
+      { text: t.common.cancel, style: "cancel" },
       {
-        text: kk.hatim.settingsClearConfirm,
+        text: t.hatim.settingsClearConfirm,
         style: "destructive",
         onPress: () => {
           void (async () => {
@@ -155,8 +143,8 @@ export function SettingsHatimHub({ colors }: Props) {
         value={themeQuick}
         onChange={onThemeQuick}
         options={[
-          { id: "light" as const, label: kk.settings.themeLight },
-          { id: "dark" as const, label: kk.settings.themeDark },
+          { id: "light" as const, label: t.settings.themeLight },
+          { id: "dark" as const, label: t.settings.themeDark },
         ]}
       />
 
@@ -164,14 +152,14 @@ export function SettingsHatimHub({ colors }: Props) {
         <SettingsIconRow
           colors={colors}
           icon="menu-book"
-          label={kk.hatim.settingsMushaf}
+          label={t.hatim.settingsMushaf}
           onPress={() => navigation.navigate("QuranSettings")}
         />
         <SettingsIconRow
           colors={colors}
           icon="headphones"
-          label={kk.hatim.settingsPlayUntil}
-          value={playUntilLabel(playUntil)}
+          label={t.hatim.settingsPlayUntil}
+          value={playUntilLabel(playUntil, t)}
           onPress={() => setPlayUntilOpen((o) => !o)}
           last={!playUntilOpen}
         />
@@ -181,7 +169,7 @@ export function SettingsHatimHub({ colors }: Props) {
               <SettingsChoiceRow
                 key={scope}
                 colors={colors}
-                label={playUntilLabel(scope)}
+                label={playUntilLabel(scope, t)}
                 selected={playUntil === scope}
                 onPress={() => onPlayUntilPick(scope)}
               />
@@ -190,35 +178,13 @@ export function SettingsHatimHub({ colors }: Props) {
         ) : null}
       </SettingsIconCard>
 
-      <SettingsIconCard colors={colors}>
-        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14 }}>
-          <SettingsBoolRow
-            colors={colors}
-            label={kk.quran.tajweedModeLabel}
-            hint={kk.quran.tajweedModeHint}
-            value={tajweedColorsEnabled}
-            onChange={onTajweedColorsToggle}
-          />
-        </View>
-      </SettingsIconCard>
-
-      <SettingsIconCard colors={colors}>
-        <SettingsIconRow
-          colors={colors}
-          icon="language"
-          label={kk.hatim.settingsTranslations}
-          onPress={() => navigation.navigate("QuranSettings")}
-          last
-        />
-      </SettingsIconCard>
-
       {Platform.OS !== "web" ? (
         <SettingsIconCard colors={colors}>
           <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14 }}>
             <SettingsBoolRow
               colors={colors}
-              label={kk.hatim.reminderTitle}
-              hint={kk.hatim.reminderHint}
+              label={t.hatim.reminderTitle}
+              hint={t.hatim.reminderHint}
               value={reminderEnabled}
               onChange={(v) => void onReminderToggle(v)}
             />
@@ -227,7 +193,7 @@ export function SettingsHatimHub({ colors }: Props) {
             ) : null}
             {reminderEnabled ? (
               <View style={{ marginTop: 12, alignItems: "center", gap: 8 }}>
-                <Text style={styles.label}>{kk.hatim.reminderTimeLabel}</Text>
+                <Text style={styles.label}>{t.hatim.reminderTimeLabel}</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 20 }}>
                   <Pressable
                     style={({ pressed }) => [
@@ -237,7 +203,7 @@ export function SettingsHatimHub({ colors }: Props) {
                     ]}
                     onPress={() => void bumpReminderClock(-30)}
                     accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.reminderTimeMinusA11y}
+                    accessibilityLabel={t.hatim.reminderTimeMinusA11y}
                   >
                     <Text style={{ color: colors.text, fontSize: 22, fontWeight: "700" }}>−</Text>
                   </Pressable>
@@ -252,7 +218,7 @@ export function SettingsHatimHub({ colors }: Props) {
                     ]}
                     onPress={() => void bumpReminderClock(30)}
                     accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.reminderTimePlusA11y}
+                    accessibilityLabel={t.hatim.reminderTimePlusA11y}
                   >
                     <Text style={{ color: colors.text, fontSize: 22, fontWeight: "700" }}>+</Text>
                   </Pressable>
@@ -267,19 +233,19 @@ export function SettingsHatimHub({ colors }: Props) {
         <SettingsIconRow
           colors={colors}
           icon="sync"
-          label={kk.hatim.settingsSyncProgress}
+          label={t.hatim.settingsSyncProgress}
           onPress={() => void syncHatimWithServerBidirectional()}
         />
         <SettingsIconRow
           colors={colors}
           icon="delete-outline"
-          label={kk.hatim.settingsClearProgress}
+          label={t.hatim.settingsClearProgress}
           onPress={onClearProgress}
           last
         />
       </SettingsIconCard>
 
-      <Text style={styles.hint}>{kk.hatim.settingsFootnote}</Text>
+      <Text style={styles.hint}>{t.hatim.settingsFootnote}</Text>
     </>
   );
 }

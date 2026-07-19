@@ -8,7 +8,7 @@ function trimUrl(s: string): string {
 export const DEFAULT_RAQAT_MARKETING_WEB_URL = "https://rahatomir.com";
 
 /**
- * Ресми веб (маркетинг / басты бет) — `RaqatAIChatScreen` ішінде WebView ашу үшін.
+ * Ресми веб (маркетинг / басты бет) үшін.
  * API (`EXPO_PUBLIC_IMAM_AI_API_BASE`) осыған автоматты түрде айналдырылмайды; тек нақты веб мекенжайды беріңіз.
  *
  * 1) EXPO_PUBLIC_RAQAT_WEB_URL

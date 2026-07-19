@@ -32,6 +32,8 @@ const hatimRu: CorePatch["hatim"] = {
   settingsSubtitle: "Тема, мусхаф, аудио, напоминание и прогресс.",
   tajweedOfflineQuickAction: "Цвета таджвида",
   tajweedOfflineQuickActionA11y: "Цвета таджвида — 114 сур офлайн",
+  tajweedColorsExplainBtn: "Пояснение цветов таджвида",
+  tajweedColorsExplainA11y: "Открыть полное описание цветов таджвида",
 };
 
 const hatimEn: CorePatch["hatim"] = {
@@ -53,6 +55,8 @@ const hatimEn: CorePatch["hatim"] = {
   settingsSubtitle: "Theme, mushaf, audio, reminder and progress.",
   tajweedOfflineQuickAction: "Tajweed colors",
   tajweedOfflineQuickActionA11y: "Tajweed colors — 114 surahs offline",
+  tajweedColorsExplainBtn: "Tajweed color explanation",
+  tajweedColorsExplainA11y: "Open full tajweed color legend",
 };
 
 const hatimKy: CorePatch["hatim"] = {
@@ -75,6 +79,8 @@ const hatimKy: CorePatch["hatim"] = {
   settingsSubtitle: "Тема, мусхаф, аудио, эскертүү жана прогресс.",
   tajweedOfflineQuickAction: "Тажвид түстөрү",
   tajweedOfflineQuickActionA11y: "Тажвид түстөрү — 114 сүрө офлайн",
+  tajweedColorsExplainBtn: "Тажвид түстөрүнө түшүндүрмө",
+  tajweedColorsExplainA11y: "Тажвид түстөрүнүн толук аныктамасын ачуу",
 };
 
 const hatimUz: CorePatch["hatim"] = {
@@ -97,6 +103,8 @@ const hatimUz: CorePatch["hatim"] = {
   settingsSubtitle: "Mavzu, mushaf, audio, eslatma va progress.",
   tajweedOfflineQuickAction: "Tajvid ranglari",
   tajweedOfflineQuickActionA11y: "Tajvid ranglari — 114 sura oflayn",
+  tajweedColorsExplainBtn: "Tajvid ranglari tushuntirmasi",
+  tajweedColorsExplainA11y: "Tajvid ranglari to'liq izohini ochish",
 };
 
 const hatimTr: CorePatch["hatim"] = {
@@ -119,6 +127,8 @@ const hatimTr: CorePatch["hatim"] = {
   settingsSubtitle: "Tema, mushaf, ses, hatırlatma ve ilerleme.",
   tajweedOfflineQuickAction: "Tecvid renkleri",
   tajweedOfflineQuickActionA11y: "Tecvid renkleri — 114 sure çevrimdışı",
+  tajweedColorsExplainBtn: "Tecvid renkleri açıklaması",
+  tajweedColorsExplainA11y: "Tecvid renklerinin tam açıklamasını aç",
 };
 
 const hatimAr: CorePatch["hatim"] = {
@@ -141,6 +151,8 @@ const hatimAr: CorePatch["hatim"] = {
   settingsSubtitle: "المظهر والمصحف والصوت والتذكير والتقدّم.",
   tajweedOfflineQuickAction: "ألوان التجويد",
   tajweedOfflineQuickActionA11y: "ألوان التجويد — 114 سورة دون اتصال",
+  tajweedColorsExplainBtn: "شرح ألوان التجويد",
+  tajweedColorsExplainA11y: "فتح الشرح الكامل لألوان التجويد",
 };
 
 const qiblaRu: CorePatch["qibla"] = {

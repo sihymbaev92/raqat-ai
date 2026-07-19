@@ -3,7 +3,7 @@ import { BackHandler, Platform, ToastAndroid } from "react-native";
 import { CommonActions } from "@react-navigation/native";
 import { rootNavigationRef } from "./rootNavigationRef";
 import { resolveAndroidBackNavigation } from "./resolveAndroidBackNavigation";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 import { useAppLocale } from "../i18n/runtime";
 
 /**
@@ -11,7 +11,8 @@ import { useAppLocale } from "../i18n/runtime";
  * Экрандағы useHardwareBackPress алдымен іске қосылады (LIFO); мұнда nested/tab артқа + Home-да шығуды блоктау.
  */
 export function AndroidBackNavigationBridge() {
-  useAppLocale();
+  const t = useI18n();
+  const locale = useAppLocale();
   const homeBackAtRef = useRef(0);
 
   useEffect(() => {
@@ -40,12 +41,12 @@ export function AndroidBackNavigationBridge() {
         return true;
       }
       homeBackAtRef.current = now;
-      ToastAndroid.show(kk.navigation.pressBackAgainToExit, ToastAndroid.SHORT);
+      ToastAndroid.show(t.navigation.pressBackAgainToExit, ToastAndroid.SHORT);
       return true;
     });
 
     return () => sub.remove();
-  }, []);
+  }, [locale, t.navigation.pressBackAgainToExit]);
 
   return null;
 }

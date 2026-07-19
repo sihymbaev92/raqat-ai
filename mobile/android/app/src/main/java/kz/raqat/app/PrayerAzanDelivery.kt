@@ -29,13 +29,24 @@ object PrayerAzanDelivery {
   const val EXTRA_AZAN_TRUSTED = "kz.raqat.app.AZAN_TRUSTED"
 
   /** Intent flags — Activity API 29+ атаулары кей SDK-да жоқ болуы мүмкін. */
-  private const val FLAG_SHOW_WHEN_LOCKED = 0x00080000
-  private const val FLAG_TURN_SCREEN_ON = 0x00200000
+  const val FLAG_SHOW_WHEN_LOCKED = 0x00080000
+  const val FLAG_TURN_SCREEN_ON = 0x00200000
 
   @Volatile
   private var heldWakeLock: PowerManager.WakeLock? = null
 
+  /** Құлып үстіндегі жеңіл native азан беті (FSI / AlarmReceiver). */
   fun azanActivityIntent(
+    context: Context,
+    label: String,
+    enteredTitle: String,
+    time: String,
+    soundId: String,
+    salatKey: String
+  ): Intent = PrayerAzanLockActivity.createIntent(context, label, enteredTitle, time, soundId, salatKey)
+
+  /** Толық RN PrayerAzanScreen — native беттен «Қолданбаны ашу». */
+  fun azanMainActivityIntent(
     context: Context,
     label: String,
     enteredTitle: String,
@@ -46,7 +57,7 @@ object PrayerAzanDelivery {
     val uri = Uri.parse(
       "raqat://azan?label=${enc(label)}&enteredTitle=${enc(enteredTitle)}&time=${enc(time)}&soundId=${enc(soundId)}&salatKey=${enc(salatKey)}&nativeAudio=1"
     )
-    var launchFlags =
+    val launchFlags =
       Intent.FLAG_ACTIVITY_NEW_TASK or
         Intent.FLAG_ACTIVITY_CLEAR_TOP or
         Intent.FLAG_ACTIVITY_SINGLE_TOP or
@@ -249,15 +260,14 @@ object PrayerAzanDelivery {
       if (soundId != "off") {
         PrayerAzanNativePlayer.play(app, soundId)
       }
-      // Негізгі: FSI notification (locked screen). Қосымша: тікелей Activity.
-      showAzanFullScreenNotification(app, label, enteredTitle, time, soundId, salatKey)
+      // Тек азан беті — хабарлама жоқ.
+      clearFullScreenNotification(app)
+      tryStartAzanActivity(app, label, enteredTitle, time, soundId, salatKey)
       scheduleAzanActivityLaunches(context, label, enteredTitle, time, soundId, salatKey)
-      // FSI-ді өшірмеу — тек ескі Expo/legacy хабарламаларды тазалау.
       PrayerLegacyNotificationCleaner.clearLegacyDuringAzanDelivery(app)
     } catch (t: Throwable) {
       Log.w(TAG, "deliverAzan failed for $salatKey", t)
     }
-    // Wake lock dismissAzanDelivery-ге дейін ұсталады (8с емес) — RN boot + құлып экраны үшін.
   }
 
   fun acquireAzanWakeLock(context: Context): PowerManager.WakeLock? {

@@ -76,7 +76,8 @@ if ($coreOk) {
   } else {
     Write-Host "WARN: tajweed letter mp3 not on disk — build with assets/tajweed/letters" -ForegroundColor Yellow
   }
-  Write-Host "WARN: muftyat JPG + offline-i18n still need CDN/VPS (or FileSystem cache after first load)." -ForegroundColor Yellow
+  Write-Host "WARN: muftyat JPG still need CDN/VPS (or FileSystem cache after first load)." -ForegroundColor Yellow
+  Write-Host "OK: UI i18n APK pack (~0.6 MB) is bundled — full offline-i18n CDN optional." -ForegroundColor Green
   Write-Host "Fix VPS: powershell -File scripts/vps_install_ssh_key.ps1 then scripts/deploy_mushaf_cdn_assets.ps1"
   exit 0
 }

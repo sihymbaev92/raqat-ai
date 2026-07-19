@@ -3,6 +3,7 @@ import { rootNavigationRef } from "../navigation/rootNavigationRef";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 import { openPrayerAzanScreen } from "./prayerFullScreenAzan";
 import { isPrayerNotificationIdentifier } from "./prayerNotificationSchedule";
+import { kk } from "../i18n/kk";
 
 type PrayerAzanNotificationData = {
   raqatType?: string;
@@ -20,13 +21,14 @@ function parsePrayerAzanData(raw: unknown): PrayerAzanNotificationData | null {
   return data;
 }
 
-async function routePrayerAzanNotification(data: PrayerAzanNotificationData): Promise<void> {
+export async function routePrayerAzanNotification(data: PrayerAzanNotificationData): Promise<void> {
   await openPrayerAzanScreen({
-    label: data.label ?? "Намаз",
+    label: data.label ?? kk.prayer.azanScreenDefaultLabel,
     enteredTitle: data.enteredTitle,
     time: data.timeShort,
     salatKey: data.salatKey,
     soundId: (data.soundId as PrayerNotifSoundId | undefined) ?? "adhan_haramain",
+    nativeAudio: Platform.OS === "ios" || Platform.OS === "android",
   });
 }
 

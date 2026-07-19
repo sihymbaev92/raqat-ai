@@ -6,6 +6,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useI18n } from "../i18n/useI18n";
+import { useLocaleRevision } from "../i18n/runtime";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "./GuideAutoTranslateBanner";
 import { useNavigation } from "@react-navigation/native";
@@ -49,45 +50,41 @@ type CompactSectionProps = {
 
 type HajjJourneyPhaseId = "prep" | "umrah" | "hajj-days" | "ziyarah" | "after";
 
-type HajjJourneyPhase = {
+type HajjJourneyPhaseMeta = {
   id: HajjJourneyPhaseId;
-  title: string;
-  subtitle: string;
   icon: React.ComponentProps<typeof MaterialIcons>["name"];
 };
 
-const HAJJ_JOURNEY_PHASES: HajjJourneyPhase[] = [
-  {
-    id: "prep",
-    title: "1. Дайындық және ниет",
-    subtitle: "ұғым, шарт, миқат, ихрам, тәлбия",
-    icon: "fact-check",
-  },
-  {
-    id: "umrah",
-    title: "2. Умра реті",
-    subtitle: "Мекке, тауаф, зәмзәм, сағи, шаш",
-    icon: "sync-alt",
-  },
-  {
-    id: "hajj-days",
-    title: "3. Қажылық күндері",
-    subtitle: "Мина, Арафа, Муздалифа, жәмарат",
-    icon: "event-note",
-  },
-  {
-    id: "ziyarah",
-    title: "4. Зиярат және ерекше жағдайлар",
-    subtitle: "Медина, әйелдер, қарттар, қауіпсіздік",
-    icon: "health-and-safety",
-  },
-  {
-    id: "after",
-    title: "5. Қажылықтан кейін",
-    subtitle: "рухани нәтиже, қорытынды, схемалар",
-    icon: "verified",
-  },
+type HajjJourneyPhase = HajjJourneyPhaseMeta & {
+  title: string;
+  subtitle: string;
+};
+
+const HAJJ_JOURNEY_PHASE_META: HajjJourneyPhaseMeta[] = [
+  { id: "prep", icon: "fact-check" },
+  { id: "umrah", icon: "sync-alt" },
+  { id: "hajj-days", icon: "event-note" },
+  { id: "ziyarah", icon: "health-and-safety" },
+  { id: "after", icon: "verified" },
 ];
+
+function hajjPhaseCopy(
+  id: HajjJourneyPhaseId,
+  features: typeof kk.features
+): { title: string; subtitle: string } {
+  switch (id) {
+    case "prep":
+      return { title: features.hajjPhasePrepTitle, subtitle: features.hajjPhasePrepSub };
+    case "umrah":
+      return { title: features.hajjPhaseUmrahTitle, subtitle: features.hajjPhaseUmrahSub };
+    case "hajj-days":
+      return { title: features.hajjPhaseDaysTitle, subtitle: features.hajjPhaseDaysSub };
+    case "ziyarah":
+      return { title: features.hajjPhaseZiyarahTitle, subtitle: features.hajjPhaseZiyarahSub };
+    case "after":
+      return { title: features.hajjPhaseAfterTitle, subtitle: features.hajjPhaseAfterSub };
+  }
+}
 
 function hajjBookSectionNumber(title: string): number | null {
   const match = title.match(/^(\d+)\./);
@@ -106,18 +103,24 @@ function phaseForHajjBookSection(section: TextSection): HajjJourneyPhaseId {
 }
 
 export function buildHajjJourneyGroups(
-  sections: readonly TextSection[] | undefined = HAJJ_BOOK_SECTIONS
+  sections: readonly TextSection[] | undefined = HAJJ_BOOK_SECTIONS,
+  features: typeof kk.features = kk.features
 ): Array<HajjJourneyPhase & { sections: TextSection[] }> {
   const safeSections = Array.isArray(sections) ? sections : [];
-  return HAJJ_JOURNEY_PHASES.map((phase) => ({
-    ...phase,
-    sections: safeSections.filter((section) => phaseForHajjBookSection(section) === phase.id),
-  })).filter((phase) => phase.sections.length > 0);
+  return HAJJ_JOURNEY_PHASE_META.map((phase) => {
+    const copy = hajjPhaseCopy(phase.id, features);
+    return {
+      ...phase,
+      ...copy,
+      sections: safeSections.filter((section) => phaseForHajjBookSection(section) === phase.id),
+    };
+  }).filter((phase) => phase.sections.length > 0);
 }
 
 function CompactHajjSection({ section, expanded, onToggle, colors, children }: CompactSectionProps) {
   const styles = useMemo(() => makeCompactSectionStyles(colors), [colors]);
   const { tr } = useKkAutoTranslator();
+  const t = useI18n();
   const pageRange =
     section.startPage === section.endPage ? `${section.startPage}` : `${section.startPage}–${section.endPage}`;
   return (
@@ -127,7 +130,7 @@ function CompactHajjSection({ section, expanded, onToggle, colors, children }: C
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${tr(section.title)} — ${expanded ? "жабу" : "ашу"}`}
+        accessibilityLabel={`${tr(section.title)} — ${expanded ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
         style={({ pressed }) => [styles.head, expanded && styles.headOpen, pressed && { opacity: 0.9 }]}
       >
         <View style={styles.textCol}>
@@ -203,8 +206,14 @@ function HajjJourneyRoadmap({
   tr: (text: string) => string;
 }) {
   const t = useI18n();
+  const localeRevision = useLocaleRevision();
   const styles = useMemo(() => makeJourneyStyles(colors), [colors]);
-  const groups = useMemo(() => buildHajjJourneyGroups(), []);
+  const groups = useMemo(
+    () => buildHajjJourneyGroups(HAJJ_BOOK_SECTIONS, t.features),
+    // localeRevision: `kk` is mutated in place on language change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [localeRevision, t.features]
+  );
   const [openPhase, setOpenPhase] = useState<HajjJourneyPhaseId | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -235,20 +244,20 @@ function HajjJourneyRoadmap({
                 }}
                 accessibilityRole="button"
                 accessibilityState={{ expanded }}
-                accessibilityLabel={`${tr(group.title)} — ${expanded ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
-                style={({ pressed }) => [styles.phaseHead, expanded && styles.phaseHeadOpen, pressed && { opacity: 0.92 }]}
-              >
-                <View style={styles.phaseIcon}>
-                  <MaterialIcons name={group.icon} size={18} color={expanded ? "#FFFFFF" : colors.accent} />
-                </View>
-                <View style={styles.phaseTextCol}>
-                  <Text style={[styles.phaseTitle, expanded && styles.phaseTitleOpen]} numberOfLines={1}>
-                    {tr(group.title)}
-                  </Text>
-                  <Text style={[styles.phaseSub, expanded && styles.phaseSubOpen]} numberOfLines={1}>
-                    {tr(group.subtitle)}
-                  </Text>
-                </View>
+                  accessibilityLabel={`${group.title} — ${expanded ? t.common.guideAccordionCollapse : t.common.guideAccordionExpand}`}
+                  style={({ pressed }) => [styles.phaseHead, expanded && styles.phaseHeadOpen, pressed && { opacity: 0.92 }]}
+                >
+                  <View style={styles.phaseIcon}>
+                    <MaterialIcons name={group.icon} size={18} color={expanded ? "#FFFFFF" : colors.accent} />
+                  </View>
+                  <View style={styles.phaseTextCol}>
+                    <Text style={[styles.phaseTitle, expanded && styles.phaseTitleOpen]} numberOfLines={1}>
+                      {group.title}
+                    </Text>
+                    <Text style={[styles.phaseSub, expanded && styles.phaseSubOpen]} numberOfLines={1}>
+                      {group.subtitle}
+                    </Text>
+                  </View>
                 <Text style={[styles.phaseCount, expanded && styles.phaseCountOpen]}>{group.sections.length}</Text>
               </Pressable>
 

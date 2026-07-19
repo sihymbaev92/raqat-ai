@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, Modal, ScrollView } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
 import {
   displayCachedAyahArabic,
   type CachedAyah,
@@ -10,6 +10,7 @@ import {
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
+import { useQuranTranslitScript } from "../../quran/quranTranslitScript";
 import type { QuranSurahScreenStyles } from "../../quran/quranSurahScreenStyles";
 
 export type QuranSurahTranslationSheetProps = {
@@ -33,6 +34,8 @@ export function QuranSurahTranslationSheet({
   ayahMeaningLine,
   onClose,
 }: QuranSurahTranslationSheetProps) {
+  const t = useI18n();
+  const translitScript = useQuranTranslitScript();
   const insets = useSafeAreaInsets();
   const content = useMemo(() => {
     if (!item) return null;
@@ -40,36 +43,40 @@ export function QuranSurahTranslationSheet({
     const kkLine = ayahMeaningLine(item);
     const kirilRead =
       getQuranTranslitOverride(surahNumber, item.numberInSurah) ??
-      resolveQuranTranslitForDisplay(item.translit, displayCachedAyahArabic(item, arabicScriptEdition));
+      resolveQuranTranslitForDisplay(
+        item.translit,
+        displayCachedAyahArabic(item, arabicScriptEdition),
+        translitScript
+      );
     return (
       <>
         <Text style={styles.readerSettingsTitle}>
-          {kk.quran.ayahTranslationSheetTitle(surahNumber, item.numberInSurah)}
+          {t.quran.ayahTranslationSheetTitle(surahNumber, item.numberInSurah)}
         </Text>
         <ScrollView
           style={{ maxHeight: Math.min(520, windowHeight * 0.62) }}
           contentContainerStyle={styles.translationSheetContent}
           showsVerticalScrollIndicator
         >
-          <Text style={styles.translationSectionTitle}>{kk.quran.ayahTranslationArabic}</Text>
+          <Text style={styles.translationSectionTitle}>{t.quran.ayahTranslationArabic}</Text>
           <Text selectable style={styles.translationArabicText}>
             {ar}
           </Text>
           {kirilRead ? (
             <>
-              <Text style={styles.translationSectionTitle}>{kk.quran.ayahTranslationReading}</Text>
+              <Text style={styles.translationSectionTitle}>{t.quran.ayahTranslationReading}</Text>
               <Text selectable style={styles.translationBodyText}>
                 {kirilRead}
               </Text>
             </>
           ) : null}
-          <Text style={styles.translationSectionTitle}>{kk.quran.ayahTranslationMeaning}</Text>
+          <Text style={styles.translationSectionTitle}>{t.quran.ayahTranslationMeaning}</Text>
           <Text selectable style={styles.translationBodyText}>
-            {kkLine || kk.quran.ayahTranslationMissing}
+            {kkLine || t.quran.ayahTranslationMissing}
           </Text>
-          <Text style={styles.translationSectionTitle}>{kk.quran.ayahTranslationTafsir}</Text>
+          <Text style={styles.translationSectionTitle}>{t.quran.ayahTranslationTafsir}</Text>
           <Text selectable style={styles.translationTafsirText}>
-            {kk.quran.ayahTranslationTafsirBody}
+            {t.quran.ayahTranslationTafsirBody}
           </Text>
         </ScrollView>
         <Pressable
@@ -80,11 +87,11 @@ export function QuranSurahTranslationSheet({
           ]}
           onPress={onClose}
         >
-          <Text style={styles.readerSettingsDoneTxt}>{kk.common.close}</Text>
+          <Text style={styles.readerSettingsDoneTxt}>{t.common.close}</Text>
         </Pressable>
       </>
     );
-  }, [arabicScriptEdition, ayahMeaningLine, item, onClose, styles, surahNumber, windowHeight]);
+  }, [arabicScriptEdition, ayahMeaningLine, item, onClose, styles, surahNumber, t, translitScript, windowHeight]);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

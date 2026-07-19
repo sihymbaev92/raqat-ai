@@ -50,8 +50,6 @@
           url.replace(/"/g, "&quot;") +
           '" rel="noopener noreferrer" target="_blank">Толық оқу</a>';
       }
-      html +=
-        '<a class="btn primary" href="https://rahatomir.com/more/ai" rel="noopener noreferrer">AI-ға сұрақ</a>';
       html += "</div></div>";
       li.innerHTML = html;
       listEl.appendChild(li);

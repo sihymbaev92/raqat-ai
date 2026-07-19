@@ -12,7 +12,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
+import { useAppLocale } from "../../i18n/runtime";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import { surahListMetaSubtitle, surahListNumberedTitle, mushafStartPageForSurah } from "../../data/surahListMeta";
 import { modalSheetBottomPadding } from "../../utils/modalSheetInsets";
 
@@ -55,6 +57,9 @@ export function HatimSurahSearchSheet({
   onClose,
   onPick,
 }: Props) {
+  const t = useI18n();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const insets = useSafeAreaInsets();
   const sheetBottomPad = modalSheetBottomPadding(insets);
   const [query, setQuery] = useState("");
@@ -81,13 +86,13 @@ export function HatimSurahSearchSheet({
         <View style={[styles.card, { paddingBottom: sheetBottomPad }]}>
           <View style={styles.handle} />
           <View style={styles.titleRow}>
-            <Text style={styles.title}>{kk.hatim.searchTitle}</Text>
+            <Text style={styles.title}>{t.hatim.searchTitle}</Text>
             <Pressable
               style={styles.closeBtn}
               onPress={onClose}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel={kk.common.cancel}
+              accessibilityLabel={t.common.cancel}
             >
               <MaterialIcons name="close" size={22} color={colors.muted} />
             </Pressable>
@@ -97,13 +102,13 @@ export function HatimSurahSearchSheet({
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder={kk.hatim.searchPlaceholder}
+              placeholder={t.hatim.searchPlaceholder}
               placeholderTextColor={colors.muted}
               style={styles.searchInput}
               autoCorrect={false}
               autoCapitalize="none"
               autoFocus={visible}
-              accessibilityLabel={kk.hatim.searchPlaceholder}
+              accessibilityLabel={t.hatim.searchPlaceholder}
               returnKeyType="search"
             />
             {query.length > 0 ? (
@@ -111,7 +116,7 @@ export function HatimSurahSearchSheet({
                 onPress={() => setQuery("")}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel={kk.hatim.searchClearA11y}
+                accessibilityLabel={t.hatim.searchClearA11y}
               >
                 <MaterialIcons name="close" size={18} color={colors.muted} />
               </Pressable>
@@ -128,18 +133,18 @@ export function HatimSurahSearchSheet({
                 : [styles.listPad, { paddingBottom: sheetBottomPad }]
             }
             ListEmptyComponent={
-              <Text style={styles.emptyTxt}>{kk.hatim.searchEmpty}</Text>
+              <Text style={styles.emptyTxt}>{t.hatim.searchEmpty}</Text>
             }
             renderItem={({ item }) => {
               const page = mushafStartPageForSurah(item.number);
-              const numberedTitle = surahListNumberedTitle(item.number, item.name);
+              const numberedTitle = surahListNumberedTitle(item.number, item.name, locale, tr);
               const metaSubtitle = surahListMetaSubtitle(item.ayahCount, page);
               return (
                 <Pressable
                   style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
                   onPress={() => onSelect(item.number)}
                   accessibilityRole="button"
-                  accessibilityLabel={kk.hatim.searchRowA11y(numberedTitle, metaSubtitle)}
+                  accessibilityLabel={t.hatim.searchRowA11y(numberedTitle, metaSubtitle)}
                 >
                   <Text style={styles.rowTitle} numberOfLines={1}>
                     {numberedTitle}

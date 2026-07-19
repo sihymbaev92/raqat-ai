@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { AppLocale } from "../i18n/runtime";
 import { quranTranslationAttributionForLocale } from "../i18n/quranTranslationAttribution";
+import type { QuranReadingLocale } from "../quran/quranReadingLocale";
 import { ensureQuranKkProvenanceLoaded } from "../services/quranKkProvenance";
 
 /** Оқу/tізім экрандарында аударма дереккөз footer (kk — бандл provenance). */
-export function useQuranTranslationAttribution(locale: AppLocale): string {
+export function useQuranTranslationAttribution(locale: QuranReadingLocale): string {
   const [line, setLine] = useState(() => quranTranslationAttributionForLocale(locale));
 
   useEffect(() => {

@@ -17,14 +17,24 @@ describe("scheduleFullScreenAzanAlarmsForResult", () => {
     },
   ];
 
-  it("rejects schedule when exact alarm permission is blocked on Android 12+", () => {
+  it("rejects when exact alarm is blocked and native scheduled nothing", () => {
+    const result = scheduleFullScreenAzanAlarmsForResult(payload, {
+      scheduledCount: 0,
+      identifiers: [],
+      exactAlarmPermissionGranted: false,
+    });
+    expect(result.accepted).toBe(false);
+    expect(result.identifiers.size).toBe(0);
+  });
+
+  it("accepts when native alarms were scheduled even if exact-alarm flag is false", () => {
     const result = scheduleFullScreenAzanAlarmsForResult(payload, {
       scheduledCount: 1,
       identifiers: ["test-fajr"],
       exactAlarmPermissionGranted: false,
     });
-    expect(result.accepted).toBe(false);
-    expect(result.identifiers.size).toBe(0);
+    expect(result.accepted).toBe(true);
+    expect(result.identifiers.has("test-fajr")).toBe(true);
   });
 
   it("accepts when exact alarm granted", () => {

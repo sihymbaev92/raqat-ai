@@ -14,12 +14,8 @@ describe("quranTranslationEditions", () => {
     expect(isQuranTranslationLocale("tr")).toBe(true);
     expect(isQuranTranslationLocale("uz")).toBe(true);
     expect(isQuranTranslationLocale("ky")).toBe(true);
-    expect(isQuranTranslationLocale("zh")).toBe(true);
-    expect(isQuranTranslationLocale("fa")).toBe(true);
-    expect(isQuranTranslationLocale("id")).toBe(true);
-    expect(isQuranTranslationLocale("ms")).toBe(true);
-    expect(isQuranTranslationLocale("hi")).toBe(true);
-    expect(isQuranTranslationLocale("ku")).toBe(true);
+    expect(isQuranTranslationLocale("zh")).toBe(false);
+    expect(isQuranTranslationLocale("fa")).toBe(false);
     expect(isQuranTranslationLocale("kk")).toBe(false);
     expect(isQuranTranslationLocale("ar")).toBe(false);
   });
@@ -30,12 +26,6 @@ describe("quranTranslationEditions", () => {
     expect(quranTranslationFieldForLocale("tr")).toBe("textTr");
     expect(quranTranslationFieldForLocale("uz")).toBe("textUz");
     expect(quranTranslationFieldForLocale("ky")).toBe("textKy");
-    expect(quranTranslationFieldForLocale("zh")).toBe("textZh");
-    expect(quranTranslationFieldForLocale("fa")).toBe("textFa");
-    expect(quranTranslationFieldForLocale("id")).toBe("textId");
-    expect(quranTranslationFieldForLocale("ms")).toBe("textMs");
-    expect(quranTranslationFieldForLocale("hi")).toBe("textHi");
-    expect(quranTranslationFieldForLocale("ku")).toBe("textKu");
   });
 
   it("loads Quran translations from the offline bundle before network", async () => {
@@ -43,9 +33,6 @@ describe("quranTranslationEditions", () => {
 
     await expect(getQuranSurahTranslation(1, "en")).resolves.toMatchObject({
       1: "In the name of Allah, the Entirely Merciful, the Especially Merciful.",
-    });
-    await expect(getQuranSurahTranslation(1, "zh")).resolves.toMatchObject({
-      1: "奉至仁至慈的真主之名",
     });
     expect(fetchSpy).not.toHaveBeenCalled();
 
@@ -60,9 +47,6 @@ describe("quranTranslationEditions", () => {
       expect(map?.[1]?.trim()).toBeTruthy();
       expect(map?.[7]?.trim()).toBeTruthy();
     }
-    await expect(getQuranSurahTranslation(108, "ku")).resolves.toMatchObject({
-      3: "بێگومان ھەر ناحەزت دوا بڕاوە (ئەی موحەممەد ﷺ)",
-    });
     await expect(getQuranSurahTranslation(1, "ky")).resolves.toMatchObject({
       2: "Ааламдардын Раббиси – Аллахка алкыш-мактоолор болсун![1]",
     });

@@ -10,10 +10,7 @@ import {
   type TraditionEvidenceBlock,
   type TraditionEvidenceRef,
 } from "../../content/traditionReligiousEvidence";
-import { kk } from "../../i18n/kk";
-import { useAppLocale } from "../../i18n/runtime";
-
-const tg = kk.features.traditionGuide;
+import { useI18n } from "../../i18n/useI18n";
 
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
 
@@ -36,6 +33,7 @@ function EvidenceRefRow({
   tr: (text: string) => string;
 }) {
   const styles = useMemo(() => makeRefStyles(palette), [palette]);
+  const tg = useI18n().features.traditionGuide;
   const isQuran = evidenceRef.kind === "quran";
   const canOpenHadith = evidenceRef.kind === "hadith" && Boolean(evidenceRef.hadithId);
 
@@ -109,7 +107,7 @@ function EvidenceBlockCard({
 }
 
 export function TraditionReligiousEvidenceSection({ topicId, palette, nav, tr }: Props) {
-  useAppLocale();
+  const tg = useI18n().features.traditionGuide;
   const blocks = getTraditionReligiousEvidence(topicId);
   const styles = useMemo(() => makeStyles(palette), [palette]);
 

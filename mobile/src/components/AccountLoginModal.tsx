@@ -36,12 +36,17 @@ function apiErrorMessage(body: unknown): string | null {
 
 async function applyAuthSuccess(r: AuthLoginResponse): Promise<boolean> {
   if (!r.ok || !r.access_token || !r.refresh_token) return false;
-  await saveLoginTokens({
-    access_token: r.access_token,
-    refresh_token: r.refresh_token,
-    expires_in: r.expires_in,
-    platform_user_id: r.platform_user_id,
-  });
+  try {
+    await saveLoginTokens({
+      access_token: r.access_token,
+      refresh_token: r.refresh_token,
+      expires_in: r.expires_in,
+      platform_user_id: r.platform_user_id,
+    });
+  } catch (e) {
+    if (e instanceof Error && e.message === "SECURITY_BLOCKED_DEVICE") return false;
+    throw e;
+  }
   await syncAccountDataWithServerBidirectional();
   return true;
 }

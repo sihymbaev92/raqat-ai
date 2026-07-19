@@ -22,10 +22,13 @@ import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
-import { hydrateLocale, useAppLocale } from "./src/i18n/runtime";
+import { hydrateLocale, useAppLocale, useLocaleRevision } from "./src/i18n/runtime";
+import { getOnboardingDone } from "./src/storage/prefs";
+import { OnboardingLanguageScreen } from "./src/screens/OnboardingLanguageScreen";
 import { runAfterInteractions } from "./src/utils/uiDefer";
 import { trackNavigationPlausible } from "./src/navigation/navigationPlausible";
 import { isPlausibleEnabled, trackPlausiblePageview } from "./src/services/plausible";
+import * as Linking from "expo-linking";
 import { trackUsageEvent } from "./src/services/usageAnalytics";
 import { ScreenFitProvider, useScreenFitMetrics, webViewportClampStyle } from "./src/theme/screenFit";
 
@@ -61,16 +64,13 @@ function AppSafeAreaFrame({ children }: { children: React.ReactNode }) {
           {
             flex: 1,
             backgroundColor: colors.bg,
+            /** Үсті — сағаттан төмен; асты — жүйелік артқадан жоғары (жағаласпау). */
             paddingTop: deviceInsets.top,
             paddingBottom: bottomGuard,
           },
           webClamp,
         ]}
       >
-        {/*
-          The outer frame consumes device system insets once. The nested provider
-          reports zero top/bottom so screens do not pad twice under the status bar.
-        */}
         <SafeAreaProvider style={{ flex: 1 }} initialMetrics={innerMetrics}>
           {children}
         </SafeAreaProvider>
@@ -79,9 +79,27 @@ function AppSafeAreaFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
+function scheduleFirstLaunchPermissionsBurst(): void {
+  if (Platform.OS === "web") return;
+  setTimeout(() => {
+    void import("./src/storage/prefs")
+      .then(async (prefs) => {
+        if (await prefs.getFirstLaunchPermissionsBurstDone()) return;
+        const { requestAllCorePermissionsOnFirstLaunch } = await import(
+          "./src/services/firstLaunchPermissions"
+        );
+        await requestAllCorePermissionsOnFirstLaunch();
+        await prefs.setFirstLaunchPermissionsBurstDone();
+      })
+      .catch((e) => reportBackgroundJobError("firstLaunchPermissions", e));
+  }, FIRST_LAUNCH_PERMISSIONS_DELAY_MS);
+}
+
 export default function App() {
   const [bootReady, setBootReady] = useState(false);
-  useAppLocale();
+  const [needsLanguageOnboarding, setNeedsLanguageOnboarding] = useState(false);
+  const locale = useAppLocale();
+  const localeRevision = useLocaleRevision();
   const colorScheme = useColorScheme();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastAppStateSyncAtRef = useRef(0);
@@ -89,13 +107,63 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       /** API URL / тіл — UI алдында; қалған ауыр жұмыс интеракциядан кейін. */
+      let onboardingDone = true;
+      let azanLockScreenLaunch = false;
       try {
-        await hydrateRaqatApiBaseOverride();
-        await hydrateLocale();
+        /** Құлып экранындағы азан: boot spinner NavigationContainer-ды бөгемесін. */
+        if (Platform.OS === "android") {
+          try {
+            const initialUrl = await Linking.getInitialURL();
+            if (initialUrl?.includes("azan")) {
+              azanLockScreenLaunch = true;
+              onboardingDone = true;
+            }
+          } catch {
+            /* */
+          }
+        }
+
+        if (!azanLockScreenLaunch) {
+          await hydrateRaqatApiBaseOverride();
+          try {
+            await import("./src/security/appSecurityShield").then((m) =>
+              m.evaluateAppSecurityPosture(true)
+            );
+          } catch {
+            /* security shield — fail open for prayer UX */
+          }
+          onboardingDone = await getOnboardingDone();
+          if (!onboardingDone && Platform.OS === "android") {
+            try {
+              const { ensurePrayerAzanShouldBypassOnboarding } = await import(
+                "./src/services/prayerFullScreenAzan"
+              );
+              if (await ensurePrayerAzanShouldBypassOnboarding()) {
+                onboardingDone = true;
+                azanLockScreenLaunch = true;
+              }
+            } catch {
+              /* */
+            }
+          }
+        } else {
+          void hydrateRaqatApiBaseOverride().catch(() => {});
+        }
+
+        setNeedsLanguageOnboarding(!onboardingDone);
+
+        if (azanLockScreenLaunch) {
+          // Навигацияны бірден ашу — тіл hydrate параллель (азан экраны құлып үстінде).
+          setBootReady(true);
+          void hydrateLocale().catch((e) => console.error("azan boot hydrateLocale", e));
+        } else {
+          await hydrateLocale();
+          setBootReady(true);
+        }
       } catch (e) {
         console.error("boot hydrate failed", e);
-      } finally {
         setBootReady(true);
+      } finally {
         void trackUsageEvent({
           eventName: "app_launch",
           screen: "App",
@@ -119,20 +187,13 @@ export default function App() {
           .then((m) => m.initPrayerNotificationTapRouting())
           .catch((e) => reportBackgroundJobError("prayerNotificationTap", e));
 
-        if (Platform.OS !== "web") {
-          // Орнатқаннан кейін бірден: орын + хабарлама + батарея + азан рұқсаттары.
-          setTimeout(() => {
-            void import("./src/storage/prefs")
-              .then(async (prefs) => {
-                if (await prefs.getFirstLaunchPermissionsBurstDone()) return;
-                const { requestAllCorePermissionsOnFirstLaunch } = await import(
-                  "./src/services/firstLaunchPermissions"
-                );
-                await requestAllCorePermissionsOnFirstLaunch();
-                await prefs.setFirstLaunchPermissionsBurstDone();
-              })
-              .catch((e) => reportBackgroundJobError("firstLaunchPermissions", e));
-          }, FIRST_LAUNCH_PERMISSIONS_DELAY_MS);
+        void import("./src/services/prayerFullScreenAzan")
+          .then((m) => m.initPrayerAzanLaunchRouting())
+          .catch((e) => reportBackgroundJobError("prayerAzanLaunchRouting", e));
+
+        /** Азан сессиясы кезінде рұқсат экрандарын ашпау — құлып үстіндегі бетті жаппау. */
+        if (onboardingDone && !azanLockScreenLaunch) {
+          scheduleFirstLaunchPermissionsBurst();
         }
 
         if (Platform.OS === "web") {
@@ -211,6 +272,9 @@ export default function App() {
           void import("./src/services/prayerAzanPermissions")
             .then((m) => m.ensurePrayerAzanPermissionsOnAppActive())
             .catch((e) => reportBackgroundJobError("prayerAzanPermissions", e));
+          void import("./src/services/prayerFullScreenAzan")
+            .then((m) => m.ensurePrayerAzanRouteFromLaunch())
+            .catch((e) => reportBackgroundJobError("prayerAzanRouteReplay", e));
           void import("./src/services/accountSync")
             .then((m) => m.syncAccountDataWithServerBidirectional())
             .catch((e) => reportBackgroundJobError("accountSync", e));
@@ -256,12 +320,19 @@ export default function App() {
   const appNavigation = (
     <>
       <NavigationContainer
+        key={`${locale}-${localeRevision}`}
         ref={rootNavigationRef}
         linking={appDeepLinking}
         onReady={() => {
           const state = rootNavigationRef.getRootState() ?? undefined;
           setRootNavReady(true, state);
           trackNavigationPlausible(state);
+          void import("./src/services/prayerFullScreenAzan")
+            .then((m) => m.ensurePrayerAzanRouteFromLaunch())
+            .catch((e) => reportBackgroundJobError("prayerAzanRouteReplay", e));
+          void import("./src/services/notificationQuickActions")
+            .then((m) => m.flushPendingNotificationQuickActions())
+            .catch(() => {});
         }}
         onStateChange={(state) => {
           setRootNavState(state);
@@ -275,13 +346,27 @@ export default function App() {
     </>
   );
 
+  const onLanguageOnboardingComplete = () => {
+    setNeedsLanguageOnboarding(false);
+    scheduleFirstLaunchPermissionsBurst();
+  };
+
   return (
     <GestureHandlerRootView testID="raqat-app-root" style={{ flex: 1 }}>
       <AppErrorBoundary>
         <ScreenFitProvider>
           <SafeAreaProvider>
             <ThemeProvider>
-              <AppSafeAreaFrame>{appNavigation}</AppSafeAreaFrame>
+              <AppSafeAreaFrame>
+                {needsLanguageOnboarding ? (
+                  <>
+                    <OnboardingLanguageScreen onComplete={onLanguageOnboardingComplete} />
+                    <ThemedStatusBar />
+                  </>
+                ) : (
+                  appNavigation
+                )}
+              </AppSafeAreaFrame>
             </ThemeProvider>
           </SafeAreaProvider>
         </ScreenFitProvider>

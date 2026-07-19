@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react";
 import { useAppLocale } from "../../i18n/runtime";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
 import { View, Text } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -7,35 +8,30 @@ import type { MoreStackParamList } from "../../navigation/types";
 import { navigateToHatim } from "../../navigation/navigateToMoreStack";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
-import { MUSHAF_DENSITY_ORDER } from "../../config/mushafConfig";
-import {
-  QURAN_ARABIC_FONT_PRESETS,
-} from "../../config/quranArabicFontPresets";
 import {
   QURAN_RECITER_GROUP_ORDER,
   QURAN_RECITER_OPTIONS,
   quranReciterGroupLabelKk,
 } from "../../config/quranReciters";
 import {
-  MUSHAF_TEXT_SCALE_MAX,
-  MUSHAF_TEXT_SCALE_MIN,
-  MUSHAF_TEXT_SCALE_STEP,
-} from "../../quran/mushafTextScale";
+  QURAN_READING_LOCALES,
+  setQuranReadingLocale,
+  useQuranReadingLocale,
+  type QuranReadingLocale,
+} from "../../quran/quranReadingLocale";
+import { quranTranslationLocaleChoiceLabel } from "../../quran/quranTranslationLocaleOptions";
+import {
+  QURAN_TRANSLIT_SCRIPTS,
+  setQuranTranslitScript,
+  useQuranTranslitScript,
+  type QuranTranslitScript,
+} from "../../quran/quranTranslitScript";
 import {
   loadQuranReaderPrefs,
-  setAyahMarkerStyle,
-  setMushafDensity,
-  setQuranArabicFontPreset,
   setQuranArabicScriptEdition,
-  setQuranMushafTextScale,
   setQuranReaderAllowRotation,
-  setQuranReaderNavMode,
   setQuranReciterEdition,
   setQuranReadingTheme,
-  setQuranTajweedColorsEnabled,
-  type AyahMarkerStyleId,
-  type MushafDensityId,
-  type QuranReaderNavMode,
   type QuranReaderPrefsSnapshot,
 } from "../../storage/quranReaderPrefs";
 import {
@@ -63,7 +59,6 @@ import {
   SettingsBoolRow,
   SettingsChipGroup,
   SettingsChoiceRow,
-  SettingsScaleStepper,
 } from "./settingsFormUi";
 
 type Props = { colors: ThemeColors };
@@ -92,6 +87,9 @@ function quranAudioStatusLabel(status: QuranAudioDownloadStatus): string {
 
 export function SettingsQuranHub({ colors }: Props) {
   useAppLocale();
+  const readingLocale = useQuranReadingLocale();
+  const translitScript = useQuranTranslitScript();
+  const { tr } = useKkAutoTranslator();
   const styles = makeSettingsStyles(colors);
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [prefs, setPrefs] = useState<QuranReaderPrefsSnapshot | null>(null);
@@ -133,7 +131,6 @@ export function SettingsQuranHub({ colors }: Props) {
     setPrefs((p) => (p ? { ...p, ...partial } : p));
   };
 
-  const mushafPct = Math.round(prefs.mushafTextScale * 100);
   const audioState = audioDash?.state;
   const audioPrefs = audioDash?.prefs;
   const activeEdition = audioState?.currentEdition ?? prefs.reciterEdition;
@@ -166,6 +163,30 @@ export function SettingsQuranHub({ colors }: Props) {
             }}
           />
         </SettingsCard>
+        <Text style={[styles.label, { marginTop: 12, marginBottom: 6 }]}>
+          {kk.settings.quranTranslationLocaleTitle}
+        </Text>
+        <SettingsChipGroup
+          colors={colors}
+          options={QURAN_READING_LOCALES}
+          value={readingLocale}
+          onChange={(id: QuranReadingLocale) => {
+            void setQuranReadingLocale(id);
+          }}
+          labelFor={(id) => quranTranslationLocaleChoiceLabel(id)}
+        />
+        <Text style={[styles.hint, { marginBottom: 10 }]}>{kk.settings.quranTranslationLocaleHint}</Text>
+        <Text style={[styles.label, { marginBottom: 6 }]}>{kk.settings.quranTranslitScriptTitle}</Text>
+        <SettingsChipGroup
+          colors={colors}
+          options={QURAN_TRANSLIT_SCRIPTS}
+          value={translitScript}
+          onChange={(id: QuranTranslitScript) => {
+            void setQuranTranslitScript(id);
+          }}
+          labelFor={(id) => kk.settings.quranTranslitScriptOption(id)}
+        />
+        <Text style={[styles.hint, { marginBottom: 4 }]}>{kk.settings.quranTranslitScriptHint}</Text>
       </SettingsSection>
 
       <SettingsSection
@@ -182,66 +203,9 @@ export function SettingsQuranHub({ colors }: Props) {
             patch({ readingTheme: id });
             void setQuranReadingTheme(id);
           }}
-          labelFor={(id) => QURAN_READING_THEMES.find((t) => t.id === id)?.labelKk ?? id}
+          labelFor={(id) => tr(QURAN_READING_THEMES.find((t) => t.id === id)?.labelKk ?? id)}
         />
         <Text style={[styles.hint, { marginBottom: 10 }]}>{kk.quran.readerReadingThemeHint}</Text>
-        <Text style={[styles.label, { marginBottom: 6 }]}>{kk.settings.quranMushafDensityTitle}</Text>
-        <SettingsChipGroup
-          colors={colors}
-          options={MUSHAF_DENSITY_ORDER}
-          value={prefs.density}
-          onChange={(id: MushafDensityId) => {
-            patch({ density: id });
-            void setMushafDensity(id);
-          }}
-          labelFor={(id) => kk.settings.quranMushafDensityOption(id)}
-        />
-        <Text style={[styles.label, { marginTop: 10, marginBottom: 6 }]}>{kk.quran.readerNavTitle}</Text>
-        <SettingsChipGroup
-          colors={colors}
-          options={["scroll", "page"] as const}
-          value={prefs.navMode}
-          onChange={(id: QuranReaderNavMode) => {
-            patch({ navMode: id });
-            void setQuranReaderNavMode(id);
-          }}
-          labelFor={(id) =>
-            id === "scroll" ? kk.settings.quranReaderNavScrollShort : kk.settings.quranReaderNavPageShort
-          }
-        />
-        <Text style={[styles.label, { marginTop: 10, marginBottom: 6 }]}>{kk.quran.readerAyahMarkerStyleTitle}</Text>
-        <SettingsChipGroup
-          colors={colors}
-          options={["ring_svg", "classic"] as const}
-          value={prefs.marker}
-          onChange={(id: AyahMarkerStyleId) => {
-            patch({ marker: id });
-            void setAyahMarkerStyle(id);
-          }}
-          labelFor={(id) =>
-            id === "ring_svg" ? kk.settings.quranReaderMarkerRing : kk.settings.quranReaderMarkerClassic
-          }
-        />
-        <Text style={[styles.label, { marginTop: 10, marginBottom: 6 }]}>{kk.quran.readerMushafScaleTitle}</Text>
-        <SettingsScaleStepper
-          colors={colors}
-          valuePct={mushafPct}
-          decreaseDisabled={prefs.mushafTextScale <= MUSHAF_TEXT_SCALE_MIN + 1e-6}
-          increaseDisabled={prefs.mushafTextScale >= MUSHAF_TEXT_SCALE_MAX - 1e-6}
-          decreaseA11y={kk.quran.readerMushafScaleSmallerA11y}
-          increaseA11y={kk.quran.readerMushafScaleLargerA11y}
-          valueA11y={kk.quran.readerMushafScaleValueA11y(mushafPct)}
-          onDecrease={() => {
-            const next = prefs.mushafTextScale - MUSHAF_TEXT_SCALE_STEP;
-            patch({ mushafTextScale: next });
-            void setQuranMushafTextScale(next);
-          }}
-          onIncrease={() => {
-            const next = prefs.mushafTextScale + MUSHAF_TEXT_SCALE_STEP;
-            patch({ mushafTextScale: next });
-            void setQuranMushafTextScale(next);
-          }}
-        />
         <View style={{ marginTop: 8 }}>
           <SettingsBoolRow
             colors={colors}
@@ -277,21 +241,6 @@ export function SettingsQuranHub({ colors }: Props) {
             />
           ))}
         </SettingsAccordion>
-        <SettingsAccordion colors={colors} title={kk.quran.readerArabicFontTitle}>
-          <Text style={styles.hint}>{kk.quran.readerArabicFontHint}</Text>
-          {QURAN_ARABIC_FONT_PRESETS.map((p) => (
-            <SettingsChoiceRow
-              key={p.id}
-              colors={colors}
-              label={p.labelKk}
-              selected={prefs.arabicFont === p.id}
-              onPress={() => {
-                patch({ arabicFont: p.id });
-                void setQuranArabicFontPreset(p.id);
-              }}
-            />
-          ))}
-        </SettingsAccordion>
       </SettingsSection>
 
       <SettingsSection colors={colors} title={kk.settings.quranSectionAudio} subtitle={kk.settings.quranSectionAudioSub}>
@@ -303,13 +252,13 @@ export function SettingsQuranHub({ colors }: Props) {
             return (
               <View key={group}>
                 <Text style={[styles.label, { marginTop: 8, fontSize: 13, color: colors.muted }]}>
-                  {quranReciterGroupLabelKk(group)}
+                  {tr(quranReciterGroupLabelKk(group))}
                 </Text>
                 {items.map((r) => {
                   const available = r.audioAvailable !== false;
                   const label = available
-                    ? r.labelKk
-                    : `${r.labelKk} (${kk.quran.readerReciterSoon})`;
+                    ? tr(r.labelKk)
+                    : `${tr(r.labelKk)} (${kk.quran.readerReciterSoon})`;
                   return (
                     <SettingsChoiceRow
                       key={r.edition}
@@ -318,7 +267,7 @@ export function SettingsQuranHub({ colors }: Props) {
                       selected={prefs.reciterEdition === r.edition}
                       disabled={!available}
                       accessibilityLabel={
-                        available ? label : kk.quran.readerReciterUnavailableA11y(r.labelKk)
+                        available ? label : kk.quran.readerReciterUnavailableA11y(tr(r.labelKk))
                       }
                       onPress={() => {
                         if (!available) return;
@@ -420,26 +369,6 @@ export function SettingsQuranHub({ colors }: Props) {
             }}
           />
         </SettingsCard>
-      </SettingsSection>
-
-      <SettingsSection colors={colors} title={kk.settings.quranSectionTajweed} subtitle={kk.settings.quranSectionTajweedSub}>
-        <SettingsCard colors={colors}>
-          <SettingsBoolRow
-            colors={colors}
-            label={kk.quran.tajweedModeLabel}
-            hint={kk.quran.tajweedModeHint}
-            value={prefs.tajweedColors}
-            onChange={(v) => {
-              patch({ tajweedColors: v });
-              void setQuranTajweedColorsEnabled(v);
-            }}
-          />
-        </SettingsCard>
-        <SettingsRow
-          colors={colors}
-          label={kk.quran.tajweedOpenGuide}
-          onPress={() => navigation.navigate("TajweedGuide")}
-        />
       </SettingsSection>
 
       <SettingsSection colors={colors} title={kk.settings.quranSectionShortcuts} subtitle={kk.settings.quranSectionShortcutsSub}>

@@ -8,6 +8,7 @@ import {
   DIN_DASTUR_PILLARS,
 } from "../../content/dinMenDasturConnectionGuide";
 import type { TraditionKazakhPalette } from "../../theme/traditionKazakhTheme";
+import { useI18n } from "../../i18n/useI18n";
 
 type Props = {
   palette: TraditionKazakhPalette;
@@ -19,12 +20,14 @@ type Props = {
 
 export function DinDasturConnectionCard({ palette, tr, onOpenFoundation, onOpenBata, bataCount }: Props) {
   const styles = useMemo(() => makeStyles(palette), [palette]);
+  const t = useI18n();
+  const g = t.features.traditionGuide;
 
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
         <MaterialIcons name="account-balance" size={20} color={palette.bannerBg} />
-        <Text style={styles.headTitle}>{tr("Дін мен дәстүр: байланыс")}</Text>
+        <Text style={styles.headTitle}>{g.dinDasturConnectionTitle}</Text>
       </View>
       <Text style={styles.summary}>{tr(DIN_DASTUR_CONNECTION_SUMMARY)}</Text>
 
@@ -36,7 +39,7 @@ export function DinDasturConnectionCard({ palette, tr, onOpenFoundation, onOpenB
         </View>
       ))}
 
-      <Text style={styles.rulesTitle}>{tr("5 ереже")}</Text>
+      <Text style={styles.rulesTitle}>{g.dinDasturRulesTitle}</Text>
       {DIN_DASTUR_CONNECTION_RULES.map((rule) => (
         <View key={rule.id} style={styles.ruleRow}>
           <Text style={styles.ruleTitle}>{tr(rule.title)}</Text>
@@ -52,7 +55,7 @@ export function DinDasturConnectionCard({ palette, tr, onOpenFoundation, onOpenB
           style={({ pressed }) => [styles.btn, styles.btnPrimary, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
         >
-          <Text style={styles.btnPrimaryText}>{tr("Негіз тақырыбы + дәлелдер")}</Text>
+          <Text style={styles.btnPrimaryText}>{g.dinDasturFoundationBtn}</Text>
         </Pressable>
         <Pressable
           oyuBackdrop={false}
@@ -60,7 +63,7 @@ export function DinDasturConnectionCard({ palette, tr, onOpenFoundation, onOpenB
           style={({ pressed }) => [styles.btn, styles.btnSecondary, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
         >
-          <Text style={styles.btnSecondaryText}>{tr(`100 бата мәтіні (${bataCount})`)}</Text>
+          <Text style={styles.btnSecondaryText}>{g.dinDasturBataBtn(bataCount)}</Text>
         </Pressable>
       </View>
     </View>

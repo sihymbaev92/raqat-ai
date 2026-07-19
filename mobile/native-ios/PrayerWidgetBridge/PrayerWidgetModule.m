@@ -18,5 +18,22 @@ RCT_EXTERN_METHOD(stopNativeAzanAudio)
 RCT_EXTERN_METHOD(playNativeAzanDuaAudio)
 RCT_EXTERN_METHOD(getNativeAzanPlaybackStatus:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getPendingAzanLaunch:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(clearPendingAzanLaunch)
+RCT_EXTERN_METHOD(finishAzanDelivery)
+RCT_EXTERN_METHOD(isAzanSessionActive:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(requestAlarmKitAuthorization:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(setWindowSecure:(nonnull NSNumber *)enabled
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(getDeviceIntegrityReport:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(verifyPinnedHttpsHost:(NSString *)host
+                  pinsJson:(NSString *)pinsJson
+                  resolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 
 @end

@@ -40,6 +40,7 @@ docker run --rm `
   -v "${mount}:/app" `
   -w /app `
   -e RAQAT_INCLUDE_NATIVE_EXPO_CONFIG=1 `
+  -e RAQAT_EXPO_RELEASE_BUILD=1 `
   -e CI=1 `
   node:22-bookworm `
   bash -lc "npm install --ignore-scripts >/dev/null 2>&1 && npx expo prebuild --platform ios --no-install --clean"

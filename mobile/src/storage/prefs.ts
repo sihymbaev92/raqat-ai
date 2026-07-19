@@ -27,6 +27,8 @@ const K = {
   prayerLocationAuto: "raqat_prayer_location_auto_v1",
   cityLat: "raqat_city_lat_v1",
   cityLon: "raqat_city_lon_v1",
+  /** Аноним қолданба статистикасы (opt-out) */
+  usageAnalyticsEnabled: "raqat_usage_analytics_enabled_v1",
 } as const;
 
 export type QiblaMotionMode = "balanced" | "fast";
@@ -342,4 +344,15 @@ export async function migrateLegacyTasbihCountIntoMap(): Promise<void> {
     all[prefs.dhikrId] = prefs.count;
     await setAllDhikrCounts(all);
   }
+}
+
+/** Әдепкі: қосулы. Пайдаланушы өшіре алады. */
+export async function getUsageAnalyticsEnabled(): Promise<boolean> {
+  const v = await AsyncStorage.getItem(K.usageAnalyticsEnabled);
+  if (v == null) return true;
+  return v === "1" || v === "true";
+}
+
+export async function setUsageAnalyticsEnabled(on: boolean): Promise<void> {
+  await AsyncStorage.setItem(K.usageAnalyticsEnabled, on ? "1" : "0");
 }

@@ -230,8 +230,8 @@ export function prepareTajweedLetterSpeech(ar: string, nameKk?: string): string 
 }
 
 /**
- * Әріп карточкасы — бандлдалған еркек араб дауысы (أَلِفْ، بَاء + махраж).
- * Жоқ/қате болса: тек араб TTS (бَا) — қазақша жүйелік TTS қате оқиды, қолданбаймыз.
+ * Әріп карточкасы — тек әріп атауы (أَلِفْ، بَاء…). Мысал сөз оқылмайды.
+ * Жоқ/қате болса: араб TTS сол атаумен — қазақша жүйелік TTS қолданбаймыз.
  */
 export async function speakTajweedLetter(
   ar: string,
@@ -246,7 +246,7 @@ export async function speakTajweedLetter(
     await pauseAfterStop();
     if (cancelled()) return false;
 
-    // 1) Бандлдалған еркек араб MP3 (қайталап көру)
+    // 1) Бандлдалған еркек араб MP3 (тек атау)
     for (let attempt = 0; attempt < 2; attempt++) {
       const played = await playTajweedLetterAudio(ar);
       if (cancelled()) return false;
@@ -258,7 +258,7 @@ export async function speakTajweedLetter(
       if (cancelled()) return false;
     }
 
-    // 2) Араб TTS: фатхалы дыбыс (жүйеде ar дауыс болса)
+    // 2) Араб TTS: тек әріп атауы
     const speechAr = tajweedLetterSpeechAr(ar);
     if (speechAr) {
       try {

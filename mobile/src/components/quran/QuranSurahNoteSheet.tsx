@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Modal, StyleSheet, TextInput } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
 import type { ThemeColors } from "../../theme/colors";
 import type { CachedAyah } from "../../storage/quranSurahCache";
 import type { QuranSurahScreenStyles } from "../../quran/quranSurahScreenStyles";
@@ -30,6 +30,7 @@ export function QuranSurahNoteSheet({
   onCancel,
   onSave,
 }: QuranSurahNoteSheetProps) {
+  const t = useI18n();
   const insets = useSafeAreaInsets();
 
   return (
@@ -41,12 +42,12 @@ export function QuranSurahNoteSheet({
           {item ? (
             <>
               <Text style={styles.readerSettingsTitle}>
-                {kk.quran.ayahMenuTitle(surahNumber, item.numberInSurah)}
+                {t.quran.ayahMenuTitle(surahNumber, item.numberInSurah)}
               </Text>
               <TextInput
                 value={noteDraft}
                 onChangeText={onChangeNoteDraft}
-                placeholder={kk.quran.ayahMenuNotePlaceholder}
+                placeholder={t.quran.ayahMenuNotePlaceholder}
                 placeholderTextColor={colors.muted}
                 multiline
                 style={{
@@ -70,7 +71,7 @@ export function QuranSurahNoteSheet({
                   ]}
                   onPress={onCancel}
                 >
-                  <Text style={styles.readerSettingsDoneTxt}>{kk.quran.ayahMenuCancel}</Text>
+                  <Text style={styles.readerSettingsDoneTxt}>{t.quran.ayahMenuCancel}</Text>
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [
@@ -80,7 +81,7 @@ export function QuranSurahNoteSheet({
                   ]}
                   onPress={() => void onSave()}
                 >
-                  <Text style={styles.readerSettingsDoneTxt}>{kk.quran.ayahMenuSaveNote}</Text>
+                  <Text style={styles.readerSettingsDoneTxt}>{t.quran.ayahMenuSaveNote}</Text>
                 </Pressable>
               </View>
             </>

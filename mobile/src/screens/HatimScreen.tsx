@@ -20,17 +20,18 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
-import { kk } from "../i18n/kk";
+import { useAppLocale } from "../i18n/runtime";
+import { useI18n } from "../i18n/useI18n";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import type { MoreStackParamList } from "../navigation/types";
 import { navigateToQuranMushafBook } from "../navigation/navigateToMoreStack";
 import { mushafPageForSurahAyah } from "../quran/mushafPageForSurahAyah";
-import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
 import { juzForSurahAyah } from "../data/quranJuzBoundaries";
 import { AYAH_COUNTS_PER_SURAH } from "../data/quranAyahCounts";
 import {
   mushafStartPageForSurah,
   surahListMetaSubtitle,
-  surahListNumberedTitle,
 } from "../data/surahListMeta";
 import {
   HATIM_SURAH_ROW_H,
@@ -78,6 +79,9 @@ function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
 }
 
 export function HatimScreen({ navigation }: Props) {
+  const t = useI18n();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const listPalette = useMemo(() => quranSurahListPalette(colors, isDark), [colors, isDark]);
@@ -128,7 +132,7 @@ export function HatimScreen({ navigation }: Props) {
     () =>
       Array.from({ length: 114 }, (_, i) => {
         const number = i + 1;
-        const name = surahDisplayTitle(number, "");
+        const name = surahTitleForLocale(number, locale, { tr });
         const ayahCount = AYAH_COUNTS_PER_SURAH[number - 1] ?? 0;
         return {
           number,
@@ -136,7 +140,7 @@ export function HatimScreen({ navigation }: Props) {
           ayahCount,
         };
       }),
-    [],
+    [locale, tr],
   );
 
   const listRows = useMemo<HatimListRow[]>(() => {
@@ -347,11 +351,11 @@ export function HatimScreen({ navigation }: Props) {
                   ]}
                   accessibilityRole={resume ? "button" : "none"}
                   accessibilityLabel={
-                    resume ? kk.hatim.continueReading : undefined
+                    resume ? t.hatim.continueReading : undefined
                   }
                 >
                   <Text style={styles.progressTitle}>
-                    {kk.hatim.progressTitle}
+                    {t.hatim.progressTitle}
                   </Text>
                   <View style={styles.barBg}>
                     <View
@@ -362,31 +366,52 @@ export function HatimScreen({ navigation }: Props) {
                     />
                   </View>
                   <Text style={styles.progressSub}>
-                    {kk.hatim.progressCount
+                    {t.hatim.progressCount
                       .replace("{read}", String(readCount))
                       .replace("{total}", String(total))}
                   </Text>
                   {resume ? (
                     <>
                       <Text style={styles.resumeLine}>
-                        {kk.hatim.resumeLine
-                          .replace("{surahTitle}", surahDisplayTitle(resume.surah, ""))
+                        {t.hatim.resumeLine
+                          .replace(
+                            "{surahTitle}",
+                            surahTitleForLocale(resume.surah, locale, { tr })
+                          )
                           .replace("{ayah}", String(resume.ayah))}
                       </Text>
                       <Text style={styles.continueCta}>
-                        {kk.hatim.continueReading} ›
+                        {t.hatim.continueReading} ›
                       </Text>
                     </>
                   ) : (
-                    <Text style={styles.tapHint}>{kk.hatim.tapAyahHint}</Text>
+                    <Text style={styles.tapHint}>{t.hatim.tapAyahHint}</Text>
                   )}
                 </Pressable>
                 <View style={styles.hatimQuickActionsCol}>
                   <Pressable
+                    onPress={() => navigation.navigate("HatimTajweedList")}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={t.hatim.tajweedOfflineQuickActionA11y}
+                    style={({ pressed }) => [
+                      styles.hatimQuickAction,
+                      styles.hatimQuickActionTajweed,
+                      pressed && styles.hatimQuickActionPressed,
+                    ]}
+                  >
+                    <View style={styles.hatimTajweedIconBadge}>
+                      <MaterialIcons name="palette" size={16} color="#0D9488" />
+                    </View>
+                    <Text style={[styles.hatimQuickActionText, styles.hatimQuickActionTajweedText]}>
+                      {t.hatim.tajweedOfflineQuickAction}
+                    </Text>
+                  </Pressable>
+                  <Pressable
                     onPress={openNavSheet}
                     hitSlop={8}
                     accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.juzHeaderBtnA11y}
+                    accessibilityLabel={t.hatim.juzHeaderBtnA11y}
                     style={({ pressed }) => [
                       styles.hatimQuickAction,
                       styles.hatimQuickActionPrimary,
@@ -396,20 +421,20 @@ export function HatimScreen({ navigation }: Props) {
                     <View style={styles.hatimJuzIconBadge}>
                       <MaterialIcons name="auto-stories" size={17} color={colors.accent} />
                     </View>
-                    <Text style={styles.hatimQuickActionText}>{kk.hatim.juzQuickAction}</Text>
+                    <Text style={styles.hatimQuickActionText}>{t.hatim.juzQuickAction}</Text>
                   </Pressable>
                   <Pressable
                     onPress={openSearchSheet}
                     hitSlop={8}
                     accessibilityRole="button"
-                    accessibilityLabel={kk.hatim.searchBtnA11y}
+                    accessibilityLabel={t.hatim.searchBtnA11y}
                     style={({ pressed }) => [
                       styles.hatimQuickAction,
                       pressed && styles.hatimQuickActionPressed,
                     ]}
                   >
                     <MaterialIcons name="search" size={19} color={colors.accent} />
-                    <Text style={styles.hatimQuickActionText}>{kk.hatim.searchQuickAction}</Text>
+                    <Text style={styles.hatimQuickActionText}>{t.hatim.searchQuickAction}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -420,7 +445,7 @@ export function HatimScreen({ navigation }: Props) {
               return (
                 <QuranSurahListJuzHeader
                   juz={item.juz}
-                  label={kk.quran.juzSectionHeader(item.juz)}
+                  label={t.quran.juzSectionHeader(item.juz)}
                   colors={colors}
                   isDark={isDark}
                   compact
@@ -431,11 +456,11 @@ export function HatimScreen({ navigation }: Props) {
             const done = read.has(row.number);
             const inProgress =
               !done && resume != null && resume.surah === row.number;
-            const title = surahDisplayTitle(row.number, "");
+            const title = surahTitleForLocale(row.number, locale, { tr });
             return (
               <QuranSurahListRow
                 surahNumber={row.number}
-                numberedTitle={surahListNumberedTitle(row.number, "")}
+                numberedTitle={`${row.number}. ${title}`}
                 metaSubtitle={surahListMetaSubtitle(row.number, row.ayahCount)}
                 mushafPage={mushafStartPageForSurah(row.number)}
                 inProgress={inProgress}
@@ -445,7 +470,7 @@ export function HatimScreen({ navigation }: Props) {
                     inProgress && resume ? { initialAyah: resume.ayah } : undefined
                   )
                 }
-                accessibilityLabel={kk.hatim.openSurahRowA11y(title, {
+                accessibilityLabel={t.hatim.openSurahRowA11y(title, {
                   surahNumber: row.number,
                   ayahCount: row.ayahCount,
                 })}
@@ -455,7 +480,7 @@ export function HatimScreen({ navigation }: Props) {
                   <QuranSurahListCheckbox
                     checked={done}
                     onToggle={() => void onToggle(row.number)}
-                    accessibilityLabel={kk.hatim.markReadA11y.replace("{title}", title)}
+                    accessibilityLabel={t.hatim.markReadA11y.replace("{title}", title)}
                     colors={colors}
                     isDark={isDark}
                   />
@@ -578,6 +603,13 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       borderColor: colors.accent,
       backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(5, 150, 105, 0.08)",
     },
+    hatimQuickActionTajweed: {
+      borderColor: "#0D9488",
+      backgroundColor: isDark ? "rgba(13, 148, 136, 0.16)" : "rgba(13, 148, 136, 0.1)",
+    },
+    hatimQuickActionTajweedText: {
+      color: "#0D9488",
+    },
     hatimJuzIconBadge: {
       width: 22,
       height: 22,
@@ -585,6 +617,14 @@ function makeStyles(colors: ThemeColors, isDark: boolean, screenBg: string) {
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(5, 150, 105, 0.11)",
+    },
+    hatimTajweedIconBadge: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: isDark ? "rgba(13, 148, 136, 0.2)" : "rgba(13, 148, 136, 0.14)",
     },
     hatimQuickActionPressed: {
       opacity: 0.84,

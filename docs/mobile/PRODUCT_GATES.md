@@ -15,25 +15,33 @@ Decisions that cannot be faked in code. Engineering implements UX around these g
 
 | Field | Value |
 |-------|--------|
-| **Decision** | Ship **Sahih corpus Arabic-only** (`sourceOnly: true`) until licensed KK/RU meanings are imported |
-| **Owner** | Content / legal |
-| **Code** | `HadithListScreen` `corpusArabicOnlyBadge`; `hadithTextForLocale` returns "" for non-ar when `sourceOnly` |
-| **Unblock** | Run `npm run export:hadith-json:full` (or KK pipeline) → replace seed → remove `sourceOnly` on rows with `textKk` |
+| **Decision** | Ship **only hadiths with in-app Kazakh meaning** (kz-trusted catalog → seed). Rows without `textKk` / `sourceOnly` **deleted** |
+| **Owner** | Content |
+| **Code** | `hadith-from-db-seed.json` (~98); `filterHadithCorpusKkOnly` / `hadithHasKkMeaning` |
+| **Unblock** | To grow catalog: expand `kz-trusted-hadith-catalog.json` then regenerate seed |
 
 ## 3. SMS phone auth
 
 | Field | Value |
 |-------|--------|
-| **Decision** | SMS login **disabled** when platform API returns HTTP 503 (Twilio not configured) |
-| **Owner** | Backend ops |
-| **Code** | `PhoneAuthBlock` shows `phoneSmsUnavailable`; Google/Apple remain primary |
-| **Unblock** | Configure Twilio on `platform_api`; remove 503 from `/auth/phone/start` |
+| **Decision** | SMS login **removed from UI** (Twilio not configured) — Google / Apple only |
+| **Owner** | Product |
+| **Code** | `SettingsAccountLoginSection` — no `PhoneAuthBlock` |
+| **Unblock** | If SMS needed later: configure Twilio + restore phone expand UI |
+
+## 3b. Generative AI
+
+| Field | Value |
+|-------|--------|
+| **Decision** | **Removed** from mobile (2026-07-17) — no chat, no Gemini image analyze |
+| **Kept** | Official KB browse (`/api/v1/ai/kb/*`), KmdbHub WebViews, dashboard `kmdb` tile |
+| **Code** | No `ImamAI` / `RaqatAIChatScreen`; no `fetchPlatformAiChat` |
 
 ## 4. Slim APK + CDN dependency
 
 | Field | Value |
 |-------|--------|
-| **Decision** | Release APK **~46 MB** — heavy assets on CDN; **tajweed letters bundled** (~0.5 MB) |
+| **Decision** | Release APK **~55 MB** — multi-lang Quran editions (~18 MB) on CDN; **Arabic + KK + translit + tajweed + UI i18n + tajweed letters bundled** |
 | **Fallbacks** | AlQuran API + GitHub QCF4 when `rahatomir.com` 521 |
 | **Owner** | DevOps |
 | **Deploy** | `powershell -File scripts/deploy_mushaf_cdn_assets.ps1` after VPS/SSH fix |

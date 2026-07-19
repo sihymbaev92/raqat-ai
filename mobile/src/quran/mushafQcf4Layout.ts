@@ -3,14 +3,16 @@ import type { Qcf4PageJson, Qcf4Word, Qcf4WordType } from "./qcf4Types";
 import { HATIM_UNIFIED_ARABIC_FONT_SIZE } from "./mushafTextScale";
 
 export const QCF4_RENDER_LINE_COUNT = 15;
-export const QCF4_QCOM_LINE_GAP = 5;
+/** Жол арасы — харакат/нүкте кесілмей, бірақ бет тығыздығы сақталады. */
+export const QCF4_QCOM_LINE_GAP = 8;
 export const QCF4_EXTERNAL_SURAH_FRAME_RESERVE = 56;
 export const QCF4_PHONE_WEB_SAFE_INSET = 10;
 export const QCF4_PHONE_NATIVE_SAFE_INSET = 14;
-export const QCF4_PHONE_LINE_PADDING = 18;
-export const QCF4_PHONE_LINE_SCALE_X = 0.78;
-export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.72;
-export const QCF4_PHONE_GLYPH_MAX_QCOM = 40;
+export const QCF4_PHONE_LINE_PADDING = 16;
+/** Телефонда қысу аз — сызықтар жіңішке көрінбейді. */
+export const QCF4_PHONE_LINE_SCALE_X = 0.86;
+export const QCF4_PHONE_GLYPH_SCALE_QCOM = 0.78;
+export const QCF4_PHONE_GLYPH_MAX_QCOM = 46;
 export const QCF4_PHONE_VERTICAL_STRETCH_FACTOR = 1.44;
 /** Телефонда QCF4 glyph ascender/descender line box-тан шығып, бірінші/соңғы жол кесілмесін. */
 export const QCF4_PHONE_VERTICAL_SAFE_PADDING = 14;

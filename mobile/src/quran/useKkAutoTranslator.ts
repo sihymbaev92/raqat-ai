@@ -4,7 +4,7 @@ import {
   type AutoTranslateTarget,
 } from "../services/autoTranslate";
 import { getOfflineAutoTranslation } from "../services/offlineAutoTranslations";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 
 export function resolveKkAutoTranslationText(
   text: string,
@@ -29,6 +29,7 @@ export function resolveKkAutoTranslationText(
  */
 export function useKkAutoTranslator(): { tr: (text: string) => string; translated: boolean } {
   const locale = useAppLocale();
+  useLocaleRevision();
   const [map, setMap] = useState<Record<string, string>>({});
   const requestedRef = useRef<Set<string>>(new Set());
   const pendingRef = useRef<string[]>([]);

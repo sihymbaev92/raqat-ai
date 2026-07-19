@@ -12,7 +12,7 @@ export const menuIconAssets = {
   tabTasbih: require("../../assets/tasbih/tile-tasbih.png"),
   heroQuran: require("../../assets/menu-icons/hero-quran.png"),
   heroHadith: require("../../assets/menu-icons/hero-hadith.png"),
-  promoAi: require("../../assets/menu-icons/imam-ai-mascot.png"),
+  promoKmdb: require("../../assets/menu-icons/imam-ai-mascot.png"),
   /** Намаз тайлы: ішкі сәжде суреті (тайл қоршауында scale арқылы сыртқы жиек кесіледі) */
   tileNamaz: require("../../assets/namaz/tile-namaz.png"),
   /** Қажылық тайлы: алтын шеңбер ішіндегі сурет (тайл қоршауында scale арқылы сыртқы жиек пен төменгі жазу кесілуі мүмкін) */

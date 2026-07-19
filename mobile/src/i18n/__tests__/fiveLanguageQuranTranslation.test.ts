@@ -10,7 +10,7 @@ import { setCurrentLocale, type AppLocale } from "../runtime";
 import { kk } from "../kk";
 import { quranTranslationAttributionForLocale } from "../quranTranslationAttribution";
 
-const FATIHA_1: Record<Exclude<AppLocale, "ar" | "tr" | "zh" | "fa" | "id" | "ms" | "hi" | "ku">, RegExp> = {
+const FATIHA_1: Record<Exclude<AppLocale, "ar" | "tr">, RegExp> = {
   kk: /Аса қамқор|бастаймын/i,
   ru: /Во имя Аллаха|Милостивого/i,
   en: /In the name of Allah/i,

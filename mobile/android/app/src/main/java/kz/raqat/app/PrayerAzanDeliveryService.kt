@@ -20,10 +20,12 @@ class PrayerAzanDeliveryService : Service() {
       stopSelf()
       return START_NOT_STICKY
     }
-    val label = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_LABEL).orEmpty().ifBlank { "Намаз" }
+    val app = applicationContext
+    val defaultLabel = app.getString(R.string.prayer_azan_default_label)
+    val label = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_LABEL).orEmpty().ifBlank { defaultLabel }
     val enteredTitle = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_ENTERED_TITLE)
       .orEmpty()
-      .ifBlank { enteredTitleForLabel(label) }
+      .ifBlank { enteredTitleForLabel(app, label) }
     val time = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_TIME).orEmpty()
     val soundId = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_SOUND_ID).orEmpty().ifBlank { "adhan_haramain" }
     val salatKey = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_SALAT_KEY).orEmpty()
@@ -74,8 +76,13 @@ class PrayerAzanDeliveryService : Service() {
       }
     }
 
-    private fun enteredTitleForLabel(label: String): String {
-      return if (label.isBlank() || label == "Намаз") "Намаз уақыты кірді" else "$label намазы кірді"
+    private fun enteredTitleForLabel(context: Context, label: String): String {
+      val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+      return if (label.isBlank() || label == defaultLabel) {
+        context.getString(R.string.prayer_azan_fullscreen_title)
+      } else {
+        context.getString(R.string.prayer_azan_entered_for_label, label)
+      }
     }
   }
 }

@@ -33,13 +33,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>raqat</string>
           <string>imamai</string>
           <string>kz.raqat.app</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>12</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -67,65 +68,34 @@
           <key>NSExceptionAllowsInsecureHTTPLoads</key>
           <true/>
         </dict>
-        <key>10.0.2.2</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>localhost</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>127.0.0.1</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>192.168.0.148</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>10.191.110.203</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>192.168.1.100</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
-        <key>5.75.162.140</key>
-        <dict>
-          <key>NSExceptionAllowsInsecureHTTPLoads</key>
-          <true/>
-        </dict>
       </dict>
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>Қолжазба немесе құрам суретін халал тексеру үшін камера қажет.</string>
     <key>NSFaceIDUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
+    <string>Face ID арқылы қолданбаға қауіпсіз кіру үшін.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Location is used for Qibla direction and accurate prayer times.</string>
+    <string>Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Location is used for Qibla direction and accurate prayer times.</string>
+    <string>Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <string>Микрофон халал тексеру немесе дыбыс жазу мүмкіндігі үшін қажет болғанда қолданылады.</string>
     <key>NSMotionUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your device motion</string>
+    <string>Құбыла компасы үшін құрылғы қозғалысы қолданылады.</string>
+    <key>NSAlarmKitUsageDescription</key>
+    <string>Намаз уақытында құлып экранында толық азан оятқышын көрсету үшін.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Суреттер өнім жапсырмасын халал тексеру үшін қажет.</string>
     <key>RCTNewArchEnabled</key>
     <true/>
     <key>UIBackgroundModes</key>
     <array>
+      <string>audio</string>
       <string>fetch</string>
       <string>processing</string>
+      <string>remote-notification</string>
     </array>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>

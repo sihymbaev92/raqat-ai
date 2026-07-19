@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import type { AppLocale } from "../i18n/runtime";
 import type { MushafBookPageSlice } from "./mushafBookTypes";
+import type { QuranReadingLocale } from "./quranReadingLocale";
 import { ensureBundledQuranTranslationsLoaded } from "../services/quranOfflineTranslations";
 import {
   getQuranSurahTranslation,
@@ -36,19 +36,19 @@ function surahsMissingLocaleField(
 }
 
 /**
- * Хатым/мұсаф: app тілі өзгергенде немесе бет ауыскanda сол тілдегі аударманы
+ * Хатым/мұсаф: оқу аударма тілі өзгергенде немесе бет ауыскanda сол тілдегі аударманы
  * offline bundle / кэш / API арқылы page state-ке енгізеді.
  */
 export function useMushafAppLocaleTranslations(
   pages: MushafBookPageSlice[],
   setPages: React.Dispatch<React.SetStateAction<MushafBookPageSlice[]>>,
-  appLocale: AppLocale,
+  readingLocale: QuranReadingLocale,
   pageIndex: number
 ): void {
   const inFlightRef = useRef(new Set<string>());
 
   useEffect(() => {
-    if (!pages.length || !isQuranTranslationLocale(appLocale)) return;
+    if (!pages.length || !isQuranTranslationLocale(readingLocale)) return;
 
     const neighborIndices = [
       Math.max(0, pageIndex - 1),
@@ -56,21 +56,21 @@ export function useMushafAppLocaleTranslations(
       Math.min(pages.length - 1, pageIndex + 1),
     ];
     const surahs = surahsOnPageIndices(pages, neighborIndices);
-    const missing = surahsMissingLocaleField(pages, surahs, appLocale);
+    const missing = surahsMissingLocaleField(pages, surahs, readingLocale);
     if (!missing.length) return;
 
     let alive = true;
-    void ensureBundledQuranTranslationsLoaded(appLocale);
+    void ensureBundledQuranTranslationsLoaded(readingLocale);
 
     for (const surah of missing) {
-      const key = `${appLocale}:${surah}`;
+      const key = `${readingLocale}:${surah}`;
       if (inFlightRef.current.has(key)) continue;
       inFlightRef.current.add(key);
       void (async () => {
         try {
-          const map = await getQuranSurahTranslation(surah, appLocale);
+          const map = await getQuranSurahTranslation(surah, readingLocale);
           if (alive && map) {
-            setPages((prev) => mergeTranslationIntoMushafPages(prev, appLocale, surah, map));
+            setPages((prev) => mergeTranslationIntoMushafPages(prev, readingLocale, surah, map));
           }
         } finally {
           inFlightRef.current.delete(key);
@@ -81,5 +81,5 @@ export function useMushafAppLocaleTranslations(
     return () => {
       alive = false;
     };
-  }, [appLocale, pageIndex, pages, setPages]);
+  }, [pages, pageIndex, readingLocale, setPages]);
 }

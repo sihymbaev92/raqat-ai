@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">Namaz vakitleri</string>
+  <string name="widget_prayer_description">Bugünün namaz vakitleri (uygulama programından), güneş doğuşu ile.</string>
+  <string name="widget_prayer_empty">Uygulamayı açıp namaz vakitlerini yenileyin.</string>
+
+  <string name="widget_prayer_next_label">Sonraki namaz</string>
+  <string name="widget_prayer_next_description">Hava, geri sayım ve beş namaz — 5×1 şerit</string>
+  <string name="widget_prayer_next_heading">Sonraki namaz</string>
+
+  <string name="widget_prayer_strip_label">Namaz şeridi</string>
+  <string name="widget_prayer_strip_description">Bugünün namaz vakitleri — kısa şerit</string>
+
+  <string name="widget_prayer_morning_label">Sabah · Güneş · Öğle</string>
+  <string name="widget_prayer_morning_description">Sabah, güneş doğuşu, öğle</string>
+
+  <string name="widget_prayer_evening_label">İkindi · Akşam · Yatsı</string>
+  <string name="widget_prayer_evening_description">İkindi, akşam, yatsı</string>
+
+  <string name="widget_prayer_twocol_label">İki sütun</string>
+  <string name="widget_prayer_twocol_description">Namaz programı — iki sütun</string>
+
+  <string name="widget_prayer_five_dual_label">5 namaz</string>
+  <string name="widget_prayer_five_dual_description">Beş namaz — iki sütun</string>
+
+  <string name="widget_prayer_home_strip_label">Namaz</string>
+  <string name="widget_prayer_home_strip_description">Ana ekran: 5 namaz, sonraki namaz sayacı, koyu arka plan</string>
+
+  <string name="widget_qibla_a11y">Kıble</string>
+  <string name="widget_city_a11y">Şehir</string>
+  <string name="widget_qibla_service_channel">Kıble widget\'ı</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — kıble</string>
+  <string name="widget_qibla_service_text">Ana ekran widget\'ı için pusula</string>
+  <string name="prayer_azan_fullscreen_title">Namaz vakti girdi</string>
+  <string name="prayer_azan_default_label">Namaz</string>
+  <string name="prayer_azan_entered_for_label">%1$s namazı girdi</string>
+  <string name="prayer_azan_channel_name">Ezan</string>
+  <string name="prayer_azan_channel_desc">Namaz vakti girince ezan ekranını otomatik göster</string>
+  <string name="prayer_azan_notif_body_no_time">Ezan · açmak için dokunun</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Ezan</string>
+
+  <string name="widget_prayer_row_fajr">Sabah</string>
+  <string name="widget_prayer_row_sun">Güneş</string>
+  <string name="widget_prayer_row_dhuhr">Öğle</string>
+  <string name="widget_prayer_row_asr">İkindi</string>
+  <string name="widget_prayer_row_maghrib">Akşam</string>
+  <string name="widget_prayer_row_isha">Yatsı</string>
+</resources>

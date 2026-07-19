@@ -3,12 +3,15 @@ import { View, Text } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { kk } from "../../i18n/kk";
-import { getCurrentLocale, useAppLocale } from "../../i18n/runtime";
+import { useAppLocale } from "../../i18n/runtime";
+import { useQuranReadingLocale } from "../../quran/quranReadingLocale";
+import { useQuranTranslitScript } from "../../quran/quranTranslitScript";
 import { quranAyahMeaningForLocale } from "../../storage/quranSurahCache";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import type { MushafBookPageStyles } from "../../quran/mushafBookPageStyles";
 import type { MushafAyahRef, MushafBookAyah } from "../../quran/mushafBookTypes";
-import { surahDisplayTitle } from "../../constants/surahTitleKk";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../../constants/surahTitleKk";
 import { resolveMushafBookAyah } from "../../quran/buildMushafPagesGlobal";
 
 type Props = {
@@ -34,7 +37,10 @@ export function MushafBookPageSecondaryAyahs({
   accentColor,
   onToggleAudio,
 }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
+  const readingLocale = useQuranReadingLocale();
+  const translitScript = useQuranTranslitScript();
+  const { tr } = useKkAutoTranslator();
   const hasFocusedAyah = ayahs.some(
     (a) =>
       (playingRef?.surah === a.surahNumber && playingRef.ayah === a.numberInSurah) ||
@@ -50,22 +56,27 @@ export function MushafBookPageSecondaryAyahs({
         const isPlayingNow = hasLoaded && ayahAudioIsPlaying;
         const isAudioFocus = hasLoaded || isLoad;
         if (!showReaderMeaning && !showReaderTranslit && !isAudioFocus) return null;
+        const meaning = quranAyahMeaningForLocale(
+          { ...resolved, surahNumber: a.surahNumber },
+          readingLocale
+        );
         return (
           <View key={`${a.surahNumber}-${a.numberInSurah}-sec`} style={st.mushafSecondaryAyahBlock}>
             <Text style={st.mushafSecondaryAyahRibbon}>
-              {surahDisplayTitle(a.surahNumber, "")} · {a.numberInSurah}
+              {surahTitleForLocale(a.surahNumber, locale, { tr })} · {a.numberInSurah}
             </Text>
             {showReaderTranslit
               ? (() => {
-                  const kiril = resolveQuranTranslitForDisplay(resolved.translit, resolved.text);
+                  const kiril = resolveQuranTranslitForDisplay(
+                    resolved.translit,
+                    resolved.text,
+                    translitScript
+                  );
                   return kiril ? <Text style={st.mushafAyahKiril}>{kiril}</Text> : null;
                 })()
               : null}
-            {showReaderMeaning &&
-            quranAyahMeaningForLocale({ ...resolved, surahNumber: a.surahNumber }, getCurrentLocale()) ? (
-              <Text style={st.mushafAyahKk}>
-                {quranAyahMeaningForLocale({ ...resolved, surahNumber: a.surahNumber }, getCurrentLocale())}
-              </Text>
+            {showReaderMeaning && meaning ? (
+              <Text style={st.mushafAyahKk}>{meaning}</Text>
             ) : null}
             {isAudioFocus ? (
               <Pressable

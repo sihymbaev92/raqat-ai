@@ -24,7 +24,7 @@ describe("quranComReadingTheme", () => {
 
     expect(t.pageFace).toBe("#FDFBF7");
 
-    expect(t.arabicInk).toBe("#1A1714");
+    expect(t.arabicInk).toBe("#0E0C0A");
 
     expect(t.minimalPageChrome).toBe(true);
 
@@ -46,7 +46,8 @@ describe("quranComReadingTheme", () => {
 
     expect(QURAN_READING_THEMES.some((t) => t.id === "muftyat")).toBe(false);
 
-    expect(QURAN_READING_THEMES.find((t) => t.id === "original")?.labelKk).toBe("Жұмсақ сүт");
+    expect(QURAN_READING_THEMES.find((t) => t.id === "original")?.labelKk).toBe("Ақ");
+    expect(QURAN_READING_THEMES.find((t) => t.id === "dark")?.labelKk).toBe("Қара");
 
   });
 

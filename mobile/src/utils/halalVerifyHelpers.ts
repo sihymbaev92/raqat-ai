@@ -10,13 +10,6 @@ import {
 import { INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
 import type { HalalFilterChip } from "../components/HalalFilterChipRow";
 
-export const HALAL_VISION_CLIENT_PROMPT = [
-  "Соңында дәл екі жолды ғана шығар (өзге қосымша жол жоқ):",
-  "BARCODE: <штрихкодтың тек сандары немесе NONE>",
-  "NAME: <өнімнің қысқа атауы: қазақ/орыс/ағыл немесе NONE>",
-  "Көрінбесе екеуіне де NONE жаз.",
-].join("\n");
-
 export const HALAL_VERIFY_DEBOUNCE_MS = 260;
 
 export type HalalCheckSummaryTone = "ok" | "warn" | "bad" | "neutral";

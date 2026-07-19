@@ -25,6 +25,8 @@ import {
   releaseHadithCorpusMemoryCache,
   clearHadithCorpusStorage,
   hadithCollectionBucket,
+  filterHadithCorpusForLocale,
+  hadithTextForLocale,
   type HadithCorpus,
   type SahihHadithEntry,
 } from "../storage/hadithCorpus";
@@ -35,7 +37,10 @@ import {
   type HadithLetterSection,
 } from "../utils/hadithLetterSections";
 import { resolveHadithGradeText } from "../content/hadithGrade";
-import { useAppLocale } from "../i18n/runtime";
+import { hadithCollectionDisplayName } from "../content/hadithDisplay";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useI18n } from "../i18n/useI18n";
+import type { AppLocale } from "../i18n/runtime";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "HadithList">;
@@ -274,6 +279,7 @@ const HadithListHeader = memo(function HadithListHeader({
   onViewMode: (m: HadithViewMode) => void;
   styles: HadithStyles;
 }) {
+  useI18n();
   const { colors: themeColors } = useAppTheme();
   const [introOpen, setIntroOpen] = useState(false);
   return (
@@ -339,25 +345,32 @@ const HadithRow = memo(function HadithRow({
   item,
   styles,
   onOpen,
+  locale,
 }: {
   item: SahihHadithEntry;
   styles: HadithStyles;
   onOpen: (id: string) => void;
+  locale: AppLocale;
 }) {
   const gradeText = resolveHadithGradeText(item.grade);
-  const preview = item.sourceCitationKk?.trim() || `№ ${item.reference}`;
+  const collectionLabel = hadithCollectionDisplayName(item, locale);
+  const localePreview = hadithTextForLocale(item, locale);
+  const preview =
+    localePreview ||
+    (locale === "kk" ? item.sourceCitationKk?.trim() : "") ||
+    `№ ${item.reference}`;
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.9 }]}
       onPress={() => onOpen(item.id)}
     >
-      <Text style={styles.coll}>{item.collectionNameKk}</Text>
+      <Text style={styles.coll}>{collectionLabel}</Text>
       <Text style={styles.ref}>
         №{item.reference}
-        {item.bookTitleKk?.trim() ? ` · ${item.bookTitleKk}` : ""}
+        {locale === "kk" && item.bookTitleKk?.trim() ? ` · ${item.bookTitleKk}` : ""}
       </Text>
       <View style={styles.badgesRow}>
-        <Text style={styles.badge}>{kk.hadith.sourceBadge(item.collectionNameKk || "—")}</Text>
+        <Text style={styles.badge}>{kk.hadith.sourceBadge(collectionLabel || "—")}</Text>
         <Text style={styles.badge}>{kk.hadith.gradeBadge(gradeText)}</Text>
         {item.sourceOnly ? (
           <Text style={[styles.badge, styles.badgeMuted]}>{kk.hadith.corpusArabicOnlyBadge}</Text>
@@ -374,7 +387,9 @@ const HadithRow = memo(function HadithRow({
 });
 
 export function HadithListScreen({ navigation }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
+  useLocaleRevision();
+  useI18n();
   const { colors, isDark } = useAppTheme();
   const [corpus, setCorpus] = useState<HadithCorpus | null>(null);
   /** Бөлу аяқталғанша тізім дерегі null болуы мүмкін (синхрон useMemo орнына). */
@@ -465,15 +480,16 @@ export function HadithListScreen({ navigation }: Props) {
     };
   }, [ensureCorpus]);
 
-  /** Корпус + режим: Бұхари/Муслимге бөлу. */
+  /** Корпус + режим + тіл: тек таңдалған тілдегі хадистер. */
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!corpus?.hadiths?.length) {
+      const localized = filterHadithCorpusForLocale(corpus, locale);
+      if (!localized?.hadiths?.length) {
         startTransition(() => setLists({ bukhari: [], muslim: [] }));
         return;
       }
-      const slice = corpusForViewMode(corpus, viewMode);
+      const slice = corpusForViewMode(localized, viewMode);
       if (!slice.hadiths.length) {
         startTransition(() => setLists({ bukhari: [], muslim: [] }));
         return;
@@ -486,7 +502,7 @@ export function HadithListScreen({ navigation }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [corpus, viewMode]);
+  }, [corpus, viewMode, locale]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -546,6 +562,26 @@ export function HadithListScreen({ navigation }: Props) {
     );
   }
 
+  const localeEmpty =
+    !loading &&
+    bukhariData.length === 0 &&
+    muslimData.length === 0 &&
+    (corpus?.hadiths?.length ?? 0) > 0;
+
+  if (localeEmpty) {
+    return (
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={[styles.center, { flexGrow: 1 }]}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
+        }
+      >
+        <Text style={styles.err}>{kk.hadith.hub.emptyLocalePending}</Text>
+      </ScrollView>
+    );
+  }
+
   const listEmpty =
     corpus && data.length === 0 && (bukhariData.length > 0 || muslimData.length > 0) ? (
       <Text style={[styles.err, { marginTop: 8, marginBottom: 24 }]}>{kk.hadith.tabEmptyHint}</Text>
@@ -574,7 +610,12 @@ export function HadithListScreen({ navigation }: Props) {
         </View>
       )}
       renderItem={({ item }: { item: SahihHadithEntry }) => (
-        <HadithRow item={item} styles={styles} onOpen={(id) => navigation.navigate("HadithDetail", { hadithId: id })} />
+        <HadithRow
+          item={item}
+          styles={styles}
+          locale={locale}
+          onOpen={(id) => navigation.navigate("HadithDetail", { hadithId: id })}
+        />
       )}
     />
   );

@@ -15,10 +15,12 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
   override fun onReceive(context: Context, intent: Intent?) {
     if (intent?.action != PrayerAzanAlarmScheduler.ACTION_AZAN) return
 
-    val label = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_LABEL).orEmpty().ifBlank { "Намаз" }
+    val app = context.applicationContext
+    val defaultLabel = app.getString(R.string.prayer_azan_default_label)
+    val label = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_LABEL).orEmpty().ifBlank { defaultLabel }
     val enteredTitle = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_ENTERED_TITLE)
       .orEmpty()
-      .ifBlank { enteredTitleForLabel(label) }
+      .ifBlank { enteredTitleForLabel(app, label) }
     val time = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_TIME).orEmpty()
     val soundId = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_SOUND_ID).orEmpty().ifBlank { "adhan_haramain" }
     val salatKey = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_SALAT_KEY).orEmpty()
@@ -29,7 +31,6 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
     }
 
     val pendingResult = goAsync()
-    val app = context.applicationContext
     Handler(Looper.getMainLooper()).post {
       try {
         PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
@@ -44,13 +45,18 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
     }
   }
 
-  private fun enteredTitleForLabel(label: String): String {
-    return if (label.isBlank() || label == "Намаз") "Намаз уақыты кірді" else "$label намазы кірді"
+  private fun enteredTitleForLabel(context: Context, label: String): String {
+    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+    return if (label.isBlank() || label == defaultLabel) {
+      context.getString(R.string.prayer_azan_fullscreen_title)
+    } else {
+      context.getString(R.string.prayer_azan_entered_for_label, label)
+    }
   }
 
   companion object {
     private const val TAG = "PrayerAzanAlarm"
-    private const val MAX_LATE_AZAN_MS = 5 * 60 * 1000L
+    private const val MAX_LATE_AZAN_MS = 15 * 60 * 1000L
     /** WakeLock + activity launch алынғанша. */
     const val ALARM_RECEIVER_FINISH_DELAY_MS = 4_000L
   }

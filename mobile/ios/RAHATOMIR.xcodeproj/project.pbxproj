@@ -7,14 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03660C5D49034588B9E7CADA /* PrayerWidgetModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CA1FC9E1A445AEBD1360A1 /* PrayerWidgetModule.swift */; };
+		03C946BFB9F3473A9011BCCE /* prayer_azan_dua_01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = DA196093213540B29B874F4C /* prayer_azan_dua_01.mp3 */; };
+		0BE19DA0E91E46F4A6F54516 /* PrayerWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF658DA74D84026AA1D8C55 /* PrayerWidgetStore.swift */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		19B6DE9F756D4C298CF910D0 /* PrayerWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15B0B4D713854EAC82E859DA /* PrayerWidgetStore.swift */; };
+		3055C7FA56C34B42B481C32E /* prayer_azan_user_01.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = FC6C171FE2BB4B1C878056DC /* prayer_azan_user_01.mp3 */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		59BB4C2D5A184EFF872F6B77 /* PrayerWidgetModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = C550E4E8402E4D0999C12BCE /* PrayerWidgetModule.swift */; };
-		972346CAF9DC4FE3BC033230 /* CarPlayQuranManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF29D840FDD54918B400F9DA /* CarPlayQuranManager.swift */; };
-		B5809C08EDC24CE38861A3D9 /* PrayerWidgetModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 2887377F96C54FF5BC67476B /* PrayerWidgetModule.m */; };
+		725CA65BEA5942798129D5F2 /* PrayerAzanNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7505210525842B4AED6874A /* PrayerAzanNotificationScheduler.swift */; };
+		A1B2C3D4E5F60718293A4B5C /* PrayerAzanPendingLaunch.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B01 /* PrayerAzanPendingLaunch.swift */; };
+		A1B2C3D4E5F60718293A4B5D /* PrayerAzanOpenIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B02 /* PrayerAzanOpenIntent.swift */; };
+		97BFD0C1C06D461BB572E82F /* PrayerWidgetModule.m in Sources */ = {isa = PBXBuildFile; fileRef = C52D351E733244D8BBC41063 /* PrayerWidgetModule.m */; };
+		9CCA61422C4244DFAE09CEBD /* RaqatDeviceIntegrity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D0CA89CC8E4FFAAD3EBEBE /* RaqatDeviceIntegrity.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E22954B0AF8D48F89C6CD3E9 /* PrayerAzanNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE59C02E6B414EFEB62C10EE /* PrayerAzanNotificationScheduler.swift */; };
+		BD8161F3C0B14BEA8976A83E /* PrayerAzanNativePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C9908EECBC445A9C5457FA /* PrayerAzanNativePlayer.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		XX12B55A1EDABF083C3B51XX /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = XX470101BAEB8E0BBC8B0DXX /* WidgetKit.framework */; };
 		XX1A6800511A685AB346D2XX /* AppIntents.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = XXA12889081EB894481655XX /* AppIntents.framework */; };
@@ -24,11 +29,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		XXF0AE2F4D27668BE1A604XX /* PBXContainerItemProxy */ = {
+		XX9DAB9D0E63476F7631D1XX /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = XXCA32147C7A028E2953BEXX;
+			remoteGlobalIDString = XXD818EA00ABBC7C050999XX;
 			remoteInfo = PrayerWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
@@ -51,16 +56,21 @@
 		13B07F961A680F5B00A75B9A /* RAHATOMIR.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RAHATOMIR.app; sourceTree = BUILT_PRODUCTS_DIR; fileEncoding = 4; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = RAHATOMIR/Images.xcassets; sourceTree = "<group>"; fileEncoding = 4; includeInIndex = 0; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = RAHATOMIR/Info.plist; sourceTree = "<group>"; includeInIndex = 0; };
-		15B0B4D713854EAC82E859DA /* PrayerWidgetStore.swift */ = {isa = PBXFileReference; name = PrayerWidgetStore.swift; path = RAHATOMIR/PrayerWidgetStore.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		2887377F96C54FF5BC67476B /* PrayerWidgetModule.m */ = {isa = PBXFileReference; name = PrayerWidgetModule.m; path = RAHATOMIR/PrayerWidgetModule.m; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		61C9908EECBC445A9C5457FA /* PrayerAzanNativePlayer.swift */ = {isa = PBXFileReference; name = PrayerAzanNativePlayer.swift; path = RAHATOMIR/PrayerAzanNativePlayer.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		7EF658DA74D84026AA1D8C55 /* PrayerWidgetStore.swift */ = {isa = PBXFileReference; name = PrayerWidgetStore.swift; path = RAHATOMIR/PrayerWidgetStore.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		80CA1FC9E1A445AEBD1360A1 /* PrayerWidgetModule.swift */ = {isa = PBXFileReference; name = PrayerWidgetModule.swift; path = RAHATOMIR/PrayerWidgetModule.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = RAHATOMIR/SplashScreen.storyboard; sourceTree = "<group>"; includeInIndex = 0; };
+		B7505210525842B4AED6874A /* PrayerAzanNotificationScheduler.swift */ = {isa = PBXFileReference; name = PrayerAzanNotificationScheduler.swift; path = RAHATOMIR/PrayerAzanNotificationScheduler.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		A1B2C3D4E5F60718293A4B01 /* PrayerAzanPendingLaunch.swift */ = {isa = PBXFileReference; name = PrayerAzanPendingLaunch.swift; path = RAHATOMIR/PrayerAzanPendingLaunch.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		A1B2C3D4E5F60718293A4B02 /* PrayerAzanOpenIntent.swift */ = {isa = PBXFileReference; name = PrayerAzanOpenIntent.swift; path = RAHATOMIR/PrayerAzanOpenIntent.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; includeInIndex = 0; };
-		BE59C02E6B414EFEB62C10EE /* PrayerAzanNotificationScheduler.swift */ = {isa = PBXFileReference; name = PrayerAzanNotificationScheduler.swift; path = RAHATOMIR/PrayerAzanNotificationScheduler.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
-		C550E4E8402E4D0999C12BCE /* PrayerWidgetModule.swift */ = {isa = PBXFileReference; name = PrayerWidgetModule.swift; path = RAHATOMIR/PrayerWidgetModule.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		C52D351E733244D8BBC41063 /* PrayerWidgetModule.m */ = {isa = PBXFileReference; name = PrayerWidgetModule.m; path = RAHATOMIR/PrayerWidgetModule.m; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; explicitFileType = undefined; includeInIndex = 0; };
+		DA196093213540B29B874F4C /* prayer_azan_dua_01.mp3 */ = {isa = PBXFileReference; name = prayer_azan_dua_01.mp3; path = RAHATOMIR/prayer_azan_dua_01.mp3; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; fileEncoding = 4; includeInIndex = undefined; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = RAHATOMIR/AppDelegate.swift; sourceTree = "<group>"; fileEncoding = 4; includeInIndex = 0; };
 		F11748442D0722820044C1D9 /* RAHATOMIR-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "RAHATOMIR-Bridging-Header.h"; path = "RAHATOMIR/RAHATOMIR-Bridging-Header.h"; sourceTree = "<group>"; fileEncoding = 4; includeInIndex = 0; };
-		FF29D840FDD54918B400F9DA /* CarPlayQuranManager.swift */ = {isa = PBXFileReference; name = CarPlayQuranManager.swift; path = RAHATOMIR/CarPlay/CarPlayQuranManager.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		F9D0CA89CC8E4FFAAD3EBEBE /* RaqatDeviceIntegrity.swift */ = {isa = PBXFileReference; name = RaqatDeviceIntegrity.swift; path = RAHATOMIR/RaqatDeviceIntegrity.swift; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; explicitFileType = undefined; includeInIndex = 0; };
+		FC6C171FE2BB4B1C878056DC /* prayer_azan_user_01.mp3 */ = {isa = PBXFileReference; name = prayer_azan_user_01.mp3; path = RAHATOMIR/prayer_azan_user_01.mp3; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		XX470101BAEB8E0BBC8B0DXX /* WidgetKit.framework */ = {isa = PBXFileReference; path = System/Library/Frameworks/WidgetKit.framework; fileEncoding = 4; lastKnownFileType = wrapper.framework; includeInIndex = undefined; name = WidgetKit.framework; sourceTree = SDKROOT; };
 		XX4DFF38D47332D6BF0183XX /* SwiftUI.framework */ = {isa = PBXFileReference; path = System/Library/Frameworks/SwiftUI.framework; fileEncoding = 4; lastKnownFileType = wrapper.framework; includeInIndex = undefined; name = SwiftUI.framework; sourceTree = SDKROOT; };
 		XX6F0A4897359EE6F7BB3DXX /* PrayerWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrayerWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; fileEncoding = 4; };
@@ -69,9 +79,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		XX7592C2F707135A74565CXX /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		XX01AE156093DA55191BD7XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			target = XXCA32147C7A028E2953BEXX /* PrayerWidgetExtension */;
+			target = XXD818EA00ABBC7C050999XX /* PrayerWidgetExtension */;
 			membershipExceptions = (
 				Info.plist,
 				"expo-target.config.js",
@@ -80,11 +90,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		XXD632B824114986DE6147XX /* prayer-widget */ = {
+		XXFB57D7D9A0B2A8220C80XX /* prayer-widget */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "prayer-widget";
 			exceptions = (
-				XX7592C2F707135A74565CXX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				XX01AE156093DA55191BD7XX /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
 			);
 			explicitFileTypes = {};
 			explicitFolders = (
@@ -124,11 +134,16 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				FF29D840FDD54918B400F9DA /* CarPlayQuranManager.swift */,
-				C550E4E8402E4D0999C12BCE /* PrayerWidgetModule.swift */,
-				2887377F96C54FF5BC67476B /* PrayerWidgetModule.m */,
-				15B0B4D713854EAC82E859DA /* PrayerWidgetStore.swift */,
-				BE59C02E6B414EFEB62C10EE /* PrayerAzanNotificationScheduler.swift */,
+				80CA1FC9E1A445AEBD1360A1 /* PrayerWidgetModule.swift */,
+				C52D351E733244D8BBC41063 /* PrayerWidgetModule.m */,
+				7EF658DA74D84026AA1D8C55 /* PrayerWidgetStore.swift */,
+				B7505210525842B4AED6874A /* PrayerAzanNotificationScheduler.swift */,
+				A1B2C3D4E5F60718293A4B01 /* PrayerAzanPendingLaunch.swift */,
+				A1B2C3D4E5F60718293A4B02 /* PrayerAzanOpenIntent.swift */,
+				61C9908EECBC445A9C5457FA /* PrayerAzanNativePlayer.swift */,
+				F9D0CA89CC8E4FFAAD3EBEBE /* RaqatDeviceIntegrity.swift */,
+				FC6C171FE2BB4B1C878056DC /* prayer_azan_user_01.mp3 */,
+				DA196093213540B29B874F4C /* prayer_azan_dua_01.mp3 */,
 			);
 			name = RAHATOMIR;
 			sourceTree = "<group>";
@@ -187,7 +202,7 @@
 		XX3E41C1850246162C0061XX /* expo:targets */ = {
 			isa = PBXGroup;
 			children = (
-				XXD632B824114986DE6147XX /* prayer-widget */,
+				XXFB57D7D9A0B2A8220C80XX /* prayer-widget */,
 			);
 			sourceTree = "<group>";
 			name = expo:targets;
@@ -211,14 +226,14 @@
 			buildRules = (
 			);
 			dependencies = (
-				XX5398B371F30F1A08A7F7XX /* PBXTargetDependency */,
+				XXB74534018D1E4CDDCAE6XX /* PBXTargetDependency */,
 			);
 			name = RAHATOMIR;
 			productName = RAHATOMIR;
 			productReference = 13B07F961A680F5B00A75B9A /* RAHATOMIR.app */;
 			productType = "com.apple.product-type.application";
 		};
-		XXCA32147C7A028E2953BEXX /* PrayerWidgetExtension */ = {
+		XXD818EA00ABBC7C050999XX /* PrayerWidgetExtension */ = {
 			isa = PBXNativeTarget;
 			buildPhases = (
 				XX074B8811C1CF8E8A3D74XX /* Frameworks */,
@@ -229,13 +244,13 @@
 			);
 			dependencies = (
 			);
-			buildConfigurationList = XXD0BB777349BFEA4A203DXX /* Build configuration list for PBXNativeTarget "PrayerWidgetExtension" */;
+			buildConfigurationList = XXC49511B2F9419B50B146XX /* Build configuration list for PBXNativeTarget "PrayerWidgetExtension" */;
 			name = PrayerWidgetExtension;
 			productName = PrayerWidgetExtension;
 			productReference = XX6F0A4897359EE6F7BB3DXX /* PrayerWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 			fileSystemSynchronizedGroups = (
-				XXD632B824114986DE6147XX /* prayer-widget */,
+				XXFB57D7D9A0B2A8220C80XX /* prayer-widget */,
 			);
 		};
 /* End PBXNativeTarget section */
@@ -249,7 +264,7 @@
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1250;
 					};
-					XXCA32147C7A028E2953BEXX = {
+					XXD818EA00ABBC7C050999XX = {
 						CreatedOnToolsVersion = 14.3;
 						ProvisioningStyle = Automatic;
 						DevelopmentTeam = undefined;
@@ -270,7 +285,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* RAHATOMIR */,
-				XXCA32147C7A028E2953BEXX /* PrayerWidgetExtension */,
+				XXD818EA00ABBC7C050999XX /* PrayerWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -283,6 +298,8 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
+				3055C7FA56C34B42B481C32E /* prayer_azan_user_01.mp3 in Resources */,
+				03C946BFB9F3473A9011BCCE /* prayer_azan_dua_01.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -373,11 +390,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				972346CAF9DC4FE3BC033230 /* CarPlayQuranManager.swift in Sources */,
-				59BB4C2D5A184EFF872F6B77 /* PrayerWidgetModule.swift in Sources */,
-				B5809C08EDC24CE38861A3D9 /* PrayerWidgetModule.m in Sources */,
-				19B6DE9F756D4C298CF910D0 /* PrayerWidgetStore.swift in Sources */,
-				E22954B0AF8D48F89C6CD3E9 /* PrayerAzanNotificationScheduler.swift in Sources */,
+				03660C5D49034588B9E7CADA /* PrayerWidgetModule.swift in Sources */,
+				97BFD0C1C06D461BB572E82F /* PrayerWidgetModule.m in Sources */,
+				0BE19DA0E91E46F4A6F54516 /* PrayerWidgetStore.swift in Sources */,
+				725CA65BEA5942798129D5F2 /* PrayerAzanNotificationScheduler.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5C /* PrayerAzanPendingLaunch.swift in Sources */,
+				A1B2C3D4E5F60718293A4B5D /* PrayerAzanOpenIntent.swift in Sources */,
+				BD8161F3C0B14BEA8976A83E /* PrayerAzanNativePlayer.swift in Sources */,
+				9CCA61422C4244DFAE09CEBD /* RaqatDeviceIntegrity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -391,10 +411,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		XX5398B371F30F1A08A7F7XX /* PBXTargetDependency */ = {
+		XXB74534018D1E4CDDCAE6XX /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = XXCA32147C7A028E2953BEXX /* PrayerWidgetExtension */;
-			targetProxy = XXF0AE2F4D27668BE1A604XX /* PBXContainerItemProxy */;
+			target = XXD818EA00ABBC7C050999XX /* PrayerWidgetExtension */;
+			targetProxy = XX9DAB9D0E63476F7631D1XX /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -572,7 +592,7 @@
 			};
 			name = Release;
 		};
-		XX13DE090300B1D2D769A6XX /* Debug */ = {
+		XX72042C9D323890C0C494XX /* Debug */ = {
 			isa = XCBuildConfiguration;
 			name = Debug;
 			buildSettings = {
@@ -584,7 +604,7 @@
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -612,7 +632,7 @@
 				REGISTER_APP_GROUPS = YES;
 			};
 		};
-		XXB79CC17087D3DFE2D586XX /* Release */ = {
+		XXA8D937083F64B0018B2AXX /* Release */ = {
 			isa = XCBuildConfiguration;
 			name = Release;
 			buildSettings = {
@@ -625,7 +645,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 12;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -673,12 +693,12 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		XXD0BB777349BFEA4A203DXX /* Build configuration list for PBXNativeTarget "PrayerWidgetExtension" */ = {
+		XXC49511B2F9419B50B146XX /* Build configuration list for PBXNativeTarget "PrayerWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			defaultConfigurationIsVisible = 0;
 			buildConfigurations = (
-				XX13DE090300B1D2D769A6XX /* Debug */,
-				XXB79CC17087D3DFE2D586XX /* Release */,
+				XX72042C9D323890C0C494XX /* Debug */,
+				XXA8D937083F64B0018B2AXX /* Release */,
 			);
 			defaultConfigurationName = Release;
 		};

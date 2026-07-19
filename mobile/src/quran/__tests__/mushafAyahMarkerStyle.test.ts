@@ -15,8 +15,8 @@ describe("mushafAyahMarkerStyle", () => {
   it("hatim unified ayah marker size is fixed and smaller than legacy QCF4 minimum", () => {
     expect(hatimUnifiedAyahMarkerHeight()).toBeLessThan(30);
     expect(hatimUnifiedAyahMarkerFontSize()).toBeGreaterThanOrEqual(9);
-    expect(hatimUnifiedAyahMarkerHeight()).toBe(22);
-    expect(hatimUnifiedAyahMarkerFontSize()).toBe(10);
+    expect(hatimUnifiedAyahMarkerHeight()).toBe(25);
+    expect(hatimUnifiedAyahMarkerFontSize()).toBe(11);
   });
 
   it("uses black marker numbers on a light page", () => {

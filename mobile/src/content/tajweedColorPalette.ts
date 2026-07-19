@@ -13,10 +13,10 @@ export function tajweedStdColor(key: TajweedStdColorKey, isDark: boolean): strin
   return isDark ? TAJWEED_STD[key].dark : TAJWEED_STD[key].light;
 }
 
-/** Қысқа шпаргалка — легенда/анықтама үшін. */
+/** Қысқа шпаргалка — легенда/анықтама үшін (4 топ = каталогтағы түс топтары). */
 export const TAJWEED_COLOR_CHEATSHEET_KK = [
-  { hex: TAJWEED_STD.madd.light, label: "Мәдд әріптері (ұзартып оқылатын)" },
-  { hex: TAJWEED_STD.ghunnahIkhfa.light, label: "Ғунна, ихфа, изһар (мұрынмен)" },
+  { hex: TAJWEED_STD.madd.light, label: "Мәдд (ұзартып оқылатын)" },
+  { hex: TAJWEED_STD.ghunnahIkhfa.light, label: "Ғунна, ихфа, иқлаб (мұрынмен)" },
   { hex: TAJWEED_STD.qalqalah.light, label: "Қалқала (секірмелі дыбыстар)" },
-  { hex: TAJWEED_STD.idgham.light, label: "Идғам және жеңілдетілген белгілер" },
+  { hex: TAJWEED_STD.idgham.light, label: "Идғам (ғунналы / ғуннасыз)" },
 ] as const;

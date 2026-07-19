@@ -13,7 +13,8 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
 import { getCurrentLocale, useAppLocale } from "../../i18n/runtime";
-import { surahDisplayTitle } from "../../constants/surahTitleKk";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../../constants/surahTitleKk";
 import { prefetchQuranAyahSearch, searchQuranAyahsLocal, type QuranAyahSearchHit } from "../../quran/searchQuranAyahs";
 import { beginLatestRequest } from "../../utils/latestRequestGuard";
 
@@ -37,7 +38,8 @@ export function QuranAyahWordSearch({
   autoFocus = false,
   listMaxHeight,
 }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<QuranAyahSearchHit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,7 @@ export function QuranAyahWordSearch({
   const renderHit = useCallback(
     ({ item }: { item: QuranAyahSearchHit }) => {
       const english = surahEnglishNames.get(item.surah) ?? "";
-      const surahTitle = surahDisplayTitle(item.surah, english);
+      const surahTitle = surahTitleForLocale(item.surah, locale, { englishName: english, tr });
       const refLine = kk.quran.ayahWordSearchHitLine(surahTitle, item.ayah);
       return (
         <Pressable
@@ -107,7 +109,7 @@ export function QuranAyahWordSearch({
         </Pressable>
       );
     },
-    [onPick, styles.hitMeaning, styles.hitRef, styles.hitRow, surahEnglishNames]
+    [locale, onPick, styles.hitMeaning, styles.hitRef, styles.hitRow, surahEnglishNames, tr]
   );
 
   const keyExtractor = useCallback((item: QuranAyahSearchHit) => `${item.surah}:${item.ayah}`, []);

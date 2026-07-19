@@ -14,6 +14,8 @@ object PrayerLegacyNotificationCleaner {
   private const val tag = "PrayerLegacyNotifCleaner"
   private const val legacyAzanNotificationIdStart = 904310
   private const val legacyAzanNotificationIdEnd = 905309
+  /** 904224 — белсенді FSI азан хабарламасы; сессия кезінде өшірілмейді. */
+  private const val ACTIVE_FSI_NOTIFICATION_ID = 904224
   private val nativeServiceNotificationIds = intArrayOf(904223, 904224)
   private val prayerKeys = arrayOf("fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha")
   private val legacyChannelIds = arrayOf(
@@ -32,8 +34,12 @@ object PrayerLegacyNotificationCleaner {
     "prayer_v14_off"
   )
 
-  fun clear(context: Context) {
+  /**
+   * Азан хабарламасыз режим: FSI 904224 да өшіріледі (сақталмайды).
+   */
+  fun clear(context: Context, preserveActiveAzanFsi: Boolean = false) {
     val mgr = context.applicationContext.getSystemService(NotificationManager::class.java) ?: return
+    // preserveActiveAzanFsi енді елемейміз — хабарламасыз жеткізу.
     try {
       mgr.cancelAll()
       for (id in legacyAzanNotificationIdStart..legacyAzanNotificationIdEnd) {
@@ -42,20 +48,29 @@ object PrayerLegacyNotificationCleaner {
       for (id in nativeServiceNotificationIds) {
         mgr.cancel(id)
       }
+      mgr.cancel(ACTIVE_FSI_NOTIFICATION_ID)
       clearExpoPrayerTags(mgr)
       deleteLegacyChannels(mgr)
-      Log.i(tag, "Cleared legacy prayer notifications and channels")
+      Log.i(tag, "Cleared legacy prayer notifications (keepFsi=false)")
     } catch (t: Throwable) {
       Log.w(tag, "Unable to clear legacy prayer notifications", t)
     }
   }
 
+  /** Азан жеткізу кезінде — барлық азан хабарламаларын өшіру. */
+  fun clearLegacyDuringAzanDelivery(context: Context) {
+    clear(context, preserveActiveAzanFsi = false)
+  }
+
   fun clearRepeatedly(context: Context) {
     val app = context.applicationContext
-    clear(app)
+    clear(app, preserveActiveAzanFsi = false)
     val handler = Handler(Looper.getMainLooper())
     longArrayOf(1_000L, 5_000L, 15_000L).forEach { delayMs ->
-      handler.postDelayed({ clear(app) }, delayMs)
+      handler.postDelayed(
+        { clear(app, preserveActiveAzanFsi = false) },
+        delayMs
+      )
     }
   }
 

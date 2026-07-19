@@ -40,8 +40,8 @@ const LAUNCHER_TILE_IMAGE_BY_KEY: Partial<
     paddingRatio: 0.02,
     scale: 1.2,
   },
-  /** Робот + QMDB — cover кесіп алмау */
-  ai: {
+  /** QMDB emblem — cover кесіп алмау */
+  kmdb: {
     resizeMode: "contain",
     paddingRatio: 0.035,
     scale: 1.12,

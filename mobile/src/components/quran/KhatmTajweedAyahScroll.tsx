@@ -1,6 +1,6 @@
 /**
  * React Native эквиваленті: Flutter KhatmQuranScreen (ListView + Html/font color + RTL).
- * Хатым/сүре scroll режимінде — әр аят бөлек блок, responsive wrap.
+ * Хатым/сүре scroll режимінде — әр аят бөлек блок, оңнан солға.
  */
 import React, { useMemo } from "react";
 import { FlatList, Text, View, useWindowDimensions, type TextStyle } from "react-native";
@@ -13,6 +13,7 @@ import {
 import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSurahCache";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import { quranSurahArabicWrapStyle } from "../../quran/quranResponsiveLayout";
+import { useI18n } from "../../i18n/useI18n";
 
 const CREAM_BG = "#FDFBF7";
 const CREAM_BORDER = "#EFEBE9";
@@ -38,6 +39,7 @@ export function KhatmTajweedAyahScroll({
   onPressAyah,
   ListHeaderComponent,
 }: Props) {
+  const t = useI18n();
   const { width: screenWidth } = useWindowDimensions();
   const metrics = useMemo(
     () =>
@@ -60,6 +62,10 @@ export function KhatmTajweedAyahScroll({
       data={ayahs}
       keyExtractor={(a) => `khatm-ayah-${a.numberInSurah}`}
       ListHeaderComponent={ListHeaderComponent ?? undefined}
+      initialNumToRender={8}
+      maxToRenderPerBatch={8}
+      windowSize={7}
+      removeClippedSubviews
       contentContainerStyle={{
         paddingVertical: 16,
         paddingHorizontal: 0,
@@ -84,9 +90,11 @@ export function KhatmTajweedAyahScroll({
                 borderBottomWidth: 1,
                 borderBottomColor: borderColor,
                 paddingBottom: 12,
+                direction: "rtl",
               }}
             >
-              <View style={{ alignItems: "flex-end", width: "100%" }}>
+              {/** RTL: flex-start = экранның оң жағы */}
+              <View style={{ width: "100%", alignItems: "flex-start" }}>
                 <View
                   style={{
                     paddingHorizontal: 10,
@@ -95,20 +103,35 @@ export function KhatmTajweedAyahScroll({
                     backgroundColor: isDark ? "rgba(255,255,255,0.08)" : CREAM_BORDER,
                   }}
                 >
-                  <Text style={{ fontSize: 12, color: muted }}>Аят {item.numberInSurah}</Text>
+                  <Text style={{ fontSize: 12, color: muted, writingDirection: "ltr" }}>
+                    {t.quran.mushafAyahA11y(item.numberInSurah)}
+                  </Text>
                 </View>
               </View>
               <View style={{ height: 8 }} />
               <Pressable
-                oyuBackdrop={false}
                 onPress={onPressAyah ? () => onPressAyah(item.numberInSurah) : undefined}
                 accessibilityRole={onPressAyah ? "button" : undefined}
-                style={quranSurahArabicWrapStyle()}
+                style={[
+                  quranSurahArabicWrapStyle(),
+                  {
+                    width: "100%",
+                    alignSelf: "stretch",
+                    direction: "rtl",
+                    alignItems: "stretch",
+                  },
+                ]}
               >
                 <TajweedColoredArabicText
                   taggedText={tagged}
                   plainText={plain}
-                  baseStyle={{ ...metrics.baseTextStyle, color: ink }}
+                  baseStyle={{
+                    ...metrics.baseTextStyle,
+                    color: ink,
+                    width: "100%",
+                    textAlign: "right",
+                    writingDirection: "rtl",
+                  }}
                   isDark={isDark}
                   nestedInText={false}
                 />

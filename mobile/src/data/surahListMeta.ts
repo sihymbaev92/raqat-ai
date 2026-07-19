@@ -2,7 +2,8 @@ import { surahAyahToGlobalOneBased } from "./quranAyahCounts";
 import { juzForSurahAyah } from "./quranJuzBoundaries";
 import { mushafDisplayPageFromGlobalAyahOneBased } from "./quranMushafPageByGlobalAyah";
 import { surahRevelationTypeFromBundled } from "../constants/surahBundledMeta";
-import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
+import { getCurrentLocale } from "../i18n/runtime";
 import { kk } from "../i18n/kk";
 
 /** Мұсафта әр сүренің басталатын беті (Хафс 604). */
@@ -19,8 +20,15 @@ export function juzAtSurahStart(surahNumber: number): number {
   return juzForSurahAyah(surahNumber, 1);
 }
 
-export function surahListNumberedTitle(surahNumber: number, englishName = ""): string {
-  return `${surahNumber}. ${surahDisplayTitle(surahNumber, englishName)}`;
+export function surahListNumberedTitle(
+  surahNumber: number,
+  englishName = "",
+  locale?: string,
+  tr?: (text: string) => string
+): string {
+  const loc = locale ?? getCurrentLocale();
+  const title = surahTitleForLocale(surahNumber, loc, { englishName, tr });
+  return `${surahNumber}. ${title}`;
 }
 
 export function surahListMetaSubtitle(surahNumber: number, ayahCount: number): string {

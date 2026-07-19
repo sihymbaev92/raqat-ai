@@ -21,6 +21,7 @@ import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { qiblaAlignHint, QIBLA_ALIGN_THRESHOLD_DEG, type QiblaAlignHint } from "../lib/qiblaHints";
 import { angleDiff } from "../lib/qibla";
 import { useAppLocale } from "../i18n/runtime";
+import { useI18n } from "../i18n/useI18n";
 
 const { width } = Dimensions.get("window");
 
@@ -44,10 +45,10 @@ function screenHint(h: QiblaAlignHint, bearing: number | null): string {
   }
 }
 
-function formatAccuracyMeters(m: number | null | undefined): string {
+function formatAccuracyMeters(m: number | null | undefined, t: ReturnType<typeof useI18n>): string {
   if (m == null || !Number.isFinite(m)) return "—";
-  if (m >= 1000) return `±${(m / 1000).toFixed(1)} км`;
-  return `±${Math.max(1, Math.round(m))} м`;
+  if (m >= 1000) return t.qibla.accuracyKm((m / 1000).toFixed(1));
+  return t.qibla.accuracyM(Math.max(1, Math.round(m)));
 }
 
 type QiblaRoute = RouteProp<RootStackParamList, "Qibla">;
@@ -63,6 +64,7 @@ export function QiblaScreen() {
 
 function QiblaScreenContent() {
   const { colors } = useAppTheme();
+  const t = useI18n();
   const route = useRoute<QiblaRoute>();
   const initialMode = route.params?.mode === "camera" ? "camera" : "compass";
   const [viewMode, setViewMode] = useState<"compass" | "camera">(initialMode);
@@ -324,7 +326,7 @@ function QiblaScreenContent() {
           </Text>
           <Text style={styles.preciseNumLine}>
             {locationSource === "gps"
-              ? kk.qibla.locationAccuracyReadout(formatAccuracyMeters(locationAccuracyM))
+              ? kk.qibla.locationAccuracyReadout(formatAccuracyMeters(locationAccuracyM, t))
               : kk.qibla.locationSourceCity}
           </Text>
         </View>

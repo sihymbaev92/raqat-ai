@@ -23,12 +23,6 @@ const UNAVAILABLE_BY_TARGET: Record<AutoTranslateTarget, string> = {
   uz: "Bu matn tez orada tarjima qilinadi.",
   tr: "Bu metin yakında çevrilecek.",
   ar: "ستتم ترجمة هذا النص قريبًا.",
-  zh: "此文本将很快翻译。",
-  fa: "این متن به‌زودی ترجمه می‌شود.",
-  id: "Teks ini akan segera diterjemahkan.",
-  ms: "Teks ini akan diterjemahkan tidak lama lagi.",
-  hi: "इस पाठ का जल्द अनुवाद किया जाएगा।",
-  ku: "ئەم دەقە بە زوویی وەردەگێڕدرێت.",
 };
 
 function cacheKey(target: AutoTranslateTarget, text: string): string {

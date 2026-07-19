@@ -13,7 +13,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
-import { surahDisplayTitle } from "../../constants/surahTitleKk";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../../constants/surahTitleKk";
 import { kk } from "../../i18n/kk";
 import {
   QURAN_NAV_JUZ_VALUES,
@@ -170,7 +171,8 @@ export function QuranNavWheelSheet({
   onClose,
   onApply,
 }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const insets = useSafeAreaInsets();
   const sheetBottomPad = modalSheetBottomPadding(insets);
   const juzPageOnly = columns === "juz-page";
@@ -206,9 +208,9 @@ export function QuranNavWheelSheet({
   const surahLabels = useMemo(
     () =>
       QURAN_NAV_SURAH_VALUES.map((n) =>
-        tg.navPickerSurahLabel(n, surahDisplayTitle(n, ""))
+        tg.navPickerSurahLabel(n, surahTitleForLocale(n, locale, { tr }))
       ),
-    [tg]
+    [locale, tg, tr]
   );
   const juzLabels = useMemo(
     () => QURAN_NAV_JUZ_VALUES.map((n) => tg.navPickerJuzLabel(n)),

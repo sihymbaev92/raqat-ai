@@ -1,81 +1,127 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Төбе: келесі намаз | қалған уақыт | мекенжай + ауа райы — үлкен жазу -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="36dp"
-    android:minHeight="36dp"
-    android:paddingBottom="2dp">
+    android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingBottom="4dp">
 
   <LinearLayout
-      android:id="@+id/widget_home_weather_row"
-      android:layout_width="wrap_content"
+      android:id="@+id/widget_home_next_block"
+      android:layout_width="0dp"
       android:layout_height="wrap_content"
-      android:layout_gravity="start|center_vertical"
-      android:orientation="horizontal"
-      android:gravity="center_vertical|start"
-      android:minWidth="46dp">
+      android:layout_weight="1.15"
+      android:orientation="vertical"
+      android:gravity="start|center_vertical"
+      android:paddingEnd="4dp">
 
     <TextView
-        android:id="@+id/widget_home_weather_icon"
-        android:layout_width="wrap_content"
+        android:id="@+id/widget_home_next_kicker"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:includeFontPadding="false"
-        android:paddingEnd="2dp" />
-
-    <TextView
-        android:id="@+id/widget_home_weather_temp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="sans-serif-medium"
-        android:textColor="@color/widget_prayer_text"
-        android:textSize="11sp"
+        android:text="@string/widget_prayer_next_heading"
+        android:textColor="@color/widget_prayer_home_kicker"
+        android:textSize="13sp"
         android:textStyle="bold"
+        android:fontFamily="sans-serif"
         android:maxLines="1"
+        android:ellipsize="end"
         android:includeFontPadding="false" />
+
+    <TextView
+        android:id="@+id/widget_home_next_line"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/widget_prayer_text"
+        android:textSize="17sp"
+        android:textStyle="bold"
+        android:fontFamily="sans-serif"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:includeFontPadding="false"
+        android:paddingTop="1dp" />
   </LinearLayout>
 
   <Chronometer
       android:id="@+id/widget_home_countdown"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_gravity="center"
-      android:fontFamily="sans-serif-medium"
+      android:layout_marginHorizontal="4dp"
+      android:fontFamily="sans-serif"
       android:textColor="@color/widget_prayer_accent"
-      android:textSize="17sp"
+      android:textSize="20sp"
       android:textStyle="bold"
       android:countDown="true"
       android:format="%s"
-      android:includeFontPadding="false" />
+      android:includeFontPadding="false"
+      android:gravity="center" />
 
   <LinearLayout
-      android:id="@+id/widget_home_city_row"
-      android:layout_width="104dp"
+      android:id="@+id/widget_home_meta_row"
+      android:layout_width="0dp"
       android:layout_height="wrap_content"
-      android:layout_gravity="end|center_vertical"
-      android:orientation="horizontal"
-      android:gravity="center_vertical|end"
-      android:minWidth="46dp">
+      android:layout_weight="1"
+      android:orientation="vertical"
+      android:gravity="end|center_vertical"
+      android:paddingStart="4dp">
 
-    <ImageView
-        android:id="@+id/widget_home_city_pin"
-        android:layout_width="14dp"
-        android:layout_height="14dp"
-        android:src="@drawable/widget_ic_city_pin"
-        android:scaleType="fitCenter"
-        android:contentDescription="@string/widget_city_a11y"
-        android:layout_marginEnd="3dp" />
-
-    <TextView
-        android:id="@+id/widget_home_city"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/widget_home_city_row"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:fontFamily="sans-serif-medium"
-        android:textColor="@color/widget_prayer_text"
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:includeFontPadding="true" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical|end">
+
+      <ImageView
+          android:id="@+id/widget_home_city_pin"
+          android:layout_width="16dp"
+          android:layout_height="16dp"
+          android:src="@drawable/widget_ic_city_pin"
+          android:scaleType="fitCenter"
+          android:contentDescription="@string/widget_city_a11y"
+          android:layout_marginEnd="3dp" />
+
+      <TextView
+          android:id="@+id/widget_home_city"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:fontFamily="sans-serif"
+          android:textColor="@color/widget_prayer_text"
+          android:textSize="14sp"
+          android:textStyle="bold"
+          android:maxLines="1"
+          android:ellipsize="end"
+          android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_home_weather_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical|end"
+        android:paddingTop="2dp">
+
+      <TextView
+          android:id="@+id/widget_home_weather_icon"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:textSize="15sp"
+          android:includeFontPadding="false"
+          android:paddingEnd="3dp" />
+
+      <TextView
+          android:id="@+id/widget_home_weather_temp"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:fontFamily="sans-serif"
+          android:textColor="@color/widget_prayer_text"
+          android:textSize="15sp"
+          android:textStyle="bold"
+          android:maxLines="1"
+          android:includeFontPadding="false" />
+    </LinearLayout>
   </LinearLayout>
-</FrameLayout>
+</LinearLayout>

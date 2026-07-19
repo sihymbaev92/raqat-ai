@@ -1,8 +1,8 @@
 import { kk } from "../i18n/kk";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 
-/** Баптаулар мен намаз экранындағы дыбыс жолының қазақша атауы */
-export function prayerNotifSoundLabelKk(id: PrayerNotifSoundId): string {
+/** Баптаулар мен намаз экранындағы дыбыс жолының атауы */
+export function prayerNotifSoundLabel(id: PrayerNotifSoundId): string {
   switch (id) {
     case "off":
       return kk.prayer.notifSoundOff;
@@ -14,3 +14,6 @@ export function prayerNotifSoundLabelKk(id: PrayerNotifSoundId): string {
     }
   }
 }
+
+/** @deprecated Use prayerNotifSoundLabel. */
+export const prayerNotifSoundLabelKk = prayerNotifSoundLabel;

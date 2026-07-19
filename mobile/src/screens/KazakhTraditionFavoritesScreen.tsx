@@ -24,9 +24,9 @@ function favoriteLabel(item: TraditionFavorite): string {
   return getTraditionArticleById(item.id)?.title ?? item.id;
 }
 
-function favoriteSub(item: TraditionFavorite): string {
-  if (item.type === "topic") return "Дәстүр";
-  return "Мақала";
+function favoriteSub(item: TraditionFavorite, t: ReturnType<typeof useI18n>): string {
+  if (item.type === "topic") return t.features.traditionGuide.favoriteTypeTopic;
+  return t.features.traditionGuide.favoriteTypeArticle;
 }
 
 function favoriteIcon(item: TraditionFavorite): React.ComponentProps<typeof MaterialIcons>["name"] {
@@ -80,7 +80,7 @@ export function KazakhTraditionFavoritesScreen() {
               <Text style={styles.title} numberOfLines={2}>
                 {tr(favoriteLabel(item))}
               </Text>
-              <Text style={styles.sub}>{tr(favoriteSub(item))}</Text>
+              <Text style={styles.sub}>{favoriteSub(item, t)}</Text>
             </View>
             <MaterialIcons name="chevron-right" size={22} color={palette.muted} />
           </Pressable>

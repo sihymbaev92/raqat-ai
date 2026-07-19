@@ -25,16 +25,16 @@ describe("hatimInteractivePageTurn", () => {
     expect(center?.grabXRatio).toBeCloseTo(0.5, 1);
   });
 
-  it("tracks drag progress with smoothstep easing", () => {
+  it("tracks drag progress with near-linear finger follow", () => {
     expect(hatimPageTurnProgressFromDx(0, 390)).toBe(0);
-    expect(hatimPageTurnProgressFromDx(140, 390)).toBeGreaterThan(0.38);
+    expect(hatimPageTurnProgressFromDx(140, 390)).toBeGreaterThan(0.35);
     expect(hatimPageTurnProgressFromDx(400, 390)).toBe(1);
   });
 
   it("commits turn after enough drag or fast flick", () => {
-    expect(hatimPageTurnShouldCommit(40, 0, 390, 0.22)).toBe(false);
-    expect(hatimPageTurnShouldCommit(120, 0, 390, 0.3)).toBe(true);
-    expect(hatimPageTurnShouldCommit(90, 0, 390, 0.28)).toBe(true);
+    expect(hatimPageTurnShouldCommit(40, 0, 390, 0.12)).toBe(false);
+    expect(hatimPageTurnShouldCommit(120, 0, 390, 0.22)).toBe(true);
+    expect(hatimPageTurnShouldCommit(90, 0, 390, 0.2)).toBe(true);
     expect(hatimPageTurnShouldCommit(30, 0.6, 390, 0.1)).toBe(true);
   });
 
@@ -55,9 +55,9 @@ describe("hatimInteractivePageTurn", () => {
     expect(hatimPageTurnCornerSkewDeg("forward", 0.9, 1)).toBeGreaterThan(0);
   });
 
-  it("swaps page mid-animation not at the end", () => {
-    expect(hatimPageTurnSwapDelayMs(0)).toBeLessThan(680);
-    expect(hatimPageTurnSwapDelayMs(0.5)).toBeLessThan(360);
-    expect(hatimPageTurnSwapDelayMs(0.5, 680)).toBeGreaterThan(0);
+  it("swaps page immediately for simple fade", () => {
+    expect(hatimPageTurnSwapDelayMs(0)).toBe(0);
+    expect(hatimPageTurnSwapDelayMs(0.5)).toBe(0);
+    expect(hatimPageTurnSwapDelayMs(0.5, 420)).toBe(0);
   });
 });

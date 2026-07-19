@@ -10,11 +10,10 @@ export type TajweedGridCell = {
   nameKk: string;
   /** true = жуан (тәхфим) — қызыл; false = жіңішке (тарқиқ) — қара */
   heavy: boolean;
-  /** Араб тыңдау үшін қысқа мысал */
+  /** Оқулықтағы қысқа мысал (экранда/сабақта; дауыстап оқылмайды) */
   example: string;
   /**
-   * TTS fallback: әріп атауы емес — фатхалы анық дыбыс (بَا).
-   * Жүйелік араб TTS бір әріпті жиі бұзып оқиды; ұзын «ـَا» тұрақтырақ.
+   * Дауыс: тек классикалық араб әріп атауы (بَاء) — мысал сөз немесе «بَا» жоқ.
    */
   speechAr: string;
 };
@@ -22,40 +21,40 @@ export type TajweedGridCell = {
 /** Әр жол — 7 ұя, 4 жол = 28 әріп; экранда row-reverse — ا оң жақта. */
 export const TAJWEED_ALPHABET_ROWS: TajweedGridCell[][] = [
   [
-    { ar: "ا", nameKk: "алиф", heavy: false, example: "أَب", speechAr: "أَا" },
-    { ar: "ب", nameKk: "бә", heavy: false, example: "بَب", speechAr: "بَا" },
-    { ar: "ت", nameKk: "тә", heavy: false, example: "تَب", speechAr: "تَا" },
-    { ar: "ث", nameKk: "сә", heavy: false, example: "ثَلَاث", speechAr: "ثَا" },
-    { ar: "ج", nameKk: "жим", heavy: false, example: "جَمَل", speechAr: "جَا" },
-    { ar: "ح", nameKk: "хә", heavy: false, example: "حَجّ", speechAr: "حَا" },
-    { ar: "خ", nameKk: "хо", heavy: true, example: "خَبَر", speechAr: "خَا" },
+    { ar: "ا", nameKk: "алиф", heavy: false, example: "أَب", speechAr: "أَلِفْ" },
+    { ar: "ب", nameKk: "бә", heavy: false, example: "بَب", speechAr: "بَاء" },
+    { ar: "ت", nameKk: "тә", heavy: false, example: "تَب", speechAr: "تَاء" },
+    { ar: "ث", nameKk: "сә", heavy: false, example: "ثَلَاث", speechAr: "ثَاء" },
+    { ar: "ج", nameKk: "жим", heavy: false, example: "جَمَل", speechAr: "جِيم" },
+    { ar: "ح", nameKk: "хә", heavy: false, example: "حَجّ", speechAr: "حَاء" },
+    { ar: "خ", nameKk: "хо", heavy: true, example: "خَبَر", speechAr: "خَاء" },
   ],
   [
-    { ar: "د", nameKk: "дәл", heavy: false, example: "دِين", speechAr: "دَا" },
-    { ar: "ذ", nameKk: "зәл", heavy: false, example: "ذَكَر", speechAr: "ذَا" },
-    { ar: "ر", nameKk: "ро", heavy: false, example: "رَبّ", speechAr: "رَا" },
-    { ar: "ز", nameKk: "зә", heavy: false, example: "زَكَاة", speechAr: "زَا" },
-    { ar: "س", nameKk: "син", heavy: false, example: "سَلَام", speechAr: "سَا" },
-    { ar: "ش", nameKk: "шин", heavy: false, example: "شَيْء", speechAr: "شَا" },
-    { ar: "ص", nameKk: "сод", heavy: true, example: "صَلَاة", speechAr: "صَا" },
+    { ar: "د", nameKk: "дәл", heavy: false, example: "دِين", speechAr: "دَال" },
+    { ar: "ذ", nameKk: "зәл", heavy: false, example: "ذَكَر", speechAr: "ذَال" },
+    { ar: "ر", nameKk: "ро", heavy: false, example: "رَبّ", speechAr: "رَاء" },
+    { ar: "ز", nameKk: "зә", heavy: false, example: "زَكَاة", speechAr: "زَاي" },
+    { ar: "س", nameKk: "син", heavy: false, example: "سَلَام", speechAr: "سِين" },
+    { ar: "ش", nameKk: "шин", heavy: false, example: "شَيْء", speechAr: "شِين" },
+    { ar: "ص", nameKk: "сод", heavy: true, example: "صَلَاة", speechAr: "صَاد" },
   ],
   [
-    { ar: "ض", nameKk: "дод", heavy: true, example: "ضَرَب", speechAr: "ضَا" },
-    { ar: "ط", nameKk: "то", heavy: true, example: "طَيِّب", speechAr: "طَا" },
-    { ar: "ظ", nameKk: "зо", heavy: true, example: "ظُلْم", speechAr: "ظَا" },
-    { ar: "ع", nameKk: "'айн", heavy: false, example: "عَلِمَ", speechAr: "عَا" },
-    { ar: "غ", nameKk: "ғойн", heavy: true, example: "غَفَار", speechAr: "غَا" },
-    { ar: "ف", nameKk: "фә", heavy: false, example: "فَضْل", speechAr: "فَا" },
-    { ar: "ق", nameKk: "қоф", heavy: true, example: "قُرْآن", speechAr: "قَا" },
+    { ar: "ض", nameKk: "дод", heavy: true, example: "ضَرَب", speechAr: "ضَاد" },
+    { ar: "ط", nameKk: "то", heavy: true, example: "طَيِّب", speechAr: "طَاء" },
+    { ar: "ظ", nameKk: "зо", heavy: true, example: "ظُلْم", speechAr: "ظَاء" },
+    { ar: "ع", nameKk: "'айн", heavy: false, example: "عَلِمَ", speechAr: "عَيْن" },
+    { ar: "غ", nameKk: "ғойн", heavy: true, example: "غَفَار", speechAr: "غَيْن" },
+    { ar: "ف", nameKk: "фә", heavy: false, example: "فَضْل", speechAr: "فَاء" },
+    { ar: "ق", nameKk: "қоф", heavy: true, example: "قُرْآن", speechAr: "قَاف" },
   ],
   [
-    { ar: "ك", nameKk: "кәф", heavy: false, example: "كَرِيم", speechAr: "كَا" },
-    { ar: "ل", nameKk: "ләм", heavy: false, example: "لَا", speechAr: "لَا" },
-    { ar: "م", nameKk: "мим", heavy: false, example: "مُحَمَّد", speechAr: "مَا" },
-    { ar: "ن", nameKk: "нун", heavy: false, example: "نُور", speechAr: "نَا" },
-    { ar: "و", nameKk: "уау", heavy: false, example: "وَقْت", speechAr: "وَا" },
-    { ar: "ه", nameKk: "һә", heavy: false, example: "هُدًى", speechAr: "هَا" },
-    { ar: "ي", nameKk: "йә", heavy: false, example: "يَوْم", speechAr: "يَا" },
+    { ar: "ك", nameKk: "кәф", heavy: false, example: "كَرِيم", speechAr: "كَاف" },
+    { ar: "ل", nameKk: "ләм", heavy: false, example: "لَا", speechAr: "لَام" },
+    { ar: "م", nameKk: "мим", heavy: false, example: "مُحَمَّد", speechAr: "مِيم" },
+    { ar: "ن", nameKk: "нун", heavy: false, example: "نُور", speechAr: "نُون" },
+    { ar: "و", nameKk: "уау", heavy: false, example: "وَقْت", speechAr: "وَاو" },
+    { ar: "ه", nameKk: "һә", heavy: false, example: "هُدًى", speechAr: "هَاء" },
+    { ar: "ي", nameKk: "йә", heavy: false, example: "يَوْم", speechAr: "يَاء" },
   ],
 ];
 

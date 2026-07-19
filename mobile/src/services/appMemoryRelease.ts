@@ -108,6 +108,7 @@ export async function releaseAppHeavyMemory(): Promise<void> {
       if (locale === "kk") {
         i18n.releaseOfflineAutoTranslationsMemory();
       } else {
+        i18n.seedApkOfflineTranslationsSync();
         i18n.pruneOfflineAutoTranslationsToLocale(
           locale as import("../services/offlineAutoTranslations").OfflineAutoTranslateTarget
         );
@@ -115,7 +116,11 @@ export async function releaseAppHeavyMemory(): Promise<void> {
     }),
     safe("i18nTree", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require("../i18n/runtime").invalidateOfflineLocaleTreeCache();
+      const runtime = require("../i18n/runtime") as typeof import("../i18n/runtime");
+      runtime.invalidateOfflineLocaleTreeCache();
+      if (locale !== "kk") {
+        runtime.reapplyCurrentLocale();
+      }
     }),
   ]);
 }

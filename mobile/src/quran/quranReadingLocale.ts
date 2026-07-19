@@ -2,19 +2,27 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
 import type { AppLocale } from "../i18n/runtime";
 
-export type QuranReadingLocale = "kk" | "ru";
+/** Құран мағына аудармасы тілі — UI тілінен бөлек. */
+export const QURAN_READING_LOCALES = ["kk", "ru", "en", "tr", "uz", "ky"] as const;
+export type QuranReadingLocale = (typeof QURAN_READING_LOCALES)[number];
 
 const QURAN_READING_LOCALE_KEY = "quran_reading_locale_v1";
 
 const listeners = new Set<() => void>();
 let cached: QuranReadingLocale = "kk";
 
+export function isQuranReadingLocale(raw: string | null | undefined): raw is QuranReadingLocale {
+  return (QURAN_READING_LOCALES as readonly string[]).includes((raw ?? "").trim());
+}
+
 export function normalizeQuranReadingLocale(raw: string | null | undefined): QuranReadingLocale {
-  return raw === "ru" ? "ru" : "kk";
+  const s = (raw ?? "").trim();
+  return isQuranReadingLocale(s) ? s : "kk";
 }
 
 export function defaultQuranReadingLocaleForUi(uiLocale: AppLocale): QuranReadingLocale {
-  return uiLocale === "ru" ? "ru" : "kk";
+  if (isQuranReadingLocale(uiLocale)) return uiLocale;
+  return "kk";
 }
 
 function emitQuranReadingLocaleChange(): void {
@@ -36,7 +44,7 @@ export async function hydrateQuranReadingLocale(): Promise<QuranReadingLocale> {
   return cached;
 }
 
-/** Бірінші іске қосу: UI тіліне сәйкес kk/ru (клиент кейін Settings-тен өзгертеді). */
+/** Бірінші іске қосу: UI тіліне сәйкес (кейін Settings-тен өзгертеді). */
 export async function ensureDefaultQuranReadingLocale(uiLocale: AppLocale): Promise<QuranReadingLocale> {
   try {
     const existing = await AsyncStorage.getItem(QURAN_READING_LOCALE_KEY);

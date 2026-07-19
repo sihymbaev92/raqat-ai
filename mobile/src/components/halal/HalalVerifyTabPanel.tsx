@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import * as ImagePicker from "expo-image-picker";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { useFocusEffect } from "@react-navigation/native";
@@ -33,14 +32,10 @@ import { HalalBarcodeCameraModal } from "../HalalBarcodeCameraModal";
 import { HalalProductResultCard } from "./HalalProductResultCard";
 import { HalalProductsApiBanner } from "./HalalProductsApiBanner";
 import { HalalVerifyHub, type HalalCheckFlowPhase } from "./HalalVerifyHub";
-import { HALAL_PHOTO_ANALYZE_MS, resolveAiTimeoutMs } from "../../config/aiRequestPolicy";
-import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../../config/raqatApiBase";
 import { kk } from "../../i18n/kk";
 import { HALAL_HUB_LIST_OPTS, prefetchHalalDamuHub, readHalalHubCatalogSnapshot } from "../../services/halalHubBootstrap";
-import { fetchPlatformAiAnalyzeImage } from "../../services/platformApiClient";
 import { getHalalProductsSeedCount, mergeHalalProductItems, prefetchHalalProductsSeedIndex, searchHalalProductsSeed, lookupHalalProductsSeedByBarcode } from "../../services/halalProductsSeedKz";
 import { probeHalalProductsApi, type HalalProductsApiProbe } from "../../services/halalProductsApiProbe";
-import { getValidAccessToken } from "../../storage/authTokens";
 import {
   clearHalalScanResults,
   loadHalalScanResults,
@@ -49,8 +44,6 @@ import {
 } from "../../storage/halalScanResults";
 import { pushHalalLookupHistory } from "../../storage/halalLocalPrefs";
 import type { ThemeColors } from "../../theme/colors";
-import { formatAiApiError } from "../../utils/formatAiApiError";
-import { isHollowAiServerReply } from "../../utils/explainEmptyAiResponse";
 import {
   INSTANT_HALAL_SEARCH_LIMIT,
 } from "../../utils/halalInstantSearch";
@@ -60,15 +53,12 @@ import {
   writeHalalLookupCache,
 } from "../../utils/halalLookupCache";
 import { resolveHalalProductSearch } from "../../utils/halalProductSearch";
-import { parseHalalVisionMachineLines } from "../../utils/halalVisionMachineLines";
 import {
   buildHalalCheckSummary,
   fastSeedProductsForQuery,
   goodsProductStatusChips,
   HALAL_VERIFY_DEBOUNCE_MS,
-  HALAL_VISION_CLIENT_PROMPT,
 } from "../../utils/halalVerifyHelpers";
-import { resolveImagePickerBase64 } from "../../utils/resolveImagePickerBase64";
 import { runAfterInteractions } from "../../utils/uiDefer";
 
 type Props = {
@@ -94,7 +84,6 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
   const [checkAdditives, setCheckAdditives] = useState<HalalDamuAdditiveItem[]>([]);
   const [checkCompanies, setCheckCompanies] = useState<HalalDamuCompanyCard[]>([]);
   const [checkLookupDone, setCheckLookupDone] = useState(false);
-  const [photoAnalysisText, setPhotoAnalysisText] = useState<string | null>(null);
   const [goodsQuickBusy, setGoodsQuickBusy] = useState(false);
   const [goodsQuick, setGoodsQuick] = useState("");
   const [goodsQuickDebounced, setGoodsQuickDebounced] = useState("");
@@ -254,7 +243,6 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
       setCheckInput(trimmed);
       const digits = trimmed.replace(/\D/g, "");
       setLastCheckQuery(digits || trimmed);
-      setPhotoAnalysisText(null);
       setCheckLookupDone(false);
       setCheckFlowPhase("registry");
       setCheckErr(null);
@@ -309,87 +297,6 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     [barcodeQueryOpts, goodsProductStatusFilter],
   );
 
-  const openCameraForManualText = useCallback(async () => {
-    if (Platform.OS === "web") {
-      Alert.alert(kk.common.error, kk.features.halalScanWebUnavailable);
-      return;
-    }
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (perm.status !== "granted") {
-      Alert.alert(kk.common.error, kk.features.halalCheckCamPerm);
-      return;
-    }
-    const res = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.38,
-      base64: true,
-    });
-    if (res.canceled || !res.assets[0]) return;
-
-    await hydrateRaqatApiBaseOverride();
-    const apiBase = getRaqatApiBase();
-    if (!apiBase) {
-      Alert.alert(kk.common.error, kk.features.halalPhotoVisionNeedApi);
-      return;
-    }
-
-    const asset = res.assets[0];
-    const resolved = await resolveImagePickerBase64(asset);
-    if (!resolved?.base64) {
-      Alert.alert(kk.common.error, kk.features.halalPhotoReadFail);
-      return;
-    }
-    if (resolved.base64.length > 4_500_000) {
-      Alert.alert(kk.common.error, kk.features.halalPhotoTooLarge);
-      return;
-    }
-
-    setPhotoAnalysisText(null);
-    setCheckErr(null);
-    setCheckFlowPhase("registry");
-    try {
-      const bearer = ((await getValidAccessToken()) ?? "").trim();
-      const timeoutMs = await resolveAiTimeoutMs(HALAL_PHOTO_ANALYZE_MS);
-      const aiRes = await fetchPlatformAiAnalyzeImage(apiBase, {
-        imageB64: resolved.base64,
-        mimeType: resolved.mime,
-        lang: "kk",
-        prompt: HALAL_VISION_CLIENT_PROMPT,
-        timeoutMs,
-        authorizationBearer: bearer || undefined,
-      });
-      const rawText = typeof aiRes.text === "string" ? aiRes.text.trim() : "";
-      if (
-        !rawText ||
-        aiRes.ok === false ||
-        (aiRes.status != null && aiRes.status >= 400) ||
-        isHollowAiServerReply(rawText)
-      ) {
-        const errLine =
-          aiRes.error || (aiRes.status != null && aiRes.status >= 400)
-            ? formatAiApiError(aiRes.status, { error: aiRes.error, detail: aiRes.detail })
-            : "";
-        setCheckErr(errLine || kk.features.halalPhotoVisionFail);
-        return;
-      }
-      const { display, barcode, name } = parseHalalVisionMachineLines(rawText);
-      setPhotoAnalysisText(display || rawText);
-
-      if (barcode) {
-        await applyBarcodePipeline(barcode, { silentBusy: true });
-      } else if (name && name.length >= 2) {
-        setLastCheckQuery(name);
-        setCheckFlowPhase("registry");
-        setCheckInput(name);
-        await lookupHalalRegistry(name, { useMainBusy: false, silentBusy: true });
-      } else {
-        setLastCheckQuery(null);
-      }
-    } finally {
-      setCheckFlowPhase(null);
-    }
-  }, [applyBarcodePipeline, lookupHalalRegistry]);
-
   const restoreScanSnapshot = useCallback((snap: HalalScanResultSnapshot) => {
     setCheckInput(snap.barcode);
     setLastCheckQuery(snap.barcode);
@@ -398,7 +305,6 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     setCheckCompanies(snap.companies);
     setCheckLookupDone(true);
     setCheckErr(null);
-    setPhotoAnalysisText(null);
     setCheckFlowPhase(null);
   }, []);
 
@@ -674,9 +580,9 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
         camPermBtn={kk.features.halalScanCamPermBtn}
         photoHint={kk.features.halalCheckPhotoBody}
         capturePhotoLabel={kk.features.halalCheckPhotoBtn}
-        pickGalleryLabel="Галерея"
-        photoScanBusyLabel="Іздеу…"
-        photoNoBarcode="Штрихкод табылмады"
+        pickGalleryLabel={kk.features.halalCheckGalleryBtn}
+        photoScanBusyLabel={kk.features.halalCheckPhotoScanBusy}
+        photoNoBarcode={kk.features.halalCheckPhotoNoBarcode}
         closeA11y={kk.features.halalHubClose}
         onClose={() => setScanOpen(false)}
         onBarcode={(data) => void applyBarcodePipeline(data)}

@@ -7,13 +7,7 @@ export type OfflineAutoTranslateTarget =
   | "ky"
   | "uz"
   | "tr"
-  | "ar"
-  | "zh"
-  | "fa"
-  | "id"
-  | "ms"
-  | "hi"
-  | "ku";
+  | "ar";
 
 type OfflineAutoTranslationBundle = {
   version?: number;
@@ -67,16 +61,27 @@ export async function ensureOfflineAutoTranslationsLoaded(
         }, FETCH_JSON_MS)
       : null;
     try {
-      const response = await fetch(bundledJsonRemoteUrl("offline-auto-translations-core.json"), {
-        cache: "force-cache",
-        signal: ctrl?.signal,
-      });
-      if (!response.ok) return;
-      const loaded = (await response.json()) as OfflineAutoTranslationBundle;
-      if (loaded?.targets && Object.keys(loaded.targets).length > 0) {
-        bundle = loaded;
-        if (preferred && loaded.targets[preferred]) {
-          pruneOfflineAutoTranslationsToLocale(preferred);
+      const urls = [
+        bundledJsonRemoteUrl("offline-auto-translations-apk.json"),
+        bundledJsonRemoteUrl("offline-auto-translations-core.json"),
+      ];
+      for (const url of urls) {
+        try {
+          const response = await fetch(url, {
+            cache: "force-cache",
+            signal: ctrl?.signal,
+          });
+          if (!response.ok) continue;
+          const loaded = (await response.json()) as OfflineAutoTranslationBundle;
+          if (loaded?.targets && Object.keys(loaded.targets).length > 0) {
+            bundle = loaded;
+            if (preferred && loaded.targets[preferred]) {
+              pruneOfflineAutoTranslationsToLocale(preferred);
+            }
+            break;
+          }
+        } catch {
+          /* try next */
         }
       }
     } catch {

@@ -12,7 +12,9 @@ import { getBookmarkedSurahs } from "../storage/quranBookmarks";
 import { loadAyahMarkers, type AyahMarkerRecord } from "../storage/quranAyahMarkers";
 import { hatimProgressFraction, loadHatimProgress, loadHatimResume, type HatimResume } from "../storage/hatimProgress";
 import { loadHalalFavorites, type HalalFavoriteCompany } from "../storage/halalLocalPrefs";
-import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { useAppLocale } from "../i18n/runtime";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
 import { useI18n } from "../i18n/useI18n";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 
@@ -40,10 +42,6 @@ function parseMarkerKey(key: string): { surah: number; ayah: number } | null {
   return { surah: s, ayah: a };
 }
 
-function surahLine(surah: number, ayah?: number): string {
-  return `${surah}. ${surahDisplayTitle(surah, "")}${ayah != null ? ` · ${ayah}-аят` : ""}`;
-}
-
 function countLine(label: string, count: number, total?: number): string {
   return `${label}: ${count}${total != null ? `/${total}` : ""}`;
 }
@@ -52,7 +50,16 @@ export function SavedTabScreen() {
   const { colors } = useAppTheme();
   const navigation = useNavigation<NavigationProp<ParamListBase>>();
   const t = useI18n();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const st = t.navigation.savedTab;
+  const surahLine = useCallback(
+    (surah: number, ayah?: number) => {
+      const title = surahTitleForLocale(surah, locale, { tr });
+      return `${surah}. ${title}${ayah != null ? ` · ${t.quran.ayahInlineSuffix(ayah)}` : ""}`;
+    },
+    [locale, tr, t.quran]
+  );
   const [snapshot, setSnapshot] = useState<SavedSnapshot>(() => emptySnapshot());
   const [loading, setLoading] = useState(true);
   useTabHomeBackHeader(navigation, colors);

@@ -1,3 +1,5 @@
+import { surahEnglishName } from "../data/surahEnglishName";
+
 /** Қазақша сүре атаулары (114). API латын атамасын көрсетпеу үшін. */
 export const SURAH_TITLES_KK: readonly string[] = [
   "Әл-Фатиха",
@@ -133,4 +135,29 @@ export function surahDisplayTitle(surahNumber: number, englishName: string): str
   if (t && CYR.test(t) && !isSurahPlaceholderKk(t)) return t;
   if (kk) return kk;
   return `Сүре ${surahNumber}`;
+}
+
+/**
+ * Ағымдағы UI тіліне сәйкес сүре атауы.
+ * en — English name; ar — арабша (берілсе); басқа — қазақша атауды tr() арқылы.
+ */
+export function surahTitleForLocale(
+  surahNumber: number,
+  locale: string,
+  opts?: {
+    englishName?: string;
+    arabicName?: string;
+    tr?: (text: string) => string;
+  }
+): string {
+  if (locale === "en") {
+    const en = (opts?.englishName || "").trim() || surahEnglishName(surahNumber);
+    if (en) return en;
+  }
+  if (locale === "ar") {
+    const ar = (opts?.arabicName || "").trim();
+    if (ar) return ar;
+  }
+  const kkTitle = surahDisplayTitle(surahNumber, opts?.englishName ?? "");
+  return opts?.tr ? opts.tr(kkTitle) : kkTitle;
 }

@@ -94,7 +94,7 @@ function SeerahPhaseBlock({
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${tr(phase.titleKk)} — ${expanded ? "жабу" : "ашу"}`}
+        accessibilityLabel={`${tr(phase.titleKk)} — ${expanded ? kk.common.guideAccordionCollapse : kk.common.guideAccordionExpand}`}
         style={({ pressed }) => [styles.phaseHead, expanded && styles.phaseHeadOpen, pressed && { opacity: 0.92 }]}
       >
         <View style={styles.phaseIcon}>

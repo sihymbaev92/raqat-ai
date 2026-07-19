@@ -15,6 +15,8 @@ import {
 } from "../services/quranTajweedAsset";
 import type { CachedAyah } from "../storage/quranSurahCache";
 import { useQuranReaderOrientation } from "../hooks/useQuranReaderOrientation";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
 
 const CREAM_BAR = "#F5F2EB";
 const INK = "#3E2723";
@@ -25,7 +27,8 @@ type Props = NativeStackScreenProps<MoreStackParamList, "HatimTajweedSurah">;
  * Flutter `SurahDetailsScreen` — офлайн `[h[` / `<font>` тәжуид түстері.
  */
 export function HatimTajweedSurahScreen({ navigation, route }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const { surahNumber, englishName, arabicName } = route.params;
   const insets = useSafeAreaInsets();
   const { isDark, colors } = useAppTheme();
@@ -49,8 +52,9 @@ export function HatimTajweedSurahScreen({ navigation, route }: Props) {
     };
   }, [surahNumber]);
 
-  const title = englishName ?? `Сүре ${surahNumber}`;
+  const title = surahTitleForLocale(surahNumber, locale, { englishName, arabicName, tr });
   const styles = useMemo(() => makeStyles(isDark), [isDark]);
+  const barInk = isDark ? "#F5F2EB" : INK;
   const mushafAyahTxt = useMemo(
     () => ({
       fontSize: 25,
@@ -63,17 +67,9 @@ export function HatimTajweedSurahScreen({ navigation, route }: Props) {
   );
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
+    <View style={styles.root}>
       <View style={styles.appBar}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel={kk.common.back}
-          style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.75 }]}
-        >
-          <MaterialIcons name="arrow-back" size={24} color={INK} />
-        </Pressable>
+        <View style={styles.backBtn} />
         <View style={styles.titleCol}>
           <Text style={styles.appBarTitle} numberOfLines={1}>
             {title}
@@ -106,7 +102,7 @@ export function HatimTajweedSurahScreen({ navigation, route }: Props) {
 
       {loading ? (
         <View style={styles.center}>
-          <ActivityIndicator color={INK} />
+          <ActivityIndicator color={barInk} />
         </View>
       ) : (
         <KhatmTajweedAyahScroll

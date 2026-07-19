@@ -17,7 +17,7 @@ import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as ScreenOrientation from "expo-screen-orientation";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
 import type { ThemeColors } from "../../theme/colors";
 import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSurahCache";
 import { toggleBookmarkSurah } from "../../storage/quranBookmarks";
@@ -27,11 +27,11 @@ import { AyahArabicKaraokeText } from "./AyahArabicKaraokeText";
 import { MushafContinuousArabicBlock, type MushafContinuousArabicHandle } from "./MushafContinuousArabicBlock";
 import { MushafPagerPageScroll, type MushafPagerPageStyles } from "./MushafPagerPageScroll";
 import { MushafBookFooter } from "./MushafBookFooter";
-import { TajweedReaderQuickPill } from "./TajweedReaderQuickPill";
 import { IlluminatedManuscriptFrame } from "../IlluminatedManuscriptFrame";
 import { MushafSurahHeader } from "./MushafSurahHeader";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
+import { useQuranTranslitScript } from "../../quran/quranTranslitScript";
 import { toEasternArabicIndic } from "../../utils/easternArabicIndic";
 import { runAfterInteractions } from "../../utils/uiDefer";
 import { mushafBookPagerListProps } from "../../quran/mushafBookPager";
@@ -66,20 +66,17 @@ export type QuranSurahReaderBodyProps = {
   showReaderArabic: boolean;
   showReaderTranslit: boolean;
   showReaderMeaning: boolean;
-  showTajweedColors: boolean;
   showTajweedForDisplay: boolean;
-  tajweedLoading: boolean;
+  tajweedNoticeText?: string | null;
   arabicScriptEdition: QuranArabicScriptEditionId;
   bookmarked: boolean;
   setBookmarked: (v: boolean) => void;
   readerAllowRotation: boolean;
   setReaderAllowRotation: (v: boolean) => void;
-  onToggleTajweedColors: (next: boolean) => void | Promise<void>;
   handleReaderBack: () => boolean;
   retryLoadSurah: () => void;
   setJuzPickerVisible: (v: boolean) => void;
   setReaderSettingsOpen: (v: boolean) => void;
-  setTajweedLegendOpen: (v: boolean) => void;
   mushafAyahAudioActive: boolean;
   playingAyahInSurah: number | null;
   loadingAyahAudio: number | null;
@@ -145,20 +142,17 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
     showReaderArabic,
     showReaderTranslit,
     showReaderMeaning,
-    showTajweedColors,
     showTajweedForDisplay,
-    tajweedLoading,
+    tajweedNoticeText,
     arabicScriptEdition,
     bookmarked,
     setBookmarked,
     readerAllowRotation,
     setReaderAllowRotation,
-    onToggleTajweedColors,
     handleReaderBack,
     retryLoadSurah,
     setJuzPickerVisible,
     setReaderSettingsOpen,
-    setTajweedLegendOpen,
     mushafAyahAudioActive,
     playingAyahInSurah,
     loadingAyahAudio,
@@ -199,13 +193,15 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
     flashListPlaybackExtra,
     renderAyahListRow,
   } = props;
+  const t = useI18n();
+  const translitScript = useQuranTranslitScript();
   const insets = useSafeAreaInsets();
 
   if (loading && !ayahs.length) {
     return (
       <View style={styles.center}>
         <RaqatOrnamentSpinner size={52} />
-        <Text style={styles.muted}>{kk.quran.ayahLoading}</Text>
+        <Text style={styles.muted}>{t.quran.ayahLoading}</Text>
       </View>
     );
   }
@@ -216,22 +212,13 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
         <Text style={styles.err}>{err}</Text>
         <View style={styles.errorActions}>
           <Pressable
-            onPress={handleReaderBack}
-            accessibilityRole="button"
-            accessibilityLabel={kk.common.back}
-            style={({ pressed }) => [styles.errorSecondaryBtn, pressed && { opacity: 0.86 }]}
-          >
-            <MaterialIcons name="arrow-back" size={18} color={colors.text} />
-            <Text style={styles.errorSecondaryBtnText}>{kk.common.back}</Text>
-          </Pressable>
-          <Pressable
             onPress={retryLoadSurah}
             accessibilityRole="button"
-            accessibilityLabel={kk.common.retry}
+            accessibilityLabel={t.common.retry}
             style={({ pressed }) => [styles.errorPrimaryBtn, pressed && { opacity: 0.9 }]}
           >
             <MaterialIcons name="refresh" size={18} color="#FFFFFF" />
-            <Text style={styles.errorPrimaryBtnText}>{kk.common.retry}</Text>
+            <Text style={styles.errorPrimaryBtnText}>{t.common.retry}</Text>
           </Pressable>
         </View>
       </View>
@@ -242,25 +229,14 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
 
   return (
     <>
-      <View style={[styles.topBar, mushafLayout && styles.mushafTopBar, { paddingTop: insets.top + 2, paddingRight: 0 }]}>
-        <Pressable
-          style={[styles.topBarBtn, mushafLayout && styles.mushafTopBarBtn]}
-          onPress={handleReaderBack}
-          accessibilityRole="button"
-          accessibilityLabel={kk.common.back}
-        >
-          <MaterialIcons
-            name="arrow-back"
-            size={20}
-            color={mushafChromeIconColor}
-          />
-        </Pressable>
+      <View style={[styles.topBar, mushafLayout && styles.mushafTopBar, { paddingTop: 2, paddingRight: 0 }]}>
+        <View style={[styles.topBarBtn, mushafLayout && styles.mushafTopBarBtn]} />
         <View style={[styles.topBarMid, mushafLayout && styles.mushafTopBarMid]}>
           {mushafLayout ? (
             <View style={styles.mushafTopHeaderRow}>
               <View style={styles.mushafTopLeft}>
                 <Text style={styles.mushafTopJuzLeft} numberOfLines={1}>
-                  {kk.quran.readerHeaderJuzHizb(readerJuzFromAnchor, mushafFooterHizb)}
+                  {t.quran.readerHeaderJuzHizb(readerJuzFromAnchor, mushafFooterHizb)}
                 </Text>
               </View>
               <View style={styles.mushafTopRight}>
@@ -275,18 +251,18 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           ) : (
             <>
               <Text style={styles.topBarSurahLatin} numberOfLines={1}>
-                {kk.quran.readerHeaderTitle(titleKk)}
+                {t.quran.readerHeaderTitle(titleKk)}
               </Text>
               <View style={styles.topBarJuzCluster}>
                 <Text style={styles.topBarJuzPart} numberOfLines={1}>
-                  {kk.quran.readerJuzPart(readerJuzFromAnchor)}
+                  {t.quran.readerJuzPart(readerJuzFromAnchor)}
                 </Text>
                 <Pressable
                   style={({ pressed }) => [styles.topBarJuzPickerBtn, pressed && { opacity: 0.88 }]}
                   onPress={() => setJuzPickerVisible(true)}
                   hitSlop={6}
                   accessibilityRole="button"
-                  accessibilityLabel={kk.quran.juzPickerListBtnA11y}
+                  accessibilityLabel={t.quran.juzPickerListBtnA11y}
                 >
                   <MaterialIcons name="view-list" size={20} color={colors.accent} />
                 </Pressable>
@@ -295,16 +271,6 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           )}
         </View>
         <View style={[styles.topBarRight, { paddingRight: Math.max(insets.right, 4) }]}>
-          <TajweedReaderQuickPill
-            colors={colors}
-            isDark={isDark}
-            enabled={showTajweedColors}
-            loading={tajweedLoading}
-            scriptSupportsTajweed={arabicScriptEdition === "madinah"}
-            variant="icon"
-            onToggle={(v) => void onToggleTajweedColors(v)}
-            onOpenLegend={() => setTajweedLegendOpen(true)}
-          />
           {mushafLayout ? (
             <Pressable
               style={[styles.topBarBtn, styles.mushafTopBarBtn]}
@@ -313,7 +279,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                 setBookmarked(next);
               }}
               accessibilityRole="button"
-              accessibilityLabel={bookmarked ? kk.quran.bookmarkRemove : kk.quran.bookmarkAdd}
+              accessibilityLabel={bookmarked ? t.quran.bookmarkRemove : t.quran.bookmarkAdd}
             >
               <MaterialIcons
                 name={bookmarked ? "bookmark" : "bookmark-border"}
@@ -348,7 +314,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                   }
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={kk.quran.readerAllowRotationTopA11y}
+                accessibilityLabel={t.quran.readerAllowRotationTopA11y}
                 accessibilityState={{ selected: readerAllowRotation }}
               >
                 <MaterialIcons
@@ -365,7 +331,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                   setBookmarked(next);
                 }}
                 accessibilityRole="button"
-                accessibilityLabel={bookmarked ? kk.quran.bookmarkRemove : kk.quran.bookmarkAdd}
+                accessibilityLabel={bookmarked ? t.quran.bookmarkRemove : t.quran.bookmarkAdd}
               >
                 <Text style={styles.topBarStar}>{bookmarked ? "★" : "☆"}</Text>
               </Pressable>
@@ -375,7 +341,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
             style={[styles.topBarBtn, mushafLayout && styles.mushafTopBarBtn]}
             onPress={() => setReaderSettingsOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel={kk.quran.readerSettingsA11y}
+            accessibilityLabel={t.quran.readerSettingsA11y}
           >
             <MaterialIcons
               name="more-horiz"
@@ -385,6 +351,22 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           </Pressable>
         </View>
       </View>
+      {tajweedNoticeText ? (
+        <View
+          style={{
+            marginHorizontal: 12,
+            marginBottom: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+            borderRadius: 10,
+            backgroundColor: isDark ? "rgba(13,148,136,0.18)" : "rgba(13,148,136,0.1)",
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: isDark ? "rgba(13,148,136,0.35)" : "rgba(13,148,136,0.28)",
+          }}
+        >
+          <Text style={{ fontSize: 13, lineHeight: 18, color: colors.muted }}>{tajweedNoticeText}</Text>
+        </View>
+      ) : null}
       {mushafLayout && mushafAyahAudioActive ? (
         <Pressable
           style={({ pressed }) => [
@@ -400,17 +382,17 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           accessibilityRole="button"
           accessibilityLabel={
             loadingAyahAudio != null
-              ? kk.quran.mushafAyahAudioLoadingLine(loadingAyahAudio)
+              ? t.quran.mushafAyahAudioLoadingLine(loadingAyahAudio)
               : ayahAudioIsPlaying
-                ? kk.quran.ayahPauseSudaisA11y(playingAyahInSurah ?? 0)
-                : kk.quran.ayahResumeSudaisA11y(playingAyahInSurah ?? 0)
+                ? t.quran.ayahPauseSudaisA11y(playingAyahInSurah ?? 0)
+                : t.quran.ayahResumeSudaisA11y(playingAyahInSurah ?? 0)
           }
         >
           {loadingAyahAudio != null ? (
             <>
               <RaqatOrnamentSpinner size={22} />
               <Text style={styles.mushafAyahAudioLoadingTxt} numberOfLines={1}>
-                {kk.quran.mushafAyahAudioLoadingLine(loadingAyahAudio)}
+                {t.quran.mushafAyahAudioLoadingLine(loadingAyahAudio)}
               </Text>
             </>
           ) : (
@@ -422,8 +404,8 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
               />
               <Text style={styles.mushafAyahAudioLoadingTxt} numberOfLines={1}>
                 {ayahAudioIsPlaying
-                  ? kk.quran.mushafAyahAudioPlayingLine(playingAyahInSurah ?? 0)
-                  : kk.quran.mushafAyahAudioPausedLine(playingAyahInSurah ?? 0)}
+                  ? t.quran.mushafAyahAudioPlayingLine(playingAyahInSurah ?? 0)
+                  : t.quran.mushafAyahAudioPausedLine(playingAyahInSurah ?? 0)}
               </Text>
             </>
           )}
@@ -511,7 +493,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           {mushafLayout && ayahs.length ? (
             <MushafBookFooter
               page={mushafPageMode ? visibleMushafPrintPage : mushafFooterPage}
-              pageA11y={kk.quran.mushafFooterPageA11y}
+              pageA11y={t.quran.mushafFooterPageA11y}
               colors={colors}
               isDark={isDark}
               bookMushaf
@@ -569,7 +551,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                 const kkLine = ayahMeaningLine(item);
                 const kirilRead =
                   getQuranTranslitOverride(surahNumber, ayahN) ??
-                  resolveQuranTranslitForDisplay(item.translit, arabicPlain);
+                  resolveQuranTranslitForDisplay(item.translit, arabicPlain, translitScript);
                 const isLoad = loadingAyahAudio === ayahN;
                 const hasLoaded = playingAyahInSurah === ayahN;
                 return (
@@ -604,13 +586,13 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                     ) : null}
                     {showReaderTranslit && kirilRead ? (
                       <>
-                        <Text style={styles.mushafAyahSectionCaption}>{kk.quran.translitCaption}</Text>
+                        <Text style={styles.mushafAyahSectionCaption}>{t.quran.translitCaption}</Text>
                         <Text style={styles.mushafAyahKiril}>{kirilRead}</Text>
                       </>
                     ) : null}
                     {showReaderMeaning && kkLine ? (
                       <>
-                        <Text style={styles.mushafAyahSectionCaption}>{kk.quran.meaningKk}</Text>
+                        <Text style={styles.mushafAyahSectionCaption}>{t.quran.meaningKk}</Text>
                         <Text style={styles.mushafAyahKk}>{kkLine}</Text>
                       </>
                     ) : null}
@@ -646,7 +628,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
             {mushafLayout && ayahs.length ? (
               <MushafBookFooter
                 page={mushafFooterPage}
-                pageA11y={kk.quran.mushafFooterPageA11y}
+                pageA11y={t.quran.mushafFooterPageA11y}
                 colors={colors}
                 isDark={isDark}
                 bookMushaf
@@ -690,7 +672,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           mushafLayout && ayahs.length ? (
             <MushafBookFooter
               page={mushafFooterPage}
-              pageA11y={kk.quran.mushafFooterPageA11y}
+              pageA11y={t.quran.mushafFooterPageA11y}
               colors={colors}
               isDark={isDark}
               bookMushaf

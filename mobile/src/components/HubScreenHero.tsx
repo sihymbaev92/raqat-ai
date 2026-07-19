@@ -10,7 +10,7 @@ import { RasterImage } from "@/ui/RasterImage";
 import type { ThemeColors } from "../theme/colors";
 import { BRAND_FONT_FACE } from "../fonts/brandFont";
 
-export type HubHeroVariant = "halal" | "ai";
+export type HubHeroVariant = "halal" | "knowledge";
 
 type Props = {
   variant: HubHeroVariant;
@@ -21,16 +21,16 @@ type Props = {
   isDark: boolean;
   /** Жоғарғы жол (мыс. halaldamu.kz) */
   eyebrow?: string;
-  /** eyebrow үшін uppercase (AI: «Сұрақ-жауап» қалыпты регистр) */
+  /** eyebrow үшін uppercase (білім порталы қалыпты регистр) */
   eyebrowUppercase?: boolean;
   /** Қысқа белгілер */
   tags?: string[];
-  /** AI хабы: кіші hero */
+  /** Білім хабы: кіші hero */
   compact?: boolean;
 };
 
 /**
- * Халал Даму / RAHAT OMIR AI хаб экрандары — басты бет промосынан ірі және жүйелі.
+ * Халал Даму / білім хабы экрандары — басты бет промосынан ірі және жүйелі.
  */
 export function HubScreenHero({
   variant,
@@ -54,7 +54,7 @@ export function HubScreenHero({
           <RasterImage
             source={image}
             style={styles.logo}
-            resizeMode={variant === "ai" ? "cover" : "contain"}
+            resizeMode={variant === "knowledge" ? "cover" : "contain"}
             resizeMethod={Platform.OS === "android" ? "resize" : undefined}
             resizeMultiplier={Platform.OS === "android" ? 0.7 : undefined}
             accessibilityIgnoresInvertColors

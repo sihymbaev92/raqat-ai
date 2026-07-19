@@ -125,10 +125,10 @@ export function OfficialKnowledgePortalScreen() {
     () => (
       <View style={styles.headerBlock}>
         <HubScreenHero
-          variant="ai"
+          variant="knowledge"
           title={kk.knowledgePortal.bilimTitle}
           lead={kk.knowledgePortal.bilimLead}
-          image={menuIconAssets.promoAi}
+          image={menuIconAssets.promoKmdb}
           colors={colors}
           isDark={isDark}
           eyebrow={kk.knowledgePortal.eyebrow}

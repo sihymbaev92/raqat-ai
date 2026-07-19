@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">أوقات الصلاة</string>
+  <string name="widget_prayer_description">أوقات صلاة اليوم (من جدول التطبيق)، مع شروق الشمس.</string>
+  <string name="widget_prayer_empty">افتح التطبيق وحدّث أوقات الصلاة.</string>
+
+  <string name="widget_prayer_next_label">الصلاة التالية</string>
+  <string name="widget_prayer_next_description">الطقس والعدّ التنازلي والصلوات الخمس — شريط 5×1</string>
+  <string name="widget_prayer_next_heading">الصلاة التالية</string>
+
+  <string name="widget_prayer_strip_label">شريط الصلاة</string>
+  <string name="widget_prayer_strip_description">أوقات صلاة اليوم — شريط مختصر</string>
+
+  <string name="widget_prayer_morning_label">الفجر · الشروق · الظهر</string>
+  <string name="widget_prayer_morning_description">الفجر وشروق الشمس والظهر</string>
+
+  <string name="widget_prayer_evening_label">العصر · المغرب · العشاء</string>
+  <string name="widget_prayer_evening_description">العصر والمغرب والعشاء</string>
+
+  <string name="widget_prayer_twocol_label">عمودان</string>
+  <string name="widget_prayer_twocol_description">جدول الصلاة — عمودان</string>
+
+  <string name="widget_prayer_five_dual_label">5 صلوات</string>
+  <string name="widget_prayer_five_dual_description">الصلوات الخمس — عمودان</string>
+
+  <string name="widget_prayer_home_strip_label">صلاة</string>
+  <string name="widget_prayer_home_strip_description">الشاشة الرئيسية: 5 صلوات وعدّ الصلاة التالية وخلفية داكنة</string>
+
+  <string name="widget_qibla_a11y">القبلة</string>
+  <string name="widget_city_a11y">المدينة</string>
+  <string name="widget_qibla_service_channel">أداة القبلة</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — القبلة</string>
+  <string name="widget_qibla_service_text">بوصلة لأداة الشاشة الرئيسية</string>
+  <string name="prayer_azan_fullscreen_title">دخل وقت الصلاة</string>
+  <string name="prayer_azan_default_label">صلاة</string>
+  <string name="prayer_azan_entered_for_label">دخل وقت صلاة %1$s</string>
+  <string name="prayer_azan_channel_name">الأذان</string>
+  <string name="prayer_azan_channel_desc">إظهار شاشة الأذان تلقائيًا عند دخول وقت الصلاة</string>
+  <string name="prayer_azan_notif_body_no_time">الأذان · اضغط للفتح</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · الأذان</string>
+
+  <string name="widget_prayer_row_fajr">الفجر</string>
+  <string name="widget_prayer_row_sun">الشروق</string>
+  <string name="widget_prayer_row_dhuhr">الظهر</string>
+  <string name="widget_prayer_row_asr">العصر</string>
+  <string name="widget_prayer_row_maghrib">المغرب</string>
+  <string name="widget_prayer_row_isha">العشاء</string>
+</resources>

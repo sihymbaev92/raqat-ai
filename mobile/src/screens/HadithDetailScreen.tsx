@@ -18,6 +18,11 @@ import { findKzTrustedHadith } from "../content/kzTrustedHadithCatalog";
 import { useAppLocale } from "../i18n/runtime";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import { resolveHadithGradeText } from "../content/hadithGrade";
+import {
+  hadithBookDisplayTitle,
+  hadithCollectionDisplayName,
+  hadithSourceForLocale,
+} from "../content/hadithDisplay";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "HadithDetail">;
 
@@ -74,7 +79,7 @@ function buildDisplay(hadithId: string, corpus: HadithCorpus | null): DisplayHad
     grade: resolveHadithGradeText(corpusEntry.grade),
     citation:
       corpusEntry.sourceCitationKk?.trim() ||
-      `${corpusEntry.collectionNameKk}, хадис № ${corpusEntry.reference}`,
+      kk.hadith.citationFallback(corpusEntry.collectionNameKk ?? "", corpusEntry.reference ?? ""),
     sourceLabel: corpusEntry.kkSourceLabel?.trim() || corpusEntry.collectionNameKk || "",
     sourceNote: corpusEntry.sourceOnly
       ? kk.hadith.sourceOnlyNoteInApp
@@ -93,8 +98,9 @@ export function HadithDetailScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     let alive = true;
+    /** kk ғана trusted каталогтан бірден көрсетуге болады; басқа тілдерге corpus қажет. */
     const trustedNow = findKzTrustedHadith(hadithId);
-    if (trustedNow) {
+    if (trustedNow && (appLocale === "kk" || appLocale === "ar")) {
       setLoading(false);
     }
     void (async () => {
@@ -112,22 +118,57 @@ export function HadithDetailScreen({ route, navigation }: Props) {
       alive = false;
       releaseHadithCorpusMemoryCache();
     };
-  }, [hadithId]);
+  }, [hadithId, appLocale]);
 
   const display = useMemo(() => buildDisplay(hadithId, corpus), [corpus, hadithId]);
+  const collectionLabel = display
+    ? hadithCollectionDisplayName(
+        display.corpusEntry ?? {
+          id: display.id,
+          collection: display.id.startsWith("muslim") ? "muslim" : "bukhari",
+          collectionNameKk: display.collectionNameKk,
+        },
+        appLocale
+      )
+    : "";
+  const bookTitle = display
+    ? hadithBookDisplayTitle(
+        display.corpusEntry ?? {
+          bookTitleKk: display.bookTitleKk,
+        },
+        appLocale
+      )
+    : "";
+  const sourceBlock = hadithSourceForLocale(display?.corpusEntry, appLocale);
 
   useLayoutEffect(() => {
     if (!display) return;
     navigation.setOptions({
-      title: display.themeKk
-        ? display.themeKk
-        : `${display.collectionNameKk} · №${display.reference}`,
+      title:
+        appLocale === "kk" && display.themeKk
+          ? display.themeKk
+          : `${collectionLabel} · №${display.reference}`,
     });
-  }, [navigation, display]);
+  }, [navigation, display, appLocale, collectionLabel]);
 
   const styles = makeStyles(colors);
 
   if (loading && !display) {
+    return (
+      <View style={styles.center}>
+        <RaqatOrnamentSpinner size={52} />
+      </View>
+    );
+  }
+
+  /** Trusted каталог бірден display береді — басқа тілде corpus келгенше «мәтін жоқ» деп шығармау. */
+  if (
+    loading &&
+    display &&
+    appLocale !== "kk" &&
+    appLocale !== "ar" &&
+    !display.corpusEntry
+  ) {
     return (
       <View style={styles.center}>
         <RaqatOrnamentSpinner size={52} />
@@ -143,63 +184,86 @@ export function HadithDetailScreen({ route, navigation }: Props) {
     );
   }
 
-  const localeExtra =
-    display.corpusEntry && (appLocale === "en" || appLocale === "ru" || appLocale === "tr")
+  const localeMeaning =
+    display.corpusEntry != null
       ? hadithTextForLocale(display.corpusEntry, appLocale)
-      : "";
+      : appLocale === "kk"
+        ? display.textKk.trim()
+        : "";
+
+  /** Таңдалған тілде мәтін жоқ — басқа тілдің аудармасын көрсетпейміз. */
+  if (!localeMeaning && appLocale !== "ar") {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.err}>{kk.hadith.hub.emptyLocalePending}</Text>
+      </View>
+    );
+  }
+
+  const meaningSectionTitle =
+    appLocale === "kk"
+      ? kk.hadith.translationKk
+      : appLocale === "ru"
+        ? kk.hadith.translationRu
+        : appLocale === "en"
+          ? kk.hadith.translationEn
+          : appLocale === "tr"
+            ? kk.hadith.translationTr
+            : appLocale === "ky"
+              ? kk.hadith.translationKy
+              : appLocale === "uz"
+                ? kk.hadith.translationUz
+                : kk.hadith.arabic;
+
+  const editionHint =
+    display.corpusEntry && appLocale !== "kk" && appLocale !== "ar"
+      ? kk.hadith.trustedEditionHint(appLocale)
+      : null;
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.meta}>{display.collectionNameKk}</Text>
-      {display.themeKk ? <Text style={styles.theme}>{display.themeKk}</Text> : null}
-      {display.bookTitleKk.trim() ? <Text style={styles.book}>{display.bookTitleKk}</Text> : null}
+      <Text style={styles.meta}>{collectionLabel}</Text>
+      {appLocale === "kk" && display.themeKk ? (
+        <Text style={styles.theme}>{display.themeKk}</Text>
+      ) : null}
+      {bookTitle ? <Text style={styles.book}>{bookTitle}</Text> : null}
       <Text style={styles.ref}>
         {kk.hadith.refLabel} №{display.reference}
       </Text>
 
       <Text style={styles.section}>{kk.hadith.reliabilityTitle}</Text>
       <View style={styles.badgesRow}>
-        <Text style={styles.badge}>{kk.hadith.sourceBadge(display.collectionNameKk || "—")}</Text>
+        <Text style={styles.badge}>{kk.hadith.sourceBadge(collectionLabel || "—")}</Text>
         <Text style={styles.badge}>{kk.hadith.gradeBadge(display.grade)}</Text>
       </View>
 
-      <Text style={styles.section}>{kk.hadith.arabic}</Text>
-      <Text style={styles.arabic} selectable>
-        {display.arabic}
-      </Text>
-
-      {display.textKk ? (
+      {appLocale !== "ar" ? (
         <>
-          <Text style={styles.section}>{kk.hadith.translationKk}</Text>
-          <Text style={styles.body} selectable>
-            {display.textKk}
-          </Text>
-          <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
-        </>
-      ) : (
-        <Text style={styles.meaningNote}>{display.sourceNote}</Text>
-      )}
-
-      {localeExtra ? (
-        <>
-          <Text style={styles.section}>
-            {appLocale === "ru" ? kk.hadith.translationRu : appLocale === "tr" ? "Çeviri" : kk.hadith.translationEn}
-          </Text>
-          <Text style={styles.body} selectable>
-            {localeExtra}
+          <Text style={styles.section}>{kk.hadith.arabic}</Text>
+          <Text style={styles.arabic} selectable>
+            {display.arabic}
           </Text>
         </>
       ) : null}
 
+      <Text style={styles.section}>{meaningSectionTitle}</Text>
+      <Text style={appLocale === "ar" ? styles.arabic : styles.body} selectable>
+        {appLocale === "ar" ? display.arabic : localeMeaning}
+      </Text>
+      {appLocale === "kk" ? (
+        <Text style={styles.meaningNote}>{kk.hadith.detailMeaningNote}</Text>
+      ) : editionHint ? (
+        <Text style={styles.meaningNote}>{editionHint}</Text>
+      ) : null}
+
       <View style={styles.sourceCard}>
         <Text style={styles.section}>{kk.hadith.kkSourceTitle}</Text>
-        <Text style={styles.sourceLabel}>{display.sourceLabel}</Text>
-        <Text style={styles.body}>{display.citation}</Text>
-        <Text style={styles.sourceNote}>{display.sourceNote}</Text>
+        <Text style={styles.sourceLabel}>{sourceBlock.label}</Text>
+        <Text style={styles.body}>{sourceBlock.citation}</Text>
         <Text style={styles.inAppOnly}>{kk.hadith.inAppSourceOnly}</Text>
       </View>
 
-      {display.narratorKk ? (
+      {appLocale === "kk" && display.narratorKk ? (
         <>
           <Text style={styles.section}>{kk.hadith.narrator}</Text>
           <Text style={styles.body}>{display.narratorKk}</Text>

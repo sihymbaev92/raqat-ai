@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const mobileRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const outFile = path.join(mobileRoot, "assets", "bundled", "offline-auto-translations-core.json");
-const defaultTargets = ["ru", "en", "ky", "uz", "tr", "ar", "zh", "fa", "id", "ms", "hi", "ku"];
+const defaultTargets = ["ru", "en", "ky", "uz", "tr", "ar"];
 const targets = (process.env.RAQAT_I18N_TARGETS || "")
   .split(",")
   .map((s) => s.trim())

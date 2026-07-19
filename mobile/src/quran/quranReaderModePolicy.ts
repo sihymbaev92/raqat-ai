@@ -6,7 +6,8 @@ import { MUSHAF_BOOK_PAGER_NATIVE_SCROLL_ENABLED } from "./mushafBookPager";
  * Транскрипция/аударма — сүре оқу экранында; хатымда аят мәзірі арқылы.
  */
 export const HATIM_MUSHAF_ARABIC_ONLY = true as const;
-export const QURAN_READER_ARABIC_ONLY = HATIM_MUSHAF_ARABIC_ONLY;
+/** Сүре оқу экраны: транскрипция + қазақша мағына (хатым mushaf — тек араб). */
+export const QURAN_READER_ARABIC_ONLY = false as const;
 
 export function hatimMushafReaderLayers(): {
   showReaderArabic: true;

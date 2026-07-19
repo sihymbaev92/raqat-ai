@@ -4,6 +4,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useAppLocale } from "../i18n/runtime";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   TAJWEED_LEGEND_SECTIONS,
   TAJWEED_RULES_CATALOG,
@@ -21,10 +22,12 @@ function RuleLine({
   meta,
   isDark,
   styles,
+  tr,
 }: {
   meta: TajweedRuleMeta;
   isDark: boolean;
   styles: ReturnType<typeof makeStyles>;
+  tr: (text: string) => string;
 }) {
   return (
     <View style={styles.line}>
@@ -33,9 +36,9 @@ function RuleLine({
       />
       <View style={styles.txtCol}>
         <Text style={styles.ruleTitle}>
-          {meta.labelKk} <Text style={styles.tag}>{meta.tagOpen}</Text>
+          {tr(meta.labelKk)} <Text style={styles.tag}>{meta.tagOpen}</Text>
         </Text>
-        <Text style={styles.detail}>{meta.detailKk}</Text>
+        <Text style={styles.detail}>{tr(meta.detailKk)}</Text>
       </View>
     </View>
   );
@@ -43,6 +46,7 @@ function RuleLine({
 
 export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Props) {
   useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const metaByRule = useMemo(
@@ -54,18 +58,18 @@ export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Pro
     grouped && !compact ? (
       TAJWEED_LEGEND_SECTIONS.map((section) => (
         <View key={section.titleKk} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.titleKk}</Text>
+          <Text style={styles.sectionTitle}>{tr(section.titleKk)}</Text>
           {section.rules.map((rule) => {
             const meta = metaByRule.get(rule);
             return meta ? (
-              <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} />
+              <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} tr={tr} />
             ) : null;
           })}
         </View>
       ))
     ) : (
       TAJWEED_RULES_CATALOG.map((meta) => (
-        <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} />
+        <RuleLine key={meta.rule} meta={meta} isDark={isDark} styles={styles} tr={tr} />
       ))
     );
 

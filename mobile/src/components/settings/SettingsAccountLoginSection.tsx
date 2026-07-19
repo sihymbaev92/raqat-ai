@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -9,13 +9,13 @@ import {
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { AppleSignInButton, GoogleSignInBlock, isGoogleSignInConfigured } from "../AccountLoginModal";
-import { PhoneAuthBlock } from "../PhoneAuthBlock";
 import { SettingsCard } from "./settingsUi";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import type { ThemeColors } from "../../theme/colors";
 import { kk } from "../../i18n/kk";
-import { setWindowSecureFlag } from "../../services/windowSecureFlag";
 import { useAppLocale } from "../../i18n/runtime";
+import { setWindowSecureFlag } from "../../services/windowSecureFlag";
+import { isSensitiveAuthBlocked } from "../../security/appSecurityShield";
 
 type Props = {
   colors: ThemeColors;
@@ -36,7 +36,7 @@ type Props = {
   loginMsg: string | null;
 };
 
-/** Баптаулар: телефон, Google, Apple және логин — бір жинақ карточкада. */
+/** Баптаулар: Google / Apple (және dev логин). SMS телефон кіру жоқ. */
 export function SettingsAccountLoginSection({
   colors,
   platformPid,
@@ -45,9 +45,7 @@ export function SettingsAccountLoginSection({
   onLoginUserChange,
   onLoginPassChange,
   loginBusy,
-  onLoginBusyChange,
   onAuthSuccess,
-  onOAuthError,
   onLoginMessage,
   onOAuthMessage,
   onPasswordLogin,
@@ -57,17 +55,17 @@ export function SettingsAccountLoginSection({
 }: Props) {
   useAppLocale();
   const styles = makeStyles(colors);
-  const [phoneOpen, setPhoneOpen] = useState(false);
   const showGoogle = isGoogleSignInConfigured();
   const showApple = Platform.OS === "ios";
   const showPasswordLogin = __DEV__;
+  const securityBlocked = isSensitiveAuthBlocked();
 
   useEffect(() => {
-    void setWindowSecureFlag(phoneOpen);
+    void setWindowSecureFlag(true);
     return () => {
       void setWindowSecureFlag(false);
     };
-  }, [phoneOpen]);
+  }, []);
 
   const clearMessages = () => {
     onOAuthMessage(null);
@@ -86,7 +84,14 @@ export function SettingsAccountLoginSection({
 
   return (
     <SettingsCard colors={colors} panel style={styles.panel}>
-      {platformPid ? (
+      {securityBlocked ? (
+        <View style={styles.loggedInRow}>
+          <MaterialIcons name="security" size={18} color={colors.accent} />
+          <Text style={styles.compactHint}>{kk.settings.accountSecurityBlocked}</Text>
+        </View>
+      ) : null}
+
+      {platformPid && !securityBlocked ? (
         <View style={styles.loggedInRow}>
           <MaterialIcons name="verified-user" size={18} color={colors.accent} />
           <Text style={styles.loggedInTxt} numberOfLines={1}>
@@ -104,7 +109,13 @@ export function SettingsAccountLoginSection({
         </View>
       ) : null}
 
-      <Text style={styles.compactHint}>{kk.settings.accountLoginCompactHint}</Text>
+      {!securityBlocked ? (
+      <>
+      <Text style={styles.compactHint}>
+        {showGoogle || showApple
+          ? kk.settings.accountLoginCompactHint
+          : kk.settings.accountAuthUnavailableHint}
+      </Text>
 
       {showGoogle || showApple ? (
         <View style={styles.oauthRow}>
@@ -183,37 +194,10 @@ export function SettingsAccountLoginSection({
         </>
       ) : null}
 
-      {/*
-        Телефон кіру public UI-да қалады; құпиясөз/әкімші жолы dev-only.
-        Бұл release-та жартылай бапталған admin форманы көрсетпейді.
-      */}
-      <Pressable
-        onPress={() => setPhoneOpen((o) => !o)}
-        style={({ pressed }) => [styles.expandRow, pressed && { opacity: 0.92 }]}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: phoneOpen }}
-        accessibilityLabel={kk.settings.accountPhoneExpand}
-      >
-        <MaterialIcons name="phone-iphone" size={18} color={colors.accent} />
-        <Text style={styles.expandLabel}>{kk.settings.accountPhoneExpand}</Text>
-        <MaterialIcons
-          name={phoneOpen ? "expand-less" : "expand-more"}
-          size={22}
-          color={colors.muted}
-        />
-      </Pressable>
-      {phoneOpen ? (
-        <PhoneAuthBlock
-          compact
-          busy={loginBusy}
-          setBusy={onLoginBusyChange}
-          onSuccess={handleOAuthSuccess}
-          onError={handleOAuthError}
-        />
-      ) : null}
-
       {oauthMsg ? <Text style={styles.warn}>{oauthMsg}</Text> : null}
       {loginMsg ? <Text style={styles.ok}>{loginMsg}</Text> : null}
+      </>
+      ) : null}
     </SettingsCard>
   );
 }
@@ -253,19 +237,6 @@ function makeStyles(colors: ThemeColors) {
       gap: 8,
     },
     oauthCell: { flex: 1, minWidth: 0 },
-    expandRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      paddingVertical: 8,
-      paddingHorizontal: 4,
-    },
-    expandLabel: {
-      flex: 1,
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: "700",
-    },
     divider: {
       flexDirection: "row",
       alignItems: "center",

@@ -6,6 +6,8 @@ import {
   type PrayerTimesResult,
 } from "../api/prayerTimes";
 import { getCityApproxCoords, getKzPresetCoords } from "../constants/kzCities";
+import { kk } from "../i18n/kk";
+import { getCurrentLocale } from "../i18n/runtime";
 import { fetchOpenMeteoCurrent } from "../services/openMeteoCurrent";
 
 const KEY = "raqat_prayer_cache_v2";
@@ -79,6 +81,18 @@ async function buildWidgetPayload(payload: CachedPrayer): Promise<Record<string,
       /* optional weather */
     }
   }
+  const locale = getCurrentLocale();
+  base.locale = locale;
+  /** Виджет жазулары — қолданба тілі (жүйе тілі емес). */
+  base.labels = {
+    fajr: kk.prayer.fajrShort,
+    sunrise: kk.prayer.sunriseShort,
+    dhuhr: kk.prayer.dhuhrShort,
+    asr: kk.prayer.asrShort,
+    maghrib: kk.prayer.maghribShort,
+    isha: kk.prayer.ishaShort,
+    nextHeading: kk.dashboard.nextPrayer,
+  };
   return base;
 }
 

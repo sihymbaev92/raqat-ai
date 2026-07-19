@@ -14,7 +14,7 @@ export type DashboardRadialItemKey =
   | "seerah"
   | "tajweed"
   | "hajj"
-  | "ai";
+  | "kmdb";
 
 export type DashboardRadialItemDef = {
   key: DashboardRadialItemKey;
@@ -46,8 +46,8 @@ function dashboardLabelForKey(key: DashboardRadialItemKey): string {
       return kk.features.hajjTitle;
     case "asma":
       return kk.tabs.asma;
-    case "ai":
-      return kk.dashboard.heroAiStripTitle;
+    case "kmdb":
+      return kk.kmdbHub.title;
     case "halal":
       return kk.features.halalTitle;
     default: {
@@ -68,7 +68,7 @@ const DASHBOARD_RADIAL_ITEM_BASE: Omit<DashboardRadialItemDef, "label">[] = [
   { key: "tasbih", image: menuIconAssets.tabTasbih, color: "#16A34A" },
   { key: "duas", image: menuIconAssets.tabDuas, color: "#DB2777" },
   { key: "asma", image: menuIconAssets.tabAsma, color: "#4F46E5" },
-  { key: "ai", image: menuIconAssets.promoAi, color: "#6366F1" },
+  { key: "kmdb", image: menuIconAssets.promoKmdb, color: "#6366F1" },
   { key: "halal", image: menuIconAssets.tileHalal, color: "#10B981" },
   { key: "tradition", image: menuIconAssets.tileDinTradition, color: "#D97706" },
 ];

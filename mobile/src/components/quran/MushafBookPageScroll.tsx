@@ -5,10 +5,14 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import { kk } from "../../i18n/kk";
-import { getCurrentLocale } from "../../i18n/runtime";
+import { useAppLocale } from "../../i18n/runtime";
+import { useQuranReadingLocale } from "../../quran/quranReadingLocale";
+import { useQuranTranslitScript } from "../../quran/quranTranslitScript";
 import { quranAyahMeaningForLocale } from "../../storage/quranSurahCache";
+import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import { surahArabicBannerTitle } from "../../data/surahArabicTitles";
-import { surahDisplayTitle } from "../../constants/surahTitleKk";
+import { useKkAutoTranslator } from "../../quran/useKkAutoTranslator";
+import { surahTitleForLocale } from "../../constants/surahTitleKk";
 import type {
   MushafBookAyah,
   MushafBookPageSlice,
@@ -295,6 +299,10 @@ function MushafBookPageTextHafs({
   onToggleAudio,
   surahScope = null,
 }: Props) {
+  const locale = useAppLocale();
+  const readingLocale = useQuranReadingLocale();
+  const translitScript = useQuranTranslitScript();
+  const { tr } = useKkAutoTranslator();
   const vScrollRef = useRef<ScrollView>(null);
   const contentRef = useRef<View>(null);
   const segments = useMemo(() => groupAyahsBySurah(page.ayahs), [page.ayahs]);
@@ -380,7 +388,7 @@ function MushafBookPageTextHafs({
     const showHeader = minimalChrome && firstAyah === 1;
     const showBism = shouldShowBismillah(seg.surah, firstAyah);
     const titleAr = surahArabicBannerTitle(seg.surah);
-    const titleKk = surahDisplayTitle(seg.surah, "");
+    const titleKk = surahTitleForLocale(seg.surah, locale, { tr });
     const playingAyah = playingRef?.surah === seg.surah ? playingRef.ayah : null;
     const loadingAyah = loadingAyahAudio?.surah === seg.surah ? loadingAyahAudio.ayah : null;
     const resumeAyah = resumeHighlight?.surah === seg.surah ? resumeHighlight.ayah : null;
@@ -459,11 +467,20 @@ function MushafBookPageTextHafs({
                   <Text style={st.mushafSecondaryAyahRibbon}>
                     {titleKk} · {a.numberInSurah}
                   </Text>
-                  {effectiveShowReaderTranslit && resolved.translit ? (
-                    <Text style={st.mushafAyahKiril}>{resolved.translit}</Text>
-                  ) : null}
-                  {effectiveShowReaderMeaning && quranAyahMeaningForLocale(resolved, getCurrentLocale()) ? (
-                    <Text style={st.mushafAyahKk}>{quranAyahMeaningForLocale(resolved, getCurrentLocale())}</Text>
+                  {effectiveShowReaderTranslit
+                    ? (() => {
+                        const kiril = resolveQuranTranslitForDisplay(
+                          resolved.translit,
+                          resolved.text,
+                          translitScript
+                        );
+                        return kiril ? <Text style={st.mushafAyahKiril}>{kiril}</Text> : null;
+                      })()
+                    : null}
+                  {effectiveShowReaderMeaning && quranAyahMeaningForLocale(resolved, readingLocale) ? (
+                    <Text style={st.mushafAyahKk}>
+                      {quranAyahMeaningForLocale(resolved, readingLocale)}
+                    </Text>
                   ) : null}
                   {isAudioFocus ? (
                     <Pressable

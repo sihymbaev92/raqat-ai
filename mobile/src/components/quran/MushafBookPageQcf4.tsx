@@ -5,6 +5,8 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import type { MushafBookPageSlice, MushafAyahRef } from "../../quran/mushafBookTypes";
 import type { MushafBookPageStyles } from "../../quran/mushafBookPageStyles";
+import { useAppLocale } from "../../i18n/runtime";
+import { useI18n } from "../../i18n/useI18n";
 import { loadQcf4Page } from "../../quran/loadQcf4Page";
 import type { Qcf4PageJson, Qcf4Word } from "../../quran/qcf4Types";
 import { parseVerseKey } from "../../quran/qcf4Types";
@@ -71,12 +73,12 @@ import { resolveQcf4TajweedPaint } from "../../quran/qcf4ColrTajweedHybrid";
 import { qcf4ColrPaletteForReadingTheme } from "../../quran/qcf4ColrTheme";
 
 /** 15 жолдық торда барлық аят glyph-тері бір тұрақты өлшеммен тұрсын. */
-const QCF4_GLYPH_SCALE_QCOM = 0.72;
+const QCF4_GLYPH_SCALE_QCOM = 0.78;
 /** Glyph кесілмей, қатар арасы ашық қалуы үшін шағын қосымша өлшем. */
-const QCF4_GLYPH_EXTRA_QCOM = 0;
+const QCF4_GLYPH_EXTRA_QCOM = 1;
 /** Қаріптің үсті/асты қиылып қалмауы үшін Text lineHeight-қа қауіпсіз коэффициент. */
-const QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM = 1.46;
-const QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y = 1.04;
+const QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM = 1.48;
+const QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y = 1.06;
 const QCF4_NATIVE_LINE_INNER_PADDING = 2;
 /** Жоғарғы джуз/бет жолы. */
 const QCF4_CHROME_JUZ_RESERVE = 28;
@@ -226,6 +228,8 @@ export function MushafBookPageQcf4({
   onLoadFailed,
   surahScope = null,
 }: Props) {
+  useAppLocale();
+  const t = useI18n();
   const [qcfPage, setQcfPage] = useState<Qcf4PageJson | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [colrReady, setColrReady] = useState(false);
@@ -684,7 +688,7 @@ export function MushafBookPageQcf4({
                 lineHeight: glyphLineHeight,
                 paddingHorizontal: glyphSideBearingPad,
                 marginHorizontal: glyphSideBearingMargin,
-                fontWeight: (usePerLetterTajweed || readableWebText ? "700" : "500") as "700" | "500",
+                fontWeight: (usePerLetterTajweed || readableWebText ? "700" : "600") as "700" | "600",
                 color:
                   word.type === "surah_header"
                     ? QCF4_AYAH_MARKER_BLUE
@@ -695,7 +699,11 @@ export function MushafBookPageQcf4({
                   !readableWebText && !usePerLetterTajweed && !useColrGlyphFont && word.type !== "surah_header"
                     ? st.mushafAyahTxt.color
                     : "transparent",
-                textShadowRadius: readableWebText || usePerLetterTajweed || useColrGlyphFont ? 0 : 0.18,
+                textShadowOffset:
+                  readableWebText || usePerLetterTajweed || useColrGlyphFont
+                    ? undefined
+                    : { width: 0.25, height: 0 },
+                textShadowRadius: readableWebText || usePerLetterTajweed || useColrGlyphFont ? 0 : 0.45,
                 transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
                 backgroundColor: isCurrentPlayingWord
                   ? "rgba(16, 185, 129, 0.34)"
@@ -715,7 +723,7 @@ export function MushafBookPageQcf4({
                       height: lineHeight,
                       overflow: "visible",
                     }}
-                    accessibilityLabel={`Аят ${qcf4AyahMarkerNumber(word)}`}
+                    accessibilityLabel={t.quran.mushafAyahA11y(Number(qcf4AyahMarkerNumber(word)))}
                   >
                     <MushafAyahSvgMarker
                       label={qcf4AyahMarkerNumber(word)}

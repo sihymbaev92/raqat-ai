@@ -63,6 +63,17 @@ export type SahihHadithEntry = {
   textEn?: string;
   /** Офлайн бандл / синк: fawaz CDN толтырған түрікше */
   textTr?: string;
+  /** HadeethEnc.com кыргызша (атрибуция міндетті) */
+  textKy?: string;
+  /** HadeethEnc.com өзбекше (атрибуция міндетті) */
+  textUz?: string;
+  /** HadeethEnc.com жазба id — ky/uz дереккөзі */
+  hadeethEncId?: string;
+  kyUzSourceLabel?: string;
+  kyUzSourceAttribution?: string;
+  /** kz-trusted = қазақша каталог; hadeethenc = Enc толықтыру (textKk бос болуы мүмкін) */
+  catalogOrigin?: "kz-trusted" | "hadeethenc";
+  matchScoreEnc?: number;
   narratorKk: string;
   /** Экспортта grade болса сақталады */
   grade?: string;
@@ -92,19 +103,80 @@ export type HadithCorpus = {
 };
 
 /**
- * Таңдалған тілге сәйкес хадис мәтіні. Source-only жолдарда бекітілмеген
- * аудармаларды көрсетпейміз; UI тек дереккөз сілтемесін көрсетеді.
+ * Таңдалған тілге сәйкес хадис мәтіні.
+ * ky/uz — сенімді басылым жоқ болса бос (KK-ға fallback жоқ).
  */
 export function hadithTextForLocale(
-  entry: Pick<SahihHadithEntry, "textKk" | "textRu" | "textEn" | "textTr" | "arabic" | "sourceOnly">,
-  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar" | "zh" | "fa" | "id" | "ms" | "hi" | "ku"
+  entry: Pick<
+    SahihHadithEntry,
+    "textKk" | "textRu" | "textEn" | "textTr" | "textKy" | "textUz" | "arabic" | "sourceOnly"
+  >,
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar"
 ): string {
   if (entry.sourceOnly && locale !== "ar") return "";
   if (locale === "en") return (entry.textEn ?? "").trim();
   if (locale === "ru") return (entry.textRu ?? "").trim();
   if (locale === "tr") return (entry.textTr ?? "").trim();
+  if (locale === "ky") return (entry.textKy ?? "").trim();
+  if (locale === "uz") return (entry.textUz ?? "").trim();
   if (locale === "ar") return (entry.arabic ?? "").trim();
-  return (entry.textKk ?? "").trim();
+  if (locale === "kk") return (entry.textKk ?? "").trim();
+  return "";
+}
+
+export function hadithHasTextForLocale(
+  entry: Pick<
+    SahihHadithEntry,
+    "textKk" | "textRu" | "textEn" | "textTr" | "textKy" | "textUz" | "arabic" | "sourceOnly"
+  >,
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar"
+): boolean {
+  return hadithTextForLocale(entry, locale).length > 0;
+}
+
+/** Қазақша мағынасы жоқ / sourceOnly жолдар — қолданбада көрсетілмейді. */
+export function hadithHasKkMeaning(
+  h: Pick<SahihHadithEntry, "textKk" | "sourceOnly">
+): boolean {
+  if (h.sourceOnly) return false;
+  return (h.textKk ?? "").trim().length > 0;
+}
+
+export function filterHadithCorpusKkOnly(c: HadithCorpus | null): HadithCorpus | null {
+  if (!c?.hadiths?.length) return c;
+  const hadiths = c.hadiths.filter(hadithHasKkMeaning);
+  if (hadiths.length === c.hadiths.length) return c;
+  return { ...c, hadiths };
+}
+
+/** Тек таңдалған тілде мәтіні бар хадистер. */
+export function filterHadithCorpusForLocale(
+  c: HadithCorpus | null,
+  locale: "kk" | "ru" | "en" | "ky" | "uz" | "tr" | "ar"
+): HadithCorpus | null {
+  if (!c?.hadiths?.length) return c;
+  const hadiths = c.hadiths.filter((h) => hadithHasTextForLocale(h, locale));
+  if (hadiths.length === c.hadiths.length) return c;
+  return { ...c, hadiths };
+}
+
+/** sourceOnly жоқ; кемінде бір тіл мәтіні бар жолдар (офлайн бандл). */
+export function filterHadithCorpusShippable(c: HadithCorpus | null): HadithCorpus | null {
+  if (!c?.hadiths?.length) return c;
+  const hadiths = c.hadiths.filter((h) => {
+    if (h.sourceOnly) return false;
+    return (
+      (h.arabic ?? "").trim().length > 0 ||
+      (h.textKk ?? "").trim().length > 0 ||
+      (h.textEn ?? "").trim().length > 0 ||
+      (h.textRu ?? "").trim().length > 0 ||
+      (h.textTr ?? "").trim().length > 0 ||
+      (h.textKy ?? "").trim().length > 0 ||
+      (h.textUz ?? "").trim().length > 0
+    );
+  });
+  if (hadiths.length === c.hadiths.length) return c;
+  return { ...c, hadiths };
 }
 
 function isCompactSourceOnlyBundle(c: HadithCorpus | null): boolean {
@@ -208,30 +280,55 @@ async function loadHadithCorpusFromStorage(): Promise<HadithCorpus | null> {
   }
 }
 
+function preferBundledOverStored(
+  bundled: HadithCorpus | null,
+  stored: HadithCorpus | null
+): boolean {
+  const nb = bundled?.hadiths?.length ?? 0;
+  const ns = stored?.hadiths?.length ?? 0;
+  if (nb <= 0) return false;
+  if (ns <= 0) return true;
+  if (nb > ns) return true;
+  const vb = Number(bundled?.version ?? 0);
+  const vs = Number(stored?.version ?? 0);
+  /** Бірдей ұзындықтағы ескі AsyncStorage ky/uz-сіз қалуы мүмкін — seed version жеңеді. */
+  return vb > vs;
+}
+
 /** @param force true — кэшті елемей дискіден қайта оқу (сирек: мәжбүрлі жаңарту) */
 export async function loadHadithCorpus(opts?: { force?: boolean }): Promise<HadithCorpus | null> {
   if (!opts?.force && memoryCorpus?.hadiths?.length) {
-    const bundled = await resolveBundledFullCorpus();
-    const nb = bundled?.hadiths?.length ?? 0;
-    const nm = memoryCorpus.hadiths.length;
-    if (nb > 0 && nm < nb) {
+    const bundled = filterHadithCorpusShippable(await resolveBundledFullCorpus());
+    if (preferBundledOverStored(bundled, memoryCorpus)) {
       memoryCorpus = bundled;
       return bundled;
     }
     return memoryCorpus;
   }
-  const stored = await loadHadithCorpusFromStorage();
-  const bundled = await resolveBundledFullCorpus();
+  const storedRaw = await loadHadithCorpusFromStorage();
+  const bundled = filterHadithCorpusShippable(await resolveBundledFullCorpus());
+  const stored = filterHadithCorpusShippable(storedRaw);
+  /** Ескі source-only кэш — өшіріп, жаңа көптілді бандлға ауысамыз. */
+  if (isStoredSourceOnlyCorpus(storedRaw) || (storedRaw && !stored?.hadiths?.length)) {
+    await clearHadithCorpusStorage();
+    memoryCorpus = bundled;
+    return bundled;
+  }
   const ns = stored?.hadiths?.length ?? 0;
   const nb = bundled?.hadiths?.length ?? 0;
-  if (ns > nb && isCompactSourceOnlyBundle(bundled) && isStoredSourceOnlyCorpus(stored)) {
+  if (ns > nb && isCompactSourceOnlyBundle(bundled) && isStoredSourceOnlyCorpus(storedRaw)) {
     await clearHadithCorpusStorage();
     memoryCorpus = bundled;
     return bundled;
   }
   let c: HadithCorpus | null = null;
-  if (nb > ns) c = bundled;
-  else if (stored?.hadiths?.length) c = stored;
+  if (preferBundledOverStored(bundled, stored)) {
+    c = bundled;
+    /** Ескі version кэшін өшіру — келесі іске қосуда v8+ ky/uz қайта жазылсын. */
+    if (stored && Number(bundled?.version ?? 0) > Number(stored.version ?? 0)) {
+      await clearHadithCorpusStorage();
+    }
+  } else if (stored?.hadiths?.length) c = stored;
   else c = bundled ?? null;
   memoryCorpus = c;
   return c;

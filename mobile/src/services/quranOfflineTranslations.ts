@@ -34,12 +34,6 @@ const FIELD_BY_LOCALE: Record<QuranTranslationLocale, keyof QuranOfflineAyah> = 
   tr: "textTr",
   uz: "textUz",
   ky: "textKy",
-  zh: "textZh",
-  fa: "textFa",
-  id: "textId",
-  ms: "textMs",
-  hi: "textHi",
-  ku: "textKu",
 };
 
 const OFFLINE_TRANSLATION_LOCALES = Object.keys(FIELD_BY_LOCALE);

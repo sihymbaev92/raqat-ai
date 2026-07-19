@@ -419,7 +419,7 @@ export const kk = {
     studyMapPickHint: "Бөлімді таңдаңыз. Алдымен дәрет, кейін намаз қадамдарын оқыңыз.",
     wuduCardSub: "Қадамдар және бұзылу",
     fivePrayersTitle: "5 уақыт намаз",
-    fivePrayersSub: "Ниеттен сәлемге дейін",
+    fivePrayersSub: "Жетектеу · ниеттен сәлемге дейін",
     rakatTableTitle: "5 уақыт намаздың рәкәттері мен оқу реті",
     rakatTableHint:
       "Рәкәт реті сурет емес, қолданба бетіне мәтін болып жазылды. Тіл ауысқанда осы кесте де бірге аударылады.",
@@ -427,6 +427,24 @@ export const kk = {
     afterPrayerDuasHint:
       "Реті: алдымен Аят әл-Курси, кейін Құнт дұғасын жаттауға ыңғайлы мәтін ретінде оқыңыз.",
   },
+  namazCompanion: {
+    screenTitle: "Сәжде жетектеуі",
+    pickerTitle: "Қай намазды жетектейміз?",
+    pickerSub:
+      "Парыз рәкәттерін қадам-қадам өтіңіз: тәкбір → қиям → рукуғ → сәжде → сәлем. Төменде сол қадамдардың оқу мәтіні де бар.",
+    fardRakatLine: (n: number) => `${n} рәкәт парыз`,
+    rakatWord: "рәкәт",
+    startCta: "Бастау",
+    disclaimer:
+      "Оқу материалы (Ханафи). Тірі фиқһ үкімі емес; жеке мәселеде ұстазбен нақтылаңыз. RAHAT OMIR ҚМДБ ресми қолданбасы емес.",
+    stepOf: (current: number, total: number) => `Қадам ${current} / ${total}`,
+    exit: "Шығу",
+    prev: "Артқа",
+    next: "Келесі",
+    finish: "Аяқтау",
+    lockedHint: "Қадам бойынша",
+  },
+
   tajweedGuide: {
     shortTitle: "Тәжуид",
     screenTitle: "Тәжуид",
@@ -467,7 +485,7 @@ export const kk = {
     stopListenA11y: "Оқуды тоқтату",
     listenPageBtn: "Оқу",
     stopListenBtn: "Тоқтату",
-    alphabetTapHint: "Әріпті басыңыз — арабша атауы еркек дауыспен оқылады (أَلِفْ، بَاء، تَاء…).",
+    alphabetTapHint: "Әріпті басыңыз — арабша атауы оқылады (أَلِفْ، بَاء…). Дыбыс: arabic-online.ru алфавиті.",
     alphabetSpeechError:
       "Дыбыс шықпады. Телефонда дыбыс қосулы екенін тексеріңіз.",
     listenLetterA11y: (nameKk: string, ar: string) => `${nameKk}, ${ar} — тыңдау`,
@@ -784,7 +802,7 @@ export const kk = {
     sourceOpenA11y: (title: string) => `${title} — браузерде ашу`,
   },
   kmdbHub: {
-    title: "Дереккөз хаб",
+    title: "ҚМДБ",
     eyebrow: "Fatua · Muftyat · ресми сайттар",
     lead: "Fatua.kz, Muftyat.kz және RAHAT OMIR оқу модульдері — бір жүйелі хабтан: іздеу, оқу, сұрау және тексеру.",
     tileAi: "Дереккөз іздеу",
@@ -2704,6 +2722,13 @@ export const kk = {
       "5. «Locked-screen QA (90 сек)» → экранды құлыптаңыз → азan экраны + дыбыс.",
       "6. Телефонды қайта қосып, channel sound сақталғанын тексеріңіз.",
     ],
+    prayerNotifAcceptanceItemsIos: [
+      "1. Хабарлама рұқсатын беріңіз.",
+      "2. iOS 26+: AlarmKit (оятқыш) рұқсатын беріңіз — құлыпта толық азан.",
+      "3. «Locked-screen QA (90 сек)» → бірден құлыптаңыз → жүйелік оятқыш / Азан батырмасы.",
+      "4. «Азан» батырмасын басыңыз → PrayerAzan экраны + толық дыбыс.",
+      "5. iOS 18 және төменде: Time Sensitive хабарлама + басқанда толық экран.",
+    ],
     prayerAzanBatteryTitle: "Азан кепілдігі — батарея",
     prayerAzanBatteryHint:
       "Samsung, Xiaomi және басқа Android телефондар азанды «Батареяны үнемдеу» режимінде кешіктіруі мүмкін. RAQAT үшін шектеусіз рұқсат беріңіз.",
@@ -2721,12 +2746,12 @@ export const kk = {
       "Ескерту: экран қосулы / телефон қолданыста кезде жүйе толық экранды азанды ашпауы мүмкін — хабарламаны басып азан бетін ашыңыз. Толық экран үшін экранды құлыптап/өшіріп тексеріңіз.",
     prayerAzanQaSchedule90s: "Locked-screen QA (90 сек)",
     prayerAzanQaScheduling: "Жоспарлануда…",
-    prayerAzanQaFailed: "QA азan жоспарланбады — exact alarm рұқсатын тексеріңіз.",
+    prayerAzanQaFailed: "QA азan жоспарланбады — оятқыш / хабарлама рұқсатын тексеріңіз.",
     prayerAzanQaSuccess: (sec: number) =>
       `QA азan ${sec} сек кейін. Экранды құлыптап, қолданбаны фонға жіберіңіз.`,
     prayerAzanQaSuccessExactAlarmOff: (sec: number) =>
-      `QA азan ${sec} сек кейін. Exact alarm жабық — баптаудан қосыңыз.`,
-    prayerAzanQaErrorNativeOnly: "QA тек Android native азан модулінде жұмыс істейді.",
+      `QA азan ${sec} сек кейін. Оятқыш рұқсаты жабық — Баптаудан қосыңыз.`,
+    prayerAzanQaErrorNativeOnly: "QA тек телефонның native азан модулінде жұмыс істейді.",
     prayerAzanQaErrorScheduleEmpty: "Тест азан жоспарланбады — кесте бос.",
     prayerAzanQaErrorModuleMissing: "Native азан модулі табылмады.",
     platformApi: "Қызметке қосылу",

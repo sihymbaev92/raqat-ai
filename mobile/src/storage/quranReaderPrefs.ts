@@ -43,6 +43,9 @@ export const QURAN_READER_SHOW_ARABIC_KEY = "quran_reader_show_arabic_v1";
 export const QURAN_READER_SHOW_TRANSLIT_KEY = "quran_reader_show_translit_v1";
 export const QURAN_READER_SHOW_MEANING_KEY = "quran_reader_show_meaning_v1";
 
+/** Arabic-only саясаты өшіргеннен кейін бір рет аударма/транскрипцияны қайта қосу. */
+const REENABLE_KK_READER_LAYERS_KEY = "quran_reader_kk_layers_restored_v1";
+
 export type QuranReaderNavMode = "scroll" | "page";
 
 /** Аят маркері: SVG сақина немесе классикалық View. */
@@ -125,6 +128,27 @@ async function writeBoolKey(key: string, on: boolean): Promise<void> {
   await AsyncStorage.setItem(key, on ? "1" : "0");
 }
 
+async function restoreKkReaderLayersIfNeeded(): Promise<void> {
+  if (QURAN_READER_ARABIC_ONLY) return;
+  try {
+    const done = await AsyncStorage.getItem(REENABLE_KK_READER_LAYERS_KEY);
+    if (done === "1") return;
+    const [translit, meaning] = await Promise.all([
+      AsyncStorage.getItem(QURAN_READER_SHOW_TRANSLIT_KEY),
+      AsyncStorage.getItem(QURAN_READER_SHOW_MEANING_KEY),
+    ]);
+    if (translit === "0" && meaning === "0") {
+      await Promise.all([
+        writeBoolKey(QURAN_READER_SHOW_TRANSLIT_KEY, true),
+        writeBoolKey(QURAN_READER_SHOW_MEANING_KEY, true),
+      ]);
+    }
+    await AsyncStorage.setItem(REENABLE_KK_READER_LAYERS_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function getQuranReaderShowArabic(): Promise<boolean> {
   return readBoolKey(QURAN_READER_SHOW_ARABIC_KEY);
 }
@@ -135,6 +159,7 @@ export async function setQuranReaderShowArabic(on: boolean): Promise<void> {
 
 export async function getQuranReaderShowTranslit(): Promise<boolean> {
   if (QURAN_READER_ARABIC_ONLY) return false;
+  await restoreKkReaderLayersIfNeeded();
   return readBoolKey(QURAN_READER_SHOW_TRANSLIT_KEY);
 }
 
@@ -144,6 +169,7 @@ export async function setQuranReaderShowTranslit(on: boolean): Promise<void> {
 
 export async function getQuranReaderShowMeaning(): Promise<boolean> {
   if (QURAN_READER_ARABIC_ONLY) return false;
+  await restoreKkReaderLayersIfNeeded();
   return readBoolKey(QURAN_READER_SHOW_MEANING_KEY);
 }
 
@@ -162,6 +188,11 @@ export async function setQuranTajweedColorsEnabled(on: boolean): Promise<void> {
 export async function getQuranReciterEdition(): Promise<string> {
   try {
     const v = (await AsyncStorage.getItem(QURAN_READER_RECITER_KEY))?.trim();
+    if (!v) {
+      const { getCurrentLocale } = await import("../i18n/runtime");
+      const { defaultReciterEditionForAppLocale } = await import("../config/quranReciters");
+      return defaultReciterEditionForAppLocale(getCurrentLocale());
+    }
     return normalizeReciterEdition(v);
   } catch {
     return DEFAULT_QURAN_RECITER_EDITION;

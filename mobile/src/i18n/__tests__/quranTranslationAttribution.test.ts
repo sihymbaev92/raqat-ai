@@ -7,5 +7,6 @@ describe("quranTranslationAttributionForLocale", () => {
     expect(quranTranslationAttributionForLocale("en")).toMatch(/Sahih International/);
     expect(quranTranslationAttributionForLocale("ky")).toMatch(/КМДБ/);
     expect(quranTranslationAttributionForLocale("uz")).toMatch(/QMDB/);
+    expect(quranTranslationAttributionForLocale("tr")).toMatch(/Diyanet/i);
   });
 });

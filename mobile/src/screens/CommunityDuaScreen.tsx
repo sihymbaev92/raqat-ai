@@ -25,6 +25,7 @@ import { useI18n } from "../i18n/useI18n";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getOrCreateClientId } from "../storage/clientId";
 import { getValidAccessToken } from "../storage/authTokens";
+import { COMMUNITY_DUA_PUBLIC_POSTING_ENABLED } from "../content/appTransparency";
 import { postCommunityDua, type CommunityDuaRow } from "../services/platformApiClient";
 import { useCommunityDuas } from "../hooks/useCommunityDuas";
 import type { MoreStackParamList } from "../navigation/types";
@@ -74,6 +75,10 @@ export function CommunityDuaScreen(_props: Props) {
   };
 
   const onSubmit = async () => {
+    if (!COMMUNITY_DUA_PUBLIC_POSTING_ENABLED) {
+      setErr(kk.communityDua.postingDisabled);
+      return;
+    }
     const base = getRaqatApiBase();
     const cid = await getOrCreateClientId();
     if (!base || !cid) return;
@@ -189,7 +194,9 @@ export function CommunityDuaScreen(_props: Props) {
           onChangeText={setDraft}
           multiline
           maxLength={400}
+          editable={COMMUNITY_DUA_PUBLIC_POSTING_ENABLED}
         />
+        {COMMUNITY_DUA_PUBLIC_POSTING_ENABLED ? (
         <Pressable
           style={({ pressed }) => [
             styles.sendBtn,
@@ -202,6 +209,11 @@ export function CommunityDuaScreen(_props: Props) {
         >
           <Text style={styles.sendTxt}>{kk.communityDua.submit}</Text>
         </Pressable>
+        ) : (
+          <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 4 }}>
+            {kk.communityDua.postingDisabled}
+          </Text>
+        )}
       </View>
 
       <Modal

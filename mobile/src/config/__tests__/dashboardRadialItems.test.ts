@@ -12,7 +12,7 @@ describe("dashboardRadialItems", () => {
     "tasbih",
     "duas",
     "asma",
-    "ai",
+    "kmdb",
     "halal",
     "tradition",
   ];

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="#0B1220"
+  android:padding="28dp">
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <TextView
+      android:id="@+id/azanBrand"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:letterSpacing="0.12"
+      android:text="@string/app_name"
+      android:textAllCaps="true"
+      android:textColor="#A5B4FC"
+      android:textSize="13sp"
+      android:textStyle="bold" />
+
+    <TextView
+      android:id="@+id/azanTitle"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="18dp"
+      android:gravity="center"
+      android:text="@string/prayer_azan_fullscreen_title"
+      android:textColor="#F8FAFC"
+      android:textSize="28sp"
+      android:textStyle="bold" />
+
+    <TextView
+      android:id="@+id/azanSubtitle"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:gravity="center"
+      android:text="@string/prayer_azan_lock_subtitle"
+      android:textColor="#94A3B8"
+      android:textSize="16sp" />
+
+    <Button
+      android:id="@+id/azanDismiss"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="36dp"
+      android:backgroundTint="#334155"
+      android:text="@string/prayer_azan_lock_dismiss"
+      android:textAllCaps="false"
+      android:textColor="#F8FAFC" />
+
+    <Button
+      android:id="@+id/azanOpenApp"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:layout_marginTop="10dp"
+      android:backgroundTint="#4F46E5"
+      android:text="@string/prayer_azan_lock_open_app"
+      android:textAllCaps="false"
+      android:textColor="#FFFFFF" />
+  </LinearLayout>
+</FrameLayout>

@@ -8,8 +8,8 @@ import {
 } from "../quranReaderModePolicy";
 
 describe("quranReaderModePolicy", () => {
-  it("locks Hatim mushaf to Arabic-only one-page layers", () => {
-    expect(QURAN_READER_ARABIC_ONLY).toBe(true);
+  it("Hatim mushaf Arabic-only; surah reader allows translit/meaning", () => {
+    expect(QURAN_READER_ARABIC_ONLY).toBe(false);
     expect(HATIM_MUSHAF_ARABIC_ONLY).toBe(true);
     expect(hatimMushafReaderLayers()).toEqual({
       showReaderArabic: true,

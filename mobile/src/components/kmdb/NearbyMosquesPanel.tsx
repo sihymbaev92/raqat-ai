@@ -43,12 +43,12 @@ function mosqueTelDialUrl(phone: string): string {
 function mosqueConfidenceLabel(confidence: "verified" | "partial" | "map_only" | undefined): string {
   switch (confidence) {
     case "verified":
-      return "Расталған дерек";
+      return kk.features.mosqueConfidenceVerified;
     case "partial":
-      return "Жартылай расталған";
+      return kk.features.mosqueConfidencePartial;
     case "map_only":
     default:
-      return "Карта дерегі ғана";
+      return kk.features.mosqueConfidenceMapOnly;
   }
 }
 
@@ -275,7 +275,7 @@ export function NearbyMosquesPanel({ active, colors }: Props) {
                   </Pressable>
                 );
               })}
-              <Text style={[styles.radiusUnit, { color: colors.muted }]}>км</Text>
+              <Text style={[styles.radiusUnit, { color: colors.muted }]}>{kk.common.distanceKmUnit}</Text>
             </View>
 
             <Pressable

@@ -1,7 +1,8 @@
 export const MUSHAF_TEXT_SCALE_MIN = 0.88;
 export const MUSHAF_TEXT_SCALE_MAX = 1.15;
 export const MUSHAF_TEXT_SCALE_STEP = 0.03;
-export const HATIM_LOCKED_MUSHAF_TEXT_SCALE = 0.95;
+/** Хатым беті: аят анық оқылуы үшін сәл үлкейтілген масштаб. */
+export const HATIM_LOCKED_MUSHAF_TEXT_SCALE = 1.04;
 
 /** Хатым: барлық беттерде бірдей араб қарпі (QCF4 glyph + unicode). */
 export const HATIM_UNIFIED_ARABIC_FONT_SIZE = Math.round(26 * 1.02 * HATIM_LOCKED_MUSHAF_TEXT_SCALE);

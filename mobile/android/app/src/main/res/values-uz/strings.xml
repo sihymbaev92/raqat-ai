@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">Namoz vaqti</string>
+  <string name="widget_prayer_description">Bugungi namoz vaqtlari (ilova jadvalidan), quyosh chiqishi bilan.</string>
+  <string name="widget_prayer_empty">Ilovani ochib, namoz vaqtini yangilang.</string>
+
+  <string name="widget_prayer_next_label">Keyingi namoz</string>
+  <string name="widget_prayer_next_description">Ob-havo, teskari sanash va besh namoz — 5×1 lenta</string>
+  <string name="widget_prayer_next_heading">Keyingi namoz</string>
+
+  <string name="widget_prayer_strip_label">Namoz lentasi</string>
+  <string name="widget_prayer_strip_description">Bugungi namoz vaqtlari — qisqa lenta</string>
+
+  <string name="widget_prayer_morning_label">Bomdod · Quyosh · Peshin</string>
+  <string name="widget_prayer_morning_description">Bomdod, quyosh chiqishi, peshin</string>
+
+  <string name="widget_prayer_evening_label">Asr · Shom · Xufton</string>
+  <string name="widget_prayer_evening_description">Asr, shom, xufton</string>
+
+  <string name="widget_prayer_twocol_label">Ikki ustun</string>
+  <string name="widget_prayer_twocol_description">Namoz jadvali — ikki ustun</string>
+
+  <string name="widget_prayer_five_dual_label">5 namoz</string>
+  <string name="widget_prayer_five_dual_description">Besh namoz — ikki ustun</string>
+
+  <string name="widget_prayer_home_strip_label">Namoz</string>
+  <string name="widget_prayer_home_strip_description">Bosh ekran: 5 namoz, keyingi namoz sanog\'i, qora fon</string>
+
+  <string name="widget_qibla_a11y">Qibla</string>
+  <string name="widget_city_a11y">Shahar</string>
+  <string name="widget_qibla_service_channel">Qibla vidjeti</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — qibla</string>
+  <string name="widget_qibla_service_text">Bosh ekran vidjeti uchun kompas</string>
+  <string name="prayer_azan_fullscreen_title">Namoz vaqti kirdi</string>
+  <string name="prayer_azan_default_label">Namoz</string>
+  <string name="prayer_azan_entered_for_label">%1$s namozi kirdi</string>
+  <string name="prayer_azan_channel_name">Azon</string>
+  <string name="prayer_azan_channel_desc">Namoz vaqti kirganda azon ekranini avtomatik ko\'rsatish</string>
+  <string name="prayer_azan_notif_body_no_time">Azon · ochish uchun bosing</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Azon</string>
+
+  <string name="widget_prayer_row_fajr">Bomdod</string>
+  <string name="widget_prayer_row_sun">Quyosh</string>
+  <string name="widget_prayer_row_dhuhr">Peshin</string>
+  <string name="widget_prayer_row_asr">Asr</string>
+  <string name="widget_prayer_row_maghrib">Shom</string>
+  <string name="widget_prayer_row_isha">Xufton</string>
+</resources>

@@ -18,7 +18,7 @@ describe("traditionBooksCatalog", () => {
     const wisdom = getTraditionBooksByGroup("wisdom");
     expect(TRADITION_BOOKS.length + getWisdomAuthorBooks().length).toBeGreaterThanOrEqual(30);
     expect(wisdom.length).toBeGreaterThanOrEqual(19);
-    expect(getTraditionBooksByGroup("faith").length).toBeGreaterThanOrEqual(14);
+    expect(getTraditionBooksByGroup("faith").length).toBeGreaterThanOrEqual(13);
     expect(getTraditionBooksByGroup("tradition").length).toBeGreaterThanOrEqual(5);
     expect(getTraditionBooksByGroup("ait").length).toBeGreaterThanOrEqual(2);
   });

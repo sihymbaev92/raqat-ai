@@ -64,12 +64,6 @@ export type MoreStackParamList = {
         siteUrl?: string;
       }
     | undefined;
-  ImamAI:
-    | undefined
-    | {
-        initialPrompt?: string;
-        autoSend?: boolean;
-      };
   /** Fatua.kz / Muftyat.kz локальды FTS іздеу */
   IslamicKbSearch: undefined;
   /** Fatua.kz + Muftyat.kz біріктірілген портал (RAHAT OMIR AI) */

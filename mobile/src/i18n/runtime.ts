@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
-import { I18nManager } from "react-native";
+import { I18nManager, Platform } from "react-native";
 import { kk } from "./kk";
 import {
   PRAYER_AZAN_PATCH_AR,
@@ -18,6 +18,7 @@ import {
   getOfflineAutoTranslation,
   hasOfflineAutoTranslationLocale,
   pruneOfflineAutoTranslationsToLocale,
+  seedApkOfflineTranslationsSync,
   type OfflineAutoTranslateTarget,
 } from "../services/offlineAutoTranslations";
 
@@ -30,13 +31,7 @@ export type AppLocale =
   | "ky"
   | "uz"
   | "tr"
-  | "ar"
-  | "zh"
-  | "fa"
-  | "id"
-  | "ms"
-  | "hi"
-  | "ku";
+  | "ar";
 
 export type AppLocaleOption = {
   id: AppLocale;
@@ -133,7 +128,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroHadithTitle: "Достоверные хадисы",
       heroDuaTitle: "Дуа сообщества",
       heroDuaSub: "Поделиться · амин",
-      heroAiStripTitle: "КМДБ",
+      heroAiStripTitle: "Дереккөз хаб",
       promoHalalHeadline: "ХАЛАЛ ДАМУ",
       promoHolidayKurbanTitle: "Курбан айт",
       quickMenu: "Еще",
@@ -301,7 +296,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       halalTitle: "ХАЛАЛ ДАМУ",
       traditionTitle: "Религия и традиции",
       kurbanAitTitle: "Курбан айт",
-      raqatAiTitle: "КМДБ · Вопрос-ответ",
       halalHeroTagRegistry: "Официальный реестр",
       halalHeroTagVerify: "Проверка продукта",
     },
@@ -426,7 +420,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroHadithTitle: "Authentic Hadiths",
       heroDuaTitle: "Community Dua",
       heroDuaSub: "Share · amin",
-      heroAiStripTitle: "QMDB",
+      heroAiStripTitle: "Source hub",
       promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Eid al-Adha",
       quickMenu: "More",
@@ -594,7 +588,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       halalTitle: "HALAL DAMU",
       traditionTitle: "Faith and tradition",
       kurbanAitTitle: "Eid al-Adha",
-      raqatAiTitle: "QMDB · Q&A",
       halalHeroTagRegistry: "Official registry",
       halalHeroTagVerify: "Product check",
     },
@@ -684,7 +677,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       qiblaStrip: "Кыбыла багыты", morePrayerLink: "Толугураак", morePrayerLinkTarget: "намаз убактысы",
       servicesHeading: "Бөлүмдөр", articlesSeeAll: "Баарын көрүү", articleBadge: "Макала",
       heroQuranTitle: "Куран", heroHadithTitle: "Сахих хадистер", heroDuaTitle: "Коом дубасы",
-      heroDuaSub: "Бөлүшүү · аамийн", heroAiStripTitle: "КМДБ", promoHalalHeadline: "ХАЛАЛ ДАМУ",
+      heroDuaSub: "Бөлүшүү · аамийн", heroAiStripTitle: "Дереккөз хаб", promoHalalHeadline: "ХАЛАЛ ДАМУ",
       promoHolidayKurbanTitle: "Курман айт", quickMenu: "Дагы", duasShort: "Дубалар", settingsShort: "Жөндөөлөр",
       telegramShort: "Telegram", quranShort: "Куран", tileSeerah: "Сира", tileHadith: "Хадистер", arabicLettersTile: "Тажвид", traditionTileShort: "Дин жана салт",
       traditionDinHubLabel: "Дин жана салт", radialLauncherMenuA11y: "Негизги бөлүмдөр", radialLauncherFabLabel: "Меню",
@@ -739,7 +732,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "Хатым", hajjTitle: "Ажылык", halalTitle: "ХАЛАЛ ДАМУ", traditionTitle: "Дин жана салт",
       kurbanAitTitle: "Курман айт",
-      raqatAiTitle: "КМДБ · Суроо-жооп", halalHeroTagRegistry: "Расмий тизмек",
+      halalHeroTagRegistry: "Расмий тизмек",
       halalHeroTagVerify: "Өнүм текшерүү",
     },
     seerah: { title: "Сира" },
@@ -802,7 +795,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       qiblaStrip: "Qibla yo'nalishi", morePrayerLink: "Batafsil", morePrayerLinkTarget: "namoz vaqti",
       servicesHeading: "Bo'limlar", articlesSeeAll: "Barchasini ko'rish", articleBadge: "Maqola",
       heroQuranTitle: "Qur'on", heroHadithTitle: "Sahih hadislar", heroDuaTitle: "Jamoa duosi",
-      heroDuaSub: "Ulashish · omin", heroAiStripTitle: "QMDB", promoHalalHeadline: "HALAL DAMU",
+      heroDuaSub: "Ulashish · omin", heroAiStripTitle: "Source hub", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Qurbon hayit", quickMenu: "Yana", duasShort: "Duolar", settingsShort: "Sozlamalar",
       telegramShort: "Telegram", quranShort: "Qur'on", tileSeerah: "Siyra", tileHadith: "Hadislar", arabicLettersTile: "Tajvid", traditionTileShort: "Din va urf-odat",
       traditionDinHubLabel: "Din va urf-odat", radialLauncherMenuA11y: "Asosiy bo'limlar", radialLauncherFabLabel: "Menyu",
@@ -830,7 +823,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "Xatm", hajjTitle: "Haj", halalTitle: "HALAL DAMU", traditionTitle: "Din va urf-odat",
       kurbanAitTitle: "Qurbon hayit",
-      raqatAiTitle: "QMDB · Savol-javob",
     },
     seerah: { title: "Siyra" },
     hadith: {
@@ -892,7 +884,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       qiblaStrip: "Kıble yönü", morePrayerLink: "Daha fazla", morePrayerLinkTarget: "namaz vakitleri",
       servicesHeading: "Bölümler", articlesSeeAll: "Tümünü gör", articleBadge: "Makale",
       heroQuranTitle: "Kur'an", heroHadithTitle: "Sahih hadisler", heroDuaTitle: "Topluluk duası",
-      heroDuaSub: "Paylaş · amin", heroAiStripTitle: "KMDB", promoHalalHeadline: "HALAL DAMU",
+      heroDuaSub: "Paylaş · amin", heroAiStripTitle: "Kaynak merkezi", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Kurban Bayramı", quickMenu: "Daha", duasShort: "Dualar", settingsShort: "Ayarlar",
       telegramShort: "Telegram", quranShort: "Kur'an", tileSeerah: "Siyer", tileHadith: "Hadisler", arabicLettersTile: "Tecvid", traditionTileShort: "Din ve gelenek",
       traditionDinHubLabel: "Din ve gelenek", radialLauncherMenuA11y: "Ana bölümler", radialLauncherFabLabel: "Menü",
@@ -920,7 +912,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "Hatim", hajjTitle: "Hac", halalTitle: "HALAL DAMU", traditionTitle: "Din ve gelenek",
       kurbanAitTitle: "Kurban Bayramı",
-      raqatAiTitle: "KMDB · Soru-cevap",
     },
     seerah: { title: "Siyer" },
     hadith: {
@@ -982,7 +973,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       qiblaStrip: "اتجاه القبلة", morePrayerLink: "المزيد", morePrayerLinkTarget: "مواقيت الصلاة",
       servicesHeading: "الأقسام", articlesSeeAll: "عرض الكل", articleBadge: "مقال",
       heroQuranTitle: "القرآن", heroHadithTitle: "أحاديث صحيحة", heroDuaTitle: "دعاء الجماعة",
-      heroDuaSub: "مشاركة · آمين", heroAiStripTitle: "QMDB", promoHalalHeadline: "HALAL DAMU",
+      heroDuaSub: "مشاركة · آمين", heroAiStripTitle: "Source hub", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "عيد الأضحى", quickMenu: "المزيد", duasShort: "الأدعية", settingsShort: "الإعدادات",
       telegramShort: "Telegram", quranShort: "القرآن", tileSeerah: "السيرة", tileHadith: "الأحاديث", arabicLettersTile: "التجويد", traditionTileShort: "الدين والتقاليد",
       traditionDinHubLabel: "الدين والتقاليد", radialLauncherMenuA11y: "الأقسام الرئيسية", radialLauncherFabLabel: "القائمة",
@@ -1010,7 +1001,6 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "ختمة", hajjTitle: "الحج", halalTitle: "HALAL DAMU", traditionTitle: "الدين والتقاليد",
       kurbanAitTitle: "عيد الأضحى",
-      raqatAiTitle: "QMDB · سؤال وجواب",
     },
     seerah: { title: "السيرة" },
     hadith: {
@@ -1039,15 +1029,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       supportProjectOpen: "فتح رابط الدعم", supportAccountCopy: "نسخ", supportAccountCopied: "تم النسخ",
     },
   },
-  zh: {},
-  fa: {},
-  id: {},
-  ms: {},
-  hi: {},
-  ku: {},
 };
 
 let currentLocale: AppLocale = "kk";
+/** applyLocale сайын өседі — бір тілде reapply кезінде де UI remount болады. */
+let localeRevision = 0;
 const localeListeners = new Set<() => void>();
 
 function deepCloneLocaleTree(obj: unknown): unknown {
@@ -1167,6 +1153,7 @@ export function applyLocale(next: AppLocale): void {
     invalidateOfflineLocaleTreeCache();
   }
   currentLocale = next;
+  localeRevision += 1;
   syncAppLayoutDirection(next);
 }
 
@@ -1184,20 +1171,42 @@ export function getCurrentLocale(): AppLocale {
   return currentLocale;
 }
 
+export function getLocaleRevision(): number {
+  return localeRevision;
+}
+
 export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
   const next = normalizeLocale(nextRaw);
   if (next !== "kk") {
     const target = next as OfflineAutoTranslateTarget;
-    if (process.env.NODE_ENV === "test") {
-      await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
-      if (areOfflineAutoTranslationsReady()) {
-        pruneOfflineAutoTranslationsToLocale(target);
+    /** APK slim pack — applyLocale алдында міндетті; CDN core күтпейміз. */
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const offline = require("../services/offlineAutoTranslations") as typeof import("../services/offlineAutoTranslations");
+      offline.seedApkOfflineTranslationsSync();
+      await offline.ensureOfflineAutoTranslationsLoaded(target);
+      if (offline.hasOfflineAutoTranslationLocale(target)) {
+        offline.pruneOfflineAutoTranslationsToLocale(target);
         invalidateOfflineLocaleTreeCache(next);
+      } else if (__DEV__) {
+        console.warn(`[i18n] APK pack missing locale=${target}; manual patches only`);
       }
-    } else if (hasOfflineAutoTranslationLocale(target)) {
-      pruneOfflineAutoTranslationsToLocale(target);
-      invalidateOfflineLocaleTreeCache(next);
+    } catch (e) {
+      if (__DEV__) console.warn("[i18n] prepareOfflinePack failed", e);
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const offline = require("../services/offlineAutoTranslations") as typeof import("../services/offlineAutoTranslations");
+        offline.seedApkOfflineTranslationsSync();
+        if (offline.hasOfflineAutoTranslationLocale(target)) {
+          offline.pruneOfflineAutoTranslationsToLocale(target);
+          invalidateOfflineLocaleTreeCache(next);
+        }
+      } catch {
+        /* ignore */
+      }
     }
+  } else {
+    invalidateOfflineLocaleTreeCache();
   }
   applyLocale(next);
   emitLocaleChange();
@@ -1205,6 +1214,15 @@ export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
     await AsyncStorage.setItem(LOCALE_KEY, next);
   } catch {
     /* ignore */
+  }
+  if (Platform.OS !== "web" && process.env.NODE_ENV !== "test") {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const prayerCache = require("../storage/prayerCache") as typeof import("../storage/prayerCache");
+      void prayerCache.syncNativePrayerWidgetFromStorage();
+    } catch {
+      /* ignore */
+    }
   }
   if (next !== "kk" && process.env.NODE_ENV !== "test") {
     try {
@@ -1226,9 +1244,14 @@ export function useAppLocale(): AppLocale {
   return useSyncExternalStore(subscribeLocale, getCurrentLocale, getCurrentLocale);
 }
 
+/** Тіл мәтіндері жаңарған сайын (соның ішінде reapply) өседі — memo/navigator key үшін. */
+export function useLocaleRevision(): number {
+  return useSyncExternalStore(subscribeLocale, getLocaleRevision, getLocaleRevision);
+}
+
 /**
  * Бут кезінде сақталған тілді оқып, негізгі `kk` мәтін объектісіне тиісті patch енгіземіз.
- * CDN/36MB сөздікті күтпейміз — алдымен manual patches, сөздік фонға.
+ * APK slim UI pack-ты күтеміз (локал, жылдам); CDN core (~30MB) фонға.
  */
 export async function hydrateLocale(): Promise<AppLocale> {
   let next: AppLocale = "kk";
@@ -1238,13 +1261,30 @@ export async function hydrateLocale(): Promise<AppLocale> {
     /* ignore */
   }
   if (next !== "kk") {
-    if (hasOfflineAutoTranslationLocale(next as OfflineAutoTranslateTarget)) {
-      pruneOfflineAutoTranslationsToLocale(next as OfflineAutoTranslateTarget);
+    const target = next as OfflineAutoTranslateTarget;
+    seedApkOfflineTranslationsSync();
+    await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
+    if (hasOfflineAutoTranslationLocale(target)) {
+      pruneOfflineAutoTranslationsToLocale(target);
       invalidateOfflineLocaleTreeCache(next);
     }
+  } else {
+    invalidateOfflineLocaleTreeCache();
   }
   applyLocale(next);
   emitLocaleChange();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const reading = require("../quran/quranReadingLocale") as typeof import("../quran/quranReadingLocale");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const translit = require("../quran/quranTranslitScript") as typeof import("../quran/quranTranslitScript");
+    await Promise.all([
+      reading.ensureDefaultQuranReadingLocale(next),
+      translit.ensureDefaultQuranTranslitScript(next),
+    ]);
+  } catch {
+    /* ignore */
+  }
   if (next !== "kk" && process.env.NODE_ENV !== "test") {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -1,5 +1,6 @@
 /**
- * Offline quran-tajweed — release APK: CDN + cache; Jest: assets/quran_tajweed.json.
+ * Offline quran-tajweed — cache → APK seed → CDN.
+ * Slim APK-да `assets/quran_tajweed.json` жоқ; `quran-tajweed-offline.json` қалады.
  */
 import {
   documentDirectory,
@@ -14,6 +15,7 @@ import { ALQURAN_TAJWEED_API_URL } from "../config/bundledJsonFallbacks";
 import { quranTajweedDocFromAlquranApi } from "./quranTajweedFromAlquran";
 import { stripTajweedTags } from "../utils/alquranTajweedParse";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { tryLoadBundledJson } from "../utils/loadBundledJson";
 
 export type QuranTajweedAyah = {
   number: number;
@@ -94,8 +96,85 @@ function buildSurahMap(surahs: QuranTajweedSurah[]): SurahMap {
 }
 
 function loadFromBundledAssetModule(): unknown {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("../../assets/quran_tajweed.json");
+  // Slim APK stash-тайды — Metro статикалық require жасамасын.
+  const dynRequire = eval("require") as (path: string) => unknown;
+  return dynRequire("../../assets/quran_tajweed.json");
+}
+
+function tryParseBundledFullAsset(): QuranTajweedAssetDoc | null {
+  if (process.env.NODE_ENV === "production") return null;
+  try {
+    return parseDoc(loadFromBundledAssetModule());
+  } catch {
+    return null;
+  }
+}
+
+type OfflineTajweedSeed = {
+  version?: number;
+  source?: string;
+  generatedAt?: string;
+  surahs?: Record<string, Record<string, string>>;
+};
+
+type SurahListApiRow = {
+  number: number;
+  name?: string;
+  englishName?: string;
+  englishNameTranslation?: string;
+  revelationType?: string;
+  numberOfAyahs?: number;
+};
+
+/** Slim APK офлайн seed → толық QuranTajweedAssetDoc (114 сүре тізімі + тегтер). */
+async function buildDocFromOfflineSeed(): Promise<QuranTajweedAssetDoc | null> {
+  const seed = await tryLoadBundledJson<OfflineTajweedSeed>("quran-tajweed-offline.json");
+  if (!seed?.surahs || !Object.keys(seed.surahs).length) return null;
+
+  const listRaw = await tryLoadBundledJson<{ data?: SurahListApiRow[] }>("surah-list-api.json");
+  const metaByNum = new Map<number, SurahListApiRow>();
+  for (const row of listRaw?.data ?? []) {
+    if (typeof row?.number === "number") metaByNum.set(row.number, row);
+  }
+
+  const surahs: QuranTajweedSurah[] = [];
+  let taggedAyahCount = 0;
+  for (let n = 1; n <= 114; n++) {
+    const ayahMap = seed.surahs[String(n)] ?? {};
+    const meta = metaByNum.get(n);
+    const ayahs: QuranTajweedAyah[] = Object.entries(ayahMap)
+      .map(([k, text]) => {
+        const numberInSurah = Number(k);
+        const tagged = (text ?? "").trim();
+        if (!Number.isFinite(numberInSurah) || !tagged) return null;
+        if (tagged.includes("[")) taggedAyahCount += 1;
+        return { number: numberInSurah, numberInSurah, text: tagged } as QuranTajweedAyah;
+      })
+      .filter((a): a is QuranTajweedAyah => a != null)
+      .sort((a, b) => a.numberInSurah - b.numberInSurah);
+
+    surahs.push({
+      number: n,
+      name: meta?.name,
+      englishName: meta?.englishName,
+      englishNameTranslation: meta?.englishNameTranslation,
+      revelationType: meta?.revelationType,
+      numberOfAyahs: meta?.numberOfAyahs ?? ayahs.length,
+      ayahs,
+    });
+  }
+
+  if (!surahs.some((s) => s.ayahs.length > 0)) return null;
+
+  return {
+    version: typeof seed.version === "number" ? seed.version : 1,
+    source: seed.source ?? "quran-tajweed-offline.json",
+    generatedAt: seed.generatedAt,
+    surahCount: surahs.length,
+    ayahCount: surahs.reduce((n, s) => n + s.ayahs.length, 0),
+    taggedAyahCount,
+    surahs,
+  };
 }
 
 async function readCachedDocRaw(): Promise<string | null> {
@@ -154,8 +233,21 @@ async function resolveDoc(): Promise<QuranTajweedAssetDoc> {
     try {
       return parseDoc(JSON.parse(cachedRaw) as unknown);
     } catch {
-      /* refetch */
+      /* fall through */
     }
+  }
+
+  const fromFullAsset = tryParseBundledFullAsset();
+  if (fromFullAsset) return fromFullAsset;
+
+  const fromSeed = await buildDocFromOfflineSeed();
+  if (fromSeed) {
+    try {
+      await writeCachedDocRaw(JSON.stringify(fromSeed));
+    } catch {
+      /* cache optional */
+    }
+    return fromSeed;
   }
 
   return fetchRemoteDoc();

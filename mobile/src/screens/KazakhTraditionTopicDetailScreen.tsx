@@ -13,7 +13,6 @@ import {
   getRelatedTraditionArticles,
   getRelatedTraditionAudios,
   getTraditionTopicById,
-  traditionCategoryLabel,
 } from "../content/traditionTopicsCatalog";
 import { TraditionReligiousEvidenceSection } from "../components/tradition/TraditionReligiousEvidenceSection";
 import { isTraditionFavorite, toggleTraditionFavorite } from "../storage/traditionFavorites";
@@ -119,9 +118,7 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         <RasterImage source={topic.image} style={styles.heroImage} resizeMode="cover" />
         <View style={styles.heroShade} />
         <View style={styles.heroTop}>
-          <Pressable oyuBackdrop={false} onPress={() => nav.goBack()} hitSlop={8} accessibilityRole="button">
-            <MaterialIcons name="arrow-back" size={22} color={palette.headerText} />
-          </Pressable>
+          <View />
           <Pressable oyuBackdrop={false} onPress={toggleFavorite} hitSlop={8} accessibilityRole="button">
             <MaterialIcons
               name={favorite ? "bookmark" : "bookmark-border"}
@@ -133,7 +130,23 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         <View style={styles.heroText}>
           <Text style={styles.heroTitle}>{tTitle}</Text>
           <Text style={styles.heroSub}>
-            {topic.categories.map((c) => tr(traditionCategoryLabel(c))).join(" · ")}
+            {topic.categories
+              .map((c) => {
+                const g = t.features.traditionGuide;
+                switch (c) {
+                  case "faith":
+                    return g.filterFaith;
+                  case "family":
+                    return g.filterFamily;
+                  case "ceremony":
+                    return g.filterCeremony;
+                  case "social":
+                    return g.filterSocial;
+                  default:
+                    return c;
+                }
+              })
+              .join(" · ")}
           </Text>
         </View>
       </View>
@@ -188,7 +201,7 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
             <TextInput
               value={bataQuery}
               onChangeText={setBataQuery}
-              placeholder={tr("Іздеу: жол, той, бала, рамазан...")}
+              placeholder={t.features.traditionGuide.searchPlaceholderShort}
               placeholderTextColor={palette.muted}
               style={styles.bataSearchInput}
               returnKeyType="search"
@@ -202,7 +215,7 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         ) : null}
         {relatedBlessings.length ? (
           <Text style={styles.bataCountLabel}>
-            {tr(`${relatedBlessings.length} бата`)}
+            {t.features.traditionGuide.bataCountLabel(relatedBlessings.length)}
           </Text>
         ) : null}
         {relatedBlessings.length ? (

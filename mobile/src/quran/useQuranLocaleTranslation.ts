@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import type { CachedAyah } from "../storage/quranSurahCache";
-import { useAppLocale } from "../i18n/runtime";
+import { useQuranReadingLocale } from "./quranReadingLocale";
 import {
   ayahsHaveTranslation,
   getQuranSurahTranslation,
@@ -9,15 +9,15 @@ import {
 } from "../services/quranTranslationEditions";
 
 /**
- * Тіл ru/en болғанда сүре аудармасын (Кулиев/Sahih) кэштен не желіден алып,
- * аят тізіміне textRu/textEn ретінде құяды. Тіл kk болса — еш нәрсе істемейді.
+ * Оқу аударма тілі ru/en/… болғанда сүре аудармасын кэштен не желіден алып,
+ * аят тізіміне құяды. kk болса — еш нәрсе істемейді.
  */
 export function useQuranLocaleTranslation(
   surahNumber: number,
   ayahs: CachedAyah[],
   setAyahs: (updater: (prev: CachedAyah[]) => CachedAyah[]) => void
 ): void {
-  const locale = useAppLocale();
+  const locale = useQuranReadingLocale();
 
   useEffect(() => {
     if (!isQuranTranslationLocale(locale)) return;

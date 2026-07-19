@@ -33,15 +33,17 @@ object OemPowerHelper {
     val b = (Build.BRAND ?: "").lowercase()
     return when {
       m.contains("samsung") || b.contains("samsung") -> OemKind.SAMSUNG
-      m.contains("xiaomi") || m.contains("redmi") || m.contains("poco") || b.contains("xiaomi") -> OemKind.XIAOMI
-      m.contains("huawei") -> OemKind.HUAWEI
-      m.contains("honor") -> OemKind.HONOR
+      m.contains("xiaomi") || m.contains("redmi") || m.contains("poco") ||
+        b.contains("xiaomi") || b.contains("redmi") || b.contains("poco") -> OemKind.XIAOMI
+      m.contains("huawei") || b.contains("huawei") -> OemKind.HUAWEI
+      m.contains("honor") || b.contains("honor") -> OemKind.HONOR
       m.contains("oppo") || b.contains("oppo") -> OemKind.OPPO
       m.contains("realme") || b.contains("realme") -> OemKind.REALME
       m.contains("vivo") || b.contains("vivo") -> OemKind.VIVO
       m.contains("oneplus") || b.contains("oneplus") -> OemKind.ONEPLUS
-      m.contains("meizu") -> OemKind.MEIZU
-      m.contains("tecno") || m.contains("infinix") -> OemKind.TECNO
+      m.contains("meizu") || b.contains("meizu") -> OemKind.MEIZU
+      m.contains("tecno") || b.contains("tecno") -> OemKind.TECNO
+      m.contains("infinix") || b.contains("infinix") -> OemKind.INFINIX
       else -> OemKind.GENERIC
     }
   }

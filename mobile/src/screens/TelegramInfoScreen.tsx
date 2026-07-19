@@ -5,7 +5,6 @@ import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import type { MoreStackParamList } from "../navigation/types";
-import { IMAM_AI_ASSISTANT_KK } from "../i18n/kk";
 import { useI18n } from "../i18n/useI18n";
 
 type Props = {
@@ -24,7 +23,7 @@ export function TelegramInfoScreen({ navigation }: Props) {
       <Text style={styles.h1}>{t.navigation.telegramInfo.title}</Text>
       <Text style={styles.p}>
         {t.navigation.telegramInfo.featuresLine}{" "}
-        {IMAM_AI_ASSISTANT_KK} — {t.navigation.telegramInfo.botCollectionSuffix}
+        {t.kmdbHub.title} — {t.navigation.telegramInfo.botCollectionSuffix}
       </Text>
       <Text style={styles.p}>
         {t.navigation.telegramInfo.mobileExtra}
@@ -34,9 +33,6 @@ export function TelegramInfoScreen({ navigation }: Props) {
         onPress={() => Linking.openURL(BOT)}
       >
         <Text style={styles.btnText}>{t.navigation.telegramInfo.openBot}</Text>
-      </Pressable>
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={styles.back}>← {t.common.back}</Text>
       </Pressable>
     </ScrollView>
   );

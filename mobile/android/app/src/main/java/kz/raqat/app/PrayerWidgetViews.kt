@@ -9,6 +9,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.SystemClock
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 
@@ -211,16 +212,13 @@ object PrayerWidgetViews {
     if (parsed == null) {
       bindHomeTopBar(context, rv, null)
       bindFiveStripGrid(context, rv, emptyList(), null)
-      bindHomeNextRow(rv, null, null)
       if (readPayloadJson(context) != null) {
         rv.setTextViewText(R.id.widget_home_city, context.getString(R.string.widget_prayer_empty))
       }
     } else {
       bindHomeTopBar(context, rv, parsed)
-      val five = parsed.salatRowsFive()
       val next = parsed.nextSalatRow()
       bindFiveStripGrid(context, rv, parsed.rows, next)
-      bindHomeNextRow(rv, next, five)
     }
     bindOpenTap(rv, R.id.widget_home_strip_root, context, RC_HOME_STRIP)
     return rv
@@ -254,21 +252,19 @@ object PrayerWidgetViews {
 
   private data class StripCell(
     val containerId: Int,
-    val iconId: Int,
     val labelId: Int,
     val timeId: Int,
     val rowIndex: Int,
-    val icon: String,
     val labelRes: Int
   )
 
-  private fun fiveStripCells(context: Context): List<StripCell> =
+  private fun fiveStripCells(): List<StripCell> =
     listOf(
-      StripCell(R.id.widget_strip_cell_fajr, R.id.widget_strip_cell_fajr_icon, R.id.widget_strip_cell_fajr_lbl, R.id.widget_strip_cell_fajr_time, 0, "🌙", R.string.widget_prayer_row_fajr),
-      StripCell(R.id.widget_strip_cell_dhuhr, R.id.widget_strip_cell_dhuhr_icon, R.id.widget_strip_cell_dhuhr_lbl, R.id.widget_strip_cell_dhuhr_time, 2, "☀️", R.string.widget_prayer_row_dhuhr),
-      StripCell(R.id.widget_strip_cell_asr, R.id.widget_strip_cell_asr_icon, R.id.widget_strip_cell_asr_lbl, R.id.widget_strip_cell_asr_time, 3, "⏳", R.string.widget_prayer_row_asr),
-      StripCell(R.id.widget_strip_cell_maghrib, R.id.widget_strip_cell_maghrib_icon, R.id.widget_strip_cell_maghrib_lbl, R.id.widget_strip_cell_maghrib_time, 4, "🌇", R.string.widget_prayer_row_maghrib),
-      StripCell(R.id.widget_strip_cell_isha, R.id.widget_strip_cell_isha_icon, R.id.widget_strip_cell_isha_lbl, R.id.widget_strip_cell_isha_time, 5, "🌙", R.string.widget_prayer_row_isha)
+      StripCell(R.id.widget_strip_cell_fajr, R.id.widget_strip_cell_fajr_lbl, R.id.widget_strip_cell_fajr_time, 0, R.string.widget_prayer_row_fajr),
+      StripCell(R.id.widget_strip_cell_dhuhr, R.id.widget_strip_cell_dhuhr_lbl, R.id.widget_strip_cell_dhuhr_time, 2, R.string.widget_prayer_row_dhuhr),
+      StripCell(R.id.widget_strip_cell_asr, R.id.widget_strip_cell_asr_lbl, R.id.widget_strip_cell_asr_time, 3, R.string.widget_prayer_row_asr),
+      StripCell(R.id.widget_strip_cell_maghrib, R.id.widget_strip_cell_maghrib_lbl, R.id.widget_strip_cell_maghrib_time, 4, R.string.widget_prayer_row_maghrib),
+      StripCell(R.id.widget_strip_cell_isha, R.id.widget_strip_cell_isha_lbl, R.id.widget_strip_cell_isha_time, 5, R.string.widget_prayer_row_isha)
     )
 
   private fun bindHomeTopBar(context: Context, rv: RemoteViews, parsed: PrayerDayParsed?) {
@@ -277,6 +273,9 @@ object PrayerWidgetViews {
       rv.setTextViewText(R.id.widget_home_weather_temp, "—°")
       setWidgetTextColor(rv, R.id.widget_home_weather_temp, context.getColor(R.color.widget_prayer_muted))
       rv.setTextViewText(R.id.widget_home_city, context.getString(R.string.widget_prayer_label))
+      rv.setTextViewText(R.id.widget_home_next_kicker, context.getString(R.string.widget_prayer_next_heading))
+      rv.setTextViewText(R.id.widget_home_next_line, "—")
+      applyHomeTopBarTextSizes(rv)
       bindHomeCountdown(rv, null)
       return
     }
@@ -286,7 +285,29 @@ object PrayerWidgetViews {
     setWidgetTextColor(rv, R.id.widget_home_weather_temp, weatherColorFor(context, parsed.weatherCode))
     val city = widgetCityTitle(context, parsed)
     rv.setTextViewText(R.id.widget_home_city, city)
+    val heading =
+      parsed.nextHeading.ifBlank { context.getString(R.string.widget_prayer_next_heading) }
+    rv.setTextViewText(R.id.widget_home_next_kicker, heading)
+    val next = parsed.nextSalatRow()
+    if (next == null) {
+      rv.setTextViewText(R.id.widget_home_next_line, "—")
+    } else {
+      val timeTxt =
+        if (next.timeRaw.isBlank()) "—" else PrayerWidgetRichText.timeHead(next.timeRaw)
+      rv.setTextViewText(R.id.widget_home_next_line, "${next.label} · $timeTxt")
+    }
+    applyHomeTopBarTextSizes(rv)
     bindHomeCountdown(rv, parsed.salatRowsFive())
+  }
+
+  /** Төбе мәтіні: келесі намаз / қала / ауа — үлкен (бастапқы бетке тиіспейді). */
+  private fun applyHomeTopBarTextSizes(rv: RemoteViews) {
+    rv.setTextViewTextSize(R.id.widget_home_next_kicker, TypedValue.COMPLEX_UNIT_SP, 13f)
+    rv.setTextViewTextSize(R.id.widget_home_next_line, TypedValue.COMPLEX_UNIT_SP, 17f)
+    rv.setTextViewTextSize(R.id.widget_home_countdown, TypedValue.COMPLEX_UNIT_SP, 20f)
+    rv.setTextViewTextSize(R.id.widget_home_city, TypedValue.COMPLEX_UNIT_SP, 14f)
+    rv.setTextViewTextSize(R.id.widget_home_weather_icon, TypedValue.COMPLEX_UNIT_SP, 15f)
+    rv.setTextViewTextSize(R.id.widget_home_weather_temp, TypedValue.COMPLEX_UNIT_SP, 15f)
   }
 
   private fun bindFiveStripGrid(
@@ -297,40 +318,28 @@ object PrayerWidgetViews {
   ) {
     val activeText = context.getColor(R.color.widget_prayer_strip_active_text)
     val normalText = context.getColor(R.color.widget_prayer_text)
-    for (cell in fiveStripCells(context)) {
+    for (cell in fiveStripCells()) {
       val row =
         if (cell.rowIndex < rows.size) rows[cell.rowIndex]
         else PrayerRow(context.getString(cell.labelRes), "", null)
       val isNext = next != null && PrayerWidgetRichText.sameRow(row, next)
       val timeTxt =
         if (row.timeRaw.isBlank()) "—" else PrayerWidgetRichText.timeHead(row.timeRaw)
-      rv.setTextViewText(cell.iconId, cell.icon)
       rv.setTextViewText(cell.labelId, row.label.ifBlank { context.getString(cell.labelRes) })
       rv.setTextViewText(cell.timeId, timeTxt)
+      // OEM масштабтамасын жеңу — намаз атауы/уақыт үлкен әрі анық
+      rv.setTextViewTextSize(cell.labelId, TypedValue.COMPLEX_UNIT_SP, 15f)
+      rv.setTextViewTextSize(cell.timeId, TypedValue.COMPLEX_UNIT_SP, 16f)
       if (isNext) {
         rv.setInt(cell.containerId, "setBackgroundResource", R.drawable.widget_prayer_cell_active_white)
-        setWidgetTextColor(rv, cell.iconId, activeText)
         setWidgetTextColor(rv, cell.labelId, activeText)
         setWidgetTextColor(rv, cell.timeId, activeText)
       } else {
         rv.setInt(cell.containerId, "setBackgroundResource", 0)
-        setWidgetTextColor(rv, cell.iconId, normalText)
         setWidgetTextColor(rv, cell.labelId, normalText)
         setWidgetTextColor(rv, cell.timeId, normalText)
       }
     }
-  }
-
-  private fun bindHomeNextRow(rv: RemoteViews, next: PrayerRow?, salatRows: List<PrayerRow>?) {
-    rv.setViewVisibility(R.id.widget_home_next_row, View.VISIBLE)
-    bindHomeCountdown(rv, salatRows)
-    if (next == null) {
-      rv.setTextViewText(R.id.widget_home_next_line, "— · —")
-      return
-    }
-    val timeTxt =
-      if (next.timeRaw.isBlank()) "—" else PrayerWidgetRichText.timeHead(next.timeRaw)
-    rv.setTextViewText(R.id.widget_home_next_line, "${next.label} · $timeTxt")
   }
 
   private fun bindNextCountdown(rv: RemoteViews, salatRows: List<PrayerRow>?) {

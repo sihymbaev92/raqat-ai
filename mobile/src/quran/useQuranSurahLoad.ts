@@ -5,7 +5,7 @@ import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { fetchPlatformQuranSurah } from "../services/platformApiClient";
 import { getValidAccessToken } from "../storage/authTokens";
 import { seedBundledQuranCachesIfNeeded } from "../services/bundledQuranSeed";
-import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
+import { ensureBundledKkReaderLoaded } from "../services/bundledQuranReader";
 import { enrichAyahsFromBundledQuranDb, enrichAyahsFromBundledQuranDbSync } from "../services/quranKkBundledLookup";
 import { fetchAlquranUthmaniAndUnicodeAyahs } from "../services/alquranSurahDualArabicFetch";
 import {
@@ -157,7 +157,7 @@ export function useQuranSurahLoad(surahNumber: number) {
   useEffect(() => {
     let alive = true;
     void (async () => {
-      await ensureBundledQuranReaderLoaded().catch(() => {});
+      await ensureBundledKkReaderLoaded().catch(() => {});
       if (!alive) return;
       setAyahs((prev) => {
         if (!prev.length) return prev;

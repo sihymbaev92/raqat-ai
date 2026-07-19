@@ -164,15 +164,19 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
     lineOffsetsRef.current = [];
     if (soundId !== "off") {
       if (useNativeAzan) {
-        // Alarm delivery already started native audio when nativeAudio=1.
-        if (!isNativeAudio) playNativePrayerAzanAudio(soundId);
+        // Delivery may already be playing; if idle, start now (iOS AlarmKit open path).
+        void getNativeAzanPlaybackStatus().then((st) => {
+          if (st?.isPlaying || st?.completed || st?.isDua) return;
+          playNativePrayerAzanAudio(soundId);
+        });
       } else if (!isNativeAudio) {
         void previewPrayerNotifSound(soundId);
       }
     }
     return () => {
       void stopPreviewPrayerNotifSound();
-      stopNativePrayerAzanAudio();
+      // Native alarm already owns playback; remount (locale / nav reset) must not kill it.
+      if (!isNativeAudio) stopNativePrayerAzanAudio();
     };
   }, [isNativeAudio, soundId, useNativeAzan]);
 

@@ -2,10 +2,10 @@ import React, { Component, type ErrorInfo, type ReactNode } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform } from "react-native";
 import { kk } from "../i18n/kk";
 import { reportClientError } from "../services/clientErrorReporter";
-import { useAppLocale } from "../i18n/runtime";
+import { getLocaleRevision } from "../i18n/runtime";
 
 type Props = { children: ReactNode };
-type State = { err: Error | null };
+type State = { err: Error | null; localeRevision: number };
 
 const WEB_ERROR_RELOAD_KEY = "raqat_web_error_reload_once_v2";
 
@@ -47,10 +47,10 @@ export function appErrorDiagnosticText(error: Error | null, showDetails = __DEV_
  * Суық іске қосуда рендер қатесін (ақ экран) ұстап, қайта кіру сынағы.
  */
 export class AppErrorBoundary extends Component<Props, State> {
-  state: State = { err: null };
+  state: State = { err: null, localeRevision: getLocaleRevision() };
 
-  static getDerivedStateFromError(e: Error): State {
-    return { err: e };
+  static getDerivedStateFromError(e: Error): Partial<State> {
+    return { err: e, localeRevision: getLocaleRevision() };
   }
 
   componentDidCatch(e: Error, info: ErrorInfo): void {
@@ -61,7 +61,8 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.err) {
-  useAppLocale();
+      // localeRevision forces chrome re-read from hydrated `kk` without hooks in a class.
+      void this.state.localeRevision;
       const diagnosticText = appErrorDiagnosticText(this.state.err);
       return (
         <View style={styles.root}>
@@ -78,7 +79,7 @@ export class AppErrorBoundary extends Component<Props, State> {
           ) : null}
           <Pressable
             style={({ pressed }) => [styles.btn, pressed && { opacity: 0.9 }]}
-            onPress={() => this.setState({ err: null })}
+            onPress={() => this.setState({ err: null, localeRevision: getLocaleRevision() })}
             accessibilityRole="button"
             accessibilityLabel={kk.common.retry}
           >

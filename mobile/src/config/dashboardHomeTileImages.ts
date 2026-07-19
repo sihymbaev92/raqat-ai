@@ -11,7 +11,7 @@ const DASHBOARD_HOME_TILE_THUMBNAILS: Record<DashboardRadialItemKey, ImageSource
   tasbih: require("../../assets/dashboard/home-tiles/tasbih-thumb.webp"),
   duas: require("../../assets/dashboard/home-tiles/duas-thumb.webp"),
   asma: require("../../assets/dashboard/home-tiles/asma-thumb.webp"),
-  ai: require("../../assets/dashboard/home-tiles/ai-thumb.webp"),
+  kmdb: require("../../assets/dashboard/home-tiles/ai-thumb.webp"),
   halal: require("../../assets/dashboard/home-tiles/halal-thumb.webp"),
   tradition: require("../../assets/dashboard/home-tiles/tradition-thumb.webp"),
 };

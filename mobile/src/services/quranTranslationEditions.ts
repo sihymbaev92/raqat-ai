@@ -3,11 +3,11 @@
  * машиналық аударма емес, дайын тексерілген басылымдар қолданылады:
  *   ru → Эльмир Кулиев (alquran.cloud `ru.kuliev`)
  *   en → Sahih International (alquran.cloud `en.sahih`)
- *   tr/uz/zh/fa/id/ms/hi/ku → alquran.cloud дайын edition-дары
+ *   tr/uz → alquran.cloud дайын edition-дары
  *   ky → QuranEnc `kyrgyz_hakimov` (alquran.cloud ky.borubaev араб мәтінін қайтарады)
  *
  * kk — bundled/platform дерегінен келеді, ar — түпнұсқа араб мәтіні.
- * ru/en/tr/uz/ky/zh/fa/id/ms/hi/ku алдымен offline bundled JSON-нан оқылады; желі тек bundle-де
+ * ru/en/tr/uz/ky алдымен offline bundled JSON-нан оқылады; желі тек bundle-де
  * жоқ мәтінге fallback ретінде қолданылады.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,12 +24,6 @@ export const QURAN_TRANSLATION_LOCALES = [
   "tr",
   "uz",
   "ky",
-  "zh",
-  "fa",
-  "id",
-  "ms",
-  "hi",
-  "ku",
 ] as const;
 export type QuranTranslationLocale = (typeof QURAN_TRANSLATION_LOCALES)[number];
 export type QuranTranslationField =
@@ -37,13 +31,7 @@ export type QuranTranslationField =
   | "textEn"
   | "textTr"
   | "textUz"
-  | "textKy"
-  | "textZh"
-  | "textFa"
-  | "textId"
-  | "textMs"
-  | "textHi"
-  | "textKu";
+  | "textKy";
 
 const EDITION_BY_LOCALE: Record<QuranTranslationLocale, string> = {
   ru: "ru.kuliev",
@@ -51,12 +39,6 @@ const EDITION_BY_LOCALE: Record<QuranTranslationLocale, string> = {
   tr: "tr.diyanet",
   uz: "uz.sodik",
   ky: "quranenc:kyrgyz_hakimov",
-  zh: "zh.jian",
-  fa: "fa.makarem",
-  id: "id.indonesian",
-  ms: "ms.basmeih",
-  hi: "hi.hindi",
-  ku: "ku.asan",
 };
 
 const FIELD_BY_LOCALE: Record<QuranTranslationLocale, QuranTranslationField> = {
@@ -65,12 +47,6 @@ const FIELD_BY_LOCALE: Record<QuranTranslationLocale, QuranTranslationField> = {
   tr: "textTr",
   uz: "textUz",
   ky: "textKy",
-  zh: "textZh",
-  fa: "textFa",
-  id: "textId",
-  ms: "textMs",
-  hi: "textHi",
-  ku: "textKu",
 };
 
 const FETCH_TIMEOUT_MS = 12000;

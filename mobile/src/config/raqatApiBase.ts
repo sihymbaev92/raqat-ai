@@ -1,8 +1,8 @@
 /**
- * Imam Ai платформа API негізгі мекенжайы (трейлинг слеш жоқ).
- * 1) EXPO_PUBLIC_IMAM_AI_API_BASE — әдепкі жаңа атауы
- * 2) EXPO_PUBLIC_RAQAT_API_BASE — мұра (егер жоғарыдағы бос болса)
- * 3) app.config.js → expo.extra.imamAiApiBase, содан кейін extra.raqatApiBase
+ * RAQAT платформа API негізгі мекенжайы (трейлинг слеш жоқ).
+ * 1) EXPO_PUBLIC_RAQAT_API_BASE
+ * 2) EXPO_PUBLIC_IMAM_AI_API_BASE — мұра env
+ * 3) app.config.js → expo.extra.raqatApiBase, содан кейін extra.imamAiApiBase
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getExpoExtra } from "./expoExtra";
@@ -49,22 +49,22 @@ export function isTrustedRaqatApiBaseOverride(rawBase: string): boolean {
 
 /** Overrideсыз: .env → app.config.js extra (жинақтағы нақты әдепкі). */
 export function getBundledRaqatApiBase(): string {
-  const imamEnv =
-    typeof process !== "undefined" && process.env?.EXPO_PUBLIC_IMAM_AI_API_BASE
-      ? String(process.env.EXPO_PUBLIC_IMAM_AI_API_BASE)
-      : "";
-  if (imamEnv.trim()) return normalizeBase(imamEnv);
   const rqEnv =
     typeof process !== "undefined" && process.env?.EXPO_PUBLIC_RAQAT_API_BASE
       ? String(process.env.EXPO_PUBLIC_RAQAT_API_BASE)
       : "";
   if (rqEnv.trim()) return normalizeBase(rqEnv);
+  const imamEnv =
+    typeof process !== "undefined" && process.env?.EXPO_PUBLIC_IMAM_AI_API_BASE
+      ? String(process.env.EXPO_PUBLIC_IMAM_AI_API_BASE)
+      : "";
+  if (imamEnv.trim()) return normalizeBase(imamEnv);
 
   const ex = getExpoExtra();
-  const rawImam = ex?.imamAiApiBase;
-  if (rawImam != null && String(rawImam).trim()) return normalizeBase(String(rawImam));
   const rawR = ex?.raqatApiBase;
   if (rawR != null && String(rawR).trim()) return normalizeBase(String(rawR));
+  const rawImam = ex?.imamAiApiBase;
+  if (rawImam != null && String(rawImam).trim()) return normalizeBase(String(rawImam));
   return "";
 }
 

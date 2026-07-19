@@ -16,6 +16,7 @@ import {
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { getRaqatContentReadSecret } from "../config/raqatContentSecret";
 import { getValidAccessToken } from "../storage/authTokens";
+import { kk } from "../i18n/kk";
 
 export type KbArticlesFeedSource = "api_search" | "api_browse" | "live_scrape" | "cache" | "seed";
 
@@ -153,13 +154,13 @@ export function kbFeedSourceLabel(source: KbArticlesFeedSource): string {
   switch (source) {
     case "api_search":
     case "api_browse":
-      return "ҚМДБ индекс";
+      return kk.knowledgePortal.feedSourceApi;
     case "live_scrape":
-      return "Ресми сайт";
+      return kk.knowledgePortal.feedSourceLive;
     case "cache":
-      return "Сақталған тізім";
+      return kk.knowledgePortal.feedSourceCache;
     case "seed":
-      return "Офлайн үзінді";
+      return kk.knowledgePortal.feedSourceSeed;
     default:
       return source;
   }

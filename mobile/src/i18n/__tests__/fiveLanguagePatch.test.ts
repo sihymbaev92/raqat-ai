@@ -87,12 +87,6 @@ describe("five-language manual locale patches", () => {
       uz: "",
       tr: "",
       ar: "",
-      zh: "",
-      fa: "",
-      id: "",
-      ms: "",
-      hi: "",
-      ku: "",
     };
 
     for (const locale of PRIMARY_LOCALES) {

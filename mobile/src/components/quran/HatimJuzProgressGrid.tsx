@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { View, Text, StyleSheet, Platform } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
-import { kk } from "../../i18n/kk";
+import { useI18n } from "../../i18n/useI18n";
 import { computeHatimJuzStats } from "../../hatim/hatimJuzProgress";
 
 type Props = {
@@ -17,9 +17,10 @@ const COLS = 6;
 const ROWS = 5;
 
 export function HatimJuzProgressGrid({ read, colors, isDark, activeJuz, onOpenJuz }: Props) {
+  const t = useI18n();
   const stats = useMemo(() => computeHatimJuzStats(read), [read]);
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
-  const tg = kk.hatim;
+  const tg = t.hatim;
 
   return (
     <View style={styles.wrap}>

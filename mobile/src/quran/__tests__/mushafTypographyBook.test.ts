@@ -40,7 +40,7 @@ describe("computeMushafTypography (mushaf book reader)", () => {
 
     });
 
-    expect(lightBook.mushafPageInk).toBe("#1A1714");
+    expect(lightBook.mushafPageInk).toBe("#0E0C0A");
 
   });
 
@@ -56,7 +56,7 @@ describe("computeMushafTypography (mushaf book reader)", () => {
 
     });
 
-    expect(light.mushafPageInk).toBe("#1A1714");
+    expect(light.mushafPageInk).toBe("#0E0C0A");
 
   });
 

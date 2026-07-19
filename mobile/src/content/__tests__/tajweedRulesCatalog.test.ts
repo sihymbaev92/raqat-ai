@@ -50,6 +50,15 @@ describe("tajweedRulesCatalog", () => {
     expect(tajweedColorForRule("a", false)).toBe("#FFD600");
   });
 
+  it("green group is ghunnah/ikhfa/iqlab — not izhar; qalqalah uses Arabic dal", () => {
+    const green = TAJWEED_LEGEND_SECTIONS.find((s) => s.rules.includes("i"));
+    expect(green?.titleKk).toMatch(/иқлаб/i);
+    expect(green?.titleKk).not.toMatch(/изһар/i);
+    const qalqalah = TAJWEED_RULES_CATALOG.find((m) => m.rule === "q");
+    expect(qalqalah?.detailKk).toContain("د");
+    expect(qalqalah?.detailKk).not.toMatch(/ج д/);
+  });
+
   it("tajweedColorForRule returns catalog colors", () => {
     const meta = TAJWEED_RULES_CATALOG.find((m) => m.rule === "n")!;
     expect(tajweedColorForRule("n", false)).toBe(meta.colorLight);

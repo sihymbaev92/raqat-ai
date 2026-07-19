@@ -1,7 +1,7 @@
 import { PixelRatio, Platform, type TextProps } from "react-native";
 
 /** MIUI / Android display size — UI мәтінінің қабаттасуын болдырмау. */
-export const APP_TEXT_MAX_FONT_SIZE_MULTIPLIER = 1.12;
+export const APP_TEXT_MAX_FONT_SIZE_MULTIPLIER = 1.35;
 
 /** Тік сызықты мәтін кішірейіп сияқты (iOS adjustsFontSizeToFit). */
 export const APP_TEXT_MIN_FONT_SCALE = 0.82;

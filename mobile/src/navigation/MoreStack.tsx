@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import { navigationHeaderTitleStyle } from "../theme/typography";
 import { kk } from "../i18n/kk";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import type { MoreStackParamList } from "./types";
 import { moreStackScreenBackListeners } from "./useMoreStackHardwareBack";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
@@ -63,7 +63,6 @@ const KazakhGreatWordsAuthorScreen = lazyScreen(() => import("../screens/KazakhG
 const KazakhGreatWordsEntryScreen = lazyScreen(() => import("../screens/KazakhGreatWordsEntryScreen").then((m) => ({ default: m.KazakhGreatWordsEntryScreen })));
 const HajjScreen = lazyScreen(() => import("../screens/FeaturePlaceholderScreens").then((m) => ({ default: m.HajjScreen })));
 const ZakatCalculatorScreen = lazyScreen(() => import("../screens/ZakatCalculatorScreen").then((m) => ({ default: m.ZakatCalculatorScreen })));
-const RaqatAIChatScreen = lazyScreen(() => import("../screens/RaqatAIChatScreen").then((m) => ({ default: m.RaqatAIChatScreen })));
 const OfficialKnowledgePortalScreen = lazyScreen(() => import("../screens/OfficialKnowledgePortalScreen").then((m) => ({ default: m.OfficialKnowledgePortalScreen })));
 const IslamicKbSearchScreen = lazyScreen(() => import("../screens/IslamicKbSearchScreen").then((m) => ({ default: m.IslamicKbSearchScreen })));
 const EcosystemScreen = lazyScreen(() => import("../screens/EcosystemScreen").then((m) => ({ default: m.EcosystemScreen })));
@@ -73,7 +72,8 @@ const HadithDetailScreen = lazyScreen(() => import("../screens/HadithDetailScree
 
 export function MoreNavigator() {
   const { colors, isDark } = useAppTheme();
-  useAppLocale();
+  const locale = useAppLocale();
+  const localeRevision = useLocaleRevision();
 
   const screenOptions = {
     ...hiddenStackHeaderOptions,
@@ -82,7 +82,7 @@ export function MoreNavigator() {
 
   return (
     <Stack.Navigator
-      key={MORE_STACK_WEB_CACHE_VERSION}
+      key={`${MORE_STACK_WEB_CACHE_VERSION}-${locale}-${localeRevision}`}
       initialRouteName="ContentHub"
       screenOptions={screenOptions}
       screenListeners={moreStackScreenBackListeners}
@@ -255,15 +255,6 @@ export function MoreNavigator() {
         }}
       />
       <Stack.Screen
-        name="ImamAI"
-        component={RaqatAIChatScreen}
-        options={{
-          title: kk.features.raqatAiTitle,
-          headerTitleAlign: "left",
-          headerTitleStyle: navigationHeaderTitleStyle,
-        }}
-      />
-      <Stack.Screen
         name="OfficialKnowledgePortal"
         component={OfficialKnowledgePortalScreen}
         options={{
@@ -275,7 +266,7 @@ export function MoreNavigator() {
         name="IslamicKbSearch"
         component={IslamicKbSearchScreen}
         options={{
-          title: kk.aiChat.kbSearchTitle,
+          title: kk.knowledgePortal.fatwaSearchTitle,
           headerTitleStyle: navigationHeaderTitleStyle,
         }}
       />

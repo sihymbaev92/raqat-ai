@@ -10,10 +10,10 @@ const readSource = (relativePath: string) =>
   fs.readFileSync(path.join(process.cwd(), relativePath), "utf8");
 
 describe("Quran reader content preferences", () => {
-  it("forces transliteration and meaning off for Quran-only Arabic policy", async () => {
-    expect(QURAN_READER_ARABIC_ONLY).toBe(true);
-    await expect(getQuranReaderShowTranslit()).resolves.toBe(false);
-    await expect(getQuranReaderShowMeaning()).resolves.toBe(false);
+  it("allows transliteration and meaning on surah reader (Hatim mushaf stays Arabic-only)", async () => {
+    expect(QURAN_READER_ARABIC_ONLY).toBe(false);
+    await expect(getQuranReaderShowTranslit()).resolves.toBe(true);
+    await expect(getQuranReaderShowMeaning()).resolves.toBe(true);
   });
 
   it("reader settings sheet shows Arabic-only content hint", () => {

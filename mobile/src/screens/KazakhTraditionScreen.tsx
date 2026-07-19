@@ -15,7 +15,6 @@ import type { TraditionTopicCategory } from "../content/kazakhTraditionTopicStat
 import {
   getTraditionTopicByTitle,
   getTraditionTopics,
-  traditionCategoryLabel,
   traditionHeroImage,
   type TraditionTopic,
 } from "../content/traditionTopicsCatalog";
@@ -31,13 +30,7 @@ type FilterKey = TraditionTopicCategory | "all";
 /** Негізгі тақырыптар — тізімнің басында. */
 const FOUNDATION_IDS = new Set(["dastur-men-din-negiz", "yrymdar-men-din"]);
 
-const FILTERS: Array<{ id: FilterKey; label: string }> = [
-  { id: "all", label: "Барлығы" },
-  { id: "faith", label: "Дінмен байланыс" },
-  { id: "family", label: "Отбасы" },
-  { id: "ceremony", label: "Рәсім" },
-  { id: "social", label: "Қоғам" },
-];
+const FILTER_IDS: FilterKey[] = ["all", "faith", "family", "ceremony", "social"];
 
 function sortTopics(topics: TraditionTopic[]): TraditionTopic[] {
   return [...topics].sort((a, b) => {
@@ -66,6 +59,32 @@ export function KazakhTraditionScreen() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
+
+  const filterLabel = useCallback(
+    (id: FilterKey) => {
+      const g = t.features.traditionGuide;
+      switch (id) {
+        case "all":
+          return g.filterAll;
+        case "faith":
+          return g.filterFaith;
+        case "family":
+          return g.filterFamily;
+        case "ceremony":
+          return g.filterCeremony;
+        case "social":
+          return g.filterSocial;
+        default:
+          return g.filterAll;
+      }
+    },
+    [t]
+  );
+
+  const filters = useMemo(
+    () => FILTER_IDS.map((id) => ({ id, label: filterLabel(id) })),
+    [filterLabel]
+  );
 
   useEffect(() => {
     const category = route.params?.scrollToCategory;
@@ -210,7 +229,7 @@ export function KazakhTraditionScreen() {
           </View>
 
           <View style={styles.filters}>
-            {FILTERS.map((item) => {
+            {filters.map((item) => {
               const active = filter === item.id;
               return (
                 <Pressable
@@ -224,10 +243,10 @@ export function KazakhTraditionScreen() {
                   ]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  accessibilityLabel={tr(item.label)}
+                  accessibilityLabel={item.label}
                 >
                   <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>
-                    {tr(item.label)}
+                    {item.label}
                   </Text>
                 </Pressable>
               );
@@ -235,11 +254,9 @@ export function KazakhTraditionScreen() {
           </View>
 
           <Text style={styles.listTitle}>
-            {tr(
-              filter === "all"
-                ? `Тақырыптар (${visibleTopics.length})`
-                : `${traditionCategoryLabel(filter)} · ${visibleTopics.length}`
-            )}
+            {filter === "all"
+              ? t.features.traditionGuide.topicsCount(visibleTopics.length)
+              : `${filterLabel(filter)} · ${visibleTopics.length}`}
           </Text>
         </View>
       }

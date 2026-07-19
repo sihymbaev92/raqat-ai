@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from "react";
-import { View, Text, Switch, Platform, StyleSheet } from "react-native";
+import { View, Text, Switch, Platform, StyleSheet, Linking } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
@@ -58,7 +58,7 @@ export function SettingsPrayerNotificationsSection({
   const [azanQaMessage, setAzanQaMessage] = useState<string | null>(null);
 
   const runLockedScreenAzanQa = useCallback(async () => {
-    if (Platform.OS !== "android" || azanQaBusy) return;
+    if ((Platform.OS !== "android" && Platform.OS !== "ios") || azanQaBusy) return;
     setAzanQaBusy(true);
     setAzanQaMessage(null);
     const result = await scheduleTestAzanAlarmForQa(90);
@@ -141,7 +141,7 @@ export function SettingsPrayerNotificationsSection({
             <Text style={styles.diagnosticLine}>
               {kk.settings.prayerNotifDiagnosticScheduled}: {diagnostics.scheduledPrayerCount}
             </Text>
-            {diagnostics.platform === "android" ? (
+            {diagnostics.platform === "android" || diagnostics.platform === "ios" ? (
               <>
                 <Text style={styles.diagnosticLine}>
                   Native azan status: {diagnostics.nativeAzanReliabilityStatus}
@@ -151,7 +151,8 @@ export function SettingsPrayerNotificationsSection({
                   {diagnostics.nativeAzanAlarmLastError ? ` (${diagnostics.nativeAzanAlarmLastError})` : ""}
                 </Text>
                 <Text style={styles.diagnosticLine}>
-                  Exact alarm: {formatPermissionFlag(diagnostics.nativeAzanExactAlarmPermissionGranted)}
+                  {diagnostics.platform === "ios" ? "AlarmKit / exact" : "Exact alarm"}:{" "}
+                  {formatPermissionFlag(diagnostics.nativeAzanExactAlarmPermissionGranted)}
                 </Text>
                 {diagnostics.fullScreenIntentSettingsAvailable ? (
                   <Text style={styles.diagnosticLine}>
@@ -209,17 +210,23 @@ export function SettingsPrayerNotificationsSection({
             ) : null}
           </View>
         ) : null}
-        {Platform.OS === "android" ? (
+        {Platform.OS === "android" || Platform.OS === "ios" ? (
           <View style={styles.acceptanceBox}>
             <Text style={styles.acceptanceTitle}>{kk.settings.prayerNotifAcceptanceTitle}</Text>
-            {kk.settings.prayerNotifAcceptanceItems.map((item) => (
+            {(Platform.OS === "ios"
+              ? kk.settings.prayerNotifAcceptanceItemsIos
+              : kk.settings.prayerNotifAcceptanceItems
+            ).map((item) => (
               <Text key={item} style={styles.acceptanceItem}>
                 {item}
               </Text>
             ))}
             {diagnostics?.exactAlarmSettingsAvailable ? (
               <Pressable
-                onPress={() => void openAndroidExactAlarmSettings()}
+                onPress={() => {
+                  if (Platform.OS === "android") void openAndroidExactAlarmSettings();
+                  else void Linking.openSettings();
+                }}
                 style={({ pressed }) => [styles.warnLinkBtn, pressed && { opacity: 0.88 }]}
                 accessibilityRole="button"
                 accessibilityLabel={kk.settings.notifOpenSystemSettings}

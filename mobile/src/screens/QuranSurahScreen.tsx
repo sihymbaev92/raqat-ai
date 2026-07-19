@@ -33,14 +33,22 @@ import {
   type CachedAyah,
 } from "../storage/quranSurahCache";
 import { useQuranLocaleTranslation } from "../quran/useQuranLocaleTranslation";
-import { resolveEffectiveQuranReaderNavMode, QURAN_READER_ARABIC_ONLY } from "../quran/quranReaderModePolicy";
+import { resolveEffectiveQuranReaderNavMode } from "../quran/quranReaderModePolicy";
 import { useAppLocale } from "../i18n/runtime";
+import { useQuranReadingLocale } from "../quran/quranReadingLocale";
+import { useQuranTranslitScript } from "../quran/quranTranslitScript";
 import { releaseBundledQuranReaderMemory } from "../services/bundledQuranReader";
 import { releaseBundledQuranTranslationsMemory } from "../services/quranOfflineTranslations";
 import { enrichAyahsFromBundledQuranDb } from "../services/quranKkBundledLookup";
 import { enrichAyahsWithAlquranTajweed, shouldShowMushafBismillahBanner } from "../services/quranSurahTajweedEnrich";
+import { hasTajweedMarkup } from "../utils/hasTajweedMarkup";
+import {
+  tajweedRenderNoticeKind,
+  tajweedRenderNoticeVisible,
+} from "../quran/quranTajweedRenderPolicy";
 import { useQuranSurahLoad } from "../quran/useQuranSurahLoad";
-import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { juzForSurahAyah, type QuranJuzStart } from "../data/quranJuzBoundaries";
 import { surahArabicFromBundled } from "../constants/surahBundledMeta";
 import { surahAyahToGlobalOneBased } from "../data/quranAyahCounts";
@@ -77,7 +85,6 @@ import {
 import { QuranSurahReaderBody } from "../components/quran/QuranSurahReaderBody";
 import { QuranSurahTranslationSheet } from "../components/quran/QuranSurahTranslationSheet";
 import { QuranSurahNoteSheet } from "../components/quran/QuranSurahNoteSheet";
-import { QuranSurahTajweedLegendModal } from "../components/quran/QuranSurahTajweedLegendModal";
 import { QuranSurahJuzPickerSheet } from "../components/quran/QuranSurahJuzPickerSheet";
 import type { MushafContinuousArabicHandle } from "../components/quran/MushafContinuousArabicBlock";
 import {
@@ -101,6 +108,7 @@ import { pickDominantAyahAboveScrollOffset } from "../quran/mushafScrollAnchor";
 import { ayahNumbersForAudioPlayUntil } from "../quran/quranAyahPlayQueue";
 import { getHatimAudioPlayUntil } from "../storage/hatimPrefs";
 import {
+  getQuranReciterEdition,
   DEFAULT_AYAH_MARKER_STYLE,
   getAyahMarkerStyle,
   getMushafDensity,
@@ -112,7 +120,7 @@ import {
   getQuranReaderShowTranslit,
   getQuranReaderAllowRotation,
   setQuranReaderAllowRotation,
-  QURAN_TAJWEED_COLORS_KEY,
+  getQuranTajweedColorsEnabled,
   QURAN_READER_RECITER_KEY,
   QURAN_READER_ARABIC_FONT_KEY,
   QURAN_READER_MUSHAF_TEXT_SCALE_KEY,
@@ -159,9 +167,18 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const mushafContinuousRef = useRef<MushafContinuousArabicHandle | null>(null);
   const mushafAyahScrollTopsRef = useRef<Record<number, number>>({});
   const mushafScrollContentHeightRef = useRef(0);
+  const appLocale = useAppLocale();
+  const readingLocale = useQuranReadingLocale();
+  const translitScript = useQuranTranslitScript();
+  const { tr } = useKkAutoTranslator();
   const titleKk = useMemo(
-    () => surahDisplayTitle(surahNumber, route.params.englishName ?? ""),
-    [surahNumber, route.params.englishName]
+    () =>
+      surahTitleForLocale(surahNumber, appLocale, {
+        englishName: route.params.englishName ?? "",
+        arabicName: surahArabicBannerTitle(surahNumber),
+        tr,
+      }),
+    [surahNumber, appLocale, route.params.englishName, tr]
   );
   /** Ayah қолданбасындағы сияқты жоғарғы жол: латын атау (API englishName). */
   const latinHeaderTitle = useMemo(() => {
@@ -214,7 +231,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const [arabicScriptEdition, setArabicScriptEdition] = useState<QuranArabicScriptEditionId>(
     DEFAULT_QURAN_ARABIC_SCRIPT_EDITION
   );
-  const [tajweedLegendOpen, setTajweedLegendOpen] = useState(false);
   const [readerSettingsOpen, setReaderSettingsOpen] = useState(false);
   const [readerSettingsAccordion, setReaderSettingsAccordion] = useState<ReaderSettingsAccordionKey | null>(null);
   const [arabicSourcesExpanded, setArabicSourcesExpanded] = useState(false);
@@ -274,7 +290,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const readingThemeSpec = useMemo(() => resolveQuranReadingTheme(readingThemeId), [readingThemeId]);
   const mushafChromeIconColor = mushafLayout ? readingThemeSpec.chromeInk : colors.accent;
 
-  const appLocale = useAppLocale();
   const showReciterLocaleFallbackNote = useMemo(() => {
     if (appLocale === "ky") return !isQuranReciterAudioAvailable(QURAN_KY_HAKIMOV_AUDIO_EDITION);
     if (appLocale === "uz") return !isQuranReciterAudioAvailable(QURAN_UZ_RWWAD_AUDIO_EDITION);
@@ -283,9 +298,10 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   useQuranLocaleTranslation(surahNumber, ayahs, setAyahs);
 
   const ayahMeaningLine = useCallback(
-    (item: CachedAyah) => quranAyahMeaningForLocale({ ...item, surahNumber }, appLocale),
-    [appLocale, surahNumber]
+    (item: CachedAyah) => quranAyahMeaningForLocale({ ...item, surahNumber }, readingLocale),
+    [readingLocale, surahNumber]
   );
+  void translitScript; // subscribe so translit lines re-render when script changes
 
   const mushafHighlightAyah = ayahMenuItem?.numberInSurah ?? resumeHighlightAyah;
 
@@ -362,6 +378,17 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     [showTajweedColors, arabicScriptEdition]
   );
 
+  const tajweedNoticeText = useMemo(() => {
+    const kind = tajweedRenderNoticeKind({
+      showTajweed: showTajweedColors,
+      arabicScriptEdition,
+      surface: "surah",
+    });
+    if (!tajweedRenderNoticeVisible(kind)) return null;
+    if (kind === "surah_unicode_tags") return kk.quran.tajweedNoticeSurahUnicode;
+    return null;
+  }, [showTajweedColors, arabicScriptEdition]);
+
   pagesRef.current = mushafPages;
 
   useEffect(() => {
@@ -409,20 +436,54 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     };
   }, [surahNumber]);
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
+  const ensureTajweedTagsIfNeeded = useCallback(
+    async (enabled: boolean) => {
+      if (!enabled || arabicScriptEdition !== "madinah") return;
+      const cur = ayahsRef.current;
+      if (!cur.length) return;
+      if (cur.every((a) => hasTajweedMarkup(a.textTajweed))) return;
+      setTajweedLoading(true);
       try {
-        const v = await AsyncStorage.getItem(QURAN_TAJWEED_COLORS_KEY);
-        if (alive) setShowTajweedColors(v === "1");
-      } catch {
-        /* ignore */
+        const enriched = await enrichAyahsFromBundledQuranDb(
+          surahNumber,
+          await enrichAyahsWithAlquranTajweed(surahNumber, cur)
+        );
+        setAyahs(enriched);
+        if (enriched.some((a) => hasTajweedMarkup(a.textTajweed))) {
+          await saveSurahAyahsCache(surahNumber, enriched);
+        } else {
+          setToast(kk.quran.tajweedLoadFailedHint);
+        }
+      } finally {
+        setTajweedLoading(false);
       }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+    },
+    [arabicScriptEdition, setAyahs, surahNumber]
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      void (async () => {
+        try {
+          const on = await getQuranTajweedColorsEnabled();
+          if (!alive) return;
+          setShowTajweedColors(on);
+          if (on) await ensureTajweedTagsIfNeeded(true);
+        } catch {
+          /* ignore */
+        }
+      })();
+      return () => {
+        alive = false;
+      };
+    }, [ensureTajweedTagsIfNeeded])
+  );
+
+  useEffect(() => {
+    if (!showTajweedColors || !ayahs.length) return;
+    void ensureTajweedTagsIfNeeded(true);
+  }, [showTajweedColors, ayahs.length, ensureTajweedTagsIfNeeded]);
 
   useEffect(() => {
     let alive = true;
@@ -451,7 +512,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     void (async () => {
       try {
         const [re, fp] = await Promise.all([
-          AsyncStorage.getItem(QURAN_READER_RECITER_KEY),
+          getQuranReciterEdition(),
           AsyncStorage.getItem(QURAN_READER_ARABIC_FONT_KEY),
         ]);
         if (!alive) return;
@@ -726,37 +787,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     [mushafScrollMode, ayahs, scheduleLastReadSaveThrottled]
   );
 
-  const onToggleTajweedColors = useCallback(
-    async (next: boolean) => {
-      setShowTajweedColors(next);
-      try {
-        await AsyncStorage.setItem(QURAN_TAJWEED_COLORS_KEY, next ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      if (!next) return;
-      const cur = ayahsRef.current;
-      if (!cur.length) return;
-      if (cur.every((a) => (a.textTajweed ?? "").includes("["))) return;
-      setTajweedLoading(true);
-      try {
-        const enriched = await enrichAyahsFromBundledQuranDb(
-          surahNumber,
-          await enrichAyahsWithAlquranTajweed(surahNumber, cur)
-        );
-        setAyahs(enriched);
-        if (enriched.some((a) => (a.textTajweed ?? "").includes("["))) {
-          await saveSurahAyahsCache(surahNumber, enriched);
-        } else {
-          setToast(kk.quran.tajweedLoadFailedHint);
-        }
-      } finally {
-        setTajweedLoading(false);
-      }
-    },
-    [surahNumber]
-  );
-
   const closeReaderSettings = useCallback(() => {
     setArabicSourcesExpanded(false);
     setReaderSettingsAccordion(null);
@@ -780,10 +810,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       closeReaderSettings();
       return true;
     }
-    if (tajweedLegendOpen) {
-      setTajweedLegendOpen(false);
-      return true;
-    }
     if (juzPickerVisible) {
       setJuzPickerVisible(false);
       return true;
@@ -803,7 +829,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     noteTargetItem,
     translationTargetItem,
     readerSettingsOpen,
-    tajweedLegendOpen,
     juzPickerVisible,
     closeReaderSettings,
     navigation,
@@ -916,7 +941,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         showReaderMeaning={showReaderMeaning}
         showTajweedForDisplay={showTajweedForDisplay}
         arabicScriptEdition={arabicScriptEdition}
-        locale={appLocale}
+        locale={readingLocale}
         playingAyahInSurah={playingAyahInSurah}
         loadingAyahAudio={loadingAyahAudio}
         ayahAudioIsPlaying={ayahAudioIsPlaying}
@@ -934,7 +959,8 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       showReaderMeaning,
       showTajweedForDisplay,
       arabicScriptEdition,
-      appLocale,
+      readingLocale,
+      translitScript,
       playingAyahInSurah,
       loadingAyahAudio,
       ayahAudioIsPlaying,
@@ -1175,12 +1201,12 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       }
       navigation.navigate("QuranSurah", {
         surahNumber: j.startSurah,
-        englishName: surahDisplayTitle(j.startSurah, ""),
+        englishName: surahTitleForLocale(j.startSurah, appLocale, { tr }),
         arabicName: surahArabicFromBundled(j.startSurah),
         initialAyah: j.startAyah,
       });
     },
-    [navigation, mushafLayout]
+    [navigation, mushafLayout, appLocale, tr]
   );
 
   return (
@@ -1283,38 +1309,10 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         showReciterLocaleFallbackNote={showReciterLocaleFallbackNote}
         reciterEdition={reciterEdition}
         setReciterEdition={setReciterEdition}
-        arabicFontPreset={arabicFontPreset}
-        setArabicFontPreset={setArabicFontPreset}
         arabicScriptEdition={arabicScriptEdition}
         setArabicScriptEdition={setArabicScriptEdition}
         arabicSourcesExpanded={arabicSourcesExpanded}
         setArabicSourcesExpanded={setArabicSourcesExpanded}
-        effectiveReaderNavMode={effectiveReaderNavMode}
-        setReaderNavMode={setReaderNavMode}
-        mushafDensity={mushafDensity}
-        setMushafDensityState={setMushafDensityState}
-        ayahMarkerStyleId={ayahMarkerStyleId}
-        setAyahMarkerStyleIdState={setAyahMarkerStyleIdState}
-        mushafTextScale={mushafTextScale}
-        setMushafTextScale={setMushafTextScale}
-        showTajweedColors={showTajweedColors}
-        onToggleTajweedColors={onToggleTajweedColors}
-        tajweedLoading={tajweedLoading}
-        onOpenTajweedLegend={() => {
-          closeReaderSettings();
-          setTajweedLegendOpen(true);
-        }}
-      />
-      <QuranSurahTajweedLegendModal
-        visible={tajweedLegendOpen}
-        styles={styles}
-        colors={colors}
-        isDark={isDark}
-        onClose={() => setTajweedLegendOpen(false)}
-        onOpenGuide={() => {
-          setTajweedLegendOpen(false);
-          navigation.navigate("TajweedGuide");
-        }}
       />
       <QuranSurahJuzPickerSheet
         visible={juzPickerVisible}
@@ -1344,20 +1342,17 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         showReaderArabic={showReaderArabic}
         showReaderTranslit={showReaderTranslit}
         showReaderMeaning={showReaderMeaning}
-        showTajweedColors={showTajweedColors}
         showTajweedForDisplay={showTajweedForDisplay}
-        tajweedLoading={tajweedLoading}
+        tajweedNoticeText={tajweedNoticeText}
         arabicScriptEdition={arabicScriptEdition}
         bookmarked={bookmarked}
         setBookmarked={setBookmarked}
         readerAllowRotation={readerAllowRotation}
         setReaderAllowRotation={setReaderAllowRotation}
-        onToggleTajweedColors={onToggleTajweedColors}
         handleReaderBack={handleReaderBack}
         retryLoadSurah={retryLoadSurah}
         setJuzPickerVisible={setJuzPickerVisible}
         setReaderSettingsOpen={setReaderSettingsOpen}
-        setTajweedLegendOpen={setTajweedLegendOpen}
         mushafAyahAudioActive={mushafAyahAudioActive}
         playingAyahInSurah={playingAyahInSurah}
         loadingAyahAudio={loadingAyahAudio}

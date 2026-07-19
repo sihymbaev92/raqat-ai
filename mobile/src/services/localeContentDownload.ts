@@ -8,6 +8,7 @@ import {
 } from "../i18n/runtime";
 import {
   areOfflineAutoTranslationsReady,
+  ensureOfflineAutoTranslationsCoreLoaded,
   ensureOfflineAutoTranslationsLoaded,
 } from "./offlineAutoTranslations";
 import { releaseBundledQuranReaderMemory } from "./bundledQuranReader";
@@ -33,11 +34,19 @@ async function refreshQuranCachesAfterLocalePacks(locale: AppLocale): Promise<vo
 async function refreshUiLocaleAfterI18nPack(locale: AppLocale): Promise<void> {
   if (locale === "kk") return;
   try {
+    const offline = await import("./offlineAutoTranslations");
     const target = locale as import("./offlineAutoTranslations").OfflineAutoTranslateTarget;
-    await ensureOfflineAutoTranslationsLoaded(target);
-    if (!areOfflineAutoTranslationsReady()) return;
+    offline.seedApkOfflineTranslationsSync();
+    await offline.ensureOfflineAutoTranslationsLoaded(target);
+    if (!offline.hasOfflineAutoTranslationLocale(target)) return;
+    offline.pruneOfflineAutoTranslationsToLocale(target);
     invalidateOfflineLocaleTreeCache(locale);
     if (getCurrentLocale() === locale) {
+      reapplyCurrentLocale();
+    }
+    const coreMerged = await offline.ensureOfflineAutoTranslationsCoreLoaded(target).catch(() => false);
+    if (coreMerged && getCurrentLocale() === locale) {
+      invalidateOfflineLocaleTreeCache(locale);
       reapplyCurrentLocale();
     }
   } catch {
@@ -59,6 +68,14 @@ export async function ensureI18nOfflineDictionary(locale: AppLocale): Promise<bo
   await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
   if (areOfflineAutoTranslationsReady()) {
     invalidateOfflineLocaleTreeCache(locale);
+    /** Core фон — UI-ды CDN күтуінен босату. */
+    void ensureOfflineAutoTranslationsCoreLoaded(target)
+      .then((merged) => {
+        if (!merged || getCurrentLocale() !== locale) return;
+        invalidateOfflineLocaleTreeCache(locale);
+        reapplyCurrentLocale();
+      })
+      .catch(() => {});
     return true;
   }
 

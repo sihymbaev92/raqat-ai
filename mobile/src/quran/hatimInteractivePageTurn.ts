@@ -1,4 +1,5 @@
 import type { HatimPageTurnDirection } from "../components/quran/HatimPageTurnOverlay";
+import { HATIM_PAGE_TURN_MS } from "../components/quran/HatimPageTurnOverlay";
 
 export type HatimPageGrabEdge = "left" | "right" | "none";
 
@@ -11,8 +12,8 @@ export type HatimPageGrabAnchor = {
 
 /** Саусақ бағыты — кез келген жерден ұстауға болады. */
 export function hatimPageTurnDirectionFromDx(dx: number): HatimPageTurnDirection | null {
-  if (dx > 6) return "forward";
-  if (dx < -6) return "backward";
+  if (dx > 4) return "forward";
+  if (dx < -4) return "backward";
   return null;
 }
 
@@ -53,11 +54,13 @@ export function hatimPageTurnCanDrag(
   return pageIndex > 0;
 }
 
-/** 0…1 — парақ майысуы баяу және көрінетін болуы үшін span үлкенірек. */
+/**
+ * 0…1 — саусаққа жақын 1:1 ілесу (жеңіл ease).
+ */
 export function hatimPageTurnProgressFromDx(dx: number, pageWidth: number): number {
-  const span = Math.max(120, pageWidth * 0.62);
-  const eased = Math.min(1, Math.max(0, Math.abs(dx) / span));
-  return eased * eased * (3 - 2 * eased);
+  const span = Math.max(110, pageWidth * 0.88);
+  const t = Math.min(1, Math.max(0, Math.abs(dx) / span));
+  return 1 - Math.pow(1 - t, 1.2);
 }
 
 export function hatimPageTurnSignedDx(
@@ -73,14 +76,14 @@ export function hatimPageTurnShouldCommit(
   pageWidth: number,
   progress: number
 ): boolean {
-  const fast = Math.abs(vx) >= 0.45;
-  if (fast && Math.sign(vx) === Math.sign(dx) && Math.abs(dx) >= pageWidth * 0.06) {
+  const fast = Math.abs(vx) >= 0.28;
+  if (fast && Math.sign(vx) === Math.sign(dx) && Math.abs(dx) >= pageWidth * 0.04) {
     return true;
   }
-  return progress >= 0.28;
+  return progress >= 0.18;
 }
 
-/** Ұстау биіктігі мен шеті — күшті еңкейіс. */
+/** Ұстау биіктігі — бұрыштан тартқанда күштірек еңкейіс. */
 export function hatimPageTurnCornerSkewDeg(
   direction: HatimPageTurnDirection,
   grabYRatio: number,
@@ -88,14 +91,15 @@ export function hatimPageTurnCornerSkewDeg(
 ): number {
   const centered = (grabYRatio - 0.5) * 2;
   const sign = direction === "forward" ? 1 : -1;
-  return sign * centered * 11 * progress;
+  return sign * centered * 16 * progress;
 }
 
-/** Анимация ортасында бет ауыстыру (peek астында көрінген). */
+/** Анимация басында бет ауыстыру — fade астында жаңа бет көрінеді. */
 export function hatimPageTurnSwapDelayMs(
   fromProgress: number,
-  turnMs = 680
+  turnMs = HATIM_PAGE_TURN_MS
 ): number {
-  const remaining = Math.max(140, Math.round(turnMs * (1 - fromProgress)));
-  return Math.min(remaining - 50, Math.round(remaining * 0.55));
+  void fromProgress;
+  void turnMs;
+  return 0;
 }

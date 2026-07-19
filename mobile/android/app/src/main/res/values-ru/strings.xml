@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">Время намаза</string>
+  <string name="widget_prayer_description">Сегодняшние намазы (из расписания приложения), с восходом.</string>
+  <string name="widget_prayer_empty">Откройте приложение и обновите расписание намаза.</string>
+
+  <string name="widget_prayer_next_label">Следующий намаз</string>
+  <string name="widget_prayer_next_description">Погода, обратный отсчёт и пять намазов — полоска 5×1</string>
+  <string name="widget_prayer_next_heading">Следующий намаз</string>
+
+  <string name="widget_prayer_strip_label">Полоска намаза</string>
+  <string name="widget_prayer_strip_description">Сегодняшние намазы — короткая полоска</string>
+
+  <string name="widget_prayer_morning_label">Фаджр · Восход · Зухр</string>
+  <string name="widget_prayer_morning_description">Фаджр, восход, зухр</string>
+
+  <string name="widget_prayer_evening_label">Аср · Магриб · Иша</string>
+  <string name="widget_prayer_evening_description">Аср, магриб, иша</string>
+
+  <string name="widget_prayer_twocol_label">Две колонки</string>
+  <string name="widget_prayer_twocol_description">Расписание намаза — две колонки</string>
+
+  <string name="widget_prayer_five_dual_label">5 намазов</string>
+  <string name="widget_prayer_five_dual_description">Пять намазов — две колонки</string>
+
+  <string name="widget_prayer_home_strip_label">Намаз</string>
+  <string name="widget_prayer_home_strip_description">Главный экран: 5 намазов, обратный отсчёт, тёмный фон</string>
+
+  <string name="widget_qibla_a11y">Кибла</string>
+  <string name="widget_city_a11y">Город</string>
+  <string name="widget_qibla_service_channel">Виджет киблы</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — кибла</string>
+  <string name="widget_qibla_service_text">Компас для виджета главного экрана</string>
+  <string name="prayer_azan_fullscreen_title">Наступило время намаза</string>
+  <string name="prayer_azan_default_label">Намаз</string>
+  <string name="prayer_azan_entered_for_label">Наступило время %1$s</string>
+  <string name="prayer_azan_channel_name">Азан</string>
+  <string name="prayer_azan_channel_desc">Автоматически показывать экран азана при наступлении намаза</string>
+  <string name="prayer_azan_notif_body_no_time">Азан · нажмите, чтобы открыть</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Азан</string>
+
+  <string name="widget_prayer_row_fajr">Фаджр</string>
+  <string name="widget_prayer_row_sun">Восход</string>
+  <string name="widget_prayer_row_dhuhr">Зухр</string>
+  <string name="widget_prayer_row_asr">Аср</string>
+  <string name="widget_prayer_row_maghrib">Магриб</string>
+  <string name="widget_prayer_row_isha">Иша</string>
+</resources>

@@ -47,6 +47,9 @@ function copyBridgeNativeFiles(config) {
         "PrayerWidgetModule.m",
         "PrayerAzanNotificationScheduler.swift",
         "PrayerAzanNativePlayer.swift",
+        "PrayerAzanPendingLaunch.swift",
+        "PrayerAzanOpenIntent.swift",
+        "RaqatDeviceIntegrity.swift",
       ]) {
         fs.copyFileSync(path.join(projectRoot, BRIDGE_DIR, file), path.join(appDir, file));
       }
@@ -80,6 +83,9 @@ function linkBridgeSourcesToMainTarget(config) {
       path.join(projectName, "PrayerWidgetStore.swift"),
       path.join(projectName, "PrayerAzanNotificationScheduler.swift"),
       path.join(projectName, "PrayerAzanNativePlayer.swift"),
+      path.join(projectName, "PrayerAzanPendingLaunch.swift"),
+      path.join(projectName, "PrayerAzanOpenIntent.swift"),
+      path.join(projectName, "RaqatDeviceIntegrity.swift"),
     ];
 
     for (const filepath of sourceFiles) {

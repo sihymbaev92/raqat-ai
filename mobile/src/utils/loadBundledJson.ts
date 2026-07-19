@@ -1,5 +1,5 @@
 /**
- * Native: хатым Arabic JSON APK-та; қалған ауыр JSON CDN + FileSystem cache.
+ * Native: APK-ға кіретін JSON — Metro inline object; қалғаны CDN + FileSystem cache.
  * Jest: assets/bundled require (офлайн тест).
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,6 +11,14 @@ import {
   readAsStringAsync,
   writeAsStringAsync,
 } from "expo-file-system/legacy";
+import mosques2gisApk from "../../assets/bundled/mosques-2gis-kz.json";
+import offlineAutoTranslationsApk from "../../assets/bundled/offline-auto-translations-apk.json";
+import hadithFromDbSeedApk from "../../assets/bundled/hadith-from-db-seed.json";
+import quranEnTranslitApk from "../../assets/bundled/quran-en-transliteration-full.json";
+import quranKkFromDbApk from "../../assets/bundled/quran-kk-from-db.json";
+import quranTajweedApk from "../../assets/bundled/quran-tajweed-offline.json";
+import quranUthmaniApk from "../../assets/bundled/quran-uthmani-full.json";
+import surahListApk from "../../assets/bundled/surah-list-api.json";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
 import { bundledJsonDownloadUrls } from "../config/bundledJsonFallbacks";
 import type { BundledJsonName } from "./bundledJsonTypes";
@@ -28,11 +36,19 @@ type MetaStore = Partial<Record<BundledJsonName, FileMeta>>;
 const memory = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();
 
-/** APK asset (JS bundle-ға inline емес — Asset resource). */
-const APK_JSON_ASSET_MODULES: Partial<Record<BundledJsonName, number>> = {
-  "surah-list-api.json": require("../../assets/bundled/surah-list-api.json"),
-  "mosques-2gis-kz.json": require("../../assets/bundled/mosques-2gis-kz.json"),
-  "quran-kk-from-db.json": require("../../assets/bundled/quran-kk-from-db.json"),
+/**
+ * APK-да болуы тиіс JSON — static import (Metro object ретінде бандлға кіреді).
+ * Asset.fromModule JSON-ға жарамайды: require object қайтарса URI жоқ, CDN 521-де аударма жоғалады.
+ */
+const APK_JSON_INLINE: Partial<Record<BundledJsonName, unknown>> = {
+  "surah-list-api.json": surahListApk,
+  "mosques-2gis-kz.json": mosques2gisApk,
+  "quran-kk-from-db.json": quranKkFromDbApk,
+  "quran-uthmani-full.json": quranUthmaniApk,
+  "quran-en-transliteration-full.json": quranEnTranslitApk,
+  "quran-tajweed-offline.json": quranTajweedApk,
+  "hadith-from-db-seed.json": hadithFromDbSeedApk,
+  "offline-auto-translations-apk.json": offlineAutoTranslationsApk,
 };
 
 export class BundledJsonMissingError extends Error {
@@ -86,6 +102,8 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
   });
 
   switch (name) {
+    case "offline-auto-translations-apk.json":
+      return testRequire("../../assets/bundled/offline-auto-translations-apk.json");
     case "offline-auto-translations-core.json":
       return {
         targets: {
@@ -122,18 +140,24 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
 
 async function loadFromNativeAssetFallback(name: BundledJsonName): Promise<unknown | null> {
   if (!isApkBundledJson(name)) return null;
-  const mod = APK_JSON_ASSET_MODULES[name];
-  if (mod == null) return null;
-  try {
-    const asset = Asset.fromModule(mod);
-    await asset.downloadAsync();
-    const uri = asset.localUri ?? asset.uri;
-    if (!uri) return null;
-    const raw = await readAsStringAsync(uri);
-    return JSON.parse(raw) as unknown;
-  } catch {
-    return null;
+  const inline = APK_JSON_INLINE[name];
+  if (inline != null && typeof inline === "object") {
+    return inline;
   }
+  /** Ескі/сирек: сандық asset module id қалса. */
+  if (typeof inline === "number") {
+    try {
+      const asset = Asset.fromModule(inline);
+      await asset.downloadAsync();
+      const uri = asset.localUri ?? asset.uri;
+      if (!uri) return null;
+      const raw = await readAsStringAsync(uri);
+      return JSON.parse(raw) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 async function ensureCacheDir(): Promise<void> {
@@ -185,7 +209,7 @@ export async function isBundledJsonCached(name: BundledJsonName): Promise<boolea
   if (memory.has(name)) return true;
   const cached = await readCachedBundledJsonFile(name);
   if (cached != null) return true;
-  return isApkBundledJson(name) && APK_JSON_ASSET_MODULES[name] != null;
+  return isApkBundledJson(name) && APK_JSON_INLINE[name] != null;
 }
 
 export async function downloadBundledJsonToCache<T>(

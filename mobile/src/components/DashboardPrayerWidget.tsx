@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -22,7 +22,8 @@ import { qiblaAlignHint } from "../lib/qiblaHints";
 import { prayerVisual, shortPrayerName } from "./CompactPrayerTimesRow";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { cityLabelKkForApiName } from "../constants/kzCities";
+import { cityLabelForLocale } from "../constants/kzCities";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { resolvePrayerHeroBackground } from "../config/dashboardPrayerHero";
 import { PrayerHeroDaylightOverlay } from "./PrayerHeroDaylightOverlay";
 import {
@@ -46,6 +47,7 @@ import { formatGregorianTechYmd, formatKkHijriUmmAlQura } from "../utils/formatK
 import { LiveWeatherChip } from "./LiveWeatherChip";
 import type { OpenMeteoCurrent } from "../services/openMeteoCurrent";
 import { useAppLocale } from "../i18n/runtime";
+import { BRAND_FONT_FACE } from "../fonts/brandFont";
 
 const KAABA_ICON_IMAGE = require("../../assets/menu-icons/header-qibla-kaaba-gemini-transparent.png");
 
@@ -525,6 +527,11 @@ function DashboardPrayerWidget({
   onPress,
 }: Props) {
   const locale = useAppLocale();
+  const { tr } = useKkAutoTranslator();
+  const cityDisplayLabel = useCallback(
+    (raw: string) => (raw.trim() ? cityLabelForLocale(raw.trim(), locale, { tr }) : ""),
+    [locale, tr]
+  );
   const styles = useMemo(() => makeStyles(compact, colors), [compact, colors]);
   /** Кесте/прогресс — сирек; HMS — жеке 1s child. */
   const [now, setNow] = useState(() => new Date());
@@ -583,7 +590,7 @@ function DashboardPrayerWidget({
     const stripRows = HOME_MOCKUP_STRIP_KEYS.map((k) => rows.find((r) => r.key === k)).filter(
       (r): r is PrayerRow => Boolean(r?.time?.trim())
     );
-    const mockupCityKk = cityLabel.trim() ? cityLabelKkForApiName(cityLabel.trim()) : "";
+    const mockupCityKk = cityDisplayLabel(cityLabel);
     const mockupBody = (
       <ImageBackground
         source={heroBg}
@@ -643,7 +650,7 @@ function DashboardPrayerWidget({
               <Text style={styles.mockupKicker} numberOfLines={1}>
                 {kk.dashboard.nextPrayer}
               </Text>
-              <Text style={styles.mockupNextName} numberOfLines={1}>
+              <Text style={styles.mockupNextName} numberOfLines={1} maxFontSizeMultiplier={1.35}>
                 {leftName} · {nextTimeLine}
               </Text>
             </View>
@@ -680,7 +687,7 @@ function DashboardPrayerWidget({
                   >
                     <LivePrayerIcon
                       name={vis.icon}
-                      size={denseStrip ? 13 : 14}
+                      size={denseStrip ? 16 : 18}
                       color={vis.fg}
                       prayerKey={r.key}
                       active={isNext}
@@ -692,6 +699,7 @@ function DashboardPrayerWidget({
                         isNext && styles.mockupStripNameActive,
                       ]}
                       numberOfLines={1}
+                      maxFontSizeMultiplier={1.35}
                     >
                       {name}
                     </Text>
@@ -702,6 +710,7 @@ function DashboardPrayerWidget({
                         isNext && styles.mockupStripTimeActive,
                       ]}
                       numberOfLines={1}
+                      maxFontSizeMultiplier={1.35}
                     >
                       {t}
                     </Text>
@@ -739,7 +748,7 @@ function DashboardPrayerWidget({
   }
 
   if (launcherHeader) {
-    const launcherCityKk = cityLabel.trim() ? cityLabelKkForApiName(cityLabel.trim()) : "";
+    const launcherCityKk = cityDisplayLabel(cityLabel);
     const launcherHijri = formatKkHijriUmmAlQura(now, locale);
     const launcherBody = (
       <View style={styles.launcherHeaderShell}>
@@ -857,7 +866,7 @@ function DashboardPrayerWidget({
     return <View style={styles.launcherHeaderWrap}>{launcherBody}</View>;
   }
 
-  const cityKk = cityLabel.trim() ? cityLabelKkForApiName(cityLabel.trim()) : "";
+  const cityKk = cityDisplayLabel(cityLabel);
 
   /** Басты бет hero: blur аз — артқы сурет анық көрінеді; мәтін әлі ақ+жолдарда контраст бар. */
   const blurTint: "dark" | "light" = "dark";
@@ -1004,7 +1013,7 @@ function DashboardPrayerWidget({
                   <View style={styles.iconCol}>
                     <MaterialIcons
                       name={prayerNotifEnabled ? "volume-up" : "volume-off"}
-                      size={compact ? 17 : 18}
+                      size={compact ? 20 : 22}
                       color={
                         prayerNotifEnabled
                           ? isPast
@@ -1337,7 +1346,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     prayerRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingVertical: compact ? 5 : 11,
+      paddingVertical: compact ? 8 : 13,
       paddingHorizontal: 4,
       borderRadius: 12,
     },
@@ -1351,27 +1360,29 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       flex: 1,
       minWidth: 0,
       color: "rgba(255,255,255,0.96)",
-      fontSize: compact ? 14 : 15,
-      fontWeight: "700",
+      fontSize: compact ? 18 : 19,
+      fontWeight: "800",
+      letterSpacing: 0.2,
     },
     prayerNamePast: {
       color: "rgba(255,255,255,0.72)",
     },
     iconCol: {
-      width: 40,
+      width: 44,
       alignItems: "center",
       justifyContent: "center",
     },
     prayerTime: {
-      width: 56,
+      minWidth: 72,
       textAlign: "right",
-      color: "rgba(255,255,255,0.95)",
-      fontSize: compact ? 14 : 15,
-      fontWeight: "700",
+      color: "#FFFFFF",
+      fontSize: compact ? 20 : 22,
+      fontWeight: "900",
       fontVariant: ["tabular-nums"],
+      letterSpacing: 0.3,
     },
     prayerTimePast: {
-      color: "rgba(255,255,255,0.65)",
+      color: "rgba(255,255,255,0.7)",
     },
     greenStrip: {
       flexDirection: "row",
@@ -1657,9 +1668,10 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupNextName: {
       color: "#FFFFFF",
-      fontSize: 14,
+      fontSize: 17,
+      fontFamily: BRAND_FONT_FACE.extrabold,
       fontWeight: "800",
-      letterSpacing: 0.15,
+      letterSpacing: 0.2,
       textAlign: "left",
       ...heroTextShadow,
     },
@@ -1681,62 +1693,68 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupNextHms: {
       color: "#FFFFFF",
-      fontSize: 16,
-      fontWeight: "900",
+      fontSize: 20,
+      fontFamily: BRAND_FONT_FACE.extrabold,
+      fontWeight: "800",
       fontVariant: ["tabular-nums"],
       letterSpacing: 0.5,
       textAlign: "right",
+      ...heroTextShadow,
     },
     mockupStrip: {
       flexDirection: "row",
       alignItems: "stretch",
       justifyContent: "space-between",
-      gap: 1,
-      marginTop: 1,
+      gap: 2,
+      marginTop: 4,
     },
     mockupStripCell: {
       flex: 1,
       alignItems: "center",
-      paddingVertical: 2,
-      paddingHorizontal: 0,
-      borderRadius: 9,
-      gap: 1,
+      paddingVertical: 6,
+      paddingHorizontal: 1,
+      borderRadius: 10,
+      gap: 2,
     },
     mockupStripCellActive: {
       backgroundColor: "#FFFFFF",
     },
     mockupStripName: {
       color: "#FFFFFF",
-      fontSize: 10,
-      fontWeight: "900",
-      lineHeight: 12,
+      fontSize: 13,
+      fontFamily: BRAND_FONT_FACE.extrabold,
+      fontWeight: "800",
+      lineHeight: 16,
       textAlign: "center",
       ...heroTextShadow,
     },
     mockupStripNameActive: {
       color: "#1B4332",
+      fontFamily: BRAND_FONT_FACE.extrabold,
       fontWeight: "800",
     },
     mockupStripNameDense: {
-      fontSize: 9,
-      lineHeight: 11,
+      fontSize: 12,
+      lineHeight: 15,
     },
     mockupStripTime: {
       color: "#FFFFFF",
-      fontSize: 11,
-      fontWeight: "900",
-      lineHeight: 13,
+      fontSize: 15,
+      fontFamily: BRAND_FONT_FACE.extrabold,
+      fontWeight: "800",
+      lineHeight: 18,
       fontVariant: ["tabular-nums"],
-      letterSpacing: 0.45,
+      letterSpacing: 0.35,
       ...heroTextShadow,
     },
     mockupStripTimeActive: {
       color: "#1B4332",
-      fontWeight: "900",
+      fontFamily: BRAND_FONT_FACE.extrabold,
+      fontWeight: "800",
     },
     mockupStripTimeDense: {
-      fontSize: 10,
-      lineHeight: 12,
+      fontSize: 14,
+      lineHeight: 17,
       letterSpacing: 0.2,
     },
     mockupWeatherText: {

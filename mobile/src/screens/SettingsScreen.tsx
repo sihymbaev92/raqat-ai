@@ -59,22 +59,24 @@ import {
   makeSettingsStyles,
 } from "../components/settings/settingsUi";
 import { SettingsQiblaSection } from "../components/settings/SettingsQiblaSection";
+import { IndependenceBanner } from "../components/IndependenceBanner";
+import { PRIVACY_POLICY_URL } from "../content/appTransparency";
 import { navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
-import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
-import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import { ScreenFitScrollView } from "../components/ScreenFit";
+import { useI18n } from "../i18n/useI18n";
 import {
   APP_LOCALE_OPTIONS,
   setCurrentLocale,
   useAppLocale,
   type AppLocale,
 } from "../i18n/runtime";
+import { getUsageAnalyticsEnabled, setUsageAnalyticsEnabled } from "../storage/prefs";
 
 const COMPACT_COLOR_PALETTES: ColorPaletteId[] = ["default", "sapphire", "violet", "rose"];
 
 type SettingsMoreLink = keyof Pick<
   MoreStackParamList,
-  "TelegramInfo" | "Ecosystem" | "Halal" | "ImamAI"
+  "TelegramInfo" | "Ecosystem" | "Halal"
 >;
 
 type ReleaseDiagnostics = {
@@ -93,46 +95,60 @@ function appVersionLine(): string {
 }
 
 function boolStatus(value: boolean | null | undefined): string {
-  if (value === true) return "OK";
-  if (value === false) return "Блок";
-  return "Белгісіз";
+  if (value === true) return kk.settings.diagnosticsStatusOk;
+  if (value === false) return kk.settings.diagnosticsStatusBlock;
+  return kk.settings.diagnosticsStatusUnknown;
 }
 
 function nativeAzanStatusLabel(status?: PrayerNotificationDiagnostics["nativeAzanReliabilityStatus"]): string {
   switch (status) {
     case "ready":
-      return "Дайын";
+      return kk.settings.diagnosticsStatusReady;
     case "blocked":
-      return "Блок";
+      return kk.settings.diagnosticsStatusBlock;
     case "idle":
-      return "Күту";
+      return kk.settings.diagnosticsStatusIdle;
     case "unavailable":
-      return "Жоқ";
+      return kk.settings.diagnosticsStatusUnavailable;
     default:
-      return "Тексерілмеді";
+      return kk.settings.diagnosticsNotChecked;
   }
 }
 
 function apiStatusLine(api: PlatformLivenessProbe | null): string {
-  if (!api) return "Тексерілмеді";
+  if (!api) return kk.settings.diagnosticsNotChecked;
   if (api.ok) {
     const service = api.health.service ? ` · ${api.health.service}` : "";
     const version = api.health.version ? ` · ${api.health.version}` : "";
-    return `OK${service}${version}`;
+    return `${kk.settings.diagnosticsStatusOk}${service}${version}`;
   }
   const http = api.httpStatus ? ` HTTP ${api.httpStatus}` : "";
   return `${api.code}${http}`;
 }
 
-function checkedAtLine(date: Date | null): string {
-  if (!date) return "әлі жоқ";
-  return date.toLocaleTimeString("kk-KZ", { hour: "2-digit", minute: "2-digit" });
+function checkedAtLine(date: Date | null, locale: string): string {
+  if (!date) return kk.settings.diagnosticsCheckedNever;
+  const tag =
+    locale === "en"
+      ? "en-GB"
+      : locale === "ru"
+        ? "ru-RU"
+        : locale === "tr"
+          ? "tr-TR"
+          : locale === "ar"
+            ? "ar"
+            : locale === "uz"
+              ? "uz-UZ"
+              : locale === "ky"
+                ? "ky-KG"
+                : "kk-KZ";
+  return date.toLocaleTimeString(tag, { hour: "2-digit", minute: "2-digit" });
 }
 
 function nativeAzanWarningLine(prayer: PrayerNotificationDiagnostics | null): string | null {
   if (!prayer?.nativeAzanAlarmLastError) return null;
   if (/SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM/i.test(prayer.nativeAzanAlarmLastError)) {
-    return "Exact alarm рұқсаты жабық: locked-phone Azan QA алдында жүйе баптауынан рұқсат беріңіз.";
+    return kk.settings.diagnosticsExactAlarmWarning;
   }
   return prayer.nativeAzanAlarmLastError;
 }
@@ -214,7 +230,7 @@ function labelForColorPalette(id: ColorPaletteId): string {
 export function SettingsScreen() {
   const { colors, themeScheme, setThemeScheme, colorPalette, setColorPalette, isDark } = useAppTheme();
   const locale = useAppLocale();
-  const { tr, translated } = useKkAutoTranslator();
+  const t = useI18n();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   useTabHomeBackHeader(navigation, colors);
   const insets = useSafeAreaInsets();
@@ -234,6 +250,7 @@ export function SettingsScreen() {
     error: null,
   });
   const [diagnosticsLoading, setDiagnosticsLoading] = useState(false);
+  const [usageAnalyticsOn, setUsageAnalyticsOn] = useState(true);
   const supportCopyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
@@ -255,12 +272,12 @@ export function SettingsScreen() {
       setDiagnostics({ api, prayer, checkedAt: new Date(), error: null });
     } catch (e) {
       if (!mountedRef.current) return;
-      const msg = e instanceof Error ? e.message : "Диагностика жүктелмеді";
+      const msg = e instanceof Error ? e.message : t.settings.diagnosticsLoadFailed;
       setDiagnostics((prev) => ({ ...prev, checkedAt: new Date(), error: msg }));
     } finally {
       if (mountedRef.current) setDiagnosticsLoading(false);
     }
-  }, []);
+  }, [t.settings.diagnosticsLoadFailed]);
 
   useFocusEffect(
     useCallback(() => {
@@ -269,9 +286,13 @@ export function SettingsScreen() {
         await hydrateRaqatApiBaseOverride();
         if (!alive || !mountedRef.current) return;
         setApiBase(getRaqatApiBase());
-        const pid = await getStoredPlatformUserId();
+        const [pid, analyticsOn] = await Promise.all([
+          getStoredPlatformUserId(),
+          getUsageAnalyticsEnabled(),
+        ]);
         if (!alive || !mountedRef.current) return;
         setPlatformPid(pid);
+        setUsageAnalyticsOn(analyticsOn);
         void loadReleaseDiagnostics();
       })();
       return () => {
@@ -373,12 +394,20 @@ export function SettingsScreen() {
               try {
                 const r = await postAuthLogin(base, loginUser, loginPass);
                 if (r.ok && r.access_token && r.refresh_token) {
-                  await saveLoginTokens({
-                    access_token: r.access_token,
-                    refresh_token: r.refresh_token,
-                    expires_in: r.expires_in,
-                    platform_user_id: r.platform_user_id,
-                  });
+                  try {
+                    await saveLoginTokens({
+                      access_token: r.access_token,
+                      refresh_token: r.refresh_token,
+                      expires_in: r.expires_in,
+                      platform_user_id: r.platform_user_id,
+                    });
+                  } catch (e) {
+                    if (e instanceof Error && e.message === "SECURITY_BLOCKED_DEVICE") {
+                      setLoginMsg(kk.settings.accountSecurityBlocked);
+                      return;
+                    }
+                    throw e;
+                  }
                   setLoginPass("");
                   setLoginMsg(kk.settings.accountLoginOk);
                   setPlatformPid(await getStoredPlatformUserId());
@@ -414,7 +443,7 @@ export function SettingsScreen() {
               <View style={styles.diagnosticsTitleText}>
                 <Text style={styles.diagnosticsTitle}>RAHAT OMIR</Text>
                 <Text style={styles.diagnosticsSub}>
-                  {kk.settings.diagnosticsLastChecked}: {checkedAtLine(diagnostics.checkedAt)}
+                  {kk.settings.diagnosticsLastChecked}: {checkedAtLine(diagnostics.checkedAt, locale)}
                 </Text>
               </View>
             </View>
@@ -501,8 +530,8 @@ export function SettingsScreen() {
         colors={colors}
         title={kk.settings.sectionAppearance}
       >
-        <Text style={[ui.rowLabel, styles.appearanceFieldTitle]}>{tr(kk.settings.themeBackgroundTitle)}</Text>
-        <Text style={[ui.hint, styles.appearanceGroupHint]}>{tr(kk.settings.themeBackgroundCompactHint)}</Text>
+        <Text style={[ui.rowLabel, styles.appearanceFieldTitle]}>{kk.settings.themeBackgroundTitle}</Text>
+        <Text style={[ui.hint, styles.appearanceGroupHint]}>{kk.settings.themeBackgroundCompactHint}</Text>
         <View style={styles.themeSchemeGrid}>
           {THEME_SCHEME_LIGHT_ORDER.map((sid) => {
             const sel = themeScheme === sid;
@@ -538,7 +567,7 @@ export function SettingsScreen() {
                   <View style={[styles.themeSchemeSwatch, { backgroundColor: preview.accent }]} />
                 </View>
                 <Text style={[styles.themeSchemeChipTxt, { color: preview.label }]} numberOfLines={1}>
-                  {tr(labelForThemeScheme(sid))}
+                  {labelForThemeScheme(sid)}
                 </Text>
               </Pressable>
             );
@@ -577,13 +606,13 @@ export function SettingsScreen() {
                   <View style={[styles.themeSchemeSwatch, { backgroundColor: preview.accent }]} />
                 </View>
                 <Text style={[styles.themeSchemeChipTxt, { color: preview.label }]} numberOfLines={1}>
-                  {tr(labelForThemeScheme(sid))}
+                  {labelForThemeScheme(sid)}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-        <Text style={[ui.rowLabel, styles.appearanceAccentTitle]}>{tr(kk.settings.colorPaletteTitle)}</Text>
+        <Text style={[ui.rowLabel, styles.appearanceAccentTitle]}>{kk.settings.colorPaletteTitle}</Text>
         <View style={styles.paletteCompactRow}>
           {COMPACT_COLOR_PALETTES.map((pid) => {
             const sel = colorPalette === pid;
@@ -606,7 +635,7 @@ export function SettingsScreen() {
                 accessibilityLabel={labelForColorPalette(pid)}
               >
                 <Text style={[styles.paletteChipTxt, { color: chip.label }]} numberOfLines={1}>
-                  {tr(labelForColorPalette(pid))}
+                  {labelForColorPalette(pid)}
                 </Text>
               </Pressable>
             );
@@ -621,6 +650,58 @@ export function SettingsScreen() {
         }}
       />
 
+      <SettingsSection
+        colors={colors}
+        title={kk.settings.sectionTransparency}
+        subtitle={kk.settings.sectionTransparencySub}
+      >
+        <SettingsCard colors={colors}>
+          <Text style={[ui.rowLabel, { marginBottom: 8 }]}>
+            {kk.settings.transparencyIndependenceTitle}
+          </Text>
+          <IndependenceBanner colors={colors} />
+          <Pressable
+            style={({ pressed }) => [styles.row, styles.rowGap, pressed && { opacity: 0.9 }]}
+            onPress={() => {
+              void Linking.openURL(PRIVACY_POLICY_URL).catch(() => {});
+            }}
+            accessibilityRole="link"
+            accessibilityLabel={kk.settings.transparencyPrivacyOpen}
+          >
+            <View style={styles.rowLead}>
+              <MaterialIcons name="privacy-tip" size={22} color={colors.accent} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.rowTxt}>{kk.settings.transparencyPrivacyTitle}</Text>
+                <Text style={[ui.hint, { marginTop: 2 }]}>{kk.settings.transparencyPrivacyOpen}</Text>
+              </View>
+            </View>
+            <Text style={styles.chev}>›</Text>
+          </Pressable>
+          <View style={[styles.rowGap, { paddingTop: 4 }]}>
+            <Text style={ui.rowLabel}>{kk.settings.transparencyDataFlowsTitle}</Text>
+            <Text style={[ui.hint, { marginTop: 6 }]}>{kk.transparency.dataFlowsBody}</Text>
+          </View>
+          <View style={[styles.rowBetween, styles.rowGap]}>
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <Text style={ui.rowLabel}>{kk.settings.transparencyUsageAnalyticsTitle}</Text>
+              <Text style={[ui.hint, { marginTop: 4 }]}>
+                {kk.settings.transparencyUsageAnalyticsSub}
+              </Text>
+            </View>
+            <Switch
+              value={usageAnalyticsOn}
+              onValueChange={(on) => {
+                setUsageAnalyticsOn(on);
+                void setUsageAnalyticsEnabled(on);
+              }}
+              trackColor={{ false: colors.border, true: colors.accent }}
+              thumbColor="#fff"
+              accessibilityLabel={kk.settings.transparencyUsageAnalyticsTitle}
+            />
+          </View>
+        </SettingsCard>
+      </SettingsSection>
+
       <SettingsSection colors={colors} title={kk.settings.sectionLinks} subtitle={kk.settings.sectionLinksSub}>
       <Pressable
         style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
@@ -630,7 +711,7 @@ export function SettingsScreen() {
       >
         <View style={styles.rowLead}>
           <MaterialIcons name="telegram" size={22} color={colors.accent} />
-          <Text style={styles.rowTxt}>{tr(kk.dashboard.telegramShort)}</Text>
+          <Text style={styles.rowTxt}>{kk.dashboard.telegramShort}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
@@ -642,7 +723,7 @@ export function SettingsScreen() {
       >
         <View style={styles.rowLead}>
           <Text style={styles.rowEmoji}>🌐</Text>
-          <Text style={styles.rowTxt}>{tr(kk.ecosystem.cardTitle)}</Text>
+          <Text style={styles.rowTxt}>{kk.ecosystem.cardTitle}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
@@ -659,24 +740,7 @@ export function SettingsScreen() {
             resizeMode="contain"
             accessibilityIgnoresInvertColors
           />
-          <Text style={styles.rowTxt}>{tr(kk.features.halalTitle)}</Text>
-        </View>
-        <Text style={styles.chev}>›</Text>
-      </Pressable>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }, styles.rowGap]}
-        onPress={() => openMore("ImamAI")}
-        accessibilityRole="button"
-        accessibilityLabel={kk.features.raqatAiTitle}
-      >
-        <View style={styles.rowLead}>
-          <Image
-            source={menuIconAssets.promoAi}
-            style={[styles.rowMenuIcon, styles.rowMenuIconPromo]}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-          <Text style={styles.rowTxt}>{tr(kk.features.raqatAiTitle)}</Text>
+          <Text style={styles.rowTxt}>{kk.features.halalTitle}</Text>
         </View>
         <Text style={styles.chev}>›</Text>
       </Pressable>
@@ -684,11 +748,11 @@ export function SettingsScreen() {
 
       <SettingsSection colors={colors} title={kk.settings.sectionSupport}>
       <View style={styles.supportBlock}>
-        <Text style={styles.supportTitle}>{tr(kk.settings.supportProjectTitle)}</Text>
-        <Text style={styles.supportBody}>{tr(kk.settings.supportProjectBody)}</Text>
+        <Text style={styles.supportTitle}>{kk.settings.supportProjectTitle}</Text>
+        <Text style={styles.supportBody}>{kk.settings.supportProjectBody}</Text>
         {supportAccount ? (
           <>
-            <Text style={styles.supportAccountLabel}>{tr(kk.settings.supportAccountLabel)}</Text>
+            <Text style={styles.supportAccountLabel}>{kk.settings.supportAccountLabel}</Text>
             <View style={styles.supportAccountBox}>
               <Text style={styles.supportAccountMono} selectable>
                 {supportAccount}
@@ -701,12 +765,12 @@ export function SettingsScreen() {
               accessibilityLabel={kk.settings.supportAccountCopy}
             >
               <Text style={styles.supportCopyBtnTxt}>
-                {tr(supportAccountCopied
+                {supportAccountCopied
                   ? kk.settings.supportAccountCopied
-                  : kk.settings.supportAccountCopy)}
+                  : kk.settings.supportAccountCopy}
               </Text>
             </Pressable>
-            <Text style={styles.supportDisclaimer}>{tr(kk.settings.supportAccountDisclaimer)}</Text>
+            <Text style={styles.supportDisclaimer}>{kk.settings.supportAccountDisclaimer}</Text>
           </>
         ) : null}
         {donationUrl ? (
@@ -716,13 +780,12 @@ export function SettingsScreen() {
             accessibilityRole="button"
             accessibilityLabel={kk.settings.supportProjectOpen}
           >
-            <Text style={styles.supportBtnTxt}>{tr(kk.settings.supportProjectOpen)}</Text>
+            <Text style={styles.supportBtnTxt}>{kk.settings.supportProjectOpen}</Text>
           </Pressable>
         ) : null}
       </View>
       </SettingsSection>
-      <GuideAutoTranslateBanner colors={colors} visible={translated} />
-    </ScreenFitScrollView>
+</ScreenFitScrollView>
   );
 }
 

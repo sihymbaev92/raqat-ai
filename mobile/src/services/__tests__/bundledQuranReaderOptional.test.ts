@@ -2,8 +2,11 @@ import {
   clearMushafPagesGlobalCache,
 } from "../../quran/buildMushafPagesGlobal";
 import {
+  ensureBundledKkReaderLoaded,
   ensureBundledQuranReaderLoaded,
+  getBundledKkTextForAyah,
   getBundledSurahAyahs,
+  isBundledKkReaderReady,
   isBundledQuranReaderLoaded,
   releaseBundledQuranReaderMemory,
 } from "../bundledQuranReader";
@@ -14,6 +17,35 @@ describe("bundledQuranReader optional remote packs", () => {
     releaseBundledQuranReaderMemory({ keepSurahList: false });
     clearMushafPagesGlobalCache();
     jest.restoreAllMocks();
+  });
+
+  it("loads KK maps when remote uthmani pack is missing", async () => {
+    jest.spyOn(loadBundledJson, "loadBundledJson").mockImplementation(async (name) => {
+      if (name === "quran-kk-from-db.json") {
+        return {
+          data: {
+            surahs: [
+              {
+                number: 1,
+                ayahs: [
+                  {
+                    numberInSurah: 1,
+                    text_kk: "Аса қамқор, ерекше мейірімді Алланың атымен бастаймын,",
+                    translit: "бисмилләһир рахманир рахиим",
+                  },
+                ],
+              },
+            ],
+          },
+        };
+      }
+      throw new loadBundledJson.BundledJsonMissingError(name);
+    });
+    jest.spyOn(loadBundledJson, "tryLoadBundledJson").mockResolvedValue(null);
+
+    await ensureBundledKkReaderLoaded();
+    expect(isBundledKkReaderReady()).toBe(true);
+    expect(getBundledKkTextForAyah(1, 1)).toContain("қамқор");
   });
 
   it("loads Arabic + KK from APK when remote EN translit pack is missing", async () => {

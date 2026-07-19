@@ -40,14 +40,13 @@ const FAITH_SHELF_BY_ID: Record<string, FaithBookShelfId> = {
   asma: "ilm",
   halal: "tools",
   "islamic-kb": "tools",
-  "imam-ai": "tools",
 };
 
 const FAITH_SHELF_ORDER: Record<FaithBookShelfId, string[]> = {
   ibada: ["prayer-times", "qibla", "namaz", "duas", "tasbih"],
   quran: ["quran", "tajweed", "hatim"],
   ilm: ["seerah", "hajj", "asma"],
-  tools: ["halal", "islamic-kb", "imam-ai"],
+  tools: ["halal", "islamic-kb"],
 };
 
 const BOOKS_SCREEN_EXCLUDED_FAITH_IDS = new Set<string>([
@@ -65,7 +64,6 @@ const BOOKS_SCREEN_EXCLUDED_FAITH_IDS = new Set<string>([
   /** Басты бет / мазмұн хабынан — кітаптар каталогында қайталанбауы керек */
   "halal",
   "islamic-kb",
-  "imam-ai",
 ]);
 
 const TRADITION_GUIDE_ORDER = [
@@ -578,30 +576,6 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
     religionLink: "Ресми фетуа базасы — анықтау көзі; жеке жағдайды ұстазбен толықтырыңыз.",
     howToRead: ["Нақты сөздермен іздеу.", "Түпнұсқа сілтемені ашып оқу.", "Күрделі мәселеде имамға жүгіну."],
     action: { kind: "screen", screen: "OfficialKnowledgePortal" },
-  },
-  {
-    id: "imam-ai",
-    group: "faith",
-    title: "Сұрақ-жауап (RAQAT AI)",
-    subtitle: "Дін мен дәстүр туралы сауатты сұрақ",
-    summary:
-      "Дәстүр мен шариғат шегін, отбасылық әдепті, намаз мен ораза сияқты тақырыптар бойынша сауатты сұрақ қоюға көмектеседі; нақты фиқһ — ұстазға.",
-    contents: ["Текст сұрақ", "Контекст бойынша жауап", "Көп тақырыпты сұрақ"],
-    religionLink: "AI жауабы оқулық емес; шешімді мешіт пен білікті ұстазбен растау керек.",
-    howToRead: [
-      "Нақты, қысқа сұрақ қою.",
-      "Жауапты отбада талқылау.",
-      "Күрделі жағдайда имамға жүгіну.",
-    ],
-    action: {
-      kind: "screen",
-      screen: "ImamAI",
-      params: {
-        initialPrompt:
-          "Қазақ салты мен ислам әдебі қалай үйлеседі? Мысал: қонақ күту, бата, мереке.",
-        autoSend: false,
-      },
-    },
   },
 ];
 

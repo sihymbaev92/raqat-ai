@@ -50,7 +50,6 @@ const BASE_EXTRA = {
   },
   halalDamuUrl: "https://halaldamu.kz/",
   raqatWebUrl: "https://rahatomir.com",
-  raqatAiKbOnly: true,
 };
 
 const NATIVE_EXPO_CONFIG = {
@@ -67,8 +66,10 @@ const NATIVE_EXPO_CONFIG = {
     [
       "expo-location",
       {
-        locationAlwaysAndWhenInUsePermission: "Location is used for Qibla direction and accurate prayer times.",
-        locationWhenInUsePermission: "Location is used for Qibla direction and accurate prayer times.",
+        locationAlwaysAndWhenInUsePermission:
+          "Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.",
+        locationWhenInUsePermission:
+          "Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.",
       },
     ],
     [
@@ -115,7 +116,7 @@ const NATIVE_EXPO_CONFIG = {
     "expo-apple-authentication",
     "@bacons/apple-targets",
     "./plugins/withIosPrayerWidgetBridge",
-    "./plugins/withIosCarPlay",
+    // CarPlay scene/entitlements not wired for device IPA yet — re-enable with withIosCarPlay when ready.
   ],
   ios: {
     supportsTablet: true,
@@ -125,17 +126,32 @@ const NATIVE_EXPO_CONFIG = {
     entitlements: {
       "com.apple.security.application-groups": ["group.kz.raqat.app"],
     },
+    buildNumber: process.env.RAQAT_IOS_BUILD_NUMBER || "12",
     infoPlist: {
+      CFBundleURLTypes: [
+        {
+          CFBundleURLSchemes: ["raqat", "imamai", "kz.raqat.app"],
+        },
+      ],
+      UIBackgroundModes: ["audio", "fetch", "processing", "remote-notification"],
       NSAppTransportSecurity: {
         NSExceptionDomains: isReleaseExpoBuild()
           ? IOS_PROD_NS_EXCEPTION_DOMAINS
           : { ...IOS_PROD_NS_EXCEPTION_DOMAINS, ...IOS_DEV_INSECURE_DOMAINS },
       },
-      NSLocationWhenInUseUsageDescription: "Your location is used for Qibla and prayer times.",
-      NSLocationAlwaysAndWhenInUseUsageDescription: "Your location is used for Qibla and prayer times.",
-      NSPhotoLibraryUsageDescription: "Photos are used to analyze product labels for halal checking.",
+      NSLocationWhenInUseUsageDescription:
+        "Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.",
+      NSLocationAlwaysAndWhenInUseUsageDescription:
+        "Құбыла бағыты мен намаз уақытын дәл есептеу үшін орналасу қажет.",
+      NSPhotoLibraryUsageDescription: "Суреттер өнім жапсырмасын халал тексеру үшін қажет.",
       NSCameraUsageDescription:
         "Камера құбыла бағыты (алдыңғы көрініс), штрихкод және халал тексеру үшін қолданылады.",
+      NSMicrophoneUsageDescription:
+        "Микрофон халал тексеру немесе дыбыс жазу мүмкіндігі үшін қажет болғанда қолданылады.",
+      NSFaceIDUsageDescription: "Face ID арқылы қолданбаға қауіпсіз кіру үшін.",
+      NSMotionUsageDescription: "Құбыла компасы үшін құрылғы қозғалысы қолданылады.",
+      NSAlarmKitUsageDescription:
+        "Намаз уақытында құлып экранында толық азан оятқышын көрсету үшін.",
       ITSAppUsesNonExemptEncryption: false,
     },
   },
@@ -159,9 +175,11 @@ const NATIVE_EXPO_CONFIG = {
       "WAKE_LOCK",
       "FOREGROUND_SERVICE",
       "FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+      "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
     ],
   },
-  scheme: "imamai",
+  /** Primary deep link; `imamai://` remains in AndroidManifest + linking prefixes for legacy. */
+  scheme: "raqat",
 };
 
 function trimBase(s) {
@@ -213,8 +231,7 @@ module.exports = ({ config }) => {
     if (isLocalhostUrl(rqRaw)) delete extra.raqatApiBase;
   }
 
-  /** AI/контент: клиент бандлына құпия енгізілмейді — JWT (кіру) арқылы. */
-  delete extra.raqatAiSecret;
+  /** Контент: клиент бандлына құпия енгізілмейді — JWT (кіру) арқылы. */
   delete extra.raqatContentSecret;
   /** Release: Metro EXPO_PUBLIC_* инлайн жасамасын. */
   const isReleaseConfig =
@@ -223,8 +240,6 @@ module.exports = ({ config }) => {
     process.env.RAQAT_STRIP_CLIENT_SECRETS === "1";
   if (isReleaseConfig) {
     delete process.env.EXPO_PUBLIC_RAQAT_CONTENT_SECRET;
-    delete process.env.EXPO_PUBLIC_RAQAT_AI_SECRET;
-    delete process.env.EXPO_PUBLIC_IMAM_AI_SECRET;
   }
   if (donationEnv) extra.raqatDonationUrl = donationEnv;
 

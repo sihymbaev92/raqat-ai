@@ -19,9 +19,7 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     applyAzanWindowFlags(intent)
-    if (isTrustedAzanIntent(intent)) {
-      PrayerAzanDelivery.clearFullScreenAzanLaunch(this)
-    }
+    // FSI хабарламасын мұнда өшірмейміз — RN PrayerAzan ашылғанша құлып экраны үшін керек.
     super.onCreate(null)
   }
 
@@ -29,9 +27,7 @@ class MainActivity : ReactActivity() {
     super.onNewIntent(intent)
     setIntent(intent)
     applyAzanWindowFlags(intent)
-    if (isTrustedAzanIntent(intent)) {
-      PrayerAzanDelivery.clearFullScreenAzanLaunch(this)
-    }
+    // FSI clear — finishAzanDelivery / dismissAzanDelivery арқылы.
   }
 
   override fun onResume() {
@@ -58,8 +54,12 @@ class MainActivity : ReactActivity() {
 
   private fun applyAzanWindowFlags(intent: Intent?) {
     // Тек өз PendingIntent-тен (EXTRA_AZAN_TRUSTED) — сыртқы imamai://azan VIEW құлып экранын ашпайды.
+    // Немесе белсенді азан сессиясы: process restart кейін де құлып үстінде ұстау.
     val trusted = intent?.getBooleanExtra(PrayerAzanDelivery.EXTRA_AZAN_TRUSTED, false) == true
-    if (intent?.data?.host == "azan" && trusted) {
+    val azanHost = intent?.data?.host == "azan"
+    val sessionActive = PrayerAzanActiveSession.isActive(applicationContext)
+    val showOverLock = (azanHost && trusted) || (sessionActive && (azanHost || trusted))
+    if (showOverLock) {
       window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
         setShowWhenLocked(true)

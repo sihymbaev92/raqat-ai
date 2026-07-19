@@ -43,6 +43,10 @@
   <string name="prayer_azan_notif_body_with_time">%1$s · Азан · ашу үшін басыңыз</string>
   <string name="prayer_azan_notif_body_fsi_denied">Азан беті ашылмады — хабарламаны басыңыз</string>
   <string name="prayer_azan_notif_body_fsi_denied_with_time">%1$s · Азан беті үшін хабарламаны басыңыз</string>
+  <string name="prayer_azan_lock_subtitle">Азан оқылуда</string>
+  <string name="prayer_azan_lock_subtitle_with_time">%1$s · Азан оқылуда</string>
+  <string name="prayer_azan_lock_dismiss">Жабу</string>
+  <string name="prayer_azan_lock_open_app">Қолданбаны ашу</string>
 
   <string name="widget_prayer_row_fajr">Таң</string>
   <string name="widget_prayer_row_sun">Күн</string>

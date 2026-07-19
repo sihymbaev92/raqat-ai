@@ -33,12 +33,11 @@ import {
   ensureBundledSurahListLoaded,
   getBundledSurahList,
 } from "../services/bundledQuranReader";
-import { surahDisplayTitle } from "../constants/surahTitleKk";
+import { surahTitleForLocale } from "../constants/surahTitleKk";
 import { QURAN_JUZ_STARTS, juzForSurahAyah, type QuranJuzStart } from "../data/quranJuzBoundaries";
 import {
   mushafStartPageForSurah,
   surahListMetaSubtitle,
-  surahListNumberedTitle,
 } from "../data/surahListMeta";
 import {
   QuranSurahListJuzHeader,
@@ -73,7 +72,7 @@ function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
 const SURAH_API = "https://api.alquran.cloud/v1/surah";
 
 export function QuranListScreen({ navigation }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
   const { tr } = useKkAutoTranslator();
@@ -255,10 +254,10 @@ export function QuranListScreen({ navigation }: Props) {
     () =>
       list.map((s) => ({
         number: s.number,
-        name: surahDisplayTitle(s.number, s.englishName),
+        name: surahTitleForLocale(s.number, locale, { englishName: s.englishName, tr }),
         ayahCount: s.numberOfAyahs ?? 0,
       })),
-    [list]
+    [list, locale, tr]
   );
 
   const onSurahSearchPick = useCallback(
@@ -345,9 +344,14 @@ export function QuranListScreen({ navigation }: Props) {
           {continueRead ? (
             <QuranContinueReadingCard
               colors={colors}
-              surahTitle={surahDisplayTitle(
+              surahTitle={surahTitleForLocale(
                 continueRead.surah,
-                list.find((x) => x.number === continueRead.surah)?.englishName ?? ""
+                locale,
+                {
+                  englishName:
+                    list.find((x) => x.number === continueRead.surah)?.englishName ?? "",
+                  tr,
+                }
               )}
               ayah={continueRead.ayah}
               streakDays={streakDays}
@@ -402,12 +406,12 @@ export function QuranListScreen({ navigation }: Props) {
         }
         if (item.kind === "surah") {
           const s = item.surah;
-          const kkTitle = surahDisplayTitle(s.number, s.englishName);
+          const kkTitle = surahTitleForLocale(s.number, locale, { englishName: s.englishName, tr });
           const ayahCount = s.numberOfAyahs ?? 0;
           return (
             <QuranSurahListRow
               surahNumber={s.number}
-              numberedTitle={tr(surahListNumberedTitle(s.number, s.englishName))}
+              numberedTitle={`${s.number}. ${kkTitle}`}
               metaSubtitle={tr(surahListMetaSubtitle(s.number, ayahCount))}
               mushafPage={mushafStartPageForSurah(s.number)}
               onPress={() => openQuranReaderAt(s.number)}
@@ -418,7 +422,7 @@ export function QuranListScreen({ navigation }: Props) {
           );
         }
         const j = item.meta;
-        const surahTitle = surahDisplayTitle(j.startSurah, "");
+        const surahTitle = surahTitleForLocale(j.startSurah, locale, { tr });
         return (
           <QuranSurahListRow
             surahNumber={j.startSurah}

@@ -1,8 +1,10 @@
 import { Linking, NativeModules, Platform } from "react-native";
 import type { PrayerNotifSoundId } from "../storage/prefs";
 import type { PrayerScheduleSlot } from "./prayerNotificationSchedule";
+import { parsePrayerAzanQueryParams } from "../navigation/linking";
 import { rootNavigationRef } from "../navigation/rootNavigationRef";
 import type { RootStackParamList } from "../navigation/types";
+import { kk } from "../i18n/kk";
 
 type PrayerWidgetNativeModule = {
   scheduleFullScreenAzanAlarms?: (json: string) => Promise<{
@@ -21,6 +23,7 @@ type PrayerWidgetNativeModule = {
     scheduledCount?: number;
     lastError?: string | null;
     exactAlarmPermissionGranted?: boolean;
+    fullScreenIntentAllowed?: boolean;
   }>;
   stopNativeAzanAudio?: () => void;
   playNativeAzanAudio?: (soundId: string) => void;
@@ -33,8 +36,21 @@ type PrayerWidgetNativeModule = {
     isDua?: boolean;
     fullyFinished?: boolean;
   }>;
+  getPendingAzanLaunch?: () => Promise<{
+    label?: string;
+    enteredTitle?: string;
+    time?: string;
+    soundId?: string;
+    salatKey?: string;
+  } | null>;
+  clearPendingAzanLaunch?: () => void;
+  isAzanSessionActive?: () => Promise<boolean>;
   clearLegacyAzanNotifications?: () => void;
   finishAzanDelivery?: () => void;
+  requestAlarmKitAuthorization?: () => Promise<{
+    authorized?: boolean;
+    state?: string;
+  }>;
 };
 
 export type AzanPlaybackStatus = {
@@ -67,18 +83,18 @@ export type FullScreenAzanScheduleResult = {
 export function prayerEnteredTitleForSlot(label: string, salatKey?: string): string {
   switch (salatKey) {
     case "fajr":
-      return "Таң намазы кірді";
+      return kk.prayer.enteredFajr;
     case "dhuhr":
-      return "Бесін намазы кірді";
+      return kk.prayer.enteredDhuhr;
     case "asr":
-      return "Екінті намазы кірді";
+      return kk.prayer.enteredAsr;
     case "maghrib":
-      return "Ақшам намазы кірді";
+      return kk.prayer.enteredMaghrib;
     case "isha":
-      return "Құптан намазы кірді";
+      return kk.prayer.enteredIsha;
     default: {
       const clean = label.trim();
-      return clean ? `${clean} намазы кірді` : "Намаз уақыты кірді";
+      return clean ? kk.prayer.enteredGeneric(clean) : kk.prayer.enteredDefault;
     }
   }
 }
@@ -106,7 +122,11 @@ export function shouldRoutePrayerSoundToFullScreenAzan(
   soundId: PrayerNotifSoundId,
   platform: typeof Platform.OS = Platform.OS
 ): boolean {
-  return platform === "android" && slot.kind === "salat" && soundId !== "off";
+  return (
+    (platform === "android" || platform === "ios") &&
+    slot.kind === "salat" &&
+    soundId !== "off"
+  );
 }
 
 export function scheduleFullScreenAzanAlarms(
@@ -136,21 +156,21 @@ export function scheduleFullScreenAzanAlarmsForResult(
     | void
 ): FullScreenAzanScheduleResult {
   const rejected: FullScreenAzanScheduleResult = { accepted: false, identifiers: new Set() };
-  if (Platform.OS === "android" && Number(Platform.Version) >= 31) {
-    if (result?.exactAlarmPermissionGranted === false) {
-      return rejected;
-    }
-  }
   const nativeIds = Array.isArray(result?.identifiers)
     ? result.identifiers.filter((id): id is string => typeof id === "string" && id.length > 0)
     : [];
+  const scheduledCount = Math.max(0, Math.trunc(Number(result?.scheduledCount ?? 0)));
+  if (Platform.OS === "android" && Number(Platform.Version) >= 31) {
+    if (result?.exactAlarmPermissionGranted === false && nativeIds.length === 0 && scheduledCount === 0) {
+      return rejected;
+    }
+  }
   if (nativeIds.length > 0) {
     return {
       accepted: true,
       identifiers: new Set(nativeIds),
     };
   }
-  const scheduledCount = Math.max(0, Math.trunc(Number(result?.scheduledCount ?? 0)));
   if (scheduledCount > 0) {
     return {
       accepted: true,
@@ -231,12 +251,14 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
   scheduledCount: number;
   lastError: string | null;
   exactAlarmPermissionGranted: boolean | null;
+  fullScreenIntentAllowed: boolean | null;
 }> {
   if (Platform.OS !== "android" && Platform.OS !== "ios") {
     return {
       scheduledCount: 0,
       lastError: null,
       exactAlarmPermissionGranted: null,
+      fullScreenIntentAllowed: null,
     };
   }
   try {
@@ -246,12 +268,15 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
       lastError: typeof diag?.lastError === "string" && diag.lastError ? diag.lastError : null,
       exactAlarmPermissionGranted:
         typeof diag?.exactAlarmPermissionGranted === "boolean" ? diag.exactAlarmPermissionGranted : null,
+      fullScreenIntentAllowed:
+        typeof diag?.fullScreenIntentAllowed === "boolean" ? diag.fullScreenIntentAllowed : null,
     };
   } catch (e) {
     return {
       scheduledCount: 0,
       lastError: e instanceof Error ? e.message : "Native diagnostics unavailable",
       exactAlarmPermissionGranted: null,
+      fullScreenIntentAllowed: null,
     };
   }
 }
@@ -262,6 +287,7 @@ export function prayerAzanDeepLink(params: {
   time?: string;
   soundId: PrayerNotifSoundId;
   salatKey?: string;
+  nativeAudio?: boolean;
 }): string {
   const q = new URLSearchParams({
     label: params.label,
@@ -270,7 +296,8 @@ export function prayerAzanDeepLink(params: {
     soundId: params.soundId,
     salatKey: params.salatKey ?? "",
   });
-  return `imamai://azan?${q.toString()}`;
+  if (params.nativeAudio) q.set("nativeAudio", "1");
+  return `raqat://azan?${q.toString()}`;
 }
 
 export async function openPrayerAzanScreen(params: {
@@ -300,6 +327,7 @@ export async function openPrayerAzanScreen(params: {
       prayerAzanDeepLink({
         ...params,
         enteredTitle: routeParams.enteredTitle,
+        nativeAudio: params.nativeAudio === true,
       })
     );
   } catch {
@@ -307,8 +335,143 @@ export async function openPrayerAzanScreen(params: {
   }
 }
 
+export function isPrayerAzanRouteFocused(): boolean {
+  if (!rootNavigationRef.isReady()) return false;
+  const state = rootNavigationRef.getRootState();
+  const route = state?.routes?.[state.index ?? 0];
+  return route?.name === "PrayerAzan";
+}
+
+function normalizePendingAzanSoundId(raw: unknown): PrayerNotifSoundId {
+  return raw === "off" || raw === "adhan_haramain" ? raw : "adhan_haramain";
+}
+
+export function prayerAzanParamsFromUrl(url: string | null | undefined): {
+  label: string;
+  enteredTitle?: string;
+  time?: string;
+  soundId: PrayerNotifSoundId;
+  salatKey?: string;
+  nativeAudio?: boolean;
+} | null {
+  if (!url || !url.includes("azan")) return null;
+  const azanIdx = url.indexOf("azan");
+  const parsed = parsePrayerAzanQueryParams(url.slice(azanIdx));
+  if (!parsed?.label?.trim()) return null;
+  return {
+    label: parsed.label.trim(),
+    enteredTitle: parsed.enteredTitle,
+    time: parsed.time,
+    soundId: normalizePendingAzanSoundId(parsed.soundId),
+    salatKey: parsed.salatKey,
+    nativeAudio: parsed.nativeAudio === "1",
+  };
+}
+
+async function readPendingAzanLaunchFromNative(): Promise<{
+  label: string;
+  enteredTitle?: string;
+  time?: string;
+  soundId: PrayerNotifSoundId;
+  salatKey?: string;
+} | null> {
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return null;
+  const read = PrayerWidget?.getPendingAzanLaunch;
+  if (typeof read !== "function") return null;
+  try {
+    const pending = await read();
+    const label = pending?.label?.trim();
+    if (!label) return null;
+    return {
+      label,
+      enteredTitle: pending?.enteredTitle?.trim() || undefined,
+      time: pending?.time?.trim() || undefined,
+      soundId: normalizePendingAzanSoundId(pending?.soundId),
+      salatKey: pending?.salatKey?.trim() || undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function isNativeAzanSessionActive(): Promise<boolean> {
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return false;
+  const read = PrayerWidget?.isAzanSessionActive;
+  if (typeof read !== "function") return false;
+  try {
+    return (await read()) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Азан дыбысы native-де ойнаса да RN boot/nav кешіккенде PrayerAzan экранын ашады.
+ * NavContainer.onReady және app active кезінде шақырылады.
+ */
+export async function ensurePrayerAzanRouteFromLaunch(): Promise<boolean> {
+  if (Platform.OS === "web" || !rootNavigationRef.isReady()) return false;
+  if (isPrayerAzanRouteFocused()) return false;
+
+  const pending = await readPendingAzanLaunchFromNative();
+  if (pending) {
+    playNativePrayerAzanAudio(pending.soundId);
+    await openPrayerAzanScreen({ ...pending, nativeAudio: true });
+    try {
+      PrayerWidget?.clearPendingAzanLaunch?.();
+    } catch {
+      /* */
+    }
+    return true;
+  }
+
+  const sessionActive = await isNativeAzanSessionActive();
+  const playback = sessionActive ? await getNativeAzanPlaybackStatus() : null;
+  if (sessionActive && (playback?.isPlaying || playback?.completed)) {
+    const fromUrl = prayerAzanParamsFromUrl(await Linking.getInitialURL().catch(() => null));
+    if (fromUrl) {
+      await openPrayerAzanScreen({ ...fromUrl, nativeAudio: true });
+      return true;
+    }
+  }
+
+  const fromUrl = prayerAzanParamsFromUrl(await Linking.getInitialURL().catch(() => null));
+  if (fromUrl) {
+    await openPrayerAzanScreen({ ...fromUrl, nativeAudio: fromUrl.nativeAudio ?? false });
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Азан deep link / pending launch бар болса — тіл onboarding NavigationContainer-ды бөгемесін.
+ */
+export async function ensurePrayerAzanShouldBypassOnboarding(): Promise<boolean> {
+  if (Platform.OS === "web") return false;
+  if (await readPendingAzanLaunchFromNative()) return true;
+  if (await isNativeAzanSessionActive()) return true;
+  const initial = await Linking.getInitialURL().catch(() => null);
+  if (initial && initial.includes("azan")) return true;
+  return false;
+}
+
+let azanLaunchRoutingInit = false;
+
+/** Warm start: onNewIntent azan deep link — linking қосымша сақтық. */
+export function initPrayerAzanLaunchRouting(): void {
+  if (azanLaunchRoutingInit || Platform.OS === "web") return;
+  azanLaunchRoutingInit = true;
+  Linking.addEventListener("url", ({ url }) => {
+    if (!url.includes("azan")) return;
+    void ensurePrayerAzanRouteFromLaunch().catch(() => {
+      /* OEM Linking failures must not become unhandled rejections. */
+    });
+  });
+}
+
 export function stopNativePrayerAzanAudio(): void {
-  if (Platform.OS !== "android") return;
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return;
   try {
     PrayerWidget?.stopNativeAzanAudio?.();
   } catch {
@@ -318,7 +481,7 @@ export function stopNativePrayerAzanAudio(): void {
 
 /** Азанды тоқтату: дыбыс және жабу — толық жабу. */
 export function finishAzanDelivery(): void {
-  if (Platform.OS === "android") {
+  if (Platform.OS === "android" || Platform.OS === "ios") {
     try {
       PrayerWidget?.finishAzanDelivery?.();
     } catch {
@@ -330,7 +493,7 @@ export function finishAzanDelivery(): void {
 }
 
 export function playNativePrayerAzanAudio(soundId: PrayerNotifSoundId): boolean {
-  if (Platform.OS !== "android" || soundId === "off") return false;
+  if ((Platform.OS !== "android" && Platform.OS !== "ios") || soundId === "off") return false;
   const play = PrayerWidget?.playNativeAzanAudio;
   if (typeof play !== "function") return false;
   try {
@@ -342,7 +505,7 @@ export function playNativePrayerAzanAudio(soundId: PrayerNotifSoundId): boolean 
 }
 
 export function playNativePrayerAzanDuaAudio(): boolean {
-  if (Platform.OS !== "android") return false;
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return false;
   const play = PrayerWidget?.playNativeAzanDuaAudio;
   if (typeof play !== "function") return false;
   try {
@@ -354,7 +517,7 @@ export function playNativePrayerAzanDuaAudio(): boolean {
 }
 
 export async function getNativeAzanPlaybackStatus(): Promise<AzanPlaybackStatus | null> {
-  if (Platform.OS !== "android") return null;
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return null;
   const read = PrayerWidget?.getNativeAzanPlaybackStatus;
   if (typeof read !== "function") return null;
   try {

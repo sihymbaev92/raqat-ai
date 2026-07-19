@@ -1,8 +1,11 @@
 import React, { useMemo } from "react";
 import { Text, type TextStyle } from "react-native";
-import { TajweedColoredArabicText } from "../TajweedColoredArabicText";
+import { TajweedColoredArabicText, inlineTajweedSpanStyle } from "../TajweedColoredArabicText";
+import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
 import { useQuranKaraokeDurationMs, useQuranKaraokeWordIndex } from "../../context/quranKaraokeSync";
 import { ayahArabicWordBoundaries, splitAyahArabicWords } from "../../utils/quranAyahAudioKaraoke";
+import { hasTajweedMarkup } from "../../utils/hasTajweedMarkup";
+import { tajweedWordColorSpans, type TajweedRuleKey } from "../../utils/alquranTajweedParse";
 
 type Props = {
   plainText: string;
@@ -20,7 +23,7 @@ type Props = {
 
 /**
  * Ойнату кезінде араб сөздерін кезекпен жарықтандыру — әріп-әріп емес, толық сөз.
- * UI: 3 Text сегменті (оқылған | қазіргі сөз | қалған).
+ * Тәжуид қосулы болса түстер сақталады; караоке тек фон жарығы ретінде қосылады.
  */
 export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
   plainText,
@@ -37,6 +40,8 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
   const trimmed = useMemo(() => plainText.trim(), [plainText]);
   const wordBounds = useMemo(() => ayahArabicWordBoundaries(trimmed), [trimmed]);
   const wordCount = wordBounds.length || splitAyahArabicWords(trimmed).length;
+  const tagged = (taggedText ?? "").trim();
+  const tajweedOn = showTajweedColors && hasTajweedMarkup(tagged);
 
   const currentWordIdx = useMemo(() => {
     if (!wordCount) return 0;
@@ -46,10 +51,10 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
   const useKaraoke = audioFocus && !audioLoading && wordCount > 0 && syncedDurationMs > 0;
 
   if (!useKaraoke) {
-    if (showTajweedColors && (taggedText ?? "").includes("[")) {
+    if (tajweedOn) {
       return (
         <TajweedColoredArabicText
-          taggedText={taggedText!}
+          taggedText={tagged}
           plainText={plainText}
           baseStyle={baseStyle}
           isDark={isDark}
@@ -65,6 +70,37 @@ export const AyahArabicKaraokeText = React.memo(function AyahArabicKaraokeText({
   const currentBg = isDark ? "rgba(52, 211, 153, 0.42)" : "rgba(5, 150, 105, 0.28)";
   const upcomingOpacity = isDark ? 0.78 : 0.88;
   const readOpacity = isDark ? 0.72 : 0.78;
+
+  if (tajweedOn) {
+    const spans = tajweedWordColorSpans(tagged, trimmed);
+    const words: Array<{ text: string; rule?: TajweedRuleKey }> = spans.length
+      ? spans
+      : splitAyahArabicWords(trimmed).map((text) => ({ text }));
+    const nodes = words.map((span, idx) => {
+      const color =
+        span.rule != null ? tajweedColorForRule(span.rule as TajweedRuleKey, isDark) : undefined;
+      const isCurrent = idx === currentWordIdx;
+      const isRead = idx < currentWordIdx;
+      return (
+        <Text
+          key={`kw-${idx}-${span.rule ?? "p"}`}
+          style={[
+            inlineTajweedSpanStyle(baseStyle, color, { compact: true }),
+            {
+              backgroundColor: isCurrent ? currentBg : isRead ? readBg : undefined,
+              borderRadius: isCurrent ? 3 : 2,
+              opacity: isCurrent ? 1 : isRead ? readOpacity : upcomingOpacity,
+            },
+          ]}
+        >
+          {span.text}
+          {idx < words.length - 1 ? " " : ""}
+        </Text>
+      );
+    });
+    if (nestedInText) return nodes;
+    return <Text style={baseStyle}>{nodes}</Text>;
+  }
 
   const currentBound = wordBounds[currentWordIdx];
   const readText = currentBound ? trimmed.slice(0, currentBound.start) : "";

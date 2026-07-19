@@ -7,7 +7,7 @@ import {
 
 describe("textLayoutGuard", () => {
   it("caps default max font multiplier for MIUI-safe UI", () => {
-    expect(APP_TEXT_MAX_FONT_SIZE_MULTIPLIER).toBeLessThanOrEqual(1.15);
+    expect(APP_TEXT_MAX_FONT_SIZE_MULTIPLIER).toBe(1.35);
   });
 
   it("detects large system font scale", () => {

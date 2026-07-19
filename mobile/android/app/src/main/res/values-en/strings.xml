@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">Prayer times</string>
+  <string name="widget_prayer_description">Today\'s prayer times (from the app schedule), with sunrise.</string>
+  <string name="widget_prayer_empty">Open the app and refresh prayer times.</string>
+
+  <string name="widget_prayer_next_label">Next prayer</string>
+  <string name="widget_prayer_next_description">Weather, countdown, and five prayers — 5×1 strip</string>
+  <string name="widget_prayer_next_heading">Next prayer</string>
+
+  <string name="widget_prayer_strip_label">Prayer strip</string>
+  <string name="widget_prayer_strip_description">Today\'s prayer times — compact strip</string>
+
+  <string name="widget_prayer_morning_label">Fajr · Sunrise · Dhuhr</string>
+  <string name="widget_prayer_morning_description">Fajr, sunrise, dhuhr</string>
+
+  <string name="widget_prayer_evening_label">Asr · Maghrib · Isha</string>
+  <string name="widget_prayer_evening_description">Asr, maghrib, isha</string>
+
+  <string name="widget_prayer_twocol_label">Two columns</string>
+  <string name="widget_prayer_twocol_description">Prayer schedule — two columns</string>
+
+  <string name="widget_prayer_five_dual_label">5 prayers</string>
+  <string name="widget_prayer_five_dual_description">Five prayers — two columns</string>
+
+  <string name="widget_prayer_home_strip_label">Prayer</string>
+  <string name="widget_prayer_home_strip_description">Home screen: 5 prayers, next countdown, dark background</string>
+
+  <string name="widget_qibla_a11y">Qibla</string>
+  <string name="widget_city_a11y">City</string>
+  <string name="widget_qibla_service_channel">Qibla widget</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — qibla</string>
+  <string name="widget_qibla_service_text">Compass for the home screen widget</string>
+  <string name="prayer_azan_fullscreen_title">Prayer time has entered</string>
+  <string name="prayer_azan_default_label">Prayer</string>
+  <string name="prayer_azan_entered_for_label">%1$s time has entered</string>
+  <string name="prayer_azan_channel_name">Adhan</string>
+  <string name="prayer_azan_channel_desc">Automatically show the adhan screen when prayer time enters</string>
+  <string name="prayer_azan_notif_body_no_time">Adhan · tap to open</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Adhan</string>
+
+  <string name="widget_prayer_row_fajr">Fajr</string>
+  <string name="widget_prayer_row_sun">Sunrise</string>
+  <string name="widget_prayer_row_dhuhr">Dhuhr</string>
+  <string name="widget_prayer_row_asr">Asr</string>
+  <string name="widget_prayer_row_maghrib">Maghrib</string>
+  <string name="widget_prayer_row_isha">Isha</string>
+</resources>

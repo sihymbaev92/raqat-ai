@@ -5,11 +5,11 @@ type SecureFlagModule = {
 };
 
 /**
- * Android FLAG_SECURE — логин экрандарында скриншот/жазуды болдырмау.
- * iOS / web: no-op.
+ * Скриншот / экран жазу / App Switcher превью — логин және сезімтал экрандарда.
+ * Android: FLAG_SECURE. iOS: secure overlay (native).
  */
 export async function setWindowSecureFlag(enabled: boolean): Promise<void> {
-  if (Platform.OS !== "android") return;
+  if (Platform.OS !== "android" && Platform.OS !== "ios") return;
   const mod = NativeModules.PrayerWidget as SecureFlagModule | undefined;
   try {
     await mod?.setWindowSecure?.(enabled);

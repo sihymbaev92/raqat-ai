@@ -1,0 +1,47 @@
+<resources>
+  <string name="widget_prayer_label">Намаз убактысы</string>
+  <string name="widget_prayer_description">Бүгүнкү намаз убакыттары (колдонмо графигинен), күн чыгуу менен.</string>
+  <string name="widget_prayer_empty">Колдонмону ачып, намаз убактысын жаңыртыңыз.</string>
+
+  <string name="widget_prayer_next_label">Кийинки намаз</string>
+  <string name="widget_prayer_next_description">Аба ырайы, тескери санак жана беш намаз — 5×1 тилке</string>
+  <string name="widget_prayer_next_heading">Кийинки намаз</string>
+
+  <string name="widget_prayer_strip_label">Намаз тилкеси</string>
+  <string name="widget_prayer_strip_description">Бүгүнкү намаз убакыттары — кыска тилке</string>
+
+  <string name="widget_prayer_morning_label">Багымдат · Күн · Бешим</string>
+  <string name="widget_prayer_morning_description">Багымдат, күн чыгуу, бешим</string>
+
+  <string name="widget_prayer_evening_label">Аср · Шам · Куптан</string>
+  <string name="widget_prayer_evening_description">Аср, шам, куптан</string>
+
+  <string name="widget_prayer_twocol_label">Эки тилке</string>
+  <string name="widget_prayer_twocol_description">Намаз графиги — эки тилке</string>
+
+  <string name="widget_prayer_five_dual_label">5 намаз</string>
+  <string name="widget_prayer_five_dual_description">Беш намаз — эки тилке</string>
+
+  <string name="widget_prayer_home_strip_label">Намаз</string>
+  <string name="widget_prayer_home_strip_description">Башкы экран: 5 намаз, кийинки намаз санагы, кара фон</string>
+
+  <string name="widget_qibla_a11y">Кыбыла</string>
+  <string name="widget_city_a11y">Шаар</string>
+  <string name="widget_qibla_service_channel">Кыбыла виджети</string>
+  <string name="widget_qibla_service_title">RAHAT OMIR — кыбыла</string>
+  <string name="widget_qibla_service_text">Башкы экран виджети үчүн компас</string>
+  <string name="prayer_azan_fullscreen_title">Намаз убактысы кирди</string>
+  <string name="prayer_azan_default_label">Намаз</string>
+  <string name="prayer_azan_entered_for_label">%1$s намазы кирди</string>
+  <string name="prayer_azan_channel_name">Азан</string>
+  <string name="prayer_azan_channel_desc">Намаз убактысы киргенде азан экранын автоматтык көрсөтүү</string>
+  <string name="prayer_azan_notif_body_no_time">Азан · ачуу үчүн басыңыз</string>
+  <string name="prayer_azan_notif_body_with_time">%1$s · Азан</string>
+
+  <string name="widget_prayer_row_fajr">Багымдат</string>
+  <string name="widget_prayer_row_sun">Күн</string>
+  <string name="widget_prayer_row_dhuhr">Бешим</string>
+  <string name="widget_prayer_row_asr">Аср</string>
+  <string name="widget_prayer_row_maghrib">Шам</string>
+  <string name="widget_prayer_row_isha">Куптан</string>
+</resources>

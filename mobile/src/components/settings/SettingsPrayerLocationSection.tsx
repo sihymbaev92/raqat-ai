@@ -23,7 +23,8 @@ import {
   type PrayerSourceMode,
 } from "../../storage/prefs";
 import { disablePrayerLocationAutoFromManualPick } from "../../services/devicePrayerLocation";
-import { KZ_CITY_PRESETS_LIST } from "../../constants/kzCityPresetsList";
+import { loadPrayerCache } from "../../storage/prayerCache";
+import { cityLabelForLocale } from "../../constants/kzCities";
 import { useAppLocale } from "../../i18n/runtime";
 
 type Props = {
@@ -49,11 +50,15 @@ export function SettingsPrayerLocationSection({
   const [sourceMode, setSourceMode] = useState<PrayerSourceMode>("calc");
   const [mosqueShift, setMosqueShift] = useState(0);
   const [locationAuto, setLocationAuto] = useState(true);
+  const [liveSource, setLiveSource] = useState<"muftyat" | "aladhan" | null>(null);
 
   const load = useCallback(async () => {
     setSourceMode(await getPrayerSourceMode());
     setMosqueShift(await getPrayerMosqueShiftMin());
     setLocationAuto(await getPrayerLocationAutoEnabled());
+    const cached = await loadPrayerCache();
+    const src = cached?.source;
+    setLiveSource(src === "muftyat" || src === "aladhan" ? src : null);
   }, []);
 
   useEffect(() => {
@@ -140,6 +145,17 @@ export function SettingsPrayerLocationSection({
             </Text>
           </Pressable>
         </View>
+        {sourceMode === "calc" ? (
+          <Text style={[styles.hint, { marginTop: 8 }]}>
+            {liveSource === "muftyat"
+              ? kk.prayer.sourceMuftyatLive
+              : liveSource === "aladhan"
+                ? kk.prayer.sourceAladhanLive
+                : null}
+            {liveSource ? "\n" : null}
+            {kk.prayer.sourceMethodHint}
+          </Text>
+        ) : null}
         {sourceMode === "mosque" ? (
           <View style={[styles.rowBetween, styles.chipRow]}>
             <Text style={styles.label}>{kk.prayer.mosqueShiftLabel(mosqueShift)}</Text>
@@ -190,7 +206,11 @@ export function SettingsPrayerLocationSection({
   );
 }
 
-export function cityLabelFor(city: string, country: string): string {
-  const p = KZ_CITY_PRESETS_LIST.find((x) => x.city === city && x.country === country);
-  return p?.label ?? city;
+export function cityLabelFor(
+  city: string,
+  _country: string,
+  locale = "kk",
+  tr?: (text: string) => string
+): string {
+  return cityLabelForLocale(city, locale, { tr });
 }

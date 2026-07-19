@@ -17,6 +17,8 @@ import { buildQuranArabicFlowMetrics, QuranArabicFlowRoot } from "./QuranArabicA
 import { quranSurahArabicWrapStyle } from "../../quran/quranResponsiveLayout";
 import { kk } from "../../i18n/kk";
 import { useAppLocale, type AppLocale } from "../../i18n/runtime";
+import type { QuranReadingLocale } from "../../quran/quranReadingLocale";
+import { useQuranTranslitScript } from "../../quran/quranTranslitScript";
 import { getQuranTranslitOverride } from "../../content/quranTranslitOverrides";
 import { resolveQuranTranslitForDisplay } from "../../utils/quranTranslitDisplay";
 import {
@@ -58,7 +60,7 @@ type Props = {
   showReaderMeaning: boolean;
   showTajweedForDisplay: boolean;
   arabicScriptEdition: QuranArabicScriptEditionId;
-  locale: AppLocale;
+  locale: QuranReadingLocale | AppLocale;
   playingAyahInSurah: number | null;
   loadingAyahAudio: number | null;
   ayahAudioIsPlaying: boolean;
@@ -85,13 +87,18 @@ function QuranSurahAyahListRowInner({
   onLongPress,
 }: Props) {
   useAppLocale();
+  const translitScript = useQuranTranslitScript();
   const ayahN = item.numberInSurah;
   const kkLine = quranAyahMeaningForLocale({ ...item, surahNumber }, locale);
   const kirilRead = useMemo(
     () =>
       getQuranTranslitOverride(surahNumber, ayahN) ??
-      resolveQuranTranslitForDisplay(item.translit, displayCachedAyahArabic(item, arabicScriptEdition)),
-    [surahNumber, ayahN, item.translit, item, arabicScriptEdition]
+      resolveQuranTranslitForDisplay(
+        item.translit,
+        displayCachedAyahArabic(item, arabicScriptEdition),
+        translitScript
+      ),
+    [surahNumber, ayahN, item.translit, item, arabicScriptEdition, translitScript]
   );
   const hasLoadedAudio = playingAyahInSurah === ayahN;
   const isPlayingNow = hasLoadedAudio && ayahAudioIsPlaying;

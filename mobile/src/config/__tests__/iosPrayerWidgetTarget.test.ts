@@ -16,8 +16,9 @@ describe("iOS prayer widget target", () => {
     const appConfig = fs.readFileSync(path.join(root, "app.config.js"), "utf8");
     expect(appConfig).toContain("@bacons/apple-targets");
     expect(appConfig).toContain("./plugins/withIosPrayerWidgetBridge");
-    expect(appConfig).toContain("./plugins/withIosCarPlay");
     expect(appConfig).toContain("group.kz.raqat.app");
+    /** CarPlay — device IPA үшін уақытша өшірулі; қайта қосу кезінде withIosCarPlay. */
+    expect(appConfig).toMatch(/withIosCarPlay|CarPlay scene/);
   });
 
   it("keeps RN bridge sources outside generated ios/", () => {

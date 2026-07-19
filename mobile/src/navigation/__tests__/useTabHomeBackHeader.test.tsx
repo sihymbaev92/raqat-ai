@@ -3,18 +3,6 @@ import renderer, { act, type ReactTestRenderer } from "react-test-renderer";
 import { ThemeContext } from "../../theme/ThemeContext";
 import type { ThemeColors } from "../../theme/colors";
 
-jest.mock("../../i18n/useI18n", () => ({
-  useI18n: () => ({ common: { back: "Back" } }),
-}));
-
-jest.mock("@expo/vector-icons/MaterialIcons", () => {
-  const React = require("react");
-  return {
-    __esModule: true,
-    default: (props: Record<string, unknown>) => React.createElement("Icon", props),
-  };
-});
-
 import { TabHomeBackButton } from "../useTabHomeBackHeader";
 
 const themeValue = {
@@ -33,18 +21,7 @@ function renderWithTheme(element: React.ReactElement) {
 }
 
 describe("TabHomeBackButton", () => {
-  it("returns null when navigation cannot go back", () => {
-    const navigation = { canGoBack: () => false, goBack: jest.fn() };
-    let tree: ReactTestRenderer | undefined;
-    act(() => {
-      tree = renderWithTheme(
-        <TabHomeBackButton navigation={navigation as never} colors={{ text: "#111" } as never} />
-      );
-    });
-    expect(tree!.toJSON()).toBeNull();
-  });
-
-  it("returns a pressable when navigation can go back", () => {
+  it("is hidden under screen restriction", () => {
     const navigation = { canGoBack: () => true, goBack: jest.fn() };
     let tree: ReactTestRenderer | undefined;
     act(() => {
@@ -52,7 +29,6 @@ describe("TabHomeBackButton", () => {
         <TabHomeBackButton navigation={navigation as never} colors={{ text: "#111" } as never} />
       );
     });
-    const root = tree!.root;
-    expect(root.findByProps({ accessibilityRole: "button" }).props.accessibilityLabel).toBe("Back");
+    expect(tree!.toJSON()).toBeNull();
   });
 });

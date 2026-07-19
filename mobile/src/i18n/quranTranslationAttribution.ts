@@ -1,7 +1,7 @@
-import type { AppLocale } from "./runtime";
+import type { QuranReadingLocale } from "../quran/quranReadingLocale";
 
 /** Құран мағына аудармасының дереккөз жолы (хатым аударма sheet). */
-export function quranTranslationAttributionForLocale(locale: AppLocale): string {
+export function quranTranslationAttributionForLocale(locale: QuranReadingLocale | "ar"): string {
   switch (locale) {
     case "kk":
       return "Мағына: Ерлан Алимулы аудармасы";
@@ -9,6 +9,8 @@ export function quranTranslationAttributionForLocale(locale: AppLocale): string 
       return "Перевод смысла: Эльмир Кулиев";
     case "en":
       return "Meaning: Sahih International";
+    case "tr":
+      return "Anlam: Diyanet Vakfı";
     case "ky":
       return "Meaning: Hakimov (КМДБ)";
     case "uz":

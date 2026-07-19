@@ -14,10 +14,6 @@ const manifestPath = path.join(mobileRoot, ".content-pack-staging", "manifest.js
 const REMOTE_JSON = [
   "offline-auto-translations-core.json",
   "quran-translations-offline.json",
-  "quran-en-transliteration-full.json",
-  "quran-tajweed-offline.json",
-  "quran-uthmani-full.json",
-  "hadith-from-db-seed.json",
   "great-words-catalog.json",
   "halal-companies-snapshot.json",
 ];

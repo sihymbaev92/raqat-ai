@@ -17,7 +17,6 @@ import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner
 import {
   getNamazLearningHintsForGuidePose,
   getNamazRecitationBlocksForGuidePose,
-  NAMAZ_CONTENT_REVIEW,
   type RecitationBlock,
 } from "../content/namazLearningContent";
 import {
@@ -35,9 +34,14 @@ import {
   NamazGuidePoseRecitationBlocks,
   NamazGuideWuduLearningBlock,
 } from "../components/NamazGuideLearning";
+import {
+  NamazCompanionPicker,
+  NamazCompanionSession,
+} from "../components/NamazCompanionPanel";
+import type { NamazCompanionSalatKey } from "../content/namazCompanionSession";
 import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
-import { ScholarContentNotice } from "../components/ScholarContentNotice";
+import { useModalSafeAreaInsets, appBottomSafeInset } from "../theme/deviceSafeArea";
 
 const WUDU_THEORY_ACC_KEY = "wudu-theory";
 const NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER = Platform.OS === "android" ? 0.45 : undefined;
@@ -82,21 +86,37 @@ function NamazGuideBody({
 }) {
   const t = useI18n();
   const { tr, translated } = useKkAutoTranslator();
+  const modalInsets = useModalSafeAreaInsets();
+  const modalBottomPad = appBottomSafeInset(modalInsets);
   const [selectedPrimarySection, setSelectedPrimarySection] = useState<NamazPrimarySectionKey | null>(null);
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
   const [selectedPrayerCard, setSelectedPrayerCard] = useState<NamazPrayerTypeCardContent | null>(null);
+  const [companionSalatKey, setCompanionSalatKey] = useState<NamazCompanionSalatKey | null>(null);
+  const [companionStepIndex, setCompanionStepIndex] = useState(0);
+  const exitCompanionSession = useCallback(() => {
+    setCompanionSalatKey(null);
+    setCompanionStepIndex(0);
+  }, []);
   const closeOpenNamazPanel = useCallback(() => {
     if (selectedPrayerCard) {
       setSelectedPrayerCard(null);
       return true;
     }
+    if (companionSalatKey) {
+      exitCompanionSession();
+      return true;
+    }
     if (selectedPrimarySection) {
+      exitCompanionSession();
       setSelectedPrimarySection(null);
       return true;
     }
     return false;
-  }, [selectedPrayerCard, selectedPrimarySection]);
-  useHardwareBackPress(closeOpenNamazPanel, selectedPrimarySection != null || selectedPrayerCard != null);
+  }, [companionSalatKey, exitCompanionSession, selectedPrayerCard, selectedPrimarySection]);
+  useHardwareBackPress(
+    closeOpenNamazPanel,
+    selectedPrimarySection != null || selectedPrayerCard != null || companionSalatKey != null
+  );
   const toggleAcc = (key: string) => setAccOpen((o) => ({ ...o, [key]: !o[key] }));
 
   const primarySectionTitle =
@@ -181,6 +201,13 @@ function NamazGuideBody({
 
   const renderFivePrayerContent = () => (
     <View style={styles.namazExpanded}>
+      <NamazCompanionPicker
+        colors={colors}
+        onStart={(key) => {
+          setCompanionSalatKey(key);
+          setCompanionStepIndex(0);
+        }}
+      />
       <View style={styles.manualNamazPage}>
         <View style={styles.manualPageHeader}>
           <Text style={styles.manualPageEyebrow}>{t.namazGuide.screenTitle}</Text>
@@ -291,11 +318,6 @@ function NamazGuideBody({
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
     >
-      <ScholarContentNotice
-        review={NAMAZ_CONTENT_REVIEW}
-        message={t.namazGuide.scholarReviewBanner}
-        colors={colors}
-      />
       <View style={styles.studyMap}>
         <Text style={styles.studyMapTitle}>{t.namazGuide.studyMapTitle}</Text>
         <Text style={styles.studyMapHint}>{t.namazGuide.studyMapPickHint}</Text>
@@ -309,10 +331,14 @@ function NamazGuideBody({
             accessibilityRole="button"
           >
             <Text style={styles.studyMapBadge}>1</Text>
-            <Text style={styles.studyMapCardTitle}>{t.namazGuide.wuduHeroTitle}</Text>
-            <Text style={styles.studyMapCardSub}>
-              {t.namazGuide.wuduCardSub}
-            </Text>
+            <View style={styles.studyMapTextCol}>
+              <Text style={styles.studyMapCardTitle} numberOfLines={2}>
+                {t.namazGuide.wuduHeroTitle}
+              </Text>
+              <Text style={styles.studyMapCardSub} numberOfLines={2}>
+                {t.namazGuide.wuduCardSub}
+              </Text>
+            </View>
           </Pressable>
           <Pressable
             onPress={() => setSelectedPrimarySection("five-prayers")}
@@ -323,12 +349,14 @@ function NamazGuideBody({
             accessibilityRole="button"
           >
             <Text style={styles.studyMapBadge}>2</Text>
-            <Text style={styles.studyMapCardTitle}>
-              {t.namazGuide.fivePrayersTitle}
-            </Text>
-            <Text style={styles.studyMapCardSub}>
-              {t.namazGuide.fivePrayersSub}
-            </Text>
+            <View style={styles.studyMapTextCol}>
+              <Text style={styles.studyMapCardTitle} numberOfLines={2}>
+                {t.namazGuide.fivePrayersTitle}
+              </Text>
+              <Text style={styles.studyMapCardSub} numberOfLines={2}>
+                {t.namazGuide.fivePrayersSub}
+              </Text>
+            </View>
           </Pressable>
           {NAMAZ_PRAYER_TYPE_CARDS.map((card) => {
             return (
@@ -343,8 +371,12 @@ function NamazGuideBody({
               >
                 <Text style={styles.studyMapBadge}>{card.no}</Text>
                 <View style={styles.studyMapTextCol}>
-                  <Text style={styles.studyMapCardTitle}>{tr(card.title)}</Text>
-                  <Text style={styles.studyMapCardSub}>{tr(card.subtitle)}</Text>
+                  <Text style={styles.studyMapCardTitle} numberOfLines={2}>
+                    {tr(card.title)}
+                  </Text>
+                  <Text style={styles.studyMapCardSub} numberOfLines={2}>
+                    {tr(card.subtitle)}
+                  </Text>
                 </View>
               </Pressable>
             );
@@ -357,28 +389,35 @@ function NamazGuideBody({
     <Modal
       visible={selectedPrimarySection != null}
       animationType="slide"
-      onRequestClose={() => setSelectedPrimarySection(null)}
+      onRequestClose={closeOpenNamazPanel}
+      statusBarTranslucent
+      navigationBarTranslucent={Platform.OS === "android"}
     >
-      <View style={styles.modalRoot}>
+      <View
+        style={[
+          styles.modalRoot,
+          { paddingTop: modalInsets.top, paddingBottom: modalBottomPad },
+        ]}
+      >
         <View style={styles.modalHeader}>
-          <Pressable
-            onPress={() => setSelectedPrimarySection(null)}
-            style={({ pressed }) => [styles.modalBackBtn, pressed && { opacity: 0.82 }]}
-            accessibilityRole="button"
-            accessibilityLabel={kk.common.back}
-          >
-            <Text style={styles.modalBackTxt}>←</Text>
-          </Pressable>
           <View style={styles.modalTitleCol}>
             <Text style={styles.modalTitle} numberOfLines={1}>
-              {primarySectionTitle}
+              {companionSalatKey ? kk.namazCompanion.screenTitle : primarySectionTitle}
             </Text>
             <Text style={styles.modalSub} numberOfLines={1}>
-              {primarySectionSub}
+              {companionSalatKey ? kk.namazCompanion.lockedHint : primarySectionSub}
             </Text>
           </View>
         </View>
-        {selectedPrimarySection ? (
+        {selectedPrimarySection && companionSalatKey ? (
+          <NamazCompanionSession
+            colors={colors}
+            salatKey={companionSalatKey}
+            stepIndex={companionStepIndex}
+            onStepIndexChange={setCompanionStepIndex}
+            onExit={exitCompanionSession}
+          />
+        ) : selectedPrimarySection ? (
           <ScrollView
             style={styles.root}
             contentContainerStyle={styles.modalContent}
@@ -395,17 +434,16 @@ function NamazGuideBody({
       visible={selectedPrayerCard != null}
       animationType="slide"
       onRequestClose={() => setSelectedPrayerCard(null)}
+      statusBarTranslucent
+      navigationBarTranslucent={Platform.OS === "android"}
     >
-      <View style={styles.modalRoot}>
+      <View
+        style={[
+          styles.modalRoot,
+          { paddingTop: modalInsets.top, paddingBottom: modalBottomPad },
+        ]}
+      >
         <View style={styles.modalHeader}>
-          <Pressable
-            onPress={() => setSelectedPrayerCard(null)}
-            style={({ pressed }) => [styles.modalBackBtn, pressed && { opacity: 0.82 }]}
-            accessibilityRole="button"
-            accessibilityLabel={kk.common.back}
-          >
-            <Text style={styles.modalBackTxt}>←</Text>
-          </Pressable>
           <View style={styles.modalTitleCol}>
             <Text style={styles.modalTitle} numberOfLines={1}>
               {selectedPrayerCard ? `${selectedPrayerCard.no}. ${tr(selectedPrayerCard.title)}` : ""}
@@ -499,7 +537,7 @@ function makeStyles(colors: ThemeColors) {
     modalTitleCol: { flex: 1, minWidth: 0 },
     modalTitle: { color: colors.text, fontSize: 18, fontWeight: "900" },
     modalSub: { color: colors.muted, fontSize: 13, lineHeight: 18, marginTop: 2 },
-    modalContent: { padding: 14, paddingBottom: 40 },
+    modalContent: { padding: 14, paddingBottom: 56 },
     block: {
       backgroundColor: colors.card,
       borderRadius: 18,
@@ -536,7 +574,8 @@ function makeStyles(colors: ThemeColors) {
       gap: 10,
     },
     studyMapCard: {
-      width: "100%",
+      alignSelf: "stretch",
+      maxWidth: "100%",
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 14,
@@ -545,16 +584,19 @@ function makeStyles(colors: ThemeColors) {
       flexDirection: "row",
       alignItems: "center",
       gap: 10,
+      overflow: "hidden",
     },
     studyMapTextCol: {
       flex: 1,
       minWidth: 0,
+      flexShrink: 1,
     },
     studyMapCardActive: {
       borderColor: colors.accent,
       backgroundColor: colors.accent,
     },
     studyMapBadge: {
+      flexShrink: 0,
       alignSelf: "flex-start",
       minWidth: 24,
       height: 24,
@@ -576,12 +618,15 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 15,
       fontWeight: "900",
       minWidth: 0,
+      flexShrink: 1,
     },
     studyMapCardTitleActive: { color: "#FFFFFF" },
     studyMapCardSub: {
       color: colors.muted,
       fontSize: 12,
       lineHeight: 17,
+      minWidth: 0,
+      flexShrink: 1,
     },
     studyMapCardSubActive: { color: "rgba(255,255,255,0.88)" },
     /** Тәжуид кестесі: 7 баған × 4 жол; `row-reverse` — ا оң жақта, оқу оңнан солға. */

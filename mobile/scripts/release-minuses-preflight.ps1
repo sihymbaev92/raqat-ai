@@ -13,10 +13,10 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host ""
 Write-Host "Manual gates (cannot automate here):" -ForegroundColor Yellow
-Write-Host "  - VPS SSH + CDN deploy (RAQAT_VPS_SSH_PASSWORD in .env.deploy)"
-Write-Host "  - Play Internal upload (mobile/raqat-play-release-latest.aab)"
+Write-Host "  - VPS SSH + CDN deploy (RAQAT_VPS_SSH_KEY / BatchMode — see docs/mobile/CDN_DEPLOY_SSH.md)"
+Write-Host "  - Play Internal upload (mobile/android/.../app-release.aab)"
 Write-Host "  - Scholar sign-off (namazLearningContent approvedForPublicRelease)"
-Write-Host "  - Hadith KK import (1200 sourceOnly rows)"
+Write-Host "  - Hadith catalog growth (expand kz-trusted-hadith-catalog.json; seed ~98 KK-only)"
 Write-Host "  - Azan 3 OEM x 3 day QA"
 Write-Host ""
 Write-Host "OK: automated preflight passed." -ForegroundColor Green

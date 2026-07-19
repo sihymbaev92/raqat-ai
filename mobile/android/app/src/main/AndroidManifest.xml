@@ -28,7 +28,7 @@
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="false"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_CHECK_ON_LAUNCH" android:value="ALWAYS"/>
     <meta-data android:name="expo.modules.updates.EXPO_UPDATES_LAUNCH_WAIT_MS" android:value="0"/>
-    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true">
+    <activity android:name=".MainActivity" android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" android:launchMode="singleTask" android:windowSoftInputMode="adjustResize" android:theme="@style/Theme.App.SplashScreen" android:exported="true" android:showWhenLocked="true" android:turnScreenOn="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
@@ -46,6 +46,16 @@
         <data android:scheme="imamai"/>
       </intent-filter>
     </activity>
+    <activity
+      android:name=".PrayerAzanLockActivity"
+      android:excludeFromRecents="true"
+      android:exported="false"
+      android:launchMode="singleTop"
+      android:showWhenLocked="true"
+      android:taskAffinity=""
+      android:theme="@style/Theme.App.AzanLock"
+      android:turnScreenOn="true"
+      android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode" />
     <receiver android:name=".PrayerHomeStripWidgetProvider" android:exported="true" android:label="@string/widget_prayer_home_strip_label">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -71,7 +81,7 @@
         <action android:name="kz.raqat.app.action.PRAYER_AZAN_FULLSCREEN"/>
       </intent-filter>
     </receiver>
-    <receiver android:name=".PrayerAzanQaReceiver" android:exported="false">
+    <receiver android:name=".PrayerAzanQaReceiver" android:exported="true">
       <intent-filter>
         <action android:name="kz.raqat.app.action.SCHEDULE_AZAN_QA"/>
       </intent-filter>

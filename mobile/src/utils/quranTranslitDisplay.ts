@@ -1,4 +1,7 @@
+import type { QuranTranslitScript } from "../quran/quranTranslitScript";
+import { getQuranTranslitScript } from "../quran/quranTranslitScript";
 import { transliterateArabicToKazakh } from "./arabicTranslitKk";
+import { kkCyrillicPhoneticToLatin } from "./kkCyrillicPhoneticToLatin";
 
 /**
  * Қазақ қорынын транскрипциясы кез келген стандартты кирилл блок әрпін қамтиды.
@@ -19,10 +22,8 @@ export function hasCyrillicScript(s: string): boolean {
   return false;
 }
 
-/**
- * Көрсету: бандлдағы кітаптық кирил (asyldin / түрік баспасы стилі) → арабтан алгоритм → латын қосалқы.
- */
-export function resolveQuranTranslitForDisplay(
+/** Кирилл оқылу (бандл → арабтан алгоритм → шикі мәтін). */
+export function resolveQuranTranslitKk(
   translitRaw: string | undefined,
   arabicText: string
 ): string {
@@ -32,6 +33,19 @@ export function resolveQuranTranslitForDisplay(
   if (ar) return transliterateArabicToKazakh(ar);
   if (tr) return tr;
   return "";
+}
+
+/**
+ * Көрсету: қазақ кирилл немесе латын (баптау бойынша).
+ */
+export function resolveQuranTranslitForDisplay(
+  translitRaw: string | undefined,
+  arabicText: string,
+  script: QuranTranslitScript = getQuranTranslitScript()
+): string {
+  const kk = resolveQuranTranslitKk(translitRaw, arabicText);
+  if (!kk) return "";
+  return script === "latin" ? kkCyrillicPhoneticToLatin(kk) : kk;
 }
 
 /**
