@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useAppLocale } from "../i18n/runtime";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { migrateLegacyTasbihCountIntoMap, getAllDhikrCounts } from "../storage/prefs";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAccordionSection } from "../components/GuideAccordion";
 import { DHIKR_CHAPTERS } from "../content/dhikrChapters";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,7 +18,8 @@ import { pickBestTranslit } from "../utils/translitKk";
 type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihList">;
 
 export function TasbihListScreen({ navigation }: Props) {
-  useAppLocale();
+  const kk = useI18n();
+  const { tr } = useKkAutoTranslator();
   const items = useMemo(() => loadDhikrItems(), []);
   const { colors, isDark } = useAppTheme();
   useTabHomeBackHeader(navigation, colors);
@@ -65,6 +66,7 @@ export function TasbihListScreen({ navigation }: Props) {
       const c = dhikrCounts[id] ?? 0;
       const show = String(c);
       const translit = pickBestTranslit(d.textAr || "", d.translitKk);
+      const title = tr(d.textKk);
       return (
         <View key={id} style={styles.listRowWrap}>
           <Pressable
@@ -76,7 +78,7 @@ export function TasbihListScreen({ navigation }: Props) {
             }}
             style={({ pressed }) => [styles.listRow, pressed && styles.listRowPressed]}
             accessibilityRole="button"
-            accessibilityLabel={`${d.textKk}. ${show}. ${kk.tasbih.openCounterA11y}`}
+            accessibilityLabel={`${title}. ${show}. ${kk.tasbih.openCounterA11y}`}
           >
             <View style={styles.listBadge}>
               <Text style={styles.listBadgeTxt}>{id}</Text>
@@ -88,11 +90,11 @@ export function TasbihListScreen({ navigation }: Props) {
                 </Text>
               ) : null}
               <Text style={styles.listRowTitle} numberOfLines={2}>
-                {d.textKk}
+                {title}
               </Text>
               {translit ? (
                 <Text style={styles.listRowTranslit} numberOfLines={2}>
-                  {translit}
+                  {tr(translit)}
                 </Text>
               ) : null}
               <Text style={styles.listRowProgress}>{show}</Text>
@@ -129,8 +131,8 @@ export function TasbihListScreen({ navigation }: Props) {
           return (
             <GuideAccordionSection
               key={ch.titleKk}
-              title={ch.titleKk}
-              subtitle={ch.subtitleKk}
+              title={tr(ch.titleKk)}
+              subtitle={tr(ch.subtitleKk ?? "")}
               expanded={expandedChapterIndex === idx}
               onToggle={() => setExpandedChapterIndex(expandedChapterIndex === idx ? null : idx)}
               colors={colors}

@@ -65,13 +65,13 @@ export function KazakhGreatWordsScreen(_props: Props) {
         style={({ pressed }) => [styles.authorCard, pressed && { opacity: 0.9 }]}
         onPress={() => navigation.navigate("KazakhGreatWordsAuthor", { authorId: item.id })}
         accessibilityRole="button"
-        accessibilityLabel={g.authorCardA11y(item.name, n)}
+        accessibilityLabel={g.authorCardA11y(tr(item.name), n)}
       >
         <Text style={styles.authorName} numberOfLines={2}>
-          {item.name}
+          {tr(item.name)}
         </Text>
         <Text style={styles.authorPeriod} numberOfLines={1}>
-          {item.period}
+          {tr(item.period)}
         </Text>
         <Text style={styles.authorCount}>
           {tr(g.worksCount(n))} ›
@@ -106,7 +106,7 @@ export function KazakhGreatWordsScreen(_props: Props) {
         placeholder={tr(g.searchPlaceholder)}
         placeholderTextColor={colors.muted}
         style={styles.search}
-        accessibilityLabel={g.searchA11y}
+        accessibilityLabel={tr(g.searchA11y)}
       />
 
       {catalogLoading ? (
@@ -147,13 +147,13 @@ export function KazakhGreatWordsScreen(_props: Props) {
                   style={({ pressed }) => [styles.hitRow, pressed && { opacity: 0.9 }]}
                   onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: e.id })}
                   accessibilityRole="button"
-                  accessibilityLabel={`${e.title}. ${au?.name ?? ""}`}
+                  accessibilityLabel={`${tr(e.title)}. ${tr(au?.name ?? "")}`}
                 >
                   <Text style={styles.hitTitle} numberOfLines={2}>
                     {tr(e.title)}
                   </Text>
                   <Text style={styles.hitMeta} numberOfLines={1}>
-                    {au?.name ?? e.authorId} · {e.id}
+                    {tr(au?.name ?? e.authorId)} · {e.id}
                   </Text>
                 </Pressable>
               );
@@ -186,10 +186,10 @@ export function KazakhGreatWordsScreen(_props: Props) {
                   style={({ pressed }) => [styles.reflectiveCard, pressed && { opacity: 0.9 }]}
                   onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: entry.id })}
                   accessibilityRole="button"
-                  accessibilityLabel={entry.title}
+                  accessibilityLabel={tr(entry.title)}
                 >
                   <Text style={styles.reflectiveTitle} numberOfLines={3}>{tr(entry.title)}</Text>
-                  <Text style={styles.reflectiveMeta} numberOfLines={1}>{au?.name ?? entry.authorId}</Text>
+                  <Text style={styles.reflectiveMeta} numberOfLines={1}>{tr(au?.name ?? entry.authorId)}</Text>
                   <Text style={styles.reflectiveBody} numberOfLines={4}>{tr(entry.body)}</Text>
                 </Pressable>
               );
@@ -231,12 +231,13 @@ function MergedTopicRow({
       style={({ pressed }) => [styles.topicRow, pressed && { opacity: 0.9 }]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={topic.title}
+      accessibilityLabel={tr(topic.title)}
     >
       <View style={styles.topicRowText}>
         <Text style={styles.topicTitle} numberOfLines={2}>{tr(topic.title)}</Text>
         <Text style={styles.topicMeta} numberOfLines={2}>
-          {topic.entries.length} {kk.features.greatWordsGuide.topicEntriesSuffix} · {topic.authorNames.slice(0, 4).join(", ")}
+          {topic.entries.length} {tr(kk.features.greatWordsGuide.topicEntriesSuffix)} ·{" "}
+          {topic.authorNames.slice(0, 4).map((n) => tr(n)).join(", ")}
         </Text>
       </View>
       <Text style={styles.rowArrow}>›</Text>

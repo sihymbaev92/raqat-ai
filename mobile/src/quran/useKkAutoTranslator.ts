@@ -6,6 +6,9 @@ import {
 import { getOfflineAutoTranslation } from "../services/offlineAutoTranslations";
 import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 
+/** Қазақ әріптері — басқа тілде экранға шықпауы керек. */
+const KK_SPECIFIC = /[әғқңөұүіһӘҒҚҢӨҰҮІҺ]/;
+
 export function resolveKkAutoTranslationText(
   text: string,
   locale: string,
@@ -18,14 +21,13 @@ export function resolveKkAutoTranslationText(
   if (bundled) return bundled;
   const cached = map[t];
   if (cached != null) return cached;
+  if (KK_SPECIFIC.test(t)) return "…";
   return t;
 }
 
 /**
  * Үлкен экрандарға арналған машина-аударма көмекшісі.
- * `tr(text)` — қазақша жолды ағымдағы тілге bundled offline dictionary/cache арқылы аударады; дайын болмаса
- * қазақшаны қайтарады. Тіл kk болса — әрқашан түпнұсқа. Араб/транскрипцияны
- * шақырушы `tr`-ге БЕРМЕУІ керек (тек таза қазақ прозасын аудару үшін).
+ * Дайын болмаса және мәтінде қазақ әріптері болса — «…» (қазақша қалмайды).
  */
 export function useKkAutoTranslator(): { tr: (text: string) => string; translated: boolean } {
   const locale = useAppLocale();
@@ -64,8 +66,8 @@ export function useKkAutoTranslator(): { tr: (text: string) => string; translate
         const out = await autoTranslateMany(batch, target);
         const updates: Record<string, string> = {};
         batch.forEach((src, i) => {
-          const t = out[i];
-          if (t) updates[src] = t;
+          const translated = out[i];
+          if (translated) updates[src] = translated;
         });
         if (Object.keys(updates).length) {
           setMap((prev) => ({ ...prev, ...updates }));
@@ -78,15 +80,15 @@ export function useKkAutoTranslator(): { tr: (text: string) => string; translate
     (text: string): string => {
       const t = text ?? "";
       if (locale === "kk" || !t.trim()) return text;
-      const target = locale as AutoTranslateTarget;
       const resolved = resolveKkAutoTranslationText(t, locale, map);
-      if (resolved !== t) return resolved;
-      if (!requestedRef.current.has(t)) {
-        requestedRef.current.add(t);
-        pendingRef.current.push(t);
-        scheduleFlush();
+      if (resolved === t || resolved === "…") {
+        if (!requestedRef.current.has(t)) {
+          requestedRef.current.add(t);
+          pendingRef.current.push(t);
+          scheduleFlush();
+        }
       }
-      return t;
+      return resolved;
     },
     [locale, map, scheduleFlush]
   );

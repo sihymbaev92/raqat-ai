@@ -423,10 +423,10 @@ export function HajjMuftyatGuide() {
           </View>
           <View style={styles.sourceTextCol}>
             <Text style={styles.sourceTitle} numberOfLines={1}>
-              {HAJJ_MUFTYAT_SOURCE.title}
+              {tr(HAJJ_MUFTYAT_SOURCE.title)}
             </Text>
             <Text style={styles.sourceMeta} numberOfLines={1}>
-              {kk.features.hajjSourceMeta(HAJJ_MUFTYAT_SOURCE.org, HAJJ_MUFTYAT_SOURCE.year)}
+              {tr(kk.features.hajjSourceMeta(HAJJ_MUFTYAT_SOURCE.org, HAJJ_MUFTYAT_SOURCE.year))}
             </Text>
           </View>
           <MaterialIcons name="open-in-new" size={18} color={colors.accent} />

@@ -11,6 +11,7 @@ import { ensureOemPowerSetupForAzan, getOemPowerDiagnostics } from "./prayerOemB
 type PrayerWidgetAzanPermModule = {
   requestExactAlarmPermissionIfNeeded?: () => Promise<boolean>;
   requestAlarmKitAuthorization?: () => Promise<{ authorized?: boolean; state?: string }>;
+  openOverlayPermissionSettings?: () => Promise<boolean>;
 };
 
 function prayerWidgetModule(): PrayerWidgetAzanPermModule | undefined {
@@ -56,6 +57,7 @@ function sleep(ms: number): Promise<void> {
 async function readAndroidAzanPermissionFlags(): Promise<{
   exactAlarmGranted: boolean;
   fullScreenIntentAllowed: boolean;
+  overlayAllowed: boolean;
 }> {
   const diag = await getFullScreenAzanAlarmDiagnostics();
   return {
@@ -64,6 +66,7 @@ async function readAndroidAzanPermissionFlags(): Promise<{
       Platform.OS !== "android" ||
       Number(Platform.Version) < 34 ||
       diag.fullScreenIntentAllowed !== false,
+    overlayAllowed: Platform.OS !== "android" || diag.overlayAllowed !== false,
   };
 }
 
@@ -157,6 +160,19 @@ export async function ensurePrayerAzanPermissions(opts?: {
         /* */
       }
       fullScreenIntentAllowed = (await readAndroidAzanPermissionFlags()).fullScreenIntentAllowed;
+    }
+
+    const overlayOpen = prayerWidgetModule()?.openOverlayPermissionSettings;
+    if (typeof overlayOpen === "function") {
+      const overlayAllowed = (await readAndroidAzanPermissionFlags()).overlayAllowed;
+      if (!overlayAllowed) {
+        try {
+          await overlayOpen();
+          await sleep(800);
+        } catch {
+          /* */
+        }
+      }
     }
 
     if (!openedOemBackgroundScreen) {

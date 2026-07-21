@@ -250,9 +250,6 @@ export const OFFICIAL_SITE_SPA_HISTORY_INJECT = `
     }
     post();
   });
-  document.addEventListener("click", function () {
-    setTimeout(post, 0);
-  }, true);
   post();
 })();
 true;

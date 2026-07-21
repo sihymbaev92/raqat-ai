@@ -29,6 +29,7 @@ import { DomainSettingsHeaderButton } from "../components/settings/DomainSetting
 import { getKzPresetCoords } from "../constants/kzCities";
 import {
   fetchOpenMeteoCurrent,
+  WEATHER_REFRESH_INTERVAL_MS,
   wmoCodeToWeatherIconName,
   type OpenMeteoCurrent,
 } from "../services/openMeteoCurrent";
@@ -48,7 +49,7 @@ import {
   type PrayerSourceMode,
 } from "../storage/prefs";
 import type { RootStackParamList } from "../navigation/types";
-import { savePrayerCache } from "../storage/prayerCache";
+import { savePrayerCache, syncNativePrayerWidgetFromStorage } from "../storage/prayerCache";
 import { loadPrayerCache } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
@@ -59,12 +60,13 @@ import { shortPrayerName } from "../components/CompactPrayerTimesRow";
 import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import {
   nextSalatRow,
+  currentSalatRow,
   parseMinutes,
   secondsUntilNextSalat,
   formatSecondsAsHms,
 } from "../utils/prayerSchedule";
 import { formatGregorianTechYmd, formatKkGregorianShort, formatKkHijriUmmAlQura } from "../utils/formatKkDate";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import { useScreenFitMetrics } from "../theme/screenFit";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
@@ -96,12 +98,13 @@ function resultToCells(
 function timelineStateForRow(
   row: { key: string; time: string },
   next: { key: string; time: string } | null,
+  current: { key: string; time: string } | null,
   now: Date
 ): "past" | "current" | "next" | "upcoming" {
   const nowM = now.getHours() * 60 + now.getMinutes();
   const rowM = parseMinutes(row.time);
+  if (current && row.key === current.key) return "current";
   if (next && row.key === next.key) return "next";
-  if (rowM >= 0 && Math.abs(rowM - nowM) <= 2) return "current";
   if (rowM >= 0 && rowM < nowM) return "past";
   return "upcoming";
 }
@@ -272,6 +275,7 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
   onTogglePrayerSound,
 }: PrayerTimesLiveRowsProps) {
   useAppLocale();
+  useLocaleRevision();
   const [nowTick, setNowTick] = useState(() => new Date());
   useEffect(() => {
     const t = setInterval(() => setNowTick(new Date()), 1000);
@@ -282,6 +286,10 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
     () => nextSalatRow(carouselCells, tomorrowCells, nowTick),
     [carouselCells, tomorrowCells, nowTick]
   );
+  const currentSalatResolved = useMemo(
+    () => currentSalatRow(carouselCells, nowTick),
+    [carouselCells, nowTick]
+  );
   const stripCountdownHms = useMemo(() => {
     if (pendingCarousel || !hasData) return "—";
     return formatSecondsAsHms(secondsUntilNextSalat(carouselCells, nowTick, tomorrowCells));
@@ -291,8 +299,9 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
     <>
       {carouselCells.map((cell) => {
         const key = cell.key;
-        const state = timelineStateForRow(cell, nextSalatResolved, nowTick);
-        const isHi = state === "next" || state === "current";
+        const state = timelineStateForRow(cell, nextSalatResolved, currentSalatResolved, nowTick);
+        const isHi = state === "current";
+        const isNext = state === "next";
         const isPast = state === "past";
         const t = cell.time?.trim() ? cell.time.trim().split(/\s+/)[0] : "—";
         const soundKey: PrayerNotifSalatKey | null = isSoundTogglePrayerKey(key) ? key : null;
@@ -305,7 +314,7 @@ const PrayerTimesLiveRows = memo(function PrayerTimesLiveRows({
               <Text style={[styles.ptName, isPast && styles.ptNamePast, isHi && styles.ptNameHi]} numberOfLines={1}>
                 {shortPrayerName(cell.key)}
               </Text>
-              {isHi ? (
+              {isNext ? (
                 <Text style={styles.ptCountdown} numberOfLines={1}>
                   {stripCountdownHms}
                 </Text>
@@ -401,10 +410,11 @@ export function PrayerTimesScreen() {
       if (!cancelled) {
         setWeatherSnap(w);
         setWeatherLoading(false);
+        void syncNativePrayerWidgetFromStorage(w);
       }
     };
     void tick();
-    const id = setInterval(() => void tick(), 20 * 60 * 1000);
+    const id = setInterval(() => void tick(), WEATHER_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);

@@ -1,5 +1,6 @@
 import type { QuranTranslitScript } from "../quran/quranTranslitScript";
 import { getQuranTranslitScript } from "../quran/quranTranslitScript";
+import { getCurrentLocale } from "../i18n/runtime";
 import { transliterateArabicToKazakh } from "./arabicTranslitKk";
 import { kkCyrillicPhoneticToLatin } from "./kkCyrillicPhoneticToLatin";
 
@@ -37,6 +38,7 @@ export function resolveQuranTranslitKk(
 
 /**
  * Көрсету: қазақ кирилл немесе латын (баптау бойынша).
+ * Тіл kk емес болса — әрқашан латын (қазақ әріптері экранға шықпасын).
  */
 export function resolveQuranTranslitForDisplay(
   translitRaw: string | undefined,
@@ -45,7 +47,8 @@ export function resolveQuranTranslitForDisplay(
 ): string {
   const kk = resolveQuranTranslitKk(translitRaw, arabicText);
   if (!kk) return "";
-  return script === "latin" ? kkCyrillicPhoneticToLatin(kk) : kk;
+  const forceLatin = getCurrentLocale() !== "kk" || script === "latin";
+  return forceLatin ? kkCyrillicPhoneticToLatin(kk) : kk;
 }
 
 /**

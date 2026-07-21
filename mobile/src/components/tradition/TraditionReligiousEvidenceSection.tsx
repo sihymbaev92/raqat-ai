@@ -59,7 +59,7 @@ function EvidenceRefRow({
       disabled={!tappable}
       style={({ pressed }) => [styles.refRow, tappable && pressed && { opacity: 0.9 }]}
       accessibilityRole={tappable ? "button" : "text"}
-      accessibilityLabel={`${evidenceRef.citationKk}. ${evidenceRef.excerptKk}`}
+      accessibilityLabel={`${tr(evidenceRef.citationKk)}. ${tr(evidenceRef.excerptKk)}`}
     >
       <View style={[styles.refIcon, isQuran ? styles.refIconQuran : styles.refIconHadith]}>
         <MaterialIcons
@@ -74,7 +74,7 @@ function EvidenceRefRow({
         <Text style={styles.refExcerpt}>{tr(evidenceRef.excerptKk)}</Text>
         {tappable ? (
           <Text style={styles.refOpen}>
-            {isQuran ? tg.traditionEvidenceOpenQuran : tg.traditionEvidenceOpenHadith}
+            {isQuran ? tr(tg.traditionEvidenceOpenQuran) : tr(tg.traditionEvidenceOpenHadith)}
           </Text>
         ) : null}
       </View>

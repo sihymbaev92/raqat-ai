@@ -38,22 +38,29 @@ describe("tajweedRulesCatalog", () => {
     }
   });
 
-  it("idgham mutajanis and mutaqarib share yellow palette", () => {
+  it("idgham mutajanis and mutaqarib share Al Quran Cloud gray", () => {
+    expect(tajweedColorForRule("d", false)).toBe("#A1A1A1");
     expect(tajweedColorForRule("d", false)).toBe(tajweedColorForRule("b", false));
     expect(tajweedColorForRule("d", true)).toBe(tajweedColorForRule("b", true));
   });
 
-  it("madd uses international red #DD2C00", () => {
-    expect(tajweedColorForRule("n", false)).toBe("#DD2C00");
-    expect(tajweedColorForRule("q", false)).toBe("#1A237E");
-    expect(tajweedColorForRule("g", false)).toBe("#00C853");
-    expect(tajweedColorForRule("a", false)).toBe("#FFD600");
+  it("uses Al Quran Cloud official light palette", () => {
+    expect(tajweedColorForRule("n", false)).toBe("#537FFF");
+    expect(tajweedColorForRule("p", false)).toBe("#4050FF");
+    expect(tajweedColorForRule("m", false)).toBe("#000EBC");
+    expect(tajweedColorForRule("o", false)).toBe("#2144C1");
+    expect(tajweedColorForRule("q", false)).toBe("#DD0008");
+    expect(tajweedColorForRule("g", false)).toBe("#FF7E1E");
+    expect(tajweedColorForRule("f", false)).toBe("#9400A8");
+    expect(tajweedColorForRule("i", false)).toBe("#26BFFD");
+    expect(tajweedColorForRule("a", false)).toBe("#169777");
+    expect(tajweedColorForRule("h", false)).toBe("#AAAAAA");
   });
 
-  it("green group is ghunnah/ikhfa/iqlab — not izhar; qalqalah uses Arabic dal", () => {
-    const green = TAJWEED_LEGEND_SECTIONS.find((s) => s.rules.includes("i"));
-    expect(green?.titleKk).toMatch(/иқлаб/i);
-    expect(green?.titleKk).not.toMatch(/изһар/i);
+  it("ghunnah/ikhfa/iqlab section — not izhar; qalqalah uses Arabic dal", () => {
+    const nasal = TAJWEED_LEGEND_SECTIONS.find((s) => s.rules.includes("i"));
+    expect(nasal?.titleKk).toMatch(/иқлаб/i);
+    expect(nasal?.titleKk).not.toMatch(/изһар/i);
     const qalqalah = TAJWEED_RULES_CATALOG.find((m) => m.rule === "q");
     expect(qalqalah?.detailKk).toContain("د");
     expect(qalqalah?.detailKk).not.toMatch(/ج д/);

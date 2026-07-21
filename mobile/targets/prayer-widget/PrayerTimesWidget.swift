@@ -23,7 +23,7 @@ struct PrayerTimesProvider: TimelineProvider {
   func getTimeline(in context: Context, completion: @escaping (Timeline<PrayerTimesEntry>) -> Void) {
     let snap = PrayerWidgetSnapshot.parse(from: PrayerWidgetStore.readPayloadJson())
     let entry = PrayerTimesEntry(date: Date(), snapshot: snap)
-    let next = Calendar.current.date(byAdding: .minute, value: 15, to: Date()) ?? Date().addingTimeInterval(900)
+    let next = Calendar.current.date(byAdding: .minute, value: 10, to: Date()) ?? Date().addingTimeInterval(600)
     completion(Timeline(entries: [entry], policy: .after(next)))
   }
 }

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import {
   View,
   Text,
@@ -36,6 +36,7 @@ const SEARCH_DEBOUNCE_MS = 420;
 
 export function OfficialKnowledgePortalScreen() {
   useAppLocale();
+  const localeRev = useLocaleRevision();
   const { colors, isDark } = useAppTheme();
   const screenFit = useScreenFitMetrics();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -51,7 +52,7 @@ export function OfficialKnowledgePortalScreen() {
       { value: "fatua", label: kk.knowledgePortal.chipFatua },
       { value: "muftyat", label: kk.knowledgePortal.chipMuftyat },
     ],
-    []
+    [localeRev]
   );
   const [site, setSite] = useState<KbSiteFilter>("");
   const [query, setQuery] = useState("");

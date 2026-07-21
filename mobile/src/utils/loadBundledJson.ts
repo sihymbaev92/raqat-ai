@@ -17,6 +17,7 @@ import hadithFromDbSeedApk from "../../assets/bundled/hadith-from-db-seed.json";
 import quranEnTranslitApk from "../../assets/bundled/quran-en-transliteration-full.json";
 import quranKkFromDbApk from "../../assets/bundled/quran-kk-from-db.json";
 import quranTajweedApk from "../../assets/bundled/quran-tajweed-offline.json";
+import quranTranslationsApk from "../../assets/bundled/quran-translations-offline.json";
 import quranUthmaniApk from "../../assets/bundled/quran-uthmani-full.json";
 import surahListApk from "../../assets/bundled/surah-list-api.json";
 import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
@@ -47,6 +48,7 @@ const APK_JSON_INLINE: Partial<Record<BundledJsonName, unknown>> = {
   "quran-uthmani-full.json": quranUthmaniApk,
   "quran-en-transliteration-full.json": quranEnTranslitApk,
   "quran-tajweed-offline.json": quranTajweedApk,
+  "quran-translations-offline.json": quranTranslationsApk,
   "hadith-from-db-seed.json": hadithFromDbSeedApk,
   "offline-auto-translations-apk.json": offlineAutoTranslationsApk,
 };

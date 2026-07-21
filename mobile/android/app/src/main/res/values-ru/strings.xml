@@ -35,8 +35,19 @@
   <string name="prayer_azan_entered_for_label">Наступило время %1$s</string>
   <string name="prayer_azan_channel_name">Азан</string>
   <string name="prayer_azan_channel_desc">Автоматически показывать экран азана при наступлении намаза</string>
+  <string name="prayer_azan_quiet_channel_name">Азан (фон)</string>
+  <string name="prayer_azan_quiet_channel_desc">Пока открыт экран азана — без баннера сверху</string>
+  <string name="prayer_azan_notif_body_quiet">Идёт азан</string>
+  <string name="prayer_azan_notif_body_quiet_with_time">%1$s · Идёт азан</string>
   <string name="prayer_azan_notif_body_no_time">Азан · нажмите, чтобы открыть</string>
   <string name="prayer_azan_notif_body_with_time">%1$s · Азан</string>
+  <string name="prayer_azan_notif_body_fsi_denied">Экран азана не открылся — нажмите уведомление</string>
+  <string name="prayer_azan_notif_body_fsi_denied_with_time">%1$s · нажмите уведомление, чтобы открыть азан</string>
+  <string name="prayer_azan_notif_stop">Выключить</string>
+  <string name="prayer_azan_lock_subtitle">Азан читается</string>
+  <string name="prayer_azan_lock_subtitle_with_time">%1$s · азан читается</string>
+  <string name="prayer_azan_lock_dismiss">Закрыть</string>
+  <string name="prayer_azan_lock_open_app">Открыть приложение</string>
 
   <string name="widget_prayer_row_fajr">Фаджр</string>
   <string name="widget_prayer_row_sun">Восход</string>

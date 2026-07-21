@@ -18,7 +18,6 @@ import {
   traditionHeroImage,
   type TraditionTopic,
 } from "../content/traditionTopicsCatalog";
-import { getAllTraditionBatas } from "../content/traditionBataCatalog";
 import { DinDasturConnectionCard } from "../components/tradition/DinDasturConnectionCard";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { useI18n } from "../i18n/useI18n";
@@ -55,7 +54,6 @@ export function KazakhTraditionScreen() {
   const nav = useNavigation<Nav>();
   const route = useRoute<Route>();
   const topics = useMemo(() => sortTopics(getTraditionTopics()), []);
-  const bataCount = useMemo(() => getAllTraditionBatas().length, []);
   const [filter, setFilter] = useState<FilterKey>("all");
   const [query, setQuery] = useState("");
   const deferredQuery = useDeferredValue(query);
@@ -195,19 +193,11 @@ export function KazakhTraditionScreen() {
             </View>
           </View>
 
-          <View style={styles.introCard}>
-            <Text style={styles.introTitle}>{t.features.traditionGuide.aboutSectionTitle}</Text>
-            <Text style={styles.introBody}>
-              {t.features.traditionGuide.aboutSectionBody}
-            </Text>
-          </View>
-
           <DinDasturConnectionCard
             palette={palette}
             tr={tr}
-            bataCount={bataCount}
             onOpenFoundation={() => openTopic("dastur-men-din-negiz")}
-            onOpenBata={() => openTopic("bata-beru")}
+            onOpenYrym={() => openTopic("yrymdar-men-din")}
           />
 
           <View style={styles.searchCard}>
@@ -289,16 +279,6 @@ function makeStyles(p: TraditionKazakhPalette) {
     heroCopy: { position: "absolute", left: 16, right: 16, bottom: 16 },
     heroTitle: { color: p.headerText, fontSize: 24, fontWeight: "900", letterSpacing: -0.3 },
     heroSub: { color: p.headerSubtext, fontSize: 13, fontWeight: "600", marginTop: 4, lineHeight: 18 },
-    introCard: {
-      backgroundColor: p.cardBg,
-      borderRadius: 16,
-      padding: 14,
-      marginBottom: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: p.border,
-    },
-    introTitle: { color: p.text, fontSize: 15, fontWeight: "900", marginBottom: 6 },
-    introBody: { color: p.muted, fontSize: 13, lineHeight: 19, fontWeight: "600" },
     searchCard: {
       flexDirection: "row",
       alignItems: "center",

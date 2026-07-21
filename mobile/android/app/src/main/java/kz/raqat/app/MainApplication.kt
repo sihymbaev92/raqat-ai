@@ -1,6 +1,7 @@
 package kz.raqat.app
 
 import android.app.Application
+import android.content.Context
 import android.content.res.Configuration
 
 import com.facebook.react.PackageList
@@ -17,6 +18,10 @@ import expo.modules.ApplicationLifecycleDispatcher
 import expo.modules.ReactNativeHostWrapper
 
 class MainApplication : Application(), ReactApplication {
+
+  override fun attachBaseContext(base: Context) {
+    super.attachBaseContext(DisplayMetricsCompat.wrap(base))
+  }
 
   override val reactNativeHost: ReactNativeHost = ReactNativeHostWrapper(
       this,
@@ -47,8 +52,8 @@ class MainApplication : Application(), ReactApplication {
     loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
     try {
-      PrayerLegacyNotificationCleaner.clearRepeatedly(this)
-      PrayerAzanDeliveryService.stopRunning(this)
+      // Ешқашан осында азан FGS/хабарламаны өшірмеу — AlarmReceiver процесс оятқанда
+      // onCreate алдымен жүреді; cleaner cancelAll азан бетін жоятын.
       PrayerWidgetAlarmScheduler.scheduleNext(this)
       PrayerAzanAlarmScheduler.restore(this)
     } catch (_: Throwable) {

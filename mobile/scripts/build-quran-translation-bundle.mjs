@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 /**
- * Downloads verified Quran translation editions into one offline JSON bundle.
- * This prevents non-Kazakh readers from falling back to Kazakh on first
- * launch when there is no internet connection.
+ * Downloads verified Quran translation editions (ru/en/tr/uz/ky) into one
+ * offline JSON bundle for APK. Unused stub locales are not included.
  */
 import fs from "node:fs/promises";
 import path from "node:path";

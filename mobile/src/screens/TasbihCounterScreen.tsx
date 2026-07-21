@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useAppLocale } from "../i18n/runtime";
 import {
   View,
   Text,
@@ -20,7 +19,8 @@ import {
   getAllDhikrCounts,
   setDhikrCountForId,
 } from "../storage/prefs";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TasbihStackParamList } from "../navigation/types";
 import {
@@ -44,7 +44,8 @@ function flushTasbih(
 }
 
 export function TasbihCounterScreen({ navigation, route }: Props) {
-  useAppLocale();
+  const kk = useI18n();
+  const { tr } = useKkAutoTranslator();
   const { dhikrId, titleKk } = route.params;
   const items = useMemo(() => loadDhikrItems(), []);
   const active = useMemo(() => items.find((i) => i.id === dhikrId) ?? null, [items, dhikrId]);
@@ -64,13 +65,14 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
   countRef.current = count;
 
   useLayoutEffect(() => {
-    const t = titleKk?.trim() || active?.textKk;
+    const raw = titleKk?.trim() || active?.textKk;
+    const t = raw ? tr(raw) : "";
     if (t) {
       navigation.setOptions({
         title: t.length > 42 ? `${t.slice(0, 40)}…` : t,
       });
     }
-  }, [navigation, titleKk, active?.textKk]);
+  }, [navigation, titleKk, active?.textKk, tr]);
 
   useEffect(() => {
     if (!active) {
@@ -224,15 +226,15 @@ export function TasbihCounterScreen({ navigation, route }: Props) {
 
         <View style={styles.aboveCircle}>
           <Text style={styles.arCompact}>{active.textAr}</Text>
-          {translitLine ? <Text style={styles.translitCompact}>{translitLine}</Text> : null}
+          {translitLine ? <Text style={styles.translitCompact}>{tr(translitLine)}</Text> : null}
           <Text style={styles.progressLine}>{formatTasbihProgress(count, effectiveGoal)}</Text>
           {phase ? <Text style={styles.phaseAbove}>{phase}</Text> : null}
         </View>
 
         {active.meaningKk ? (
           <View style={styles.metaBlock}>
-            <Text style={styles.metaLabel}>{kk.tasbih.meaningLabel}</Text>
-            <Text style={styles.meaning}>{active.meaningKk}</Text>
+            <Text style={styles.metaLabel}>{tr(kk.tasbih.meaningLabel)}</Text>
+            <Text style={styles.meaning}>{tr(active.meaningKk)}</Text>
           </View>
         ) : null}
 

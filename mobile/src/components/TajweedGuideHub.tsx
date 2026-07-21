@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Pressable } from "@/ui/Pressable";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -16,32 +18,72 @@ import {
   TAJWEED_APP_SECTIONS,
   buildTajweedTocGroups,
 } from "../content/tajweedMuftyatScope";
+import { tajweedSectionDisplayTitle } from "../content/tajweedSectionTitlesLocale";
+import { useAppLocale } from "../i18n/runtime";
+import type { MoreStackParamList } from "../navigation/types";
+import { setQuranTajweedColorsEnabled } from "../storage/quranReaderPrefs";
 
 type Props = {
   onOpenPage: (page: number) => void;
 };
 
+/** Нөлден оқу: әліпби → ережелер → оқулық → қысқа сүре. Түстер — кейін. */
 export function TajweedGuideHome({ onOpenPage }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const locale = useAppLocale();
   const { tr, translated } = useKkAutoTranslator();
   const t = useI18n();
+  const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [bookOpen, setBookOpen] = useState(false);
+  const [chaptersOpen, setChaptersOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [openingSurah, setOpeningSurah] = useState(false);
   const quickNavGroups = useMemo(() => buildTajweedTocGroups(TAJWEED_APP_SECTIONS), []);
+
+  const sectionTitle = useCallback(
+    (titleKk: string) => tajweedSectionDisplayTitle(titleKk, locale, tr),
+    [locale, tr]
+  );
+
+  const openPlainFatiha = useCallback(async () => {
+    if (openingSurah) return;
+    setOpeningSurah(true);
+    try {
+      await setQuranTajweedColorsEnabled(false);
+      navigation.navigate("QuranSurah", {
+        surahNumber: 1,
+        englishName: "Al-Fatiha",
+        arabicName: "الفاتحة",
+      });
+    } finally {
+      setOpeningSurah(false);
+    }
+  }, [navigation, openingSurah]);
 
   return (
     <View style={styles.wrap}>
+      <View style={styles.heroCard}>
+        <Text style={styles.heroEyebrow}>{t.tajweedGuide.sectionAlphabet}</Text>
+        <Text style={styles.heroTitle}>{t.tajweedGuide.alphabetHeading}</Text>
+        <Text style={styles.heroIntro}>{t.tajweedGuide.intro}</Text>
+      </View>
+
       <TajweedAlphabetGrid />
 
-      <View style={styles.studyCard}>
-        <Text style={styles.studyTitle}>{t.tajweedGuide.chaptersTitle}</Text>
-        <Text style={styles.studyHint}>
-          {t.tajweedGuide.chaptersHint}
-        </Text>
+      <GuideAccordionSection
+        title={tr(kk.tajweedGuide.sectionLaterTitle)}
+        subtitle={tr(kk.tajweedGuide.sectionLaterSub)}
+        expanded={chaptersOpen}
+        onToggle={() => setChaptersOpen((open) => !open)}
+        colors={colors}
+      >
+        <Text style={styles.studyHint}>{t.tajweedGuide.chaptersHint}</Text>
         {quickNavGroups.map((group) => (
           <View key={`quick-${group.id}`} style={styles.studyGroup}>
-            <Text style={styles.studyGroupTitle}>{tr(group.part?.title ?? kk.tajweedGuide.tocGroupPreface)}</Text>
+            <Text style={styles.studyGroupTitle}>
+              {sectionTitle(group.part?.title ?? kk.tajweedGuide.tocGroupPreface)}
+            </Text>
             <View style={styles.chapterGrid}>
               {group.chapters.map((sec) => (
                 <Pressable
@@ -49,10 +91,10 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
                   onPress={() => onOpenPage(sec.startPage)}
                   style={({ pressed }) => [styles.chapterChip, pressed && { opacity: 0.9 }]}
                   accessibilityRole="button"
-                  accessibilityLabel={`${sec.title}, ${sec.startPage}`}
+                  accessibilityLabel={`${sectionTitle(sec.title)}, ${sec.startPage}`}
                 >
                   <Text style={styles.chapterChipTitle} numberOfLines={2}>
-                    {tr(sec.title)}
+                    {sectionTitle(sec.title)}
                   </Text>
                   <Text style={styles.chapterChipPages}>
                     {sec.startPage}
@@ -63,7 +105,7 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
             </View>
           </View>
         ))}
-      </View>
+      </GuideAccordionSection>
 
       <GuideAccordionSection
         title={tr(kk.tajweedGuide.sectionBook)}
@@ -85,6 +127,24 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
         <TajweedRulesLegendPanel compact />
       </GuideAccordionSection>
 
+      <Pressable
+        onPress={() => void openPlainFatiha()}
+        disabled={openingSurah}
+        style={({ pressed }) => [styles.practiceCta, pressed && { opacity: 0.92 }]}
+        accessibilityRole="button"
+        accessibilityLabel={t.tajweedGuide.practiceCtaA11y}
+      >
+        <View style={styles.practiceTextCol}>
+          <Text style={styles.practiceTitle}>{t.tajweedGuide.practiceCtaTitle}</Text>
+          <Text style={styles.practiceHint}>{t.tajweedGuide.practiceCtaHint}</Text>
+        </View>
+        {openingSurah ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.practiceBtn}>{t.tajweedGuide.practiceCtaBtn}</Text>
+        )}
+      </Pressable>
+
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </View>
   );
@@ -93,25 +153,67 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
 function makeStyles(colors: ThemeColors) {
   return StyleSheet.create({
     wrap: { paddingHorizontal: 14, paddingTop: 8, paddingBottom: 32, gap: 4 },
-    studyCard: {
+    heroCard: {
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 18,
       padding: 14,
-      marginBottom: 12,
+      marginBottom: 10,
+      gap: 4,
     },
-    studyTitle: {
+    heroEyebrow: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 0.3,
+    },
+    heroTitle: {
       color: colors.text,
-      fontSize: 18,
+      fontSize: 22,
       fontWeight: "900",
-      marginBottom: 4,
+      lineHeight: 28,
+    },
+    heroIntro: {
+      color: colors.muted,
+      fontSize: 14,
+      lineHeight: 21,
+      marginTop: 2,
+    },
+    practiceCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: colors.accent,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      marginTop: 10,
+      marginBottom: 14,
+    },
+    practiceTextCol: { flex: 1, gap: 3 },
+    practiceTitle: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "900",
+      lineHeight: 21,
+    },
+    practiceHint: {
+      color: "rgba(255,255,255,0.9)",
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "600",
+    },
+    practiceBtn: {
+      color: "#FFFFFF",
+      fontSize: 14,
+      fontWeight: "900",
     },
     studyHint: {
       color: colors.muted,
       fontSize: 13,
       lineHeight: 19,
-      marginBottom: 12,
+      marginBottom: 10,
     },
     studyGroup: {
       gap: 8,

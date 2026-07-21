@@ -13,6 +13,8 @@ import {
 } from "../content/tajweedMuftyatScope";
 import type { TajweedMuftyatSection } from "../content/tajweedMuftyatCatalog";
 import { useAppLocale } from "../i18n/runtime";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { tajweedSectionDisplayTitle } from "../content/tajweedSectionTitlesLocale";
 
 type Props = {
   onPickPage: (page: number) => void;
@@ -20,7 +22,7 @@ type Props = {
   embedded?: boolean;
 };
 
-function groupTitle(group: TajweedTocGroup): string {
+function groupTitleRaw(group: TajweedTocGroup): string {
   if (group.part) return group.part.title;
   return kk.tajweedGuide.tocGroupPreface;
 }
@@ -39,22 +41,24 @@ function ChapterRow({
   onPickPage,
   styles,
   colors,
+  title,
 }: {
   sec: TajweedMuftyatSection;
   onPickPage: (page: number) => void;
   styles: ReturnType<typeof makeStyles>;
   colors: ThemeColors;
+  title: string;
 }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.chapterRow, pressed && { opacity: 0.9 }]}
       onPress={() => onPickPage(sec.startPage)}
       accessibilityRole="button"
-      accessibilityLabel={`${sec.title}, ${sec.startPage}`}
+      accessibilityLabel={`${title}, ${sec.startPage}`}
     >
       <View style={styles.chapterText}>
         <Text style={styles.chapterTitle} numberOfLines={3}>
-          {sec.title}
+          {title}
         </Text>
         <Text style={styles.chapterPages}>
           {sec.startPage}
@@ -67,10 +71,15 @@ function ChapterRow({
 }
 
 export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
-  useAppLocale();
+  const locale = useAppLocale();
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { tr } = useKkAutoTranslator();
   const groups = useMemo(() => buildTajweedTocGroups(TAJWEED_APP_SECTIONS), []);
+  const sectionTitle = useCallback(
+    (titleKk: string) => tajweedSectionDisplayTitle(titleKk, locale, tr),
+    [locale, tr]
+  );
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -89,6 +98,7 @@ export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
       {groups.map((group) => {
         const open = !!openGroups[group.id];
         const range = groupPageRange(group);
+        const title = sectionTitle(groupTitleRaw(group));
         return (
           <View key={group.id} style={styles.groupWrap}>
             <Pressable
@@ -100,11 +110,11 @@ export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
               onPress={() => toggleGroup(group.id)}
               accessibilityRole="button"
               accessibilityState={{ expanded: open }}
-              accessibilityLabel={`${groupTitle(group)}${range ? `, ${range}` : ""}`}
+              accessibilityLabel={`${title}${range ? `, ${range}` : ""}`}
             >
               <View style={styles.groupHeadText}>
                 <Text style={[styles.groupTitle, group.part && styles.groupTitlePart]} numberOfLines={2}>
-                  {groupTitle(group)}
+                  {title}
                 </Text>
                 {range ? <Text style={styles.groupRange}>{range}</Text> : null}
               </View>
@@ -125,6 +135,7 @@ export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
                     onPickPage={onPickPage}
                     styles={styles}
                     colors={colors}
+                    title={sectionTitle(sec.title)}
                   />
                 ))}
               </View>
@@ -132,7 +143,7 @@ export function TajweedMuftyatToc({ onPickPage, embedded = false }: Props) {
           </View>
         );
       })}
-      <Text style={styles.footHint}>{kk.tajweedGuide.tocJumpHint}</Text>
+      <Text style={styles.footHint}>{tr(kk.tajweedGuide.tocJumpHint)}</Text>
     </>
   );
 

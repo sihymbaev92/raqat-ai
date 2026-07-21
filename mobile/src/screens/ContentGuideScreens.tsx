@@ -151,7 +151,7 @@ function NamazGuideBody({
               thumbStyle={[styles.namazGuideImageThumb, styles.namazGuideImageThumbBleed]}
               imageAspectRatio={imageAssetAspectRatio(step.image)}
               closeLabel={kk.namazGuide.closeImageLightbox}
-              openImageA11y={`${step.title}. ${step.desc}. ${kk.namazGuide.openImageA11y}`}
+              openImageA11y={`${tr(step.title)}. ${tr(step.desc)}. ${kk.namazGuide.openImageA11y}`}
               softenThumbOverlay={false}
               fitThumbToScreen
               maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
@@ -261,7 +261,7 @@ function NamazGuideBody({
                 thumbStyle={[styles.namazGuideImageThumb, styles.namazGuideImageThumbBleed]}
                 imageAspectRatio={imageAssetAspectRatio(v.image)}
                 closeLabel={kk.namazGuide.closeImageLightbox}
-                openImageA11y={`${v.title}. ${v.desc}. ${kk.namazGuide.openImageA11y}`}
+                openImageA11y={`${tr(v.title)}. ${tr(v.desc)}. ${kk.namazGuide.openImageA11y}`}
                 softenThumbOverlay={false}
                 fitThumbToScreen
                 maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
@@ -468,7 +468,7 @@ function NamazGuideBody({
                   thumbStyle={[styles.namazGuideImageThumb, styles.namazGuideImageThumbBleed]}
                   imageAspectRatio={imageAssetAspectRatio(selectedPrayerCard.image)}
                   closeLabel={kk.namazGuide.closeImageLightbox}
-                  openImageA11y={`${selectedPrayerCard.title}. ${selectedPrayerCard.subtitle}. ${kk.namazGuide.openImageA11y}`}
+                  openImageA11y={`${tr(selectedPrayerCard.title)}. ${tr(selectedPrayerCard.subtitle)}. ${kk.namazGuide.openImageA11y}`}
                   softenThumbOverlay={false}
                   fitThumbToScreen
                   maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}

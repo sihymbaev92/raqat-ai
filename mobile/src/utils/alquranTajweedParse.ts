@@ -275,7 +275,7 @@ export function tajweedWordHasPerLetterColoring(
   return !(tagged.length === normalized.length && new Set(tagged).size === 1);
 }
 
-/** Түсті топтар: легенда үшін (4 халықаралық түс + сұр көмекші). */
+/** Түсті топтар: легенда/fallback үшін (Al Quran Cloud топтары). */
 export type TajweedColorGroup =
   | "madd"
   | "qalqalah"

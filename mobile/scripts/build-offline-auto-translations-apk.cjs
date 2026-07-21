@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Slim APK UI i18n pack: APP_LOCALE languages × strings from kk.ts (+ critical patches).
- * Full 36MB CDN file stays optional; this file is small enough to bundle in APK.
+ * Slim APK i18n pack: UI (kk.ts) + guide/catalog chrome from core dictionary.
+ * Hadith/Quran bodies are excluded (native editions only).
  */
 const fs = require("fs");
 const path = require("path");
@@ -12,6 +12,7 @@ const outPath = path.join(mobileRoot, "assets", "bundled", "offline-auto-transla
 const kkPath = path.join(mobileRoot, "src", "i18n", "kk.ts");
 
 const KEEP_LOCALES = ["ru", "en", "ky", "uz", "tr", "ar"];
+const { collectContentStrings, collectQuoted } = require("./i18n-content-collect.cjs");
 
 function hashAutoTranslateSource(s) {
   let h = 5381;
@@ -21,38 +22,25 @@ function hashAutoTranslateSource(s) {
   return (h >>> 0).toString(36);
 }
 
-function collectKkStrings(fileText) {
-  const out = new Set();
-  const re = /`(?:\\.|[^`\\])*`|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"/g;
-  let m;
-  while ((m = re.exec(fileText))) {
-    const raw = m[0];
-    let s;
-    try {
-      if (raw.startsWith("`")) {
-        s = raw.slice(1, -1).replace(/\\`/g, "`").replace(/\\\$/g, "$").replace(/\\n/g, "\n");
-      } else {
-        s = JSON.parse(raw.replace(/^'/, '"').replace(/'$/, '"').replace(/\\'/g, "'"));
-      }
-    } catch {
-      s = raw.slice(1, -1);
-    }
-    s = String(s ?? "").trim();
-    if (s.length < 2) continue;
-    if (!/[А-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ]/.test(s)) continue;
-    if (s.includes("${")) continue;
-    out.add(s);
-  }
-  return out;
-}
-
-const kkStrings = collectKkStrings(fs.readFileSync(kkPath, "utf8"));
-const hashes = new Set([...kkStrings].map(hashAutoTranslateSource));
-console.log(`kk UI strings: ${kkStrings.size}, hashes: ${hashes.size}`);
+const kkStrings = new Set();
+collectQuoted(fs.readFileSync(kkPath, "utf8"), kkStrings);
+const contentStrings = collectContentStrings(mobileRoot);
+const allStrings = new Set([...kkStrings, ...contentStrings]);
+const hashes = new Set([...allStrings].map(hashAutoTranslateSource));
+console.log(
+  `kk UI: ${kkStrings.size}, content: ${contentStrings.size}, total hashes: ${hashes.size}`
+);
 
 const full = JSON.parse(fs.readFileSync(fullPath, "utf8"));
 const targets = {};
 let kept = 0;
+let missingContent = 0;
+for (const s of contentStrings) {
+  const h = hashAutoTranslateSource(s);
+  if (!full.targets?.ru?.[h]) missingContent += 1;
+}
+console.log(`content strings missing from core(ru): ${missingContent}`);
+
 for (const loc of KEEP_LOCALES) {
   const srcMap = full.targets?.[loc] || {};
   const slim = {};
@@ -71,7 +59,8 @@ const out = {
   version: Number(full.version || 1),
   sourceLocale: "kk",
   generatedAt: new Date().toISOString(),
-  scope: "apk-ui-locales",
+  scope: "apk-ui-and-spiritual-chrome",
+  policy: "no-gtx-hadith-or-quran-body",
   locales: KEEP_LOCALES,
   targets,
 };

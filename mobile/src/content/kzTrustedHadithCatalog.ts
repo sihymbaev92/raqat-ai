@@ -1,5 +1,4 @@
-/** Қазақстандағы сенімді сахих хадистер — қолданба ішінде толық мәтін + дереккөз. */
-/* eslint-disable max-lines */
+/** Auto-generated curated Sahih catalog — do not edit by hand. */
 export type KzTrustedHadith = {
   id: string;
   collection: "bukhari" | "muslim";
@@ -13,7 +12,7 @@ export type KzTrustedHadith = {
   sourceCitationKk: string;
   sourceLabelKk: string;
   sourceNoteKk: string;
-  narratorKk: string;
+  narratorKk?: string;
 };
 
 export type KzTrustedHadithBundle = {

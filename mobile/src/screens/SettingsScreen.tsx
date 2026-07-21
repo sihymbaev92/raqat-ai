@@ -66,6 +66,7 @@ import { ScreenFitScrollView } from "../components/ScreenFit";
 import { useI18n } from "../i18n/useI18n";
 import {
   APP_LOCALE_OPTIONS,
+  appLocaleDisplayLabel,
   setCurrentLocale,
   useAppLocale,
   type AppLocale,
@@ -353,7 +354,7 @@ export function SettingsScreen() {
 
   const languageOptions = APP_LOCALE_OPTIONS.map((opt) => ({
     id: opt.id,
-    label: opt.nativeLabel,
+    label: appLocaleDisplayLabel(opt.id),
   }));
 
   return (

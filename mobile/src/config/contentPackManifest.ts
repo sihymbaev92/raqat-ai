@@ -18,7 +18,7 @@ export type ContentPackDef = {
   approxMb: number;
 };
 
-/** Хатым Arabic + KK + translit + tajweed APK-та; көптілді аудармалар CDN. */
+/** Хатым Arabic + KK + translit + tajweed + ru/en/tr/uz/ky мағына APK-та. */
 export const CONTENT_PACKS: readonly ContentPackDef[] = [
   {
     id: "hatim-arabic",
@@ -38,11 +38,11 @@ export const CONTENT_PACKS: readonly ContentPackDef[] = [
   },
   {
     id: "quran-translations",
-    bundledInApk: false,
+    bundledInApk: true,
     jsonFiles: ["quran-translations-offline.json"],
-    labelKk: "Құран аудармалары (барлық тіл)",
-    hintKk: "Орыс, ағылшын, түрік және басқа офлайн аудармалар (CDN/cache).",
-    approxMb: 18,
+    labelKk: "Құран аудармалары (ru/en/tr/uz/ky)",
+    hintKk: "Кулиев, Sahih International, Diyanet, Содиқ, Хакимов — сенімді басылымдар, APK ішінде (~5 MB).",
+    approxMb: 5,
   },
   {
     id: "quran-translit",
@@ -65,8 +65,8 @@ export const CONTENT_PACKS: readonly ContentPackDef[] = [
     bundledInApk: true,
     jsonFiles: ["offline-auto-translations-apk.json"],
     labelKk: "Интерфейс аудармалары",
-    hintKk: "ru/en/ky/uz/tr/ar UI — APK ішінде (~0.6 MB). Толық сөздік CDN-де қосымша.",
-    approxMb: 1,
+    hintKk: "ru/en/ky/uz/tr/ar UI + гайд контент — APK ішінде. Толық сөздік CDN-де қосымша.",
+    approxMb: 7,
   },
 ] as const;
 

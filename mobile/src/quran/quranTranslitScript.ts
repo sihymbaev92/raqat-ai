@@ -16,7 +16,8 @@ export function normalizeQuranTranslitScript(raw: string | null | undefined): Qu
 }
 
 export function defaultQuranTranslitScriptForUi(uiLocale: AppLocale): QuranTranslitScript {
-  return uiLocale === "en" || uiLocale === "tr" ? "latin" : "kk";
+  /** Non-kk UI must never surface Kazakh Cyrillic translit by default. */
+  return uiLocale === "kk" ? "kk" : "latin";
 }
 
 function emitQuranTranslitScriptChange(): void {
@@ -39,6 +40,12 @@ export async function hydrateQuranTranslitScript(): Promise<QuranTranslitScript>
 }
 
 export async function ensureDefaultQuranTranslitScript(uiLocale: AppLocale): Promise<QuranTranslitScript> {
+  /** Non-kk UI: force latin in memory only — do not overwrite user's kk preference in storage. */
+  if (uiLocale !== "kk") {
+    cached = "latin";
+    emitQuranTranslitScriptChange();
+    return cached;
+  }
   try {
     const existing = await AsyncStorage.getItem(QURAN_TRANSLIT_SCRIPT_KEY);
     if (existing != null && existing.trim() !== "") {

@@ -24,18 +24,20 @@
 | Deep link `imamai` primary | **`raqat://` primary**; `imamai://` kept as legacy |
 | OEM brand detection gaps | **Redmi/Poco/Honor/Infinix brand** + battery permission in Expo config |
 | Stale preflight “1200 sourceOnly” | **Updated** manual gates text |
+| Multi-lang Quran on CDN (~18 MB) | **APK-bundled** ru/en/tr/uz/ky only (~5 MB); native editions (not gtx) |
+| Hadith bodies in UI MT pack | **Excluded** — pack = chrome/guides only; hadith uses fawaz/HadeethEnc/kz-trusted |
 
 ## Still external / honest gates
 
-| Item | Why not faked | Status 2026-07-19 |
+| Item | Why not faked | Status 2026-07-21 |
 |------|----------------|-------------------|
 | VPS CDN origin 521 | Needs SSH deploy (`deploy_mushaf_cdn_assets.ps1`) | **Blocked:** host key rotated; `Permission denied (publickey)` — install key via Hetzner Console (see `docs/mobile/CDN_DEPLOY_SSH.md`) |
 | Play Internal upload | Manual Console upload | AAB built locally — upload still manual |
 | Scholar sign-off | `approvedForPublicRelease` stays **false** until real reviewer | Unchanged |
 | Azan 3×3 OEM QA | Physical devices (code/OEM helpers improved) | UX copy improved (tap notification when screen on / FSI denied) |
-| Multi-lang Quran editions (~18 MB) | Kept on CDN for slim APK | Unchanged |
 | Account cross-device sync reliability | Backend + network dependent | API host down until VPS restored |
 | iOS Apple Developer | Paid Program + EAS | Unchanged |
+| Guide prose MT quality (duas/namaz/hajj) | gtx + banner; patches override chrome | Human patches grow over time |
 
 ## Metrics
 
@@ -44,5 +46,6 @@
 | Generative AI entry points | **0** |
 | APK budget | ~55 MB est. (target 80) after Quran pack bundle |
 | Auth | Google / Apple (+ dev password) |
-| Hadith KK seed | **98** |
+| Hadith KK seed | **98** curated |
+| Quran editions (ru/en/tr/uz/ky) | **APK** ~5 MB |
 | Preflight | `npm run release:minuses-preflight` |

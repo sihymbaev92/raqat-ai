@@ -32,6 +32,9 @@ internal data class PrayerDayParsed(
   /** Келесі парыз (күн шығуын есепке алмайды). */
   fun nextSalatRow(): PrayerRow? = nextRowAmong(salatRowsFive())
 
+  /** Қазір кіріп тұрған парыз (уақыты өткен соңғы; таңға дейін — құптан). */
+  fun currentSalatRow(): PrayerRow? = currentRowAmong(salatRowsFive())
+
   private fun nextRowAmong(subset: List<PrayerRow>): PrayerRow? {
     if (subset.isEmpty()) return null
     val valid = subset.mapNotNull { r -> r.minutesFromMidnight?.let { r to it } }
@@ -40,6 +43,16 @@ internal data class PrayerDayParsed(
     val now = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
     val after = valid.firstOrNull { it.second > now }
     return (after ?: valid.first()).first
+  }
+
+  private fun currentRowAmong(subset: List<PrayerRow>): PrayerRow? {
+    if (subset.isEmpty()) return null
+    val valid = subset.mapNotNull { r -> r.minutesFromMidnight?.let { r to it } }
+    if (valid.isEmpty()) return null
+    val cal = Calendar.getInstance()
+    val now = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+    val entered = valid.lastOrNull { it.second <= now }
+    return (entered ?: valid.last()).first
   }
 }
 

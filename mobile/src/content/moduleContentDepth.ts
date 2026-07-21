@@ -40,7 +40,7 @@ export const GUIDANCE_DEPTH_MINIMUMS = {
   duas: { categories: 8, minBlocks: 1, offlineChars: 2000 },
   tasbih: { items: 5, offlineChars: 500 },
   asma: { names: 99, offlineChars: 3000 },
-  hadith: { items: 50, offlineChars: 5000 },
+  hadith: { items: 80, offlineChars: 5000 },
 } as const;
 
 function loadAsmaRows(): { n: number; ar: string; kk: string }[] {

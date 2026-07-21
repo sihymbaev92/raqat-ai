@@ -17,7 +17,7 @@ Decisions that cannot be faked in code. Engineering implements UX around these g
 |-------|--------|
 | **Decision** | Ship **only hadiths with in-app Kazakh meaning** (kz-trusted catalog → seed). Rows without `textKk` / `sourceOnly` **deleted** |
 | **Owner** | Content |
-| **Code** | `hadith-from-db-seed.json` (~98); `filterHadithCorpusKkOnly` / `hadithHasKkMeaning` |
+| **Code** | `hadith-from-db-seed.json` (~98 curated KK); `filterHadithCorpusKkOnly` / `hadithHasKkMeaning`. No unreviewed MT KK in catalog. |
 | **Unblock** | To grow catalog: expand `kz-trusted-hadith-catalog.json` then regenerate seed |
 
 ## 3. SMS phone auth
@@ -41,7 +41,7 @@ Decisions that cannot be faked in code. Engineering implements UX around these g
 
 | Field | Value |
 |-------|--------|
-| **Decision** | Release APK **~55 MB** — multi-lang Quran editions (~18 MB) on CDN; **Arabic + KK + translit + tajweed + UI i18n + tajweed letters bundled** |
+| **Decision** | Release APK — Arabic + KK + translit + tajweed + **ru/en/tr/uz/ky Quran editions (~5 MB)** + UI i18n bundled. No CDN required for mushaf meaning. |
 | **Fallbacks** | AlQuran API + GitHub QCF4 when `rahatomir.com` 521 |
 | **Owner** | DevOps |
 | **Deploy** | `powershell -File scripts/deploy_mushaf_cdn_assets.ps1` after VPS/SSH fix |

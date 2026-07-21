@@ -30,7 +30,14 @@ export function useCommunityDuas(limit = 35) {
         return { latest: j.duas[0] ?? null };
       }
       setRows(Array.isArray(j.duas) ? j.duas : []);
-      setError(typeof j.detail === "string" ? j.detail : "load_failed");
+      const detail = typeof j.detail === "string" ? j.detail : "";
+      if (detail === "network" || j.status === undefined) {
+        setError("network");
+      } else if (j.status === 503 || detail === "database_error") {
+        setError("server");
+      } else {
+        setError(detail || "load_failed");
+      }
       return { latest: j.duas?.[0] ?? null };
     } catch {
       setRows([]);

@@ -68,14 +68,25 @@ export async function ensureI18nOfflineDictionary(locale: AppLocale): Promise<bo
   await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
   if (areOfflineAutoTranslationsReady()) {
     invalidateOfflineLocaleTreeCache(locale);
-    /** Core фон — UI-ды CDN күтуінен босату. */
-    void ensureOfflineAutoTranslationsCoreLoaded(target)
-      .then((merged) => {
-        if (!merged || getCurrentLocale() !== locale) return;
-        invalidateOfflineLocaleTreeCache(locale);
-        reapplyCurrentLocale();
-      })
-      .catch(() => {});
+    /** Core (~30MB) — тіл таңдағанда күту: әйтпесе UI қазақша қалады. */
+    const coreMerged = await Promise.race([
+      ensureOfflineAutoTranslationsCoreLoaded(target).catch(() => false),
+      new Promise<false>((resolve) => setTimeout(() => resolve(false), 15_000)),
+    ]);
+    if (coreMerged && getCurrentLocale() === locale) {
+      invalidateOfflineLocaleTreeCache(locale);
+      reapplyCurrentLocale();
+    } else if (getCurrentLocale() === locale) {
+      /** Slim pack жеткілікті болса да UI-ды жаңарту. */
+      reapplyCurrentLocale();
+      void ensureOfflineAutoTranslationsCoreLoaded(target)
+        .then((merged) => {
+          if (!merged || getCurrentLocale() !== locale) return;
+          invalidateOfflineLocaleTreeCache(locale);
+          reapplyCurrentLocale();
+        })
+        .catch(() => {});
+    }
     return true;
   }
 
@@ -89,6 +100,14 @@ export async function ensureI18nOfflineDictionary(locale: AppLocale): Promise<bo
 
   await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
   invalidateOfflineLocaleTreeCache(locale);
+  const coreMerged = await Promise.race([
+    ensureOfflineAutoTranslationsCoreLoaded(target).catch(() => false),
+    new Promise<false>((resolve) => setTimeout(() => resolve(false), 15_000)),
+  ]);
+  if (coreMerged && getCurrentLocale() === locale) {
+    invalidateOfflineLocaleTreeCache(locale);
+    reapplyCurrentLocale();
+  }
   return areOfflineAutoTranslationsReady();
 }
 

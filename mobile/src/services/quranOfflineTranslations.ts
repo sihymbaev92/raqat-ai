@@ -86,7 +86,7 @@ export function ensureBundledQuranTranslationLocaleSync(locale: QuranTranslation
   projectBundledQuranTranslationsToLocale(locale);
 }
 
-/** ~18 MB көптілді bundle-ды белсенді тіл өрісіне қысу. */
+/** ~5–18 MB көптілді bundle-ды белсенді тіл өрісіне қысу. */
 export function projectBundledQuranTranslationsToLocale(locale: QuranTranslationLocale): void {
   if (!bundle.surahs?.length) return;
   if (projectedLocale === locale) return;
@@ -138,6 +138,10 @@ export async function ensureBundledQuranTranslationsLoaded(
           /* test mocks */
         }
         if (locale) projectBundledQuranTranslationsToLocale(locale);
+      })
+      .catch(() => {
+        /* APK/CDN miss — per-surah API fallback in getQuranSurahTranslation */
+        bundle = bundle.surahs?.length ? bundle : {};
       })
       .finally(() => {
         loadPromise = null;

@@ -124,6 +124,67 @@ export async function readDeviceCoords(): Promise<DeviceCoords | null> {
   return readNativeDeviceCoords();
 }
 
+function samePlaceName(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+/** Google Open Location Code (мысалы JJ2C+MR6) — елді мекен атауы емес. */
+export function isPlusCodePlaceName(value: string): boolean {
+  const s = value.trim();
+  if (!s) return false;
+  // Қысқа: JJ2C+MR6 · толық: 8Q7XJJ2C+MR6
+  if (/^[A-Z0-9]{2,8}\+[A-Z0-9]{2,8}$/i.test(s)) return true;
+  if (/\b[A-Z0-9]{4}\+[A-Z0-9]{2,3}\b/i.test(s) && !/[\u0400-\u04FF]/.test(s)) return true;
+  return false;
+}
+
+/** Көше/үй нөмірі / Plus Code — елді мекен атауы емес. */
+export function isStreetLikePlaceName(value: string, street?: string | null): boolean {
+  const s = value.trim();
+  if (!s) return true;
+  if (isPlusCodePlaceName(s)) return true;
+  if (street && samePlaceName(s, street)) return true;
+  if (/^\d+[A-Za-zА-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ/-]*$/u.test(s)) return true;
+  if (/^(ул\.?|улица|көше|пр\.?|проспект|мкр\.?|микрорайон|б\.?|бульвар)\b/iu.test(s)) return true;
+  return false;
+}
+
+type GeocodePlaceRow = {
+  city?: string | null;
+  district?: string | null;
+  name?: string | null;
+  subregion?: string | null;
+  region?: string | null;
+  street?: string | null;
+  country?: string | null;
+  formattedAddress?: string | null;
+};
+
+/**
+ * Ауыл/елді мекенді қаладан бұрын алу:
+ * district (subLocality) → name → city → subregion → region.
+ * Шымкент маңындағы Құтарыс сияқты ауылдарда city=Shymkent болса да district/name сақталады.
+ */
+export function pickSettlementFromGeocode(row: GeocodePlaceRow): string {
+  const region = (row.region ?? "").trim();
+  const street = (row.street ?? "").trim();
+  const candidates = [row.district, row.name, row.city, row.subregion, row.region]
+    .map((x) => (x ?? "").trim())
+    .filter(Boolean);
+
+  for (const cand of candidates) {
+    if (isStreetLikePlaceName(cand, street)) continue;
+    if (region && samePlaceName(cand, region) && candidates.some((c) => c !== cand && !samePlaceName(c, region))) {
+      continue;
+    }
+    return cand;
+  }
+
+  const formatted = (row.formattedAddress ?? "").split(",")[0]?.trim() ?? "";
+  if (formatted && !isStreetLikePlaceName(formatted, street)) return formatted;
+  return "";
+}
+
 async function reverseGeocodeLabel(
   lat: number,
   lon: number
@@ -132,7 +193,7 @@ async function reverseGeocodeLabel(
     const rows = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lon });
     const row = rows[0];
     if (!row) return null;
-    const city = (row.city ?? row.subregion ?? row.region ?? "").trim();
+    const city = pickSettlementFromGeocode(row);
     const country = (row.country ?? "").trim();
     if (!city && !country) return null;
     return { city: city || "Unknown", country: country || "Unknown" };
@@ -150,7 +211,8 @@ function savedCoordsFallback(city: string, country: string): { lat: number; lon:
 
 /**
  * Намаз кестесі, ауа райы және құбыла үшін бір орын:
- * автоматты режимде GPS/Wi‑Fi → ең жақын қала + нақты координат.
+ * автоматты режимде GPS/Wi‑Fi координат + reverse-geocode мекенжай
+ * (ауыл/елді мекен атауы; сәтсіз болса — ең жақын қала пресеті).
  */
 export async function resolvePrayerScheduleLocation(): Promise<ResolvedPrayerLocation> {
   const saved = await getSelectedCity();
@@ -160,18 +222,30 @@ export async function resolvePrayerScheduleLocation(): Promise<ResolvedPrayerLoc
     const device = await readDeviceCoords();
     if (device) {
       const nearest = findNearestKzCityPreset(device.lat, device.lon);
-      const inKz =
-        isInKazakhstanBBox(device.lat, device.lon) ||
-        (nearest != null && nearest.distanceM <= 180_000);
+      const geo = await reverseGeocodeLabel(device.lat, device.lon);
 
-      let city = nearest?.city ?? saved.city;
-      let country = nearest?.country ?? saved.country;
+      let city = geo?.city || nearest?.city || saved.city;
+      let country = geo?.country || nearest?.country || saved.country;
 
-      if (!inKz) {
-        const geo = await reverseGeocodeLabel(device.lat, device.lon);
-        if (geo?.city) city = geo.city;
-        if (geo?.country) country = geo.country;
-      } else if (nearest && (saved.city !== city || saved.country !== country)) {
+      // Plus Code / бос геокод — ең жақын қала/елді мекен.
+      if (!city.trim() || isPlusCodePlaceName(city) || city === "Unknown") {
+        city = nearest?.city || (isPlusCodePlaceName(saved.city) ? "" : saved.city) || city;
+      }
+      if (isPlusCodePlaceName(city) && nearest?.city) {
+        city = nearest.city;
+        country = nearest.country;
+      }
+
+      // ҚР ішінде геокод ел атауын бере алмаса — Kazakhstan.
+      if (
+        !geo?.country &&
+        (isInKazakhstanBBox(device.lat, device.lon) ||
+          (nearest != null && nearest.distanceM <= 180_000))
+      ) {
+        country = nearest?.country ?? "Kazakhstan";
+      }
+
+      if (saved.city !== city || saved.country !== country) {
         void setSelectedCity(city, country);
       }
 

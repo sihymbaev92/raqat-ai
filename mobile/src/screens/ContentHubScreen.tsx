@@ -13,7 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import type { MoreStackParamList } from "../navigation/types";
 import { navigateToAppSettings } from "../navigation/navigateToSettings";
 import { navigateToMainTabScreen, navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
@@ -171,9 +171,10 @@ const HUB_TILE_IMAGE_OPACITY = 0.92;
 export function ContentHubScreen({ navigation }: Props) {
   const { colors, isDark } = useAppTheme();
   const locale = useAppLocale();
+  const localeRevision = useLocaleRevision();
   const styles = makeStyles(colors, isDark);
   const accentHubBg = colors.accentSurface;
-  const sections = useMemo(() => hubSections(), [locale]);
+  const sections = useMemo(() => hubSections(), [locale, localeRevision]);
   const hubRasterTileDim = isDark ? 0.11 : 0.085;
 
   const onTilePress = (tile: HubTile) => {

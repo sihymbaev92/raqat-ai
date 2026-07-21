@@ -179,5 +179,14 @@ export function quranReadingThemeLabelKk(id: QuranReadingThemeId): string {
 
 export function readingThemeLabel(id: QuranReadingThemeId, tr?: (text: string) => string): string {
   const label = BY_ID[id]?.labelKk ?? id;
-  return tr ? tr(label) : label;
+  if (tr) return tr(label);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCurrentLocale } = require("../i18n/runtime") as typeof import("../i18n/runtime");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { resolveKkAutoTranslationText } = require("../quran/useKkAutoTranslator") as typeof import("../quran/useKkAutoTranslator");
+    return resolveKkAutoTranslationText(label, getCurrentLocale(), {});
+  } catch {
+    return label;
+  }
 }

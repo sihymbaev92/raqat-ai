@@ -152,16 +152,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "Обряд",
       filterFaith: "Связь с религией",
       topicsCount: (n: number) => `${n} тем`,
-      dinDasturConnectionTitle: "Религия и традиция: связь",
-      dinDasturRulesTitle: "5 правил",
-      dinDasturFoundationBtn: "Основа + доказательства",
-      dinDasturBataBtn: (n: number) => `100 текстов благословений (${n})`,
+      dinDasturConnectionTitle: "Религия, традиция и ырым",
+      dinDasturPointsTitle: "Три ясные мысли",
+      dinDasturRulesTitle: "Основные правила",
+      dinDasturFoundationBtn: "Читать основу",
+      dinDasturYrymBtn: "Ырым и религия",
+      dinDasturBataBtn: (n: number) => `Тексты бата (${n})`,
       bataCountLabel: (n: number) => `${n} бата`,
+      bataShowMore: (n: number) => `Показать ещё ${n}`,
+      bataShowLess: "Свернуть",
       topicNotFound: "Традиция не найдена",
-      aboutTraditionTitle: "О традиции",
-      originTitle: "Происхождение",
-      religionLinkTitle: "Связь с религией",
-      superstitionLimitTitle: "Граница суеверия / что неверно",
+      aboutTraditionTitle: "Кратко",
+      originTitle: "Откуда взялось",
+      religionLinkTitle: "Как сочетается с религией",
+      superstitionLimitTitle: "Где проходит граница",
+      religionLinkLead: "Ниже — связь этой традиции с религией: сначала согласие, затем граница.",
       howToHoldTitle: "Как правильно соблюдать",
       bataTextsTitle: "Тексты благословений",
       relatedArticlesTitle: "Связанные статьи",
@@ -171,6 +176,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ Шариатское правило:",
       quickEvidenceLabel: "📖 Связь с религией (доказательство):",
       quickReadFull: "Читать полный текст",
+      traditionEvidenceHint: "Краткое доказательство — понять связь с религией. Полный хукм — у учителя.",
+      traditionEvidenceDisclaimer:
+        "Это краткий смысл. Для полного текста и хукма смотрите Коран, хадисы и разъяснения муфтията.",
       introDetail:
         "Традиция — опыт общества, проверенный временем; шариат — повеление Аллаха и сунна Пророка ﷺ. Они могут идти вместе только если не причиняют вреда людям, семье и соседям.\n\n" +
         "Номера аятов на этом экране даны для ориентира; особенности мазхаба уточняйте по указаниям национального духовного управления.",
@@ -201,16 +209,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "Ceremony",
       filterFaith: "Faith link",
       topicsCount: (n: number) => `${n} topics`,
-      dinDasturConnectionTitle: "Faith and tradition: the link",
-      dinDasturRulesTitle: "5 rules",
-      dinDasturFoundationBtn: "Foundation + evidence",
-      dinDasturBataBtn: (n: number) => `100 blessing texts (${n})`,
+      dinDasturConnectionTitle: "Faith, tradition, and custom",
+      dinDasturPointsTitle: "Three clear points",
+      dinDasturRulesTitle: "Core rules",
+      dinDasturFoundationBtn: "Read the foundation",
+      dinDasturYrymBtn: "Customs and faith",
+      dinDasturBataBtn: (n: number) => `Blessing texts (${n})`,
       bataCountLabel: (n: number) => `${n} blessings`,
+      bataShowMore: (n: number) => `Show ${n} more`,
+      bataShowLess: "Show less",
       topicNotFound: "Tradition not found",
-      aboutTraditionTitle: "About the tradition",
-      originTitle: "Origins",
-      religionLinkTitle: "Link to religion",
-      superstitionLimitTitle: "Superstition limits / what is wrong",
+      aboutTraditionTitle: "In short",
+      originTitle: "Where it came from",
+      religionLinkTitle: "How it fits with faith",
+      superstitionLimitTitle: "Where the limit is",
+      religionLinkLead: "Below — how this custom relates to faith: first the fit, then the limit.",
       howToHoldTitle: "How to observe it",
       bataTextsTitle: "Blessing texts",
       relatedArticlesTitle: "Related articles",
@@ -220,6 +233,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ Sharia ruling:",
       quickEvidenceLabel: "📖 Link to religion (evidence):",
       quickReadFull: "Read full content",
+      traditionEvidenceHint: "Short evidence — to understand the faith link. Full rulings — with a teacher.",
+      traditionEvidenceDisclaimer:
+        "This is a short meaning. For full text and rulings see Quran, hadith and muftiate guidance.",
       introDetail:
         "Tradition is society's long-tested practice; sharia is Allah's command and the Prophet's ﷺ sunnah. They go together only when they do not harm people, family or neighbors.\n\n" +
         "Ayah numbers on this screen are for reference; confirm madhhab specifics with your national religious authority.",
@@ -250,16 +266,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "Ырым",
       filterFaith: "Дин менен байланыш",
       topicsCount: (n: number) => `${n} тема`,
-      dinDasturConnectionTitle: "Дин жана салт: байланыш",
-      dinDasturRulesTitle: "5 эреже",
-      dinDasturFoundationBtn: "Негиз тема + далилдер",
-      dinDasturBataBtn: (n: number) => `100 бата тексти (${n})`,
+      dinDasturConnectionTitle: "Дин, салт жана ырым",
+      dinDasturPointsTitle: "Үч анык ой",
+      dinDasturRulesTitle: "Негизги эрежелер",
+      dinDasturFoundationBtn: "Негизди окуу",
+      dinDasturYrymBtn: "Ырымдар жана дин",
+      dinDasturBataBtn: (n: number) => `Бата тексттери (${n})`,
       bataCountLabel: (n: number) => `${n} бата`,
+      bataShowMore: (n: number) => `Дагы ${n} көрсөтүү`,
+      bataShowLess: "Жыюу",
       topicNotFound: "Салт табылган жок",
-      aboutTraditionTitle: "Салт жөнүндө",
-      originTitle: "Чыгуу теги",
-      religionLinkTitle: "Дин менен байланышы",
-      superstitionLimitTitle: "Ырым чеги / эмне туура эмес",
+      aboutTraditionTitle: "Кыскача",
+      originTitle: "Кайдан чыкты",
+      religionLinkTitle: "Дин менен кантип шайкеш",
+      superstitionLimitTitle: "Кайда чек бар",
+      religionLinkLead: "Төмөндө — бул салттын дин менен байланышы: адегенде шайкештиги, андан соң чеги.",
       howToHoldTitle: "Кантип кармоо керек",
       bataTextsTitle: "Бата тексттери",
       relatedArticlesTitle: "Байланыштуу макалалар",
@@ -269,6 +290,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ Шариаттагы өкүмү:",
       quickEvidenceLabel: "📖 Дин менен байланышы (далил):",
       quickReadFull: "Толук мазмунду окуу",
+      traditionEvidenceHint: "Кыска далил — дин менен байланышты түшүнүү үчүн. Толук өкүм — устаз менен.",
+      traditionEvidenceDisclaimer:
+        "Бул кыска маани. Толук текст жана өкүм үчүн Куран, хадис жана муфтият түшүндүрмөсүн караңыз.",
       introDetail:
         "Салт — коомдун узак убакытта сыналган тажрыйбасы; шариат — Аалланын буйругу жана Пайгамбардын ﷺ сүннөтү. Адамга, үй-бүлөгө жана коңшуга зыяны жок болсо гана бирге жүрөт.\n\n" +
         "Бул экрандагы аят номерлери багыт берүү үчүн; мазхабтык өзгөчөлүктөрдү улуттук диний башкармалык нускамасы менен ырастаңыз.",
@@ -299,16 +323,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "Marosim",
       filterFaith: "Din bilan bog'liq",
       topicsCount: (n: number) => `${n} mavzu`,
-      dinDasturConnectionTitle: "Din va an'ana: bog'liqligi",
-      dinDasturRulesTitle: "5 qoida",
-      dinDasturFoundationBtn: "Asosiy mavzu + dalillar",
-      dinDasturBataBtn: (n: number) => `100 duo matni (${n})`,
+      dinDasturConnectionTitle: "Din, an'ana va urf",
+      dinDasturPointsTitle: "Uch aniq fikr",
+      dinDasturRulesTitle: "Asosiy qoidalar",
+      dinDasturFoundationBtn: "Asosni o'qish",
+      dinDasturYrymBtn: "Urf-odat va din",
+      dinDasturBataBtn: (n: number) => `Duo matnlari (${n})`,
       bataCountLabel: (n: number) => `${n} duo`,
+      bataShowMore: (n: number) => `Yana ${n} ko'rsatish`,
+      bataShowLess: "Yig'ish",
       topicNotFound: "An'ana topilmadi",
-      aboutTraditionTitle: "An'ana haqida",
-      originTitle: "Kelib chiqishi",
-      religionLinkTitle: "Din bilan bog'liqligi",
-      superstitionLimitTitle: "E'tiqod chegarasi / nima noto'g'ri",
+      aboutTraditionTitle: "Qisqacha",
+      originTitle: "Qayerdan kelgan",
+      religionLinkTitle: "Din bilan qanday uyg'un",
+      superstitionLimitTitle: "Chegara qayerda",
+      religionLinkLead: "Pastda — bu an'ananing din bilan bog'liqligi: avval uyg'unlik, keyin chegara.",
       howToHoldTitle: "Qanday tutish kerak",
       bataTextsTitle: "Duo matnlari",
       relatedArticlesTitle: "Bog'liq maqolalar",
@@ -318,6 +347,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ Shariatdagi hukmi:",
       quickEvidenceLabel: "📖 Din bilan bog'liqligi (dalil):",
       quickReadFull: "To'liq mazmunni o'qish",
+      traditionEvidenceHint: "Qisqa dalil — din bilan bog'liqlikni tushunish uchun. To'liq hukm — ustoz bilan.",
+      traditionEvidenceDisclaimer:
+        "Bu qisqa ma'no. To'liq matn va hukm uchun Qur'on, hadis va muftiyat izohini ko'ring.",
       introDetail:
         "An'ana — jamiyatning uzoq sinovdan o'tgan tajribasi; shariat — Allohning buyrug'i va Payg'ambar ﷺ sunnati. Ularning birga yurishi faqat odam, oila va qo'shniga zarar yetkazmasa mumkin.\n\n" +
         "Bu ekrandagi oyat raqamlari yo'naltirish uchun; mazhab xususiyatlarini milliy diniy boshqarma ko'rsatmasi bilan tasdiqlang.",
@@ -348,16 +380,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "Tören",
       filterFaith: "Dinle bağlantı",
       topicsCount: (n: number) => `${n} konu`,
-      dinDasturConnectionTitle: "Din ve gelenek: bağlantı",
-      dinDasturRulesTitle: "5 kural",
-      dinDasturFoundationBtn: "Temel konu + deliller",
-      dinDasturBataBtn: (n: number) => `100 dua metni (${n})`,
+      dinDasturConnectionTitle: "Din, gelenek ve âdet",
+      dinDasturPointsTitle: "Üç net fikir",
+      dinDasturRulesTitle: "Temel kurallar",
+      dinDasturFoundationBtn: "Temeli oku",
+      dinDasturYrymBtn: "Âdetler ve din",
+      dinDasturBataBtn: (n: number) => `Dua metinleri (${n})`,
       bataCountLabel: (n: number) => `${n} dua`,
+      bataShowMore: (n: number) => `${n} tane daha göster`,
+      bataShowLess: "Daralt",
       topicNotFound: "Gelenek bulunamadı",
-      aboutTraditionTitle: "Gelenek hakkında",
-      originTitle: "Köken",
-      religionLinkTitle: "Dinle bağlantısı",
-      superstitionLimitTitle: "Batıl sınırı / ne yanlış",
+      aboutTraditionTitle: "Kısaca",
+      originTitle: "Nereden geldi",
+      religionLinkTitle: "Dinle nasıl uyumlu",
+      superstitionLimitTitle: "Sınır nerede",
+      religionLinkLead: "Aşağıda — bu geleneğin dinle bağı: önce uyum, sonra sınır.",
       howToHoldTitle: "Nasıl tutulmalı",
       bataTextsTitle: "Dua metinleri",
       relatedArticlesTitle: "İlgili makaleler",
@@ -367,6 +404,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ Şeriat hükmü:",
       quickEvidenceLabel: "📖 Dinle bağlantısı (delil):",
       quickReadFull: "Tam içeriği oku",
+      traditionEvidenceHint: "Kisa delil — din baglantisini anlamak icin. Tam hukm — bir ogretmenle.",
+      traditionEvidenceDisclaimer:
+        "Bu kisa manadir. Tam metin ve hukm icin Kur'an, hadis ve müftülük açiklamasina bakin.",
       introDetail:
         "Gelenek — toplumun uzun sürede sınanmış deneyimi; şeriat — Allah'ın emri ve Peygamber'in ﷺ sünnetidir. İnsana, aileye ve komşuya zarar vermediği sürece birlikte yürürler.\n\n" +
         "Bu ekrandaki ayet numaraları yön bulmak içindir; mezhep özelliklerini ulusal dinî idarenin rehberliğiyle doğrulayın.",
@@ -397,16 +437,21 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       filterCeremony: "شعيرة",
       filterFaith: "الصلة بالدين",
       topicsCount: (n: number) => `${n} موضوع`,
-      dinDasturConnectionTitle: "الدين والتقليد: الصلة",
-      dinDasturRulesTitle: "5 قواعد",
-      dinDasturFoundationBtn: "الأساس + الأدلة",
-      dinDasturBataBtn: (n: number) => `100 نص دعاء (${n})`,
+      dinDasturConnectionTitle: "الدين والتقليد والعادات",
+      dinDasturPointsTitle: "ثلاث أفكار واضحة",
+      dinDasturRulesTitle: "قواعد أساسية",
+      dinDasturFoundationBtn: "اقرأ الأساس",
+      dinDasturYrymBtn: "العادات والدين",
+      dinDasturBataBtn: (n: number) => `نصوص الدعاء (${n})`,
       bataCountLabel: (n: number) => `${n} دعاء`,
+      bataShowMore: (n: number) => `عرض ${n} إضافية`,
+      bataShowLess: "طيّ",
       topicNotFound: "لم يُعثر على التقليد",
-      aboutTraditionTitle: "عن التقليد",
-      originTitle: "الأصل",
-      religionLinkTitle: "الصلة بالدين",
-      superstitionLimitTitle: "حد الخرافة / ما الخطأ",
+      aboutTraditionTitle: "باختصار",
+      originTitle: "من أين جاء",
+      religionLinkTitle: "كيف يوافق الدين",
+      superstitionLimitTitle: "أين الحد",
+      religionLinkLead: "أدناه — صلة هذا التقليد بالدين: أولاً الوفاق، ثم الحد.",
       howToHoldTitle: "كيف يُراعى",
       bataTextsTitle: "نصوص الدعاء",
       relatedArticlesTitle: "مقالات ذات صلة",
@@ -416,6 +461,9 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
       quickShariatLabel: "⚖️ الحكم الشرعي:",
       quickEvidenceLabel: "📖 الصلة بالدين (دليل):",
       quickReadFull: "قراءة المحتوى الكامل",
+      traditionEvidenceHint: "دليل مختصر — لفهم الصلة بالدين. الحكم الكامل — مع معلم.",
+      traditionEvidenceDisclaimer:
+        "هذا معنى مختصر. للنص الكامل والحكم انظر القرآن والحديث وإرشاد المفتية.",
       introDetail:
         "التقليد — تجربة المجتمع المجرّبة عبر الزمن؛ والشريعة — أمر الله وسنة النبي ﷺ. يمكن أن يسيرا معًا ما لم يضرا بالناس والأسرة والجيران.\n\n" +
         "أرقام الآيات في هذه الشاشة للإرشاد؛ أكّد خصوصيات المذهب بإرشاد الإدارة الدينية الوطنية.",
@@ -424,8 +472,275 @@ function traditionChrome(locale: "ru" | "en" | "ky" | "uz" | "tr" | "ar") {
   return map[locale];
 }
 
+type LeakLocale = "ru" | "en" | "ky" | "uz" | "tr" | "ar";
+
+function traditionTileSub(locale: LeakLocale): string {
+  const map = {
+    ru: "Связь обычаев и ырым с религией",
+    en: "How customs relate to faith",
+    ky: "Ырым менен салттын динге катышы",
+    uz: "Urf-odatning din bilan bog'liqligi",
+    tr: "Gelenek ve din baglantisi",
+    ar: "صلة العادات بالدين",
+  } as const;
+  return map[locale];
+}
+
+function traditionIntroLine(locale: LeakLocale): string {
+  const map = {
+    ru: "Простыми словами: как традиция и ырым связаны с религией. В каждой теме — как сочетается и где граница.",
+    en: "In plain words: how tradition and custom relate to faith. Each topic covers fit and limit.",
+    ky: "Жөнөкөй тил менен: салт менен ырымдын динге катышы. Ар темада — кантип туура жана чеги.",
+    uz: "Oddiy til bilan: an'ana va urfning din bilan bog'liqligi. Har mavzuda — qanday uyg'un va chegara.",
+    tr: "Sade dilde: gelenek ve adetin dinle bagisi. Her konuda uyum ve sinir.",
+    ar: "بكلمات بسيطة: صلة التقليد والعادات بالدين. في كل موضوع: الوفاق والحد.",
+  } as const;
+  return map[locale];
+}
+
+function namazCompanionChrome(locale: LeakLocale) {
+  const map = {
+    ru: {
+      screenTitle: "Сопровождение суджуда",
+      pickerTitle: "Какой намаз сопровождаем?",
+      pickerSub:
+        "Пройдите фарз-ракяты шаг за шагом: takbir → киям → руку → суджуд → салам. Ниже — текст тех же шагов.",
+      rakatWord: "ракят",
+      finish: "Завершить",
+      lockedHint: "По шагам",
+    },
+    en: {
+      screenTitle: "Sujood guidance",
+      pickerTitle: "Which prayer shall we guide?",
+      pickerSub:
+        "Walk through fard units step by step: takbir → qiyam → ruku → sujood → salam. Reading text for those steps is below.",
+      rakatWord: "unit",
+      finish: "Finish",
+      lockedHint: "Step by step",
+    },
+    ky: {
+      screenTitle: "Сажда жетектее",
+      pickerTitle: "Кай намазды жетектейбиз?",
+      pickerSub:
+        "Фарз ракаттарды кадам-кадам өтүңүз: takbir → кыям → руку → сажда → салам. Төмөндө окуу тексти да бар.",
+      rakatWord: "ракат",
+      finish: "Аяктоо",
+      lockedHint: "Кадам боюнча",
+    },
+    uz: {
+      screenTitle: "Sajda yo'lboshchisi",
+      pickerTitle: "Qaysi namozni kuzatamiz?",
+      pickerSub:
+        "Farzy rak'atlarni qadam-baqadam o'ting: takbir → qiyom → ruku → sajda → salom. Pastda o'qish matni ham bor.",
+      rakatWord: "rak'at",
+      finish: "Tugatish",
+      lockedHint: "Qadam bo'yicha",
+    },
+    tr: {
+      screenTitle: "Secde rehberi",
+      pickerTitle: "Hangi namazi rehberleyelim?",
+      pickerSub:
+        "Farz rekatlari adim adim gecin: tekbir → kiyam → rüku → secde → selam. Asagida okuma metni de var.",
+      rakatWord: "rekat",
+      finish: "Bitir",
+      lockedHint: "Adim adim",
+    },
+    ar: {
+      screenTitle: "إرشاد السجود",
+      pickerTitle: "أي صلاة نرشد؟",
+      pickerSub:
+        "امشِ في ركعات الفرض خطوة بخطوة: تكبير → قيام → ركوع → سجود → سلام. وفي الأسفل نص القراءة.",
+      rakatWord: "ركعة",
+      finish: "إنهاء",
+      lockedHint: "خطوة بخطوة",
+    },
+  } as const;
+  return map[locale];
+}
+
+function alphabetTajweedChrome(locale: LeakLocale) {
+  const map = {
+    ru: {
+      shortTitle: "Алфавит",
+      screenTitle: "Арабский алфавит",
+      alphabetHeading: "Арабский алфавит",
+      intro:
+        "С нуля: сначала 28 букв, затем звук и правила, потом учебник. Короткая сура — в конце, после букв и правил.",
+      sectionAlphabet: "Шаг 1",
+      sectionLaterTitle: "Шаг 2: звук и правила",
+      sectionLaterSub: "После букв — звук, продление, гунна",
+      sectionBook: "Шаг 3: полный учебник",
+      sectionQuranColors: "Позже: цветные знаки в Коране",
+      quranColorsHint:
+        "После букв и правил. Цвета — вспомогательная помощь, в начале знать их не обязательно.",
+      alphabetTapHint:
+        "Нажмите букву — услышите название. Красный — твёрдый (тафхим), чёрный — мягкий (таркик).",
+      alphabetSelectHint: "Выберите букву — здесь появятся название, звук и короткий пример.",
+      alphabetToneHeavy: "Звук: твёрдый (тафхим)",
+      alphabetToneLight: "Звук: мягкий (таркик)",
+      alphabetExampleLabel: "Пример",
+      alphabetLegendHeavy: "Твёрдый",
+      alphabetLegendLight: "Мягкий",
+      practiceCtaTitle: "Шаг 4: короткая сура",
+      practiceCtaHint: "После букв и правил. Аль-Фатиха — текст без цветов.",
+      practiceCtaA11y: "Открыть Аль-Фатиху без цветов",
+    },
+    en: {
+      shortTitle: "Alphabet",
+      intro:
+        "From zero: first the 28 letters, then sound and rules, then the textbook. A short surah comes last — after letters and rules.",
+      sectionAlphabet: "Step 1",
+      sectionLaterTitle: "Step 2: sound and rules",
+      sectionLaterSub: "After letters — sound, madd, ghunnah",
+      sectionBook: "Step 3: full textbook",
+      sectionQuranColors: "Later: colored marks in the Quran",
+      quranColorsHint:
+        "After letters and rules. Colors are optional help; you do not need them at the start.",
+      alphabetTapHint:
+        "Tap a letter to hear its name. Red — heavy (tafkhīm), black — light (tarqīq).",
+      alphabetSelectHint: "Pick a letter — name, sound and a short example show here.",
+      alphabetToneHeavy: "Sound: heavy (tafkhīm)",
+      alphabetToneLight: "Sound: light (tarqīq)",
+      practiceCtaTitle: "Step 4: read a short surah",
+      practiceCtaHint: "After letters and rules. Al-Fatiha — plain text, no colors.",
+      practiceCtaA11y: "Open Al-Fatiha without colors",
+    },
+    ky: {
+      shortTitle: "Алфавит",
+      intro:
+        "Нөлдөн: адегенде 28 тамга, андан кийин үн жана эрежелер, кийин окуу китеби. Кыска сүрө — акырында.",
+      sectionAlphabet: "1-кадам",
+      sectionLaterTitle: "2-кадам: үн жана эрежелер",
+      sectionLaterSub: "Тамгалардан кийин — үн, узартуу, гунна",
+      sectionBook: "3-кадам: толук окуу китеби",
+      sectionQuranColors: "Кийин: Курандагы түстүү белгилер",
+      quranColorsHint:
+        "Тамга жана эрежеден кийин. Түстөр — кошумча жардам, башында билүү милдеттүү эмес.",
+      alphabetTapHint:
+        "Тамганы басыңыз — аты окулат. Кызыл — жоон (тафхим), кара — ичке (таркик).",
+      alphabetSelectHint: "Тамганы тандаңыз — аты, үнү жана кыска мисал ушул жерде чыгат.",
+      alphabetToneHeavy: "Үн: жоон (тафхим)",
+      alphabetToneLight: "Үн: ичке (таркик)",
+      practiceCtaTitle: "4-кадам: кыска сүрө окуу",
+      practiceCtaHint: "Тамга жана эрежеден кийин. Ал-Фатиха — түссүз текст.",
+      practiceCtaA11y: "Ал-Фатиханы түссүз ачуу",
+    },
+    uz: {
+      shortTitle: "Alifbo",
+      intro:
+        "Noldan: avval 28 harf, keyin tovush va qoidalar, so'ng darslik. Qisqa sura — oxirida.",
+      sectionAlphabet: "1-qadam",
+      sectionLaterTitle: "2-qadam: tovush va qoidalar",
+      sectionLaterSub: "Harflardan keyin — tovush, cho'zish, g'unna",
+      sectionBook: "3-qadam: to'liq darslik",
+      sectionQuranColors: "Keyin: Qur'ondagi rangli belgilar",
+      quranColorsHint:
+        "Harf va qoidalardan keyin. Ranglar — qo'shimcha yordam, boshida bilish shart emas.",
+      alphabetTapHint:
+        "Harfni bosing — nomi o'qiladi. Qizil — qalin (tafxim), qora — yupqa (tarqiq).",
+      alphabetSelectHint: "Harfni tanlang — nomi, ovozi va qisqa misol shu yerda chiqadi.",
+      alphabetToneHeavy: "Tovush: qalin (tafxim)",
+      alphabetToneLight: "Tovush: yupqa (tarqiq)",
+      practiceCtaTitle: "4-qadam: qisqa sura o'qish",
+      practiceCtaHint: "Harf va qoidalardan keyin. Al-Fotiha — rangisiz matn.",
+      practiceCtaA11y: "Al-Fotihani rangisiz ochish",
+    },
+    tr: {
+      shortTitle: "Alfabe",
+      intro:
+        "Sifirdan: once 28 harf, sonra ses ve kurallar, sonra ders kitabi. Kisa sure — en sonda.",
+      sectionAlphabet: "1. adim",
+      sectionLaterTitle: "2. adim: ses ve kurallar",
+      sectionLaterSub: "Harflerden sonra — ses, uzatma, gunne",
+      sectionBook: "3. adim: tam ders kitabi",
+      sectionQuranColors: "Sonra: Kur'andaki renkli isaretler",
+      quranColorsHint:
+        "Harf ve kurallardan sonra. Renkler yardimcidir; bastta bilmek zorunlu degil.",
+      alphabetTapHint:
+        "Harfe basin — adi okunur. Kirmizi — kalin (tafhim), siyah — ince (tarkik).",
+      alphabetSelectHint: "Harf secin — adi, sesi ve kisa ornek burada gorünür.",
+      alphabetToneHeavy: "Ses: kalin (tafhim)",
+      alphabetToneLight: "Ses: ince (tarkik)",
+      practiceCtaTitle: "4. adim: kisa sure okuma",
+      practiceCtaHint: "Harf ve kurallardan sonra. Fatiha — renksiz metin.",
+      practiceCtaA11y: "Fatihani renksiz ac",
+    },
+    ar: {
+      shortTitle: "الألفباء",
+      intro:
+        "من الصفر: أولًا الحروف الثمانية والعشرون، ثم الصوت والقواعد، ثم الكتاب. سورة قصيرة في النهاية.",
+      sectionAlphabet: "الخطوة 1",
+      sectionLaterTitle: "الخطوة 2: الصوت والقواعد",
+      sectionLaterSub: "بعد الحروف — الصوت والمد والغنة",
+      sectionBook: "الخطوة 3: الكتاب الكامل",
+      sectionQuranColors: "لاحقًا: علامات الألوان في القرآن",
+      quranColorsHint:
+        "بعد الحروف والقواعد. الألوان مساعدة إضافية وليست ضرورية في البداية.",
+      alphabetTapHint:
+        "اضغط الحرف — يُقرأ اسمه. الأحمر مفخّم، والأسود مرقّق.",
+      alphabetSelectHint: "اختر حرفًا — يظهر الاسم والصوت ومثال قصير هنا.",
+      alphabetToneHeavy: "الصوت: مفخّم",
+      alphabetToneLight: "الصوت: مرقّق",
+      practiceCtaTitle: "الخطوة 4: قراءة سورة قصيرة",
+      practiceCtaHint: "بعد الحروف والقواعد. الفاتحة — نص بلا ألوان.",
+      practiceCtaA11y: "فتح الفاتحة بلا ألوان",
+    },
+  } as const;
+  return map[locale];
+}
+
+function prayerNotifAcceptanceIos(locale: LeakLocale): string[] {
+  const map = {
+    ru: [
+      "1. Дайте разрешение на уведомления.",
+      "2. iOS 26+: дайте разрешение AlarmKit (будильник) — полный азан на экране блокировки.",
+      "3. «Locked-screen QA (90 сек)» → сразу заблокируйте → системный будильник / кнопка Азан.",
+      "4. Нажмите «Азан» → экран PrayerAzan + полный звук.",
+      "5. iOS 18 и ниже: Time Sensitive уведомление + полный экран по нажатию.",
+    ],
+    en: [
+      "1. Allow notification permission.",
+      "2. iOS 26+: allow AlarmKit (alarm) — full azan on the lock screen.",
+      "3. «Locked-screen QA (90s)» → lock immediately → system alarm / Azan button.",
+      "4. Tap «Azan» → PrayerAzan screen + full sound.",
+      "5. iOS 18 and below: Time Sensitive notification + full screen on tap.",
+    ],
+    ky: [
+      "1. Билдирүү уруксатын бериңиз.",
+      "2. iOS 26+: AlarmKit (ойготкуч) уруксатын бериңиз — кулпуланган экранда толук азан.",
+      "3. «Locked-screen QA (90 сек)» → дароо кулпулаңыз → системалык ойготкуч / Азан баскычы.",
+      "4. «Азан» баскычын басыңыз → PrayerAzan экраны + толук үн.",
+      "5. iOS 18 жана төмөн: Time Sensitive билдирүү + басканда толук экран.",
+    ],
+    uz: [
+      "1. Bildirishnoma ruxsatini bering.",
+      "2. iOS 26+: AlarmKit (signal) ruxsatini bering — qulflangan ekranda to'liq azon.",
+      "3. «Locked-screen QA (90 sek)» → darhol qulflang → tizim signali / Azon tugmasi.",
+      "4. «Azon» tugmasini bosing → PrayerAzan ekrani + to'liq ovoz.",
+      "5. iOS 18 va pastroq: Time Sensitive bildirishnoma + bosganda to'liq ekran.",
+    ],
+    tr: [
+      "1. Bildirim iznini verin.",
+      "2. iOS 26+: AlarmKit (alarm) iznini verin — kilit ekraninda tam ezan.",
+      "3. «Locked-screen QA (90 sn)» → hemen kilitleyin → sistem alarmi / Ezan dugmesi.",
+      "4. «Ezan» dugmesine basin → PrayerAzan ekrani + tam ses.",
+      "5. iOS 18 ve alti: Time Sensitive bildirim + dokununca tam ekran.",
+    ],
+    ar: [
+      "1. امنح إذن الإشعارات.",
+      "2. iOS 26+: امنح إذن AlarmKit (المنبّه) — أذان كامل على شاشة القفل.",
+      "3. «Locked-screen QA (90 ث)» → اقفل فورًا → منبّه النظام / زر الأذان.",
+      "4. اضغط «أذان» → شاشة PrayerAzan + صوت كامل.",
+      "5. iOS 18 وأقل: إشعار Time Sensitive + شاشة كاملة عند الضغط.",
+    ],
+  } as const;
+  return [...map[locale]];
+}
+
 export const CRITICAL_UI_LOCALE_PATCHES = {
   ru: {
+    dashboard: { traditionTileSub: traditionTileSub("ru") },
+    namazCompanion: namazCompanionChrome("ru"),
     common: { close: "Закрыть", back: "Назад", open: "Открыть", continue: "Продолжить", none: "нет", guideAccordionExpand: "открыть", guideAccordionCollapse: "скрыть", appErrorTitle: "Ошибка приложения", appErrorHint: "«Повторить» — попробовать снова. Причину смотрите в логе / на экране.", distanceKmUnit: "км" },
     navigation: {
       savedTab: savedTabRu,
@@ -460,6 +775,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "Проверка",
       halalTabMap: "Организации с халяль-сертификатом на карте",
       traditionGuide: traditionChrome("ru"),
+      traditionIntro: traditionIntroLine("ru"),
       kaabaLiveTitle: "Кааба — прямой эфир",
       hajjRoadmapTitle: "Дорожная карта хаджа",
       hajjRoadmapLead:
@@ -500,6 +816,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Порядок: сначала Аят аль-Курси, затем дуа Кунут — удобный текст для заучивания.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("ru"),
       chaptersTitle: "Разделы",
       chaptersHint:
         "Учебник таджвида на 65 страницах разбит на главы: алфавит, звук, удлинение, гунна, вакф и особые знаки. Нажмите главу — откроется с того места.",
@@ -510,6 +827,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Мушаф, шрифт, чтец и язык перевода — на экране «Настройки Корана».",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("ru"),
       nativeAzanExactAlarmWarning:
         "Чтобы азан звучал точно вовремя на Android, включите разрешение «Точные будильники».",
       languageSectionSub:
@@ -535,12 +853,12 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
           case "ky":
             return "Кыргызча";
           default:
-            return "Қазақша";
+            return "Казахский";
         }
       },
       quranTranslitScriptTitle: "Письмо транскрипции",
       quranTranslitScriptHint: "Показывать чтение кириллицей или латиницей.",
-      quranTranslitScriptOption: (id: string) => (id === "latin" ? "Латиница" : "Кириллица (қазақша)"),
+      quranTranslitScriptOption: (id: string) => (id === "latin" ? "Латиница" : "Кириллица (казахский)"),
       prayerAzanScreenOnHint:
         "Важно: когда экран включён и телефон в использовании, система может не открыть полноэкранный азан — нажмите уведомление. Для полного экрана проверьте с блокировкой/выключенным экраном.",
       sectionTransparency: "Прозрачность и право",
@@ -569,18 +887,18 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Для городов РК приоритет — api.muftyat.kz. Если недоступен — Aladhan (method 2 / Hanafi asr). Сверьте с расписанием местной мечети — это не знак официального приложения ДУМК.",
     },
     communityDua: {
-      stripSub: "Чтение и «аминь» — вместе. Публикация новых текстов без модерации отключена.",
+      stripSub: "Чтение, «аминь» и публикация своей дуа — вместе.",
       listIntro:
-        "Можно читать общинные дуа и говорить «Аминь». Публикация без модерации отключена.",
+        "Можно читать общинные дуа, говорить «Аминь» и отправить свою дуа ниже — кратко и с благим намерением.",
       postingDisabled:
         "Публикация временно закрыта: только чтение и «Аминь».",
       empty: "Пока записей нет.",
       emptyOffline: "Нужен интернет. Список появится при подключении.",
-      placeholder: "Публикация отключена",
+      placeholder: "Напишите дуа…",
     },
     quran: {
       tajweedHelperLegendNote:
-        "Шпаргалка: #DD2C00 — мадд · #00C853 — гунна/ихфа/иклаб · #1A237E — калькала · #FFD600 — идгам.",
+        "Шпаргалка (Al Quran Cloud): #537FFF — мадд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам.",
       readerShowMeaningLabel: "Смысл (перевод)",
       meaningCaption: "Смысл (перевод)",
       translitCaption: "Чтение (транскрипция)",
@@ -590,6 +908,8 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
   },
   en: {
+    dashboard: { traditionTileSub: traditionTileSub("en") },
+    namazCompanion: namazCompanionChrome("en"),
     common: {
       close: "Close",
       back: "Back",
@@ -634,6 +954,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "Verify",
       halalTabMap: "Halal-certified organizations on the map",
       traditionGuide: traditionChrome("en"),
+      traditionIntro: traditionIntroLine("en"),
       kaabaLiveTitle: "Kaaba — live",
       hajjRoadmapTitle: "Hajj roadmap",
       hajjRoadmapLead:
@@ -674,6 +995,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Order: first Ayat al-Kursi, then Qunut dua — easy text to memorize.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("en"),
       chaptersTitle: "Chapters",
       chaptersHint:
         "A 65-page tajweed textbook split into chapters: alphabet, sound, elongation, ghunnah, waqf and special marks. Tap a chapter to open there.",
@@ -684,6 +1006,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Mushaf, font, reciter and translation language are in Quran Settings.",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("en"),
       nativeAzanExactAlarmWarning:
         "On Android, enable Exact alarms so the adhan can fire on time.",
       languageSectionSub:
@@ -743,18 +1066,18 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "For Kazakhstan cities, api.muftyat.kz is preferred. If unavailable — Aladhan (method 2 / Hanafi asr). Compare with your local mosque — this is not a QMDB official-app mark.",
     },
     communityDua: {
-      stripSub: "Read and say Amen together. Unmoderated posting is disabled.",
+      stripSub: "Read, say Amen, and post your own dua together.",
       listIntro:
-        "You can read community duas and say Amen. Unmoderated posting is disabled.",
+        "You can read community duas, say Amen, and send your own dua below — keep it short and sincere.",
       postingDisabled:
         "Posting is temporarily closed: read and Amen only.",
       empty: "No entries yet.",
       emptyOffline: "Internet required. The list appears when you are online.",
-      placeholder: "Posting disabled",
+      placeholder: "Write your dua…",
     },
     quran: {
       tajweedHelperLegendNote:
-        "Cheat sheet: #DD2C00 — madd · #00C853 — ghunnah/ikhfa/iqlab · #1A237E — qalqalah · #FFD600 — idgham.",
+        "Cheat sheet: #537FFF — madd · #FF7E1E — ghunnah · #9400A8 — ikhfa · #DD0008 — qalqalah · #169777 — idgham.",
       readerShowMeaningLabel: "Meaning (translation)",
       meaningCaption: "Meaning (translation)",
       translitCaption: "Reading (transcription)",
@@ -764,6 +1087,8 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
   },
   ky: {
+    dashboard: { traditionTileSub: traditionTileSub("ky") },
+    namazCompanion: namazCompanionChrome("ky"),
     common: {
       close: "Жабуу",
       back: "Артка",
@@ -806,6 +1131,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "Текшерүү",
       halalTabMap: "Картадагы халал сертификаттуу уюмдар",
       traditionGuide: traditionChrome("ky"),
+      traditionIntro: traditionIntroLine("ky"),
       kaabaLiveTitle: "Кааба — түз эфир",
       hajjRoadmapTitle: "Ажылык жол картасы",
       hajjRoadmapLead:
@@ -846,6 +1172,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Ирети: адегенде Аят ал-Курси, андан кийин Кунут дуасын жаттауга ыңгайлуу текст катары окуңуз.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("ky"),
       chaptersTitle: "Бөлүмдөр",
       chaptersHint:
         "65 бет тажвид окуулугу бөлүмдөргө бөлүндү: алиппе, үн, созуу, гунна, вакф жана өзгөчө белгилер. Бөлүмдү бассаңыз, ошол жерден ачылат.",
@@ -856,6 +1183,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Мусаф, шрифт, кари жана котормо тили — «Куран жөндөөлөрү» экранында.",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("ky"),
       nativeAzanExactAlarmWarning:
         "Android'де азан так убагында чыгышы үчүн «Так ойготкучтар» уруксатын күйгүзүңүз.",
       languageSectionSub:
@@ -911,14 +1239,14 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Үчүнчү тараптар: api.rahatomir.com; Muftyat/Fatua; api.muftyat.kz жана Aladhan; islamic.network / alquran.cloud; Google/Apple; live.net.sa.",
     },
     communityDua: {
-      stripSub: "Окуу жана «аамийн» — чогуу. Модерациясыз жарыялоо өчүрүлгөн.",
+      stripSub: "Окуу, «аамийн» жана өз дуаңды жарыялоо — чогуу.",
       listIntro:
-        "Жамаат дуаларын окуп, «Аамийн» десеңиз болот. Модерациясыз жарыялоо өчүрүлгөн.",
+        "Жамаат дуаларын окуп, «Аамийн» десеңиз жана төмөндө өз дуаңды жөнөтө аласыз — кыска жана ыклас менен.",
       postingDisabled:
         "Жарыялоо убактылуу жабык: окуу жана «Аамийн» гана.",
       empty: "Азырынча жазуу жок.",
       emptyOffline: "Интернет керек. Тизме онлайнда көрүнөт.",
-      placeholder: "Жарыялоо өчүрүлгөн",
+      placeholder: "Дуаңызды жазыңыз…",
     },
     prayer: {
       sourceMuftyatLive: "Булагы: Muftyat.kz",
@@ -926,7 +1254,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
     quran: {
       tajweedHelperLegendNote:
-        "Шпаргалка: #DD2C00 — мадд · #00C853 — гунна/ихфа/иклаб · #1A237E — калкала · #FFD600 — идгам.",
+        "Шпаргалка: #537FFF — мадд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам.",
       readerShowMeaningLabel: "Маани (котормо)",
       meaningCaption: "Маани (котормо)",
       translitCaption: "Окулушу (транскрипция)",
@@ -936,6 +1264,8 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
   },
   uz: {
+    dashboard: { traditionTileSub: traditionTileSub("uz") },
+    namazCompanion: namazCompanionChrome("uz"),
     common: {
       close: "Yopish",
       back: "Orqaga",
@@ -981,6 +1311,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "Tekshirish",
       halalTabMap: "Xaritadagi halol sertifikatli tashkilotlar",
       traditionGuide: traditionChrome("uz"),
+      traditionIntro: traditionIntroLine("uz"),
       kaabaLiveTitle: "Ka'ba — jonli efir",
       hajjRoadmapTitle: "Haj yo'l xaritasi",
       hajjRoadmapLead:
@@ -1021,6 +1352,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Tartib: avval Oyat al-Kursiy, keyin Qunut duosini yodlash uchun qulay matn sifatida o'qing.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("uz"),
       chaptersTitle: "Bo'limlar",
       chaptersHint:
         "65 betlik tajvid o'quvligi boblarga bo'lindi: alifbo, tovush, cho'zish, g'unna, vaqf va maxsus belgilari. Bobni bossangiz, shu yerdan ochiladi.",
@@ -1031,6 +1363,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Mushaf, shrift, qori va tarjima tili — «Qur'on sozlamalari» ekranida.",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("uz"),
       nativeAzanExactAlarmWarning:
         "Android'da azon aniq vaqtda yangrashi uchun «Aniq signal» ruxsatini yoqing.",
       languageSectionSub:
@@ -1086,14 +1419,14 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Uchinchi tomonlar: api.rahatomir.com; Muftyat/Fatua; api.muftyat.kz va Aladhan; islamic.network / alquran.cloud; Google/Apple; live.net.sa.",
     },
     communityDua: {
-      stripSub: "O'qish va «omin» — birga. Moderatsiyasiz joylash o'chirilgan.",
+      stripSub: "O'qish, «omin» va o'z duongizni joylash — birga.",
       listIntro:
-        "Jamoa duolarini o'qib, «Omin» desangiz bo'ladi. Moderatsiyasiz joylash o'chirilgan.",
+        "Jamoa duolarini o'qib, «Omin» desangiz va pastda o'z duongizni yuborishingiz mumkin — qisqa va ixlos bilan.",
       postingDisabled:
         "Joylash vaqtincha yopiq: faqat o'qish va «Omin».",
       empty: "Hozircha yozuv yo'q.",
       emptyOffline: "Internet kerak. Ro'yxat onlaynda ko'rinadi.",
-      placeholder: "Joylash o'chirilgan",
+      placeholder: "Duongizni yozing…",
     },
     prayer: {
       sourceMuftyatLive: "Manba: Muftyat.kz",
@@ -1101,7 +1434,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
     quran: {
       tajweedHelperLegendNote:
-        "Eslatma: #DD2C00 — madd · #00C853 — g'unna/ixfo/iqlob · #1A237E — qalqala · #FFD600 — idg'om.",
+        "Eslatma (Al Quran Cloud): #537FFF — madd · #FF7E1E — g'unna · #9400A8 — ixfo · #DD0008 — qalqala · #169777 — idg'om.",
       readerShowMeaningLabel: "Ma'no (tarjima)",
       meaningCaption: "Ma'no (tarjima)",
       translitCaption: "O'qilishi (transkripsiya)",
@@ -1111,6 +1444,8 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
   },
   tr: {
+    dashboard: { traditionTileSub: traditionTileSub("tr") },
+    namazCompanion: namazCompanionChrome("tr"),
     common: {
       close: "Kapat",
       back: "Geri",
@@ -1155,6 +1490,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "Kontrol",
       halalTabMap: "Haritada helal sertifikalı kuruluşlar",
       traditionGuide: traditionChrome("tr"),
+      traditionIntro: traditionIntroLine("tr"),
       kaabaLiveTitle: "Kâbe — canlı yayın",
       hajjRoadmapTitle: "Hac yol haritası",
       hajjRoadmapLead:
@@ -1195,6 +1531,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Sıra: önce Ayetel Kürsi, sonra Kunut duasını ezberlemeye uygun metin olarak okuyun.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("tr"),
       chaptersTitle: "Bölümler",
       chaptersHint:
         "65 sayfalık tecvid kitabı bölümlere ayrıldı: elifba, ses, uzatma, ğunne, vakıf ve özel işaretler. Bölüme basarsanız oradan açılır.",
@@ -1205,6 +1542,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Mushaf, yazı tipi, kari ve meal dili — «Kur'an ayarları» ekranında.",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("tr"),
       nativeAzanExactAlarmWarning:
         "Android'de ezanın tam vaktinde çalması için «Tam alarmlar» iznini açın.",
       languageSectionSub:
@@ -1260,14 +1598,14 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "Üçüncü taraflar: api.rahatomir.com; Muftyat/Fatua; api.muftyat.kz ve Aladhan; islamic.network / alquran.cloud; Google/Apple; live.net.sa.",
     },
     communityDua: {
-      stripSub: "Okuma ve «amin» — birlikte. Moderasyonsuz paylaşım kapalı.",
+      stripSub: "Okuma, «amin» ve kendi duanı paylaşma — birlikte.",
       listIntro:
-        "Topluluk dualarını okuyup «Amin» diyebilirsiniz. Moderasyonsuz paylaşım kapalı.",
+        "Topluluk dualarını okuyup «Amin» diyebilir ve aşağıdan kendi duanızı gönderebilirsiniz — kısa ve samimi yazın.",
       postingDisabled:
         "Paylaşım geçici olarak kapalı: yalnızca okuma ve «Amin».",
       empty: "Henüz kayıt yok.",
       emptyOffline: "İnternet gerekli. Liste çevrimiçiyken görünür.",
-      placeholder: "Paylaşım kapalı",
+      placeholder: "Duanızı yazın…",
     },
     prayer: {
       sourceMuftyatLive: "Kaynak: Muftyat.kz",
@@ -1275,7 +1613,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
     quran: {
       tajweedHelperLegendNote:
-        "Kısa not: #DD2C00 — med · #00C853 — gunne/ihfa/iklab · #1A237E — kalkale · #FFD600 — idgam.",
+        "Kısa not (Al Quran Cloud): #537FFF — med · #FF7E1E — gunne · #9400A8 — ihfa · #DD0008 — kalkale · #169777 — idgam.",
       readerShowMeaningLabel: "Anlam (meal)",
       meaningCaption: "Anlam (meal)",
       translitCaption: "Okunuş (transkripsiyon)",
@@ -1285,6 +1623,8 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
   },
   ar: {
+    dashboard: { traditionTileSub: traditionTileSub("ar") },
+    namazCompanion: namazCompanionChrome("ar"),
     common: {
       close: "إغلاق",
       back: "رجوع",
@@ -1329,6 +1669,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       halalTabVerify: "التحقق",
       halalTabMap: "مؤسسات حلال معتمدة على الخريطة",
       traditionGuide: traditionChrome("ar"),
+      traditionIntro: traditionIntroLine("ar"),
       kaabaLiveTitle: "الكعبة — بث مباشر",
       hajjRoadmapTitle: "خريطة طريق الحج",
       hajjRoadmapLead:
@@ -1369,6 +1710,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "الترتيب: أولًا آية الكرسي ثم دعاء القنوت كنص مناسب للحفظ.",
     },
     tajweedGuide: {
+      ...alphabetTajweedChrome("ar"),
       chaptersTitle: "الأقسام",
       chaptersHint:
         "كتاب تجويد من 65 صفحة مقسّم إلى فصول: الأبجدية والصوت والمد والغنة والوقف والعلامات الخاصة. اضغط فصلًا ليفتح من هناك.",
@@ -1379,6 +1721,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "المصحف والخط والقارئ ولغة الترجمة في «إعدادات القرآن».",
     },
     settings: {
+      prayerNotifAcceptanceItemsIos: prayerNotifAcceptanceIos("ar"),
       nativeAzanExactAlarmWarning:
         "على Android، فعّل إذن «التنبيهات الدقيقة» ليُؤذَّن في الوقت المحدد.",
       languageSectionSub:
@@ -1434,14 +1777,14 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
         "أطراف ثالثة: api.rahatomir.com؛ Muftyat/Fatua؛ api.muftyat.kz وAladhan؛ islamic.network / alquran.cloud؛ Google/Apple؛ live.net.sa.",
     },
     communityDua: {
-      stripSub: "القراءة و«آمين» معًا. النشر دون إشراف معطّل.",
+      stripSub: "القراءة و«آمين» ونشر دعائك معًا.",
       listIntro:
-        "يمكن قراءة أدعية المجتمع وقول «آمين». النشر دون إشراف معطّل.",
+        "يمكن قراءة أدعية المجتمع وقول «آمين» وإرسال دعائك أدناه — باختصار وبنية صالحة.",
       postingDisabled:
         "النشر مغلق مؤقتًا: قراءة و«آمين» فقط.",
       empty: "لا توجد إدخالات بعد.",
       emptyOffline: "يلزم الإنترنت. تظهر القائمة عند الاتصال.",
-      placeholder: "النشر معطّل",
+      placeholder: "اكتب دعاءك…",
     },
     prayer: {
       sourceMuftyatLive: "المصدر: Muftyat.kz",
@@ -1449,7 +1792,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
     },
     quran: {
       tajweedHelperLegendNote:
-        "ملخص: #DD2C00 — مد · #00C853 — غنة/إخفاء/إقلاب · #1A237E — قلقلة · #FFD600 — إدغام.",
+        "ملخص (Al Quran Cloud): #537FFF — مد · #FF7E1E — غنة · #9400A8 — إخفاء · #DD0008 — قلقلة · #169777 — إدغام.",
       readerShowMeaningLabel: "المعنى (الترجمة)",
       meaningCaption: "المعنى (الترجمة)",
       translitCaption: "القراءة (النسخ الصوتي)",

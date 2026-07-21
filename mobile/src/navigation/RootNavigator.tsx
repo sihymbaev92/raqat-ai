@@ -2,7 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MainTabs } from "./MainTabs";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
-import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useAppLocale } from "../i18n/runtime";
 import type { RootStackParamList } from "./types";
 import { lazyScreen } from "./lazyScreen";
 
@@ -15,10 +15,9 @@ const MoreNavigator = lazyScreen(() => import("./MoreStack").then((m) => ({ defa
 
 export function RootNavigator() {
   const locale = useAppLocale();
-  const localeRevision = useLocaleRevision();
 
   return (
-    <Stack.Navigator key={`${locale}-${localeRevision}`} screenOptions={hiddenStackHeaderOptions}>
+    <Stack.Navigator key={locale} screenOptions={hiddenStackHeaderOptions}>
       <Stack.Screen name="Main" component={MainTabs} />
       <Stack.Screen name="AsmaAlHusna" component={AsmaAlHusnaScreen} />
       <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} />

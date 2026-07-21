@@ -45,8 +45,8 @@ export function OfficialIslamicWebScreen({ navigation, route }: Props) {
   const insets = useSafeAreaInsets();
   const site = route.params.site;
   const siteUrl = useMemo(
-    () => (route.params.url?.trim() || officialIslamicSourceHomeUrl(site)),
-    [route.params.url, site]
+    () => (route.params.url?.trim() || officialIslamicSourceHomeUrl(site, locale)),
+    [route.params.url, site, locale]
   );
   const allowedHosts = site === "fatua" ? FATUA_WEBVIEW_HOSTS : MUFTYAT_WEBVIEW_HOSTS;
   const webRef = useRef<OfficialSiteFullWebViewHandle>(null);

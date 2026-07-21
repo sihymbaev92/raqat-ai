@@ -30,7 +30,7 @@ import {
   getPrayerSourceMode,
 } from "../storage/prefs";
 import { resolvePrayerScheduleLocation } from "../services/devicePrayerLocation";
-import { loadPrayerCache, savePrayerCache } from "../storage/prayerCache";
+import { loadPrayerCache, savePrayerCache, syncNativePrayerWidgetFromStorage } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import { fireInAppPrayerAlert } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
@@ -51,7 +51,7 @@ import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
 import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import { useI18n } from "../i18n/useI18n";
 import { getKzPresetCoords } from "../constants/kzCities";
-import { fetchOpenMeteoCurrent, type OpenMeteoCurrent } from "../services/openMeteoCurrent";
+import { fetchOpenMeteoCurrent, WEATHER_REFRESH_INTERVAL_MS, type OpenMeteoCurrent } from "../services/openMeteoCurrent";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 import { shouldFireInAppPrayerMoment } from "../utils/prayerMomentAlertWindow";
 
@@ -128,18 +128,21 @@ function cardShadow(isDark: boolean) {
   });
 }
 
-/** Басты бет шапка биіктігі — status bar + бір қатар (күн/бренд/баптаулар). */
+/** Басты бет шапка биіктігі — status bar + күн жолдары (грегориан + хижра). */
 function homeDashboardHeaderMetrics(insets: { top: number }) {
   const statusTop =
     Platform.OS === "web"
       ? 0
       : insets.top;
-  /** Екі жол күн (11/14 × 2). */
-  const rowH = 28;
+  /** Екі жол күн (lineHeight 14 × 2) + кіші ықтимал қаріп масштаб. */
+  const rowH = 36;
+  /** Шапка мен намаз карточкасы арасындағы бос орын — қабаттаспау үшін. */
+  const belowHeaderGap = 6;
   return {
     statusTop,
     rowH,
-    headerH: statusTop + rowH,
+    belowHeaderGap,
+    headerH: statusTop + rowH + belowHeaderGap,
   };
 }
 
@@ -155,7 +158,7 @@ const HEADER_SETTINGS_RIGHT_EDGE_NUDGE = Platform.select({
 }) as number;
 /** Күн/ауа райы — сол жақтан сәл оңға. */
 const HEADER_DATE_WEATHER_RIGHT_NUDGE = 8;
-/** RAHAT OMIR — шапка ортасында. */
+/** RAHAT OMIR — шапка ортасында (flex қатар). */
 function HomeHeaderBrandTitle({
   colors,
   isDark,
@@ -169,9 +172,10 @@ function HomeHeaderBrandTitle({
         ...homeHeaderContrastTextBase(colors, isDark),
         ...homeHeaderBrandTitleStyle("sm"),
         textAlign: "center",
-        width: "100%",
+        flexShrink: 0,
       }}
       numberOfLines={1}
+      maxFontSizeMultiplier={1.15}
       accessibilityRole="header"
     >
       {APP_BRAND_KK}
@@ -192,11 +196,11 @@ function HomeHeaderLeft({
   const dateLineStyle = homeHeaderDateLineStyle(colors, isDark);
 
   return (
-    <View style={{ flex: 1, minWidth: 0, paddingLeft: 2, marginLeft: HEADER_DATE_WEATHER_RIGHT_NUDGE }}>
-      <Text style={dateLineStyle} numberOfLines={1}>
+    <View style={{ minWidth: 0, paddingLeft: 2, justifyContent: "center" }}>
+      <Text style={dateLineStyle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
         {gregorian}
       </Text>
-      <Text style={dateLineStyle} numberOfLines={1}>
+      <Text style={dateLineStyle} numberOfLines={1} maxFontSizeMultiplier={1.15}>
         {hijri}
       </Text>
     </View>
@@ -254,37 +258,54 @@ function HomeHeaderBar({
   headerMetrics: ReturnType<typeof homeDashboardHeaderMetrics>;
   insetsRight: number;
 }) {
-  const { statusTop, rowH } = headerMetrics;
+  const { statusTop, rowH, belowHeaderGap } = headerMetrics;
   return (
     <View
       style={{
         flexDirection: "row",
         alignItems: "center",
         paddingTop: statusTop,
-        minHeight: statusTop + rowH,
-        paddingBottom: 0,
-        marginBottom: 2,
-        paddingRight: Math.max(insetsRight, 0) + HEADER_SETTINGS_RIGHT_EDGE_NUDGE,
+        minHeight: statusTop + rowH + belowHeaderGap,
+        paddingBottom: belowHeaderGap,
+        paddingHorizontal: 2,
+        paddingRight: Math.max(insetsRight, 0) + Math.max(HEADER_SETTINGS_RIGHT_EDGE_NUDGE, 0),
       }}
     >
-      <View style={{ flex: 1, minWidth: 0, zIndex: 1 }}>
+      <View
+        style={{
+          flex: 1,
+          minWidth: 0,
+          height: rowH,
+          justifyContent: "center",
+          paddingRight: 6,
+          marginLeft: HEADER_DATE_WEATHER_RIGHT_NUDGE,
+        }}
+      >
         <HomeHeaderLeft colors={colors} isDark={isDark} />
       </View>
       <View
-        pointerEvents="none"
         style={{
-          position: "absolute",
-          left: 0,
-          right: 0,
-          top: statusTop,
+          flexShrink: 0,
           height: rowH,
-          alignItems: "center",
           justifyContent: "center",
+          alignItems: "center",
+          paddingHorizontal: 4,
         }}
       >
         <HomeHeaderBrandTitle colors={colors} isDark={isDark} />
       </View>
-      <HomeHeaderActions navigation={navigation} colors={colors} />
+      <View
+        style={{
+          flex: 1,
+          minWidth: HEADER_SETTINGS_BTN,
+          height: rowH,
+          justifyContent: "center",
+          alignItems: "flex-end",
+          paddingLeft: 6,
+        }}
+      >
+        <HomeHeaderActions navigation={navigation} colors={colors} />
+      </View>
     </View>
   );
 }
@@ -370,10 +391,11 @@ function DashboardScreenContent({
       if (!cancelled) {
         setWeatherSnap(w);
         setWeatherLoading(false);
+        void syncNativePrayerWidgetFromStorage(w);
       }
     };
     void tick();
-    const id = setInterval(() => void tick(), 20 * 60 * 1000);
+    const id = setInterval(() => void tick(), WEATHER_REFRESH_INTERVAL_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
@@ -977,6 +999,7 @@ function makeStyles(colors: ThemeColors, isDark: boolean, scrollTopPad: number) 
       marginBottom: 4,
       borderRadius: 18,
       overflow: "hidden",
+      zIndex: 0,
       ...Platform.select({
         ios: {
           shadowColor: "#000",
@@ -993,8 +1016,8 @@ function makeStyles(colors: ThemeColors, isDark: boolean, scrollTopPad: number) 
     },
     prayerHeroBg: {
       width: "100%",
-      /** Скриншоттағы үй намаз батырмасы: ені/биіктігі ≈ 5:2 */
-      aspectRatio: 5 / 2,
+      /** Бір қатар: белгіше + толық атау + уақыт */
+      aspectRatio: 2.05,
       justifyContent: "flex-end",
       backgroundColor: isDark ? "#0a1520" : "#1E3A55",
       borderRadius: 18,

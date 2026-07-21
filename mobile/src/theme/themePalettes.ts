@@ -134,18 +134,18 @@ const PALETTE_PATCHES: Record<Exclude<ColorPaletteId, "default">, Patch> = {
   },
   gold: {
     dark: {
-      accent: "#E8C86A",
-      accentDark: "#C9A227",
-      accentSurface: "rgba(232, 200, 106, 0.18)",
-      accentSurfaceStrong: "rgba(232, 200, 106, 0.3)",
-      scriptureTranslit: "#F5E6B8",
-      success: "#4DB6AC",
+      accent: "#F0D78C",
+      accentDark: "#D4AF37",
+      accentSurface: "rgba(240, 215, 140, 0.24)",
+      accentSurfaceStrong: "rgba(240, 215, 140, 0.4)",
+      scriptureTranslit: "#FFE9A8",
+      success: "#2DD4BF",
     },
     light: {
-      accent: "#B98A1A",
-      accentDark: "#9A7311",
-      accentSurface: "rgba(185, 138, 26, 0.1)",
-      accentSurfaceStrong: "rgba(185, 138, 26, 0.18)",
+      accent: "#B45309",
+      accentDark: "#92400E",
+      accentSurface: "rgba(180, 83, 9, 0.16)",
+      accentSurfaceStrong: "rgba(180, 83, 9, 0.28)",
       scriptureTranslit: "#92400E",
       success: "#15803D",
     },
@@ -328,7 +328,22 @@ export function resolveThemeColors(schemeId: ThemeSchemeId, paletteId: ColorPale
   if (paletteId === "default") return base;
   const patch = PALETTE_PATCHES[paletteId];
   const isDark = isThemeSchemeDark(schemeId);
-  return { ...base, ...(isDark ? patch.dark : patch.light) };
+  const merged = { ...base, ...(isDark ? patch.dark : patch.light) };
+  // Акцент беттері анық көрінсін — тым әлсіз rgba болмасын.
+  return {
+    ...merged,
+    accentSurface: merged.accentSurface,
+    accentSurfaceStrong: merged.accentSurfaceStrong,
+    text: isDark ? "#FFFFFF" : merged.text,
+    // Қараңғыда muted тым сұр болмасын; жарықта тым ашық болмасын.
+    muted: isDark
+      ? hexLuminance(merged.muted) < 0.55
+        ? "#E2E8F0"
+        : merged.muted
+      : hexLuminance(merged.muted) > 0.45
+        ? "#334155"
+        : merged.muted,
+  };
 }
 
 /** @deprecated paletteChipColors(isDark) — resolveThemeColors scheme арқылы */

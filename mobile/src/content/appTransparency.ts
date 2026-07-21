@@ -1,7 +1,7 @@
 /** Өнім ашықтығы — КНБ/ҚМДБ алдында «причина» қалдырмау үшін тұрақты саясат. */
 
-/** Қоғамдық дұға жариялау — модерациясыз өшірулі (оқу/амин қалады). */
-export const COMMUNITY_DUA_PUBLIC_POSTING_ENABLED = false;
+/** Қоғамдық дұға жариялау — оқу, «Әмин» және жаңа мәтін жіберу қосулы. */
+export const COMMUNITY_DUA_PUBLIC_POSTING_ENABLED = true;
 
 /** Құпиялылық беті (веб). */
 export const PRIVACY_POLICY_URL = "https://rahatomir.com/privacy/";

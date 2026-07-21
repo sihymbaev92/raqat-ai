@@ -1,5 +1,6 @@
 package kz.raqat.app
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Build
@@ -13,6 +14,10 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 import expo.modules.ReactActivityDelegateWrapper
 
 class MainActivity : ReactActivity() {
+  override fun attachBaseContext(newBase: Context) {
+    super.attachBaseContext(DisplayMetricsCompat.wrap(newBase))
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     // Set the theme to AppTheme BEFORE onCreate to support
     // coloring the background, status bar, and navigation bar.
@@ -21,12 +26,14 @@ class MainActivity : ReactActivity() {
     applyAzanWindowFlags(intent)
     // FSI хабарламасын мұнда өшірмейміз — RN PrayerAzan ашылғанша құлып экраны үшін керек.
     super.onCreate(null)
+    PrayerAzanDelivery.bootstrapAzanFromMainActivity(this, intent)
   }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
     setIntent(intent)
     applyAzanWindowFlags(intent)
+    PrayerAzanDelivery.bootstrapAzanFromMainActivity(this, intent)
     // FSI clear — finishAzanDelivery / dismissAzanDelivery арқылы.
   }
 
@@ -60,24 +67,27 @@ class MainActivity : ReactActivity() {
     val sessionActive = PrayerAzanActiveSession.isActive(applicationContext)
     val showOverLock = (azanHost && trusted) || (sessionActive && (azanHost || trusted))
     if (showOverLock) {
-      window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+      // Honor/Huawei: setShowWhenLocked жетпейді — ескі flag-тар да керек.
+      @Suppress("DEPRECATION")
+      window.addFlags(
+        WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+      )
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
         setShowWhenLocked(true)
         setTurnScreenOn(true)
-        // requestDismissKeyguard PIN/құлып сұрайды — азан беті құлып ҮСТІНДЕ көрінуі керек.
-      } else {
-        @Suppress("DEPRECATION")
-        window.addFlags(
-          WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-            WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-        )
       }
     } else {
       @Suppress("DEPRECATION")
       window.clearFlags(
         WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON or
           WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+          WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+          WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
       )
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
         setShowWhenLocked(false)

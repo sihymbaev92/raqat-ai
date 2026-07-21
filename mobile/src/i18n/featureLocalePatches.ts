@@ -48,9 +48,9 @@ export type SettingsQuranPatch = {
 const tajweedRu: QuranTajweedPatch = {
   readerOpenLegend: "Справочник цветов таджвида",
   readerTajweedExplainShort:
-    "#DD2C00 — мадд · #00C853 — гунна/ихфа/иклаб · #1A237E — калкала · #FFD600 — идгам. Полный список — «Справка».",
+    "#537FFF — мадд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам (Al Quran Cloud). Полный список — «Справка».",
   tajweedColorHintShort:
-    "#DD2C00 — мадд · #00C853 — гунна/ихфа/иклаб · #1A237E — калкала · #FFD600 — идгам",
+    "#537FFF — мадд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам",
   tajweedPanelOn: "Включить",
   tajweedPanelOff: "Выключить",
   tajweedModeLabel: "Цвета таджвида",
@@ -61,7 +61,7 @@ const tajweedRu: QuranTajweedPatch = {
     "Не удалось загрузить текст таджвида. Проверьте интернет и обновите экран. Если офлайн seed недоступен — обновите приложение.",
   tajweedLegendTitle: "Цвета таджвида (справка)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 правил ([h[, [n[, [f[ …). Цвета собраны в 4 международные группы (палитра API HTML). Полная теория — раздел «Таджвид».",
+    "Al Quran Cloud «quran-tajweed» — 17 правил ([h[, [n[, [f[ …). Каждое правило — официальный цвет Al Quran Cloud tajweed-guide. Полная теория — раздел «Таджвид».",
   tajweedLegendClose: "Закрыть",
   tajweedOpenGuide: "Перейти к учебнику таджвида",
   tajweedOpenGuideA11y: "Раздел таджвида: правила и план",
@@ -72,9 +72,9 @@ const tajweedRu: QuranTajweedPatch = {
 const tajweedEn: QuranTajweedPatch = {
   readerOpenLegend: "Tajweed color legend",
   readerTajweedExplainShort:
-    "#DD2C00 — madd · #00C853 — ghunnah/ikhfa/iqlab · #1A237E — qalqalah · #FFD600 — idgham. Full list in «Legend».",
+    "#537FFF — madd · #FF7E1E — ghunnah · #9400A8 — ikhfa · #DD0008 — qalqalah · #169777 — idgham (Al Quran Cloud). Full list in «Legend».",
   tajweedColorHintShort:
-    "#DD2C00 — madd · #00C853 — ghunnah/ikhfa/iqlab · #1A237E — qalqalah · #FFD600 — idgham",
+    "#537FFF — madd · #FF7E1E — ghunnah · #9400A8 — ikhfa · #DD0008 — qalqalah · #169777 — idgham",
   tajweedPanelOn: "On",
   tajweedPanelOff: "Off",
   tajweedModeLabel: "Tajweed colors",
@@ -85,7 +85,7 @@ const tajweedEn: QuranTajweedPatch = {
     "Could not load tajweed text. Check your connection and refresh. If offline seed is missing, update the app.",
   tajweedLegendTitle: "Tajweed colors (legend)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 rule tags ([h[, [n[, [f[ …). Colors are grouped into 4 international sets (API HTML palette). Full theory — «Tajweed» section.",
+    "Al Quran Cloud «quran-tajweed» — 17 rule tags ([h[, [n[, [f[ …). Each rule uses the official Al Quran Cloud tajweed-guide color. Full theory — «Tajweed» section.",
   tajweedLegendClose: "Close",
   tajweedOpenGuide: "Open tajweed guide",
   tajweedOpenGuideA11y: "Tajweed section: rules and plan",
@@ -96,9 +96,9 @@ const tajweedEn: QuranTajweedPatch = {
 const tajweedKy: QuranTajweedPatch = {
   readerOpenLegend: "Тажвид түстөрүнүн аныктамасы",
   readerTajweedExplainShort:
-    "#DD2C00 — медд · #00C853 — гунна/ихфа/иклаб · #1A237E — калкала · #FFD600 — идгам. Толук тизим — «Аныктама».",
+    "#537FFF — медд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам (Al Quran Cloud). Толук тизим — «Аныктама».",
   tajweedColorHintShort:
-    "#DD2C00 — медд · #00C853 — гунна/ихфа/иклаб · #1A237E — калкала · #FFD600 — идгам",
+    "#537FFF — медд · #FF7E1E — гунна · #9400A8 — ихфа · #DD0008 — калкала · #169777 — идгам",
   tajweedPanelOn: "Кошуу",
   tajweedPanelOff: "Өчүрүү",
   tajweedModeLabel: "Тажвид түстөрү",
@@ -109,7 +109,7 @@ const tajweedKy: QuranTajweedPatch = {
     "Тажвид тексти жүктөлбөдү. Интернетти текшерип, экранды жаңыртыңыз. Офлайн seed жок болсо — колдонмону жаңыртыңыз.",
   tajweedLegendTitle: "Тажвид түстөрү (аныктама)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 эреже теги ([h[, [n[, [f[ …). Түстөр 4 эл аралык топко топтолот (API HTML палитрасы). Толук теория — «Тажвид» бөлүмү.",
+    "Al Quran Cloud «quran-tajweed» — 17 эреже теги ([h[, [n[, [f[ …). Ар бир эреже — Al Quran Cloud tajweed-guide расмий түсү. Толук теория — «Тажвид» бөлүмү.",
   tajweedLegendClose: "Жабуу",
   tajweedOpenGuide: "Тажвид окуу китебине өтүү",
   tajweedOpenGuideA11y: "Тажвид бөлүмү: эрежелер жана план",
@@ -120,9 +120,9 @@ const tajweedKy: QuranTajweedPatch = {
 const tajweedUz: QuranTajweedPatch = {
   readerOpenLegend: "Tajvid ranglari izohi",
   readerTajweedExplainShort:
-    "#DD2C00 — medd · #00C853 — gunnah/ihfa/iqlab · #1A237E — qalqala · #FFD600 — idgam. To'liq ro'yxat — «Izoh».",
+    "#537FFF — medd · #FF7E1E — gunnah · #9400A8 — ihfa · #DD0008 — qalqala · #169777 — idgam (Al Quran Cloud). To'liq ro'yxat — «Izoh».",
   tajweedColorHintShort:
-    "#DD2C00 — medd · #00C853 — gunnah/ihfa/iqlab · #1A237E — qalqala · #FFD600 — idgam",
+    "#537FFF — medd · #FF7E1E — gunnah · #9400A8 — ihfa · #DD0008 — qalqala · #169777 — idgam",
   tajweedPanelOn: "Yoqish",
   tajweedPanelOff: "O'chirish",
   tajweedModeLabel: "Tajvid ranglari",
@@ -133,7 +133,7 @@ const tajweedUz: QuranTajweedPatch = {
     "Tajvid matni yuklanmadi. Internetni tekshiring va ekranni yangilang. Oflayn seed bo'lmasa — ilovani yangilang.",
   tajweedLegendTitle: "Tajvid ranglari (izoh)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 qoida tegi ([h[, [n[, [f[ …). Ranglar 4 xalqaro guruhga yig'iladi (API HTML palitrasi). To'liq nazariya — «Tajvid» bo'limi.",
+    "Al Quran Cloud «quran-tajweed» — 17 qoida tegi ([h[, [n[, [f[ …). Har bir qoida — Al Quran Cloud tajweed-guide rasmiy rangi. To'liq nazariya — «Tajvid» bo'limi.",
   tajweedLegendClose: "Yopish",
   tajweedOpenGuide: "Tajvid qo'llanmasiga o'tish",
   tajweedOpenGuideA11y: "Tajvid bo'limi: qoidalar va reja",
@@ -144,9 +144,9 @@ const tajweedUz: QuranTajweedPatch = {
 const tajweedTr: QuranTajweedPatch = {
   readerOpenLegend: "Tecvid renk açıklaması",
   readerTajweedExplainShort:
-    "#DD2C00 — medd · #00C853 — gunnah/ihfa/ikalab · #1A237E — kalkale · #FFD600 — idgam. Tam liste — «Açıklama».",
+    "#537FFF — medd · #FF7E1E — gunnah · #9400A8 — ihfa · #DD0008 — kalkale · #169777 — idgam (Al Quran Cloud). Tam liste — «Açıklama».",
   tajweedColorHintShort:
-    "#DD2C00 — medd · #00C853 — gunnah/ihfa/ikalab · #1A237E — kalkale · #FFD600 — idgam",
+    "#537FFF — medd · #FF7E1E — gunnah · #9400A8 — ihfa · #DD0008 — kalkale · #169777 — idgam",
   tajweedPanelOn: "Aç",
   tajweedPanelOff: "Kapat",
   tajweedModeLabel: "Tecvid renkleri",
@@ -157,7 +157,7 @@ const tajweedTr: QuranTajweedPatch = {
     "Tecvid metni yüklenemedi. İnterneti kontrol edin ve ekranı yenileyin. Çevrimdışı seed yoksa uygulamayı güncelleyin.",
   tajweedLegendTitle: "Tecvid renkleri (açıklama)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 kural etiketi ([h[, [n[, [f[ …). Renkler 4 uluslararası gruba toplanır (API HTML paleti). Tam teori — «Tecvid» bölümü.",
+    "Al Quran Cloud «quran-tajweed» — 17 kural etiketi ([h[, [n[, [f[ …). Her kural — Al Quran Cloud tajweed-guide resmi rengi. Tam teori — «Tecvid» bölümü.",
   tajweedLegendClose: "Kapat",
   tajweedOpenGuide: "Tecvid rehberine git",
   tajweedOpenGuideA11y: "Tecvid bölümü: kurallar ve plan",
@@ -238,7 +238,7 @@ const tasbihTr: TasbihBlePatch = {
 const dashboardRu: DashboardTilePatch = {
   homeTileTasbihSub: "Счётчик зикров",
   homeTileTajweedSub: "Правила чтения Корана",
-  tajweedCardSub: "ҚМДБ · правила таджвида",
+  tajweedCardSub: "Алфавит · короткая сура",
 };
 
 const dashboardEn: DashboardTilePatch = {
@@ -293,9 +293,9 @@ const settingsQuranTr: SettingsQuranPatch = {
 const tajweedAr: QuranTajweedPatch = {
   readerOpenLegend: "دليل ألوان التجويد",
   readerTajweedExplainShort:
-    "#DD2C00 — مد · #00C853 — غنّة/إخفاء/إقلاب · #1A237E — قلقلة · #FFD600 — إدغام. القائمة الكاملة في «الدليل».",
+    "#537FFF — مد · #FF7E1E — غنّة · #9400A8 — إخفاء · #DD0008 — قلقلة · #169777 — إدغام (Al Quran Cloud). القائمة الكاملة في «الدليل».",
   tajweedColorHintShort:
-    "#DD2C00 — مد · #00C853 — غنّة/إخفاء/إقلاب · #1A237E — قلقلة · #FFD600 — إدغام",
+    "#537FFF — مد · #FF7E1E — غنّة · #9400A8 — إخفاء · #DD0008 — قلقلة · #169777 — إدغام",
   tajweedPanelOn: "تشغيل",
   tajweedPanelOff: "إيقاف",
   tajweedModeLabel: "ألوان التجويد",
@@ -306,7 +306,7 @@ const tajweedAr: QuranTajweedPatch = {
     "تعذّر تحميل نص التجويد. تحقق من الإنترنت وحدّث الشاشة. إن لم تتوفر البذرة دون اتصال فحدّث التطبيق.",
   tajweedLegendTitle: "ألوان التجويد (دليل)",
   tajweedLegendIntro:
-    "Al Quran Cloud «quran-tajweed» — 17 وسم قاعدة ([h[, [n[, [f[ …). تُجمَع الألوان في 4 مجموعات دولية (لوحة HTML لـ API). النظرية الكاملة — قسم «التجويد».",
+    "Al Quran Cloud «quran-tajweed» — 17 وسم قاعدة ([h[, [n[, [f[ …). كل قاعدة بلون Al Quran Cloud tajweed-guide الرسمي. النظرية الكاملة — قسم «التجويد».",
   tajweedLegendClose: "إغلاق",
   tajweedOpenGuide: "فتح دليل التجويد",
   tajweedOpenGuideA11y: "قسم التجويد: القواعد والخطة",

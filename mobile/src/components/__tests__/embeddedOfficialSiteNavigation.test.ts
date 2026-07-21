@@ -12,6 +12,8 @@ describe("embeddedOfficialSiteNavigation", () => {
   it("exports SPA history inject for embedded official sites", () => {
     expect(OFFICIAL_SITE_SPA_HISTORY_INJECT).toContain("__raqatSpaHistory");
     expect(OFFICIAL_SITE_SPA_HISTORY_INJECT).toContain("raqat-spa-nav");
+    // Click post қайта canGoBack көтермесін — екі рет «артқа» себебі.
+    expect(OFFICIAL_SITE_SPA_HISTORY_INJECT).not.toContain('document.addEventListener("click"');
   });
 
   it("allows same-site navigation for halaldamu", () => {

@@ -6,11 +6,11 @@ describe("resolveKkAutoTranslationText", () => {
     expect(resolveKkAutoTranslationText("Құран", "ru", {})).toBe("Коран");
   });
 
-  it("keeps the source text instead of showing an internet-dependent placeholder", () => {
+  it("hides untranslated Kazakh-letter text instead of leaking Kazakh UI", () => {
     const source = ["Бұл жаңа мәтін offline сөздікке әлі кірмеген", "987654321"].join(" ");
 
-    expect(resolveKkAutoTranslationText(source, "ru", {})).toBe(source);
-    expect(resolveKkAutoTranslationText(source, "en", {})).toBe(source);
+    expect(resolveKkAutoTranslationText(source, "ru", {})).toBe("…");
+    expect(resolveKkAutoTranslationText(source, "en", {})).toBe("…");
   });
 
   it("uses cached translations when available", () => {

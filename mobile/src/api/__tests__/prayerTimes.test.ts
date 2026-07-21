@@ -290,4 +290,47 @@ describe("Muftyat official Kazakhstan prayer source", () => {
       "https://api.muftyat.kz/prayer-times/2026/42.368009/69.612769"
     );
   });
+
+  it("GPS coordsHint болса қала іздемей, сол координатпен ҚМДБ кестесін алады", async () => {
+    const fetchMock = jest.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith("https://api.muftyat.kz/cities/")) {
+        throw new Error("city search must not run when coordsHint is set");
+      }
+      return {
+        ok: true,
+        json: async () => ({
+          result: [
+            {
+              fajr: "03:10",
+              sunrise: "05:00",
+              dhuhr: "12:30",
+              asr: "17:20",
+              maghrib: "19:50",
+              isha: "21:30",
+              Date: "2026-06-13",
+            },
+          ],
+        }),
+      };
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    await expect(
+      fetchPrayerTimesForLocationForDate("Құтарыс", "Kazakhstan", new Date(2026, 5, 13), undefined, {
+        lat: 42.12,
+        lon: 69.88,
+      })
+    ).resolves.toMatchObject({
+      city: "Құтарыс",
+      fajr: "03:10",
+      latitude: 42.12,
+      longitude: 69.88,
+      source: "muftyat",
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "https://api.muftyat.kz/prayer-times/2026/42.12/69.88"
+    );
+  });
 });

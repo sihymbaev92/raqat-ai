@@ -2,7 +2,8 @@ import React, { useCallback, useMemo } from "react";
 import { View, Text, StyleSheet, Image, ScrollView, type StyleProp, type ViewStyle } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../theme/colors";
-import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   buildNamazCompanionSteps,
   namazCompanionSalatOptions,
@@ -19,7 +20,8 @@ type PickerProps = {
 /** «5 уақыт намаз» басындағы намаз таңдау */
 export function NamazCompanionPicker({ colors, onStart, style }: PickerProps) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const t = kk.namazCompanion;
+  const t = useI18n().namazCompanion;
+  const { tr } = useKkAutoTranslator();
   const options = useMemo(() => namazCompanionSalatOptions(), []);
 
   return (
@@ -32,9 +34,9 @@ export function NamazCompanionPicker({ colors, onStart, style }: PickerProps) {
           onPress={() => onStart(opt.key)}
           style={({ pressed }) => [styles.pickCard, pressed && { opacity: 0.9 }]}
           accessibilityRole="button"
-          accessibilityLabel={`${opt.title}, ${opt.rakatCount} ${t.rakatWord}`}
+          accessibilityLabel={`${tr(opt.title)}, ${opt.rakatCount} ${t.rakatWord}`}
         >
-          <Text style={styles.pickTitle}>{opt.title}</Text>
+          <Text style={styles.pickTitle}>{tr(opt.title)}</Text>
           <Text style={styles.pickSub}>
             {t.fardRakatLine(opt.rakatCount)} · {t.startCta}
           </Text>
@@ -61,7 +63,8 @@ export function NamazCompanionSession({
   onExit,
 }: SessionProps) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const t = kk.namazCompanion;
+  const t = useI18n().namazCompanion;
+  const { tr } = useKkAutoTranslator();
   const steps = useMemo(() => buildNamazCompanionSteps(salatKey), [salatKey]);
   const step = steps[stepIndex] ?? steps[0];
   const progress = namazCompanionStepProgress(stepIndex, steps.length);
@@ -90,18 +93,18 @@ export function NamazCompanionSession({
         <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%` }]} />
       </View>
       <ScrollView style={styles.sessionScroll} contentContainerStyle={styles.sessionBody} nestedScrollEnabled>
-        <Text style={styles.badge}>{step.progressLabel}</Text>
-        <Text style={styles.stepTitle}>{step.title}</Text>
-        <Text style={styles.stepDesc}>{step.desc}</Text>
+        <Text style={styles.badge}>{tr(step.progressLabel)}</Text>
+        <Text style={styles.stepTitle}>{tr(step.title)}</Text>
+        <Text style={styles.stepDesc}>{tr(step.desc)}</Text>
         <Image source={step.image} style={styles.poseImage} resizeMode="contain" />
         {step.actions.map((line) => (
           <Text key={line} style={styles.actionLine}>
-            · {line}
+            · {tr(line)}
           </Text>
         ))}
         {step.hints?.map((h) => (
           <Text key={h} style={styles.hintLine}>
-            {h}
+            {tr(h)}
           </Text>
         ))}
       </ScrollView>

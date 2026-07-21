@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import { ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -11,6 +11,7 @@ import { kk } from "../i18n/kk";
 import { InformationalToolBanner } from "../components/InformationalToolBanner";
 import { GuideAccordionSection } from "../components/GuideAccordion";
 import { openOfficialSiteInApp } from "../config/officialSiteProxy";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   FATUA_ZAKAT_SEARCH_URL,
   MUFTYAT_ZAKAT_SEARCH_URL,
@@ -45,23 +46,10 @@ const INITIAL_AMOUNTS: ZakatAmountInput = {
   nisab: "",
 };
 
-const amountFields: AmountField[] = [
-  { key: "cash", label: kk.zakatCalculator.cash, hint: kk.zakatCalculator.cashHint, icon: "account-balance-wallet" },
-  { key: "gold", label: kk.zakatCalculator.gold, hint: kk.zakatCalculator.goldHint, icon: "workspace-premium" },
-  { key: "silver", label: kk.zakatCalculator.silver, hint: kk.zakatCalculator.silverHint, icon: "toll" },
-  { key: "tradeGoods", label: kk.zakatCalculator.tradeGoods, hint: kk.zakatCalculator.tradeGoodsHint, icon: "storefront" },
-  { key: "receivables", label: kk.zakatCalculator.receivables, hint: kk.zakatCalculator.receivablesHint, icon: "receipt-long" },
-  { key: "debts", label: kk.zakatCalculator.debts, hint: kk.zakatCalculator.debtsHint, icon: "remove-circle-outline" },
-];
-
-const NISAB_MODES: { id: NisabMode; label: string }[] = [
-  { id: "manual", label: kk.zakatCalculator.nisabModeManual },
-  { id: "gold", label: kk.zakatCalculator.nisabModeGold },
-  { id: "silver", label: kk.zakatCalculator.nisabModeSilver },
-];
-
 export function ZakatCalculatorScreen({ navigation }: Props) {
   useAppLocale();
+  const localeRev = useLocaleRevision();
+  const { tr } = useKkAutoTranslator();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
   const [amounts, setAmounts] = useState<ZakatAmountInput>(INITIAL_AMOUNTS);
@@ -69,6 +57,26 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
   const [pricePerGram, setPricePerGram] = useState("");
   const [openGuide, setOpenGuide] = useState<Record<string, boolean>>({});
 
+  const amountFields: AmountField[] = useMemo(
+    () => [
+      { key: "cash", label: kk.zakatCalculator.cash, hint: kk.zakatCalculator.cashHint, icon: "account-balance-wallet" },
+      { key: "gold", label: kk.zakatCalculator.gold, hint: kk.zakatCalculator.goldHint, icon: "workspace-premium" },
+      { key: "silver", label: kk.zakatCalculator.silver, hint: kk.zakatCalculator.silverHint, icon: "toll" },
+      { key: "tradeGoods", label: kk.zakatCalculator.tradeGoods, hint: kk.zakatCalculator.tradeGoodsHint, icon: "storefront" },
+      { key: "receivables", label: kk.zakatCalculator.receivables, hint: kk.zakatCalculator.receivablesHint, icon: "receipt-long" },
+      { key: "debts", label: kk.zakatCalculator.debts, hint: kk.zakatCalculator.debtsHint, icon: "remove-circle-outline" },
+    ],
+    [localeRev]
+  );
+
+  const nisabModes: { id: NisabMode; label: string }[] = useMemo(
+    () => [
+      { id: "manual", label: kk.zakatCalculator.nisabModeManual },
+      { id: "gold", label: kk.zakatCalculator.nisabModeGold },
+      { id: "silver", label: kk.zakatCalculator.nisabModeSilver },
+    ],
+    [localeRev]
+  );
   const computedNisab = useMemo(
     () => computeNisabKzt(nisabMode, nisabMode === "gold" ? GOLD_NISAB_GRAMS : SILVER_NISAB_GRAMS, pricePerGram),
     [nisabMode, pricePerGram]
@@ -123,7 +131,7 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
 
       <Text style={styles.sectionTitle}>{kk.zakatCalculator.nisabHelperTitle}</Text>
       <View style={styles.nisabModeRow}>
-        {NISAB_MODES.map((mode) => {
+        {nisabModes.map((mode) => {
           const active = nisabMode === mode.id;
           return (
             <Pressable
@@ -205,12 +213,12 @@ export function ZakatCalculatorScreen({ navigation }: Props) {
       {ZAKAT_GUIDE_SECTIONS.map((section) => (
         <GuideAccordionSection
           key={section.title}
-          title={section.title}
+          title={tr(section.title)}
           expanded={!!openGuide[section.title]}
           onToggle={() => toggleGuide(section.title)}
           colors={colors}
         >
-          <Text style={styles.guideBody}>{section.body}</Text>
+          <Text style={styles.guideBody}>{tr(section.body)}</Text>
         </GuideAccordionSection>
       ))}
 

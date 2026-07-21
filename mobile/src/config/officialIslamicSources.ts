@@ -18,6 +18,24 @@ export const OFFICIAL_ISLAMIC_SOURCES = {
   },
 } as const;
 
-export function officialIslamicSourceHomeUrl(site: OfficialIslamicSourceId): string {
-  return OFFICIAL_ISLAMIC_SOURCES[site].homeUrl;
+/**
+ * Locale path for official sites.
+ * Fatua has no /en/ (404) — use kk for English and other locales without a site path.
+ */
+export function officialSiteLocalePath(
+  locale: string,
+  site: OfficialIslamicSourceId = "muftyat"
+): "kk" | "ru" | "en" {
+  if (locale === "ru") return "ru";
+  if (locale === "en" && site === "muftyat") return "en";
+  return "kk";
+}
+
+export function officialIslamicSourceHomeUrl(
+  site: OfficialIslamicSourceId,
+  locale?: string
+): string {
+  const path = officialSiteLocalePath(locale ?? "kk", site);
+  if (site === "fatua") return `https://fatua.kz/${path}/`;
+  return `https://www.muftyat.kz/${path}/`;
 }

@@ -6,6 +6,9 @@ import { getRaqatApiBase } from "../config/raqatApiBase";
 
 const OPEN_METEO = "https://api.open-meteo.com/v1/forecast";
 
+/** Қолданба + home виджет: ауа райын осы аралықта жаңарту. */
+export const WEATHER_REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+
 export type OpenMeteoCurrent = {
   tempC: number;
   wmoCode: number;

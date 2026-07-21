@@ -106,6 +106,7 @@ object PrayerAzanAlarmScheduler {
         }
       }
       requestCodes.put(requestCode)
+      requestCodes.put(stableRequestCode("open-$identifier"))
       identifiers.add(identifier)
     }
     app.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -140,6 +141,7 @@ object PrayerAzanAlarmScheduler {
     val am = app.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
     try {
       val arr = JSONArray(raw)
+      cancelLegacyBroadcastPendingIntents(app, arr)
       for (i in 0 until arr.length()) {
         val requestCode = arr.optInt(i)
         if (requestCode != 0) {
@@ -153,23 +155,8 @@ object PrayerAzanAlarmScheduler {
   }
 
   private fun pendingIntent(context: Context, requestCode: Int, item: JSONObject): PendingIntent {
-    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
-    val enteredDefault = context.getString(R.string.prayer_azan_fullscreen_title)
-    val intent = Intent(context, PrayerAzanAlarmReceiver::class.java).apply {
-      action = ACTION_AZAN
-      putExtra(EXTRA_LABEL, item.optString("label", defaultLabel))
-      putExtra(EXTRA_ENTERED_TITLE, item.optString("enteredTitle", enteredDefault))
-      putExtra(EXTRA_TIME, item.optString("timeShort", ""))
-      putExtra(EXTRA_SOUND_ID, item.optString("soundId", "adhan_haramain"))
-      putExtra(EXTRA_SALAT_KEY, item.optString("salatKey", ""))
-      putExtra(EXTRA_AT_MILLIS, item.optLong("atMillis", 0L))
-    }
-    return PendingIntent.getBroadcast(
-      context,
-      requestCode,
-      intent,
-      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-    )
+    // Құлып экраны: LockActivity (AlarmClock allowlist) → дереу толық RN азан беті.
+    return openLockActivityPendingIntent(context, requestCode, item)
   }
 
   private fun openActivityPendingIntent(context: Context, requestCode: Int, item: JSONObject): PendingIntent {
@@ -179,7 +166,40 @@ object PrayerAzanAlarmScheduler {
     val time = item.optString("timeShort", "")
     val soundId = item.optString("soundId", "adhan_haramain")
     val salatKey = item.optString("salatKey", "")
-    val intent = PrayerAzanDelivery.azanActivityIntent(context, label, enteredTitle, time, soundId, salatKey)
+    val intent =
+      PrayerAzanDelivery.azanMainActivityIntent(context, label, enteredTitle, time, soundId, salatKey).apply {
+        putExtra(EXTRA_AT_MILLIS, item.optLong("atMillis", 0L))
+        putExtra(EXTRA_LABEL, label)
+        putExtra(EXTRA_ENTERED_TITLE, enteredTitle)
+        putExtra(EXTRA_TIME, time)
+        putExtra(EXTRA_SOUND_ID, soundId)
+        putExtra(EXTRA_SALAT_KEY, salatKey)
+      }
+    return PendingIntent.getActivity(
+      context,
+      requestCode,
+      intent,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+  }
+
+  private fun openLockActivityPendingIntent(context: Context, requestCode: Int, item: JSONObject): PendingIntent {
+    val defaultLabel = context.getString(R.string.prayer_azan_default_label)
+    val label = item.optString("label", defaultLabel)
+    val enteredTitle = item.optString("enteredTitle", enteredTitleForLabel(context, label))
+    val time = item.optString("timeShort", "")
+    val soundId = item.optString("soundId", "adhan_haramain")
+    val salatKey = item.optString("salatKey", "")
+    val intent =
+      PrayerAzanLockActivity.createIntent(context, label, enteredTitle, time, soundId, salatKey).apply {
+        putExtra(EXTRA_AT_MILLIS, item.optLong("atMillis", 0L))
+        putExtra(PrayerAzanLockActivity.EXTRA_FROM_ALARM, true)
+        putExtra(EXTRA_LABEL, label)
+        putExtra(EXTRA_ENTERED_TITLE, enteredTitle)
+        putExtra(EXTRA_TIME, time)
+        putExtra(EXTRA_SOUND_ID, soundId)
+        putExtra(EXTRA_SALAT_KEY, salatKey)
+      }
     return PendingIntent.getActivity(
       context,
       requestCode,
@@ -189,13 +209,50 @@ object PrayerAzanAlarmScheduler {
   }
 
   private fun emptyPendingIntent(context: Context, requestCode: Int): PendingIntent {
-    val intent = Intent(context, PrayerAzanAlarmReceiver::class.java).apply { action = ACTION_AZAN }
-    return PendingIntent.getBroadcast(
+    val intent =
+      Intent(context, PrayerAzanLockActivity::class.java).apply {
+        putExtra(PrayerAzanLockActivity.EXTRA_FROM_ALARM, true)
+      }
+    return PendingIntent.getActivity(
       context,
       requestCode,
       intent,
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
+  }
+
+  /** Ескі Broadcast / MainActivity PI-ларды да өшіру (миграция). */
+  private fun cancelLegacyBroadcastPendingIntents(context: Context, requestCodes: JSONArray) {
+    val app = context.applicationContext
+    val am = app.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+    for (i in 0 until requestCodes.length()) {
+      val requestCode = requestCodes.optInt(i)
+      if (requestCode == 0) continue
+      try {
+        val legacy =
+          PendingIntent.getBroadcast(
+            app,
+            requestCode,
+            Intent(app, PrayerAzanAlarmReceiver::class.java).apply { action = ACTION_AZAN },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+          )
+        am.cancel(legacy)
+      } catch (_: Throwable) {
+        /* */
+      }
+      try {
+        val legacyMain =
+          PendingIntent.getActivity(
+            app,
+            requestCode,
+            Intent(Intent.ACTION_VIEW, Uri.parse("raqat://azan"), app, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+          )
+        am.cancel(legacyMain)
+      } catch (_: Throwable) {
+        /* */
+      }
+    }
   }
 
   private fun stableRequestCode(identifier: String): Int {

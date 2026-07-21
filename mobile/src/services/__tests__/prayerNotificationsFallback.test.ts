@@ -147,7 +147,7 @@ describe("Android prayer azan scheduling", () => {
     expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it("falls back to Expo prayer notifications when native scheduling reports zero alarms", async () => {
+  it("does not fall back to Expo prayer notifications when native scheduling reports zero alarms", async () => {
     const nativeSchedule = jest.fn(async () => ({ scheduledCount: 0, identifiers: [] }));
     const { reschedulePrayerNotifications, notifications } =
       await loadPrayerNotificationsWithNative(nativeSchedule);
@@ -159,10 +159,10 @@ describe("Android prayer azan scheduling", () => {
     });
 
     expect(nativeSchedule).toHaveBeenCalledTimes(1);
-    expect(notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it("falls back to Expo prayer notifications when the native module is missing", async () => {
+  it("does not fall back to Expo when the native schedule module is missing", async () => {
     const { reschedulePrayerNotifications, notifications } =
       await loadPrayerNotificationsWithNative(undefined);
 
@@ -172,10 +172,10 @@ describe("Android prayer azan scheduling", () => {
       prayerTimesAlreadyAdjusted: true,
     });
 
-    expect(notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
-  it("falls back to Expo prayer notifications when native scheduling throws", async () => {
+  it("does not fall back to Expo when native scheduling throws", async () => {
     const nativeSchedule = jest.fn(() => {
       throw new Error("native exact alarm unavailable");
     });
@@ -188,7 +188,7 @@ describe("Android prayer azan scheduling", () => {
       prayerTimesAlreadyAdjusted: true,
     });
 
-    expect(notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    expect(notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
   it("still schedules native azan alarms when Android notification permission is denied", async () => {

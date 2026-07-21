@@ -46,7 +46,7 @@ import {
   type HalalHubWebTabId,
 } from "../config/halalHubWebTabs";
 import { useOfficialSiteWebViewScreenBack } from "../hooks/useOfficialSiteWebViewScreenBack";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import { kk } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
 import { getHalalHubInstantCatalog, prefetchHalalDamuHub } from "../services/halalHubBootstrap";
@@ -83,9 +83,10 @@ function companyStubFromMapId(id: number): HalalDamuCompanyCard {
  */
 export function HalalScreen({ navigation, route }: Props) {
   const locale = useAppLocale();
+  const localeRevision = useLocaleRevision();
   const { colors, isDark } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const tabs = useMemo(() => getHalalHubWebTabs(), [locale]);
+  const tabs = useMemo(() => getHalalHubWebTabs(), [locale, localeRevision]);
   const initialTab = route.params?.initialTab ?? HALAL_HUB_WEB_TAB_DEFAULT;
   const [activeTabId, setActiveTabId] = useState<HalalHubWebTabId>(() => initialTab);
   const [siteMounted, setSiteMounted] = useState(() => initialTab === "site");
@@ -121,7 +122,7 @@ export function HalalScreen({ navigation, route }: Props) {
       openDetail: kk.features.halalMapOpenDetail,
       footerNote: kk.features.halalMapFooterNote,
     }),
-    []
+    [locale, localeRevision]
   );
 
   useOfficialSiteWebViewScreenBack(navigation, webRef, isSiteTab);

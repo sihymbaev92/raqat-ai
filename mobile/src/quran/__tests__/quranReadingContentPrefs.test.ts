@@ -37,7 +37,8 @@ describe("quranTranslitScript", () => {
   it("defaults latin for en/tr UI", () => {
     expect(defaultQuranTranslitScriptForUi("en")).toBe("latin");
     expect(defaultQuranTranslitScriptForUi("tr")).toBe("latin");
-    expect(defaultQuranTranslitScriptForUi("ru")).toBe("kk");
+    expect(defaultQuranTranslitScriptForUi("ru")).toBe("latin");
+    expect(defaultQuranTranslitScriptForUi("ky")).toBe("latin");
     expect(defaultQuranTranslitScriptForUi("kk")).toBe("kk");
   });
 });

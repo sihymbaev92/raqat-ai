@@ -43,7 +43,7 @@ export function KurbanAitTopicsPanel({
             pressed && styles.pressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel={`${topic.title}. ${topic.subtitle ?? kk.dashboard.promoHolidayKurbanOpenHint}`}
+          accessibilityLabel={`${tr(topic.title)}. ${tr(topic.subtitle ?? kk.dashboard.promoHolidayKurbanOpenHint)}`}
         >
           <View style={styles.topicTextCol}>
             <Text style={styles.topicTitle} numberOfLines={2}>

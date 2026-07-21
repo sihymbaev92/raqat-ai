@@ -2,8 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const K = {
   onboardingDone: "raqat_onboarding_done",
-  /** Орын + хабарлама + дағыс рұқсаттары бір рет сұралғаны */
-  firstLaunchPermissionsBurst: "raqat_first_launch_perm_burst_v1",
+  /** Орын + хабарлама + азан рұқсаттары бір рет сұралғаны (v2 — азан алдымен) */
+  firstLaunchPermissionsBurst: "raqat_first_launch_perm_burst_v2",
   city: "raqat_city",
   country: "raqat_country",
   savedCities: "raqat_saved_cities",

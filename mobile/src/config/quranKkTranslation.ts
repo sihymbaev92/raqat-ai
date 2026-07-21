@@ -20,3 +20,16 @@ export const QURAN_KK_BUNDLE_PROVENANCE_SNAPSHOT = {
 
 /** @deprecated — snapshot/footerLine қолданыңыз */
 export const QURAN_KK_TEXT_PROVENANCE_KK = QURAN_KK_BUNDLE_PROVENANCE_SNAPSHOT.footerLine;
+
+const QURAN_KK_TEXT_PROVENANCE_RU =
+  "Казахский перевод аятов (офлайн-пакет): API qurankarim.kz (Халифа Алтай). Ссылка: https://asyldin.kz/library/readBook/id/29/. Транскрипция: asyldin.kz. Полный текст и лицензия — официальное издание.";
+
+const QURAN_KK_TEXT_PROVENANCE_EN =
+  "Kazakh ayah meanings (offline bundle): qurankarim.kz API (Khalifa Altay). Link: https://asyldin.kz/library/readBook/id/29/. Transcription: asyldin.kz. Full text and license — official edition.";
+
+/** Locale-safe provenance line for settings / about (never leaks Kazakh under non-kk). */
+export function quranKkTextProvenanceForLocale(locale: string): string {
+  if (locale === "kk") return QURAN_KK_TEXT_PROVENANCE_KK;
+  if (locale === "ru") return QURAN_KK_TEXT_PROVENANCE_RU;
+  return QURAN_KK_TEXT_PROVENANCE_EN;
+}

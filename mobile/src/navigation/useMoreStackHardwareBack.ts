@@ -9,13 +9,26 @@ export function popMoreStackScreen(navigation: NavigationProp<ParamListBase>): b
 }
 
 function popMoreStackOnly(navigation: NavigationProp<ParamListBase>): boolean {
+  try {
+    if (typeof navigation.isFocused === "function" && !navigation.isFocused()) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
   const state = navigation.getState();
-  const canPopInnerStack = (state.index ?? 0) > 0;
-  if (canPopInnerStack) {
+  const canPopInnerStack = (state?.index ?? 0) > 0;
+  if (!canPopInnerStack) return false;
+  try {
+    if (typeof navigation.canGoBack === "function" && !navigation.canGoBack()) {
+      return false;
+    }
     navigation.goBack();
     return true;
+  } catch {
+    /** Dead navigator after locale remount — never swallow back. */
+    return false;
   }
-  return false;
 }
 
 /**
@@ -27,21 +40,33 @@ export function useMoreStackHardwareBack(navigation: NavigationProp<ParamListBas
   useHardwareBackPress(handleBack, true);
 }
 
+/**
+ * Module-level subscription — locale remounts often skip blur, which leaked
+ * per-closure BackHandlers that swallowed hardware back app-wide.
+ */
+let moreStackBackSub: { remove: () => void } | undefined;
+
+function removeMoreStackBackSub() {
+  moreStackBackSub?.remove();
+  moreStackBackSub = undefined;
+}
+
 /** MoreStack.Navigator `screenListeners` — барлық экранға бірдей Android артқа. */
 export function moreStackScreenBackListeners({
   navigation,
 }: {
   navigation: NavigationProp<ParamListBase>;
 }) {
-  let sub: { remove: () => void } | undefined;
   return {
     focus: () => {
       if (Platform.OS !== "android") return;
-      sub = BackHandler.addEventListener("hardwareBackPress", () => popMoreStackOnly(navigation));
+      removeMoreStackBackSub();
+      moreStackBackSub = BackHandler.addEventListener("hardwareBackPress", () =>
+        popMoreStackOnly(navigation)
+      );
     },
     blur: () => {
-      sub?.remove();
-      sub = undefined;
+      removeMoreStackBackSub();
     },
   };
 }

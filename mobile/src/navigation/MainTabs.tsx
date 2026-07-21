@@ -1,7 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
-import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useAppLocale } from "../i18n/runtime";
 import type { MainTabParamList } from "./types";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
 import { lazyScreen } from "./lazyScreen";
@@ -23,11 +23,10 @@ const TasbihStack = lazyScreen(() => import("./TasbihStack").then((m) => ({ defa
 export function MainTabs() {
   const { colors } = useAppTheme();
   const locale = useAppLocale();
-  const localeRevision = useLocaleRevision();
 
   return (
     <Stack.Navigator
-      key={`${locale}-${localeRevision}`}
+      key={locale}
       initialRouteName="Home"
       screenOptions={{
         ...hiddenStackHeaderOptions,

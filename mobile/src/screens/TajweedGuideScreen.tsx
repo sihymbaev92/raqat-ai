@@ -10,9 +10,11 @@ import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
 import type { MoreStackParamList } from "../navigation/types";
 import { kk } from "../i18n/kk";
 import { useAppLocale } from "../i18n/runtime";
+import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 
 export function TajweedGuideScreen() {
   useAppLocale();
+  const { tr } = useKkAutoTranslator();
   const { colors } = useAppTheme();
   const navigation = useNavigation<NativeStackNavigationProp<MoreStackParamList>>();
   const [readerPage, setReaderPage] = useState<number | null>(null);
@@ -40,7 +42,7 @@ export function TajweedGuideScreen() {
       <View style={[styles.readerRoot, { backgroundColor: colors.bg }]}>
         <View style={styles.readerTopBar}>
           <Text style={[styles.readerTitle, { color: colors.text }]} numberOfLines={1}>
-            {kk.tajweedGuide.sectionBook} · {readerPage}
+            {tr(kk.tajweedGuide.sectionBook)} · {readerPage}
           </Text>
         </View>
         <TajweedMuftyatBook initialPage={readerPage} />

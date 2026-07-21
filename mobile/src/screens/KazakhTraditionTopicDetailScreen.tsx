@@ -43,6 +43,7 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   const topic = getTraditionTopicById(route.params.topicId);
   const [favorite, setFavorite] = useState(false);
   const [bataQuery, setBataQuery] = useState("");
+  const [bataExpanded, setBataExpanded] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -94,18 +95,18 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
     );
   }
 
-  const tTitle = tFields[0] ?? topic.title;
-  const tSubtitle = tFields[1] ?? topic.subtitle;
-  const tSummary = tFields[2] ?? topic.summary;
-  const tOrigin = tFields[3] ?? topic.origin;
+  const tTitle = tFields[0] ?? tr(topic.title);
+  const tSubtitle = tFields[1] ?? tr(topic.subtitle);
+  const tSummary = tFields[2] ?? tr(topic.summary);
+  const tOrigin = tFields[3] ?? tr(topic.origin);
   const religion = {
-    harmony: tFields[4] ?? religionSource.harmony,
-    limit: tFields[5] ?? religionSource.limit,
+    harmony: tFields[4] ?? tr(religionSource.harmony),
+    limit: tFields[5] ?? tr(religionSource.limit),
   };
-  const tBlessing = tFields[6] ?? topic.blessing;
-  const tQuote = tFields[7] ?? topic.quote;
+  const tBlessing = tFields[6] ?? tr(topic.blessing);
+  const tQuote = tFields[7] ?? tr(topic.quote);
   const tHowTo = tFields.slice(8);
-  const steps = tHowTo.length ? tHowTo : topic.howTo;
+  const steps = tHowTo.length ? tHowTo : topic.howTo.map((s) => tr(s));
 
   const toggleFavorite = async () => {
     const next = await toggleTraditionFavorite("topic", topic.id);
@@ -160,6 +161,8 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         <Text style={styles.body}>{tOrigin}</Text>
       </View>
 
+      <Text style={styles.sectionLead}>{t.features.traditionGuide.religionLinkLead}</Text>
+
       <View style={[styles.card, styles.faithCard]}>
         <View style={styles.cardHead}>
           <MaterialIcons name="mosque" size={18} color={palette.buttonGoldText} />
@@ -200,7 +203,10 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
             <MaterialIcons name="search" size={18} color={palette.goldMuted} />
             <TextInput
               value={bataQuery}
-              onChangeText={setBataQuery}
+              onChangeText={(text) => {
+                setBataQuery(text);
+                setBataExpanded(false);
+              }}
               placeholder={t.features.traditionGuide.searchPlaceholderShort}
               placeholderTextColor={palette.muted}
               style={styles.bataSearchInput}
@@ -220,7 +226,10 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
         ) : null}
         {relatedBlessings.length ? (
           <View style={styles.blessingList}>
-            {relatedBlessings.map((item) => (
+            {(bataExpanded || relatedBlessings.length <= 5
+              ? relatedBlessings
+              : relatedBlessings.slice(0, 5)
+            ).map((item) => (
               <View key={item.id} style={styles.blessingItem}>
                 <Text style={styles.blessingItemTitle}>{tr(item.title)}</Text>
                 <Text style={styles.blessingItemText}>{tr(item.text)}</Text>
@@ -229,6 +238,20 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
                 ) : null}
               </View>
             ))}
+            {relatedBlessings.length > 5 ? (
+              <Pressable
+                oyuBackdrop={false}
+                onPress={() => setBataExpanded((open) => !open)}
+                style={({ pressed }) => [styles.bataToggle, pressed && { opacity: 0.9 }]}
+                accessibilityRole="button"
+              >
+                <Text style={styles.bataToggleText}>
+                  {bataExpanded
+                    ? t.features.traditionGuide.bataShowLess
+                    : t.features.traditionGuide.bataShowMore(relatedBlessings.length - 5)}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -311,6 +334,14 @@ function makeStyles(p: TraditionKazakhPalette) {
       fontWeight: "700",
       lineHeight: 22,
       marginBottom: 12,
+      paddingHorizontal: 2,
+    },
+    sectionLead: {
+      color: p.muted,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "700",
+      marginBottom: 8,
       paddingHorizontal: 2,
     },
     card: {
@@ -397,6 +428,16 @@ function makeStyles(p: TraditionKazakhPalette) {
       marginTop: 10,
       marginBottom: 4,
     },
+    bataToggle: {
+      marginTop: 4,
+      paddingVertical: 12,
+      alignItems: "center",
+      borderRadius: 12,
+      backgroundColor: p.goldSurface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.goldMuted,
+    },
+    bataToggleText: { color: p.text, fontSize: 14, fontWeight: "800" },
     articleRow: {
       flexDirection: "row",
       alignItems: "center",

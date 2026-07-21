@@ -22,7 +22,7 @@ import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
-import { hydrateLocale, useAppLocale, useLocaleRevision } from "./src/i18n/runtime";
+import { hydrateLocale, useAppLocale } from "./src/i18n/runtime";
 import { getOnboardingDone } from "./src/storage/prefs";
 import { OnboardingLanguageScreen } from "./src/screens/OnboardingLanguageScreen";
 import { runAfterInteractions } from "./src/utils/uiDefer";
@@ -35,7 +35,7 @@ import { ScreenFitProvider, useScreenFitMetrics, webViewportClampStyle } from ".
 const APP_STATE_SYNC_COOLDOWN_MS = 60_000;
 const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 1_800;
 /** Рұқсаттар UI дайын болғаннан кейін бірден — баптауға кірмей. */
-const FIRST_LAUNCH_PERMISSIONS_DELAY_MS = 600;
+const FIRST_LAUNCH_PERMISSIONS_DELAY_MS = 280;
 
 function reportBackgroundJobError(label: string, error: unknown): void {
   if (__DEV__) {
@@ -63,6 +63,8 @@ function AppSafeAreaFrame({ children }: { children: React.ReactNode }) {
         style={[
           {
             flex: 1,
+            width: "100%",
+            height: "100%",
             backgroundColor: colors.bg,
             /** Үсті — сағаттан төмен; асты — жүйелік артқадан жоғары (жағаласпау). */
             paddingTop: deviceInsets.top,
@@ -71,7 +73,10 @@ function AppSafeAreaFrame({ children }: { children: React.ReactNode }) {
           webClamp,
         ]}
       >
-        <SafeAreaProvider style={{ flex: 1 }} initialMetrics={innerMetrics}>
+        <SafeAreaProvider
+          style={{ flex: 1, width: "100%" }}
+          initialMetrics={innerMetrics}
+        >
           {children}
         </SafeAreaProvider>
       </View>
@@ -99,7 +104,6 @@ export default function App() {
   const [bootReady, setBootReady] = useState(false);
   const [needsLanguageOnboarding, setNeedsLanguageOnboarding] = useState(false);
   const locale = useAppLocale();
-  const localeRevision = useLocaleRevision();
   const colorScheme = useColorScheme();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastAppStateSyncAtRef = useRef(0);
@@ -320,7 +324,7 @@ export default function App() {
   const appNavigation = (
     <>
       <NavigationContainer
-        key={`${locale}-${localeRevision}`}
+        key={locale}
         ref={rootNavigationRef}
         linking={appDeepLinking}
         onReady={() => {

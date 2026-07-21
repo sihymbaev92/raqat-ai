@@ -67,7 +67,14 @@ export function cityLabelForLocale(
   if (locale === "en") return hit?.city ?? city.trim();
   if (locale === "kk") return hit?.label ?? city.trim();
   const kkLabel = hit?.label ?? city.trim();
-  return opts?.tr ? opts.tr(kkLabel) : kkLabel;
+  if (opts?.tr) return opts.tr(kkLabel);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { resolveKkAutoTranslationText } = require("../quran/useKkAutoTranslator") as typeof import("../quran/useKkAutoTranslator");
+    return resolveKkAutoTranslationText(kkLabel, locale, {});
+  } catch {
+    return locale === "kk" ? kkLabel : hit?.city ?? city.trim();
+  }
 }
 
 /** Намаз / құбыла: тізімдегі қала үшін WGS84 координат (null — қолмен қаланы іздеу). */

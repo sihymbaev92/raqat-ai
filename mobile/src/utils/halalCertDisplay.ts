@@ -1,4 +1,9 @@
 import type { ThemeColors } from "../theme/colors";
+import { getCurrentLocale } from "../i18n/runtime";
+import {
+  getOfflineAutoTranslation,
+  type OfflineAutoTranslateTarget,
+} from "../services/offlineAutoTranslations";
 
 export type HalalCertTone = "ok" | "warn" | "bad" | "neutral";
 
@@ -107,9 +112,43 @@ export function halalCertLabelKk(status: string | null | undefined): string {
   const s = (status ?? "").trim();
   if (!s) return "";
   const low = s.toLowerCase();
-  if (low === "active") return "Белсенді сертификат";
-  if (low === "expired") return "Мерзімі өткен";
-  if (low === "draft") return "Жоба / күтуде";
-  if (low === "reference") return "Анықтама ғана";
+  const kkLabel =
+    low === "active"
+      ? "Белсенді сертификат"
+      : low === "expired"
+        ? "Мерзімі өткен"
+        : low === "draft"
+          ? "Жоба / күтуде"
+          : low === "reference"
+            ? "Анықтама ғана"
+            : s;
+  const locale = getCurrentLocale();
+  if (locale === "kk") return kkLabel;
+  if (locale === "ru") {
+    if (low === "active") return "Активный сертификат";
+    if (low === "expired") return "Срок истёк";
+    if (low === "draft") return "Черновик / ожидание";
+    if (low === "reference") return "Только справочно";
+    return s;
+  }
+  if (locale === "en" || locale === "tr" || locale === "uz" || locale === "ar") {
+    if (low === "active") return locale === "tr" ? "Aktif sertifika" : locale === "uz" ? "Faol sertifikat" : locale === "ar" ? "شهادة سارية" : "Active certificate";
+    if (low === "expired") return locale === "tr" ? "Süresi dolmuş" : locale === "uz" ? "Muddati tugagan" : locale === "ar" ? "منتهية" : "Expired";
+    if (low === "draft") return locale === "tr" ? "Taslak / bekliyor" : locale === "uz" ? "Qoralama / kutilmoqda" : locale === "ar" ? "مسودة / قيد الانتظار" : "Draft / pending";
+    if (low === "reference") return locale === "tr" ? "Yalnızca referans" : locale === "uz" ? "Faqat ma’lumot" : locale === "ar" ? "للمرجع فقط" : "Reference only";
+  }
+  if (locale === "ky") {
+    if (low === "active") return "Активдүү сертификат";
+    if (low === "expired") return "Мөөнөтү өткөн";
+    if (low === "draft") return "Долбоор / күтүүдө";
+    if (low === "reference") return "Маалымат гана";
+  }
+  const offline = getOfflineAutoTranslation(kkLabel, locale as OfflineAutoTranslateTarget);
+  if (offline) return offline;
+  /** Never leak Kazakh labels under non-kk. */
+  if (low === "active") return "Active certificate";
+  if (low === "expired") return "Expired";
+  if (low === "draft") return "Draft / pending";
+  if (low === "reference") return "Reference only";
   return s;
 }

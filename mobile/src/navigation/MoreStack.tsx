@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
 import { navigationHeaderTitleStyle } from "../theme/typography";
 import { kk } from "../i18n/kk";
-import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useAppLocale } from "../i18n/runtime";
 import type { MoreStackParamList } from "./types";
 import { moreStackScreenBackListeners } from "./useMoreStackHardwareBack";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
@@ -73,7 +73,6 @@ const HadithDetailScreen = lazyScreen(() => import("../screens/HadithDetailScree
 export function MoreNavigator() {
   const { colors, isDark } = useAppTheme();
   const locale = useAppLocale();
-  const localeRevision = useLocaleRevision();
 
   const screenOptions = {
     ...hiddenStackHeaderOptions,
@@ -82,7 +81,7 @@ export function MoreNavigator() {
 
   return (
     <Stack.Navigator
-      key={`${MORE_STACK_WEB_CACHE_VERSION}-${locale}-${localeRevision}`}
+      key={`${MORE_STACK_WEB_CACHE_VERSION}-${locale}`}
       initialRouteName="ContentHub"
       screenOptions={screenOptions}
       screenListeners={moreStackScreenBackListeners}

@@ -15,7 +15,7 @@ export type BundledJsonName =
   | "halal-companies-snapshot.json"
   | "mosques-2gis-kz.json";
 
-/** APK: индекс + KK + Arabic + translit + tajweed + UI тілдері + KK hadith seed. */
+/** APK: индекс + KK + Arabic + translit + tajweed + ru/en/tr/uz/ky мағына + UI + hadith. */
 export const APK_BUNDLED_JSON: readonly BundledJsonName[] = [
   "surah-list-api.json",
   "mosques-2gis-kz.json",
@@ -23,13 +23,13 @@ export const APK_BUNDLED_JSON: readonly BundledJsonName[] = [
   "quran-uthmani-full.json",
   "quran-en-transliteration-full.json",
   "quran-tajweed-offline.json",
+  "quran-translations-offline.json",
   "hadith-from-db-seed.json",
   "offline-auto-translations-apk.json",
 ] as const;
 
 /** Орнатудан кейін CDN/cache арқылы жүктеледі. */
 export const REMOTE_BUNDLED_JSON: readonly BundledJsonName[] = [
-  "quran-translations-offline.json",
   "offline-auto-translations-core.json",
   "great-words-catalog.json",
   "halal-companies-snapshot.json",

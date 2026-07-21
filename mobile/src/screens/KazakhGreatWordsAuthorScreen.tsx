@@ -29,8 +29,8 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
   const entries = useMemo(() => getDisplayEntriesByAuthorId(authorId), [authorId, catalogTick]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: author?.name ?? g.authorWorksTitle });
-  }, [navigation, author?.name, g.authorWorksTitle]);
+    navigation.setOptions({ title: tr(author?.name ?? g.authorWorksTitle) });
+  }, [navigation, author?.name, g.authorWorksTitle, tr]);
 
   if (catalogLoading) {
     return (
@@ -44,7 +44,7 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
   if (!author) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>{g.authorNotFound}</Text>
+        <Text style={styles.muted}>{tr(g.authorNotFound)}</Text>
       </View>
     );
   }
@@ -54,14 +54,14 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
       onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: item.id })}
       accessibilityRole="button"
-      accessibilityLabel={g.entryRowA11y(item.title)}
+      accessibilityLabel={g.entryRowA11y(tr(item.title))}
     >
       <Text style={styles.rowTitle} numberOfLines={3}>
         {tr(item.title)}
       </Text>
       {item.mergedCount ? (
         <Text style={styles.rowSub} numberOfLines={1}>
-          {g.mergedEntryCount(item.mergedCount)}
+          {tr(g.mergedEntryCount(item.mergedCount))}
         </Text>
       ) : null}
       <Text style={styles.rowChev}>›</Text>
@@ -71,8 +71,8 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.name}>{author.name}</Text>
-        <Text style={styles.period}>{author.period}</Text>
+        <Text style={styles.name}>{tr(author.name)}</Text>
+        <Text style={styles.period}>{tr(author.period)}</Text>
         <Text style={styles.bio} selectable>
           {tr(author.bio)}
         </Text>

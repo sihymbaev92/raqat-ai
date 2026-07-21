@@ -54,10 +54,14 @@ function buildAfterLoadInject(presentation: OfficialSitePresentation): string {
   return `${viewportInjectFor(presentation)}\n${OFFICIAL_SITE_SPA_HISTORY_INJECT}`;
 }
 
+export type OfficialSiteWebBackSettle = "moved" | "stuck" | "noop";
+
 export type OfficialSiteFullWebViewHandle = {
   reload: () => void;
   canGoBack: () => boolean;
-  goBack: () => void;
+  /** Басты/кіріс URL-да ма — тұрып қалған canGoBack үшін бірден шығу. */
+  isAtEntry: () => boolean;
+  goBack: (opts?: { onSettled?: (result: OfficialSiteWebBackSettle) => void }) => void;
 };
 
 type Props = {
@@ -226,16 +230,30 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       }, [refreshOnFocus, isWeb, hardReloadHome])
     );
 
+    const urlsMatchEntry = useCallback((current: string) => {
+      const entry = (entryUrlRef.current || "").replace(/\/+$/, "");
+      const cur = (current || "").replace(/\/+$/, "");
+      if (!entry || !cur) return false;
+      return cur === entry || cur.startsWith(`${entry}?`) || cur.startsWith(`${entry}#`);
+    }, []);
+
     const clearStaleBackFlags = useCallback(() => {
       setSpaCanGoBack(false);
       setHistoryCanGoBack(false);
     }, []);
 
-    const goBackInWebView = useCallback(() => {
-      const urlBefore = mainFrameUrlRef.current;
-      if (spaCanGoBack) {
-        webRef.current?.injectJavaScript(
-          `(function(){try{
+    const goBackInWebView = useCallback(
+      (opts?: { onSettled?: (result: OfficialSiteWebBackSettle) => void }) => {
+        const canSpa = spaCanGoBack;
+        const canHist = historyCanGoBack;
+        if (!canSpa && !canHist) {
+          opts?.onSettled?.("noop");
+          return;
+        }
+        const urlBefore = mainFrameUrlRef.current;
+        if (canSpa) {
+          webRef.current?.injectJavaScript(
+            `(function(){try{
             var h=window.__raqatSpaHistory;
             if(h&&h.index>0){h.index-=1;}
             history.back();
@@ -245,32 +263,56 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
               }));
             }
           }catch(e){}})();true;`
-        );
-      } else if (historyCanGoBack) {
-        webRef.current?.goBack();
-      }
-      if (pendingStuckClearRef.current) clearTimeout(pendingStuckClearRef.current);
-      // history.back() істемесе / URL өзгермесе — келесі «артқа» экранды жабуы үшін жалауларды өшіру.
-      pendingStuckClearRef.current = setTimeout(() => {
-        pendingStuckClearRef.current = null;
-        if (mainFrameUrlRef.current === urlBefore) {
-          clearStaleBackFlags();
+          );
+        } else if (canHist) {
+          webRef.current?.goBack();
         }
-      }, 420);
-    }, [spaCanGoBack, historyCanGoBack, clearStaleBackFlags]);
+        if (pendingStuckClearRef.current) clearTimeout(pendingStuckClearRef.current);
+        // history.back() істемесе / URL өзгермесе — жалауларды өшіру + stuck сигнал.
+        pendingStuckClearRef.current = setTimeout(() => {
+          pendingStuckClearRef.current = null;
+          if (mainFrameUrlRef.current === urlBefore) {
+            clearStaleBackFlags();
+            // SPA stack-ті кіріске қайта теңестіру — келесі click/post қайта көтермесін.
+            webRef.current?.injectJavaScript(
+              `(function(){try{
+              var h=window.__raqatSpaHistory;
+              if(h){h.stack=[location.href];h.index=0;}
+              if(window.ReactNativeWebView){
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type:"raqat-spa-nav",url:location.href,index:0,canGoBack:false
+                }));
+              }
+            }catch(e){}})();true;`
+            );
+            opts?.onSettled?.("stuck");
+          } else {
+            opts?.onSettled?.("moved");
+          }
+        }, 380);
+      },
+      [spaCanGoBack, historyCanGoBack, clearStaleBackFlags]
+    );
 
     const canGoBackInWebView = useCallback(() => {
+      if (urlsMatchEntry(mainFrameUrlRef.current)) return false;
       return spaCanGoBack || historyCanGoBack;
-    }, [historyCanGoBack, spaCanGoBack]);
+    }, [historyCanGoBack, spaCanGoBack, urlsMatchEntry]);
+
+    const isAtEntryInWebView = useCallback(
+      () => urlsMatchEntry(mainFrameUrlRef.current),
+      [urlsMatchEntry]
+    );
 
     useImperativeHandle(
       ref,
       () => ({
         reload: hardReloadHome,
         canGoBack: canGoBackInWebView,
+        isAtEntry: isAtEntryInWebView,
         goBack: goBackInWebView,
       }),
-      [hardReloadHome, canGoBackInWebView, goBackInWebView]
+      [hardReloadHome, canGoBackInWebView, isAtEntryInWebView, goBackInWebView]
     );
 
     const finishLoad = useCallback(() => {
@@ -323,33 +365,44 @@ export const OfficialSiteFullWebView = forwardRef<OfficialSiteFullWebViewHandle,
       [markError]
     );
 
-    const onNavigationStateChange = useCallback((nav: WebViewNavigation) => {
-      if (nav.url) mainFrameUrlRef.current = nav.url;
-      const entry = (entryUrlRef.current || "").replace(/\/+$/, "");
-      const cur = (nav.url || "").replace(/\/+$/, "");
-      const atEntry =
-        !!entry &&
-        !!cur &&
-        (cur === entry || cur.startsWith(`${entry}?`) || cur.startsWith(`${entry}#`));
-      // Басты беттегі redirect/hash — canGoBack true қалмасын.
-      setHistoryCanGoBack(Boolean(nav.canGoBack) && !atEntry);
-    }, []);
-
-    const onWebMessage = useCallback((event: { nativeEvent: { data: string } }) => {
-      try {
-        const payload = JSON.parse(event.nativeEvent.data) as {
-          type?: string;
-          canGoBack?: boolean;
-          url?: string;
-        };
-        if (payload.type === "raqat-spa-nav") {
-          if (payload.url) mainFrameUrlRef.current = payload.url;
-          setSpaCanGoBack(Boolean(payload.canGoBack));
+    const onNavigationStateChange = useCallback(
+      (nav: WebViewNavigation) => {
+        if (nav.url) mainFrameUrlRef.current = nav.url;
+        const atEntry = urlsMatchEntry(nav.url || "");
+        // Басты беттегі redirect/hash — canGoBack true қалмасын (SPA да).
+        if (atEntry) {
+          setHistoryCanGoBack(false);
+          setSpaCanGoBack(false);
+          return;
         }
-      } catch {
-        /* басқа postMessage */
-      }
-    }, []);
+        setHistoryCanGoBack(Boolean(nav.canGoBack));
+      },
+      [urlsMatchEntry]
+    );
+
+    const onWebMessage = useCallback(
+      (event: { nativeEvent: { data: string } }) => {
+        try {
+          const payload = JSON.parse(event.nativeEvent.data) as {
+            type?: string;
+            canGoBack?: boolean;
+            url?: string;
+          };
+          if (payload.type === "raqat-spa-nav") {
+            if (payload.url) mainFrameUrlRef.current = payload.url;
+            if (urlsMatchEntry(payload.url || mainFrameUrlRef.current)) {
+              setSpaCanGoBack(false);
+              setHistoryCanGoBack(false);
+              return;
+            }
+            setSpaCanGoBack(Boolean(payload.canGoBack));
+          }
+        } catch {
+          /* басқа postMessage */
+        }
+      },
+      [urlsMatchEntry]
+    );
 
     const shouldStartLoad = useCallback(
       (ev: WebViewNavigation) => {

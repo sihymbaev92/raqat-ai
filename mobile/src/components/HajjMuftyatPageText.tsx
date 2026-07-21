@@ -28,7 +28,7 @@ export function HajjMuftyatPageText({ text, colors }: Props) {
                 <Text style={styles.colLabel}>{tr(kk.features.hajjOqylyLabel)}</Text>
                 {seg.oqyly ? (
                   <Text style={styles.oqylyBody} selectable>
-                    {seg.oqyly}
+                    {tr(seg.oqyly)}
                   </Text>
                 ) : (
                   <Text style={styles.muted}>—</Text>

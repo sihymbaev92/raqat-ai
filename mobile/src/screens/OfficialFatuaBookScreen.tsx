@@ -25,20 +25,20 @@ export function OfficialFatuaBookScreen({ route, navigation }: Props) {
   const [pdfOpen, setPdfOpen] = useState(false);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: book?.title ?? g.screenTitle });
-  }, [navigation, book?.title, g.screenTitle]);
+    navigation.setOptions({ title: tr(book?.title ?? g.screenTitle) });
+  }, [navigation, book?.title, g.screenTitle, tr]);
 
   if (!book?.pdfUrl) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>{g.notFound}</Text>
+        <Text style={styles.muted}>{tr(g.notFound)}</Text>
         {book?.url ? (
           <Pressable
             oyuBackdrop={false}
             style={styles.linkBtn}
             onPress={() => void Linking.openURL(book.url)}
           >
-            <Text style={styles.linkBtnTxt}>{FATUA_KZ_LABEL_KK}</Text>
+            <Text style={styles.linkBtnTxt}>{tr(FATUA_KZ_LABEL_KK)}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -68,7 +68,7 @@ export function OfficialFatuaBookScreen({ route, navigation }: Props) {
           style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.92 }]}
           onPress={() => setPdfOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel={g.readPdfA11y}
+          accessibilityLabel={tr(g.readPdfA11y)}
         >
           <MaterialIcons name="menu-book" size={22} color="#fff" />
           <Text style={styles.primaryBtnTxt}>{tr(g.readPdfCta)}</Text>
@@ -78,7 +78,7 @@ export function OfficialFatuaBookScreen({ route, navigation }: Props) {
           style={({ pressed }) => [styles.secondaryBtn, pressed && { opacity: 0.92 }]}
           onPress={() => void Linking.openURL(book.url)}
           accessibilityRole="button"
-          accessibilityLabel={g.openSiteA11y}
+          accessibilityLabel={tr(g.openSiteA11y)}
         >
           <Text style={styles.secondaryBtnTxt}>{tr(g.openSiteCta)}</Text>
           <MaterialIcons name="open-in-new" size={18} color={colors.accent} />
@@ -93,7 +93,7 @@ export function OfficialFatuaBookScreen({ route, navigation }: Props) {
       <EmbeddedSiteSheet
         visible={pdfOpen}
         url={book.pdfUrl}
-        title={book.title}
+        title={tr(book.title)}
         colors={colors}
         onClose={() => setPdfOpen(false)}
       />

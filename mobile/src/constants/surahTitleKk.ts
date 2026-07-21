@@ -159,5 +159,10 @@ export function surahTitleForLocale(
     if (ar) return ar;
   }
   const kkTitle = surahDisplayTitle(surahNumber, opts?.englishName ?? "");
-  return opts?.tr ? opts.tr(kkTitle) : kkTitle;
+  if (opts?.tr) return opts.tr(kkTitle);
+  if (locale !== "kk") {
+    const en = (opts?.englishName || "").trim() || surahEnglishName(surahNumber);
+    return en || `${surahNumber}`;
+  }
+  return kkTitle;
 }

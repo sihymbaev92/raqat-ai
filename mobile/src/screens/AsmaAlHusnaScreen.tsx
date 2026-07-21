@@ -90,8 +90,8 @@ export function AsmaAlHusnaScreen() {
                 style={({ pressed }) => [styles.nameBlock, pressed && styles.nameBlockPressed]}
                 accessibilityRole="button"
                 accessibilityState={{ expanded: open }}
-                accessibilityLabel={`№${item.n}. ${item.kk}`}
-                accessibilityHint={open ? kk.asma.collapseHint : kk.asma.tapDetailHint}
+                accessibilityLabel={`№${item.n}. ${tr(item.kk)}`}
+                accessibilityHint={open ? tr(kk.asma.collapseHint) : tr(kk.asma.tapDetailHint)}
               >
                 <View style={styles.cardHead}>
                   <View style={styles.indexPill}>

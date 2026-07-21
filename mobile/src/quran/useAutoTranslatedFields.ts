@@ -3,12 +3,13 @@ import {
   autoTranslateMany,
   type AutoTranslateTarget,
 } from "../services/autoTranslate";
-import { useAppLocale } from "../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { resolveKkAutoTranslationText } from "./useKkAutoTranslator";
 
 /**
  * Қазақ прозасының өрістерін таңдалған тілге bundled offline dictionary/cache арқылы аударады.
- * Тіл kk болса немесе аударма сәтсіз болса — түпнұсқа қазақша қайтады.
- * `translated` — аударма дайын әрі тіл kk емес болғанда true (ескерту көрсету үшін).
+ * Тіл kk емес болса аударма жоқ / қазақ әріптері бар — түпнұсқа емес, «…».
+ * `translated` — нақты аударма бар (эллипсис емес) және тіл kk емес.
  */
 export function useAutoTranslatedFields(fields: string[]): {
   values: string[];
@@ -16,7 +17,10 @@ export function useAutoTranslatedFields(fields: string[]): {
   loading: boolean;
 } {
   const locale = useAppLocale();
-  const [values, setValues] = useState<string[]>(fields);
+  const localeRevision = useLocaleRevision();
+  const [values, setValues] = useState<string[]>(() =>
+    locale === "kk" ? fields : fields.map((f) => resolveKkAutoTranslationText(f, locale, {}))
+  );
   const [translated, setTranslated] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -31,20 +35,27 @@ export function useAutoTranslatedFields(fields: string[]): {
     }
     let alive = true;
     setLoading(true);
+    setValues(fields.map((f) => resolveKkAutoTranslationText(f, locale, {})));
     void (async () => {
       const target = locale as AutoTranslateTarget;
       const out = await autoTranslateMany(fields, target);
       if (!alive) return;
-      const merged = fields.map((orig, i) => out[i] ?? orig);
+      const map: Record<string, string> = {};
+      fields.forEach((orig, i) => {
+        const t = out[i];
+        if (t) map[orig] = t;
+      });
+      const merged = fields.map((orig) => resolveKkAutoTranslationText(orig, locale, map));
       setValues(merged);
-      setTranslated(true);
+      setTranslated(merged.some((v, i) => v !== "…" && v !== fields[i]));
       setLoading(false);
     })();
     return () => {
       alive = false;
     };
+    // localeRevision: offline pack merge must re-resolve «…» → real translations
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locale, joinKey]);
+  }, [locale, localeRevision, joinKey]);
 
   return { values, translated, loading };
 }

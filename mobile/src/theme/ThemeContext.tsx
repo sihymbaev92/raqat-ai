@@ -24,7 +24,10 @@ import {
 const STORAGE_KEY_LEGACY = "raqat_theme_mode";
 const STORAGE_KEY_SCHEME = "raqat_theme_scheme";
 const STORAGE_KEY_PALETTE = "raqat_color_palette";
+/** Бұрынғы gold әдепкін күлгінге қайтару — бір рет. */
+const STORAGE_KEY_PALETTE_VIOLET_DEFAULT = "raqat_palette_default_violet_v1";
 const DEFAULT_THEME_SCHEME: ThemeSchemeId = "light";
+/** Күлгін — әдепкі акцент. */
 const DEFAULT_COLOR_PALETTE: ColorPaletteId = "violet";
 
 type Ctx = {
@@ -55,10 +58,20 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(STORAGE_KEY_SCHEME, nextScheme);
       }
       const pal = await AsyncStorage.getItem(STORAGE_KEY_PALETTE);
-      if (isColorPaletteId(pal)) {
+      const restoredViolet = await AsyncStorage.getItem(STORAGE_KEY_PALETTE_VIOLET_DEFAULT);
+      // Бұрынғы әдепкі gold-ты күлгінге қайтару (пайдаланушы кейін алтынды өзі таңдай алады).
+      if (restoredViolet !== "1" && (pal === "gold" || !isColorPaletteId(pal))) {
+        setColorPaletteState("violet");
+        await AsyncStorage.setItem(STORAGE_KEY_PALETTE, "violet");
+        await AsyncStorage.setItem(STORAGE_KEY_PALETTE_VIOLET_DEFAULT, "1");
+      } else if (isColorPaletteId(pal)) {
         setColorPaletteState(pal);
+        if (restoredViolet !== "1") {
+          await AsyncStorage.setItem(STORAGE_KEY_PALETTE_VIOLET_DEFAULT, "1");
+        }
       } else {
         await AsyncStorage.setItem(STORAGE_KEY_PALETTE, DEFAULT_COLOR_PALETTE);
+        await AsyncStorage.setItem(STORAGE_KEY_PALETTE_VIOLET_DEFAULT, "1");
       }
     })();
   }, []);

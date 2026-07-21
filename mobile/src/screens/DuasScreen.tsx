@@ -10,6 +10,7 @@ import {
   UIManager,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -21,8 +22,10 @@ import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
 import type { DuasStackParamList, MoreStackParamList } from "../navigation/types";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
+import { navigateToMoreStackScreen } from "../navigation/navigateToMoreStack";
 import { QURAN_BOOK_FONT_FACE } from "../fonts/quranBookFonts";
 import { pickBestTranslit } from "../utils/translitKk";
+import { hubIcons } from "../theme/appIcons";
 
 /** Таб ішіндегі DuasStack және MoreStack-тегі «extra-duas» бір экран */
 type Props =
@@ -73,11 +76,33 @@ export function DuasScreen({ navigation }: Props) {
     setExpanded((o) => ({ ...o, [key]: !o[key] }));
   }, []);
 
+  const openCommunityDua = useCallback(() => {
+    navigateToMoreStackScreen("CommunityDua", undefined, navigation);
+  }, [navigation]);
+
   return (
     <ScrollView
       style={styles.root}
       contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
     >
+      <Pressable
+        style={({ pressed }) => [styles.communityCta, pressed && { opacity: 0.92 }]}
+        onPress={openCommunityDua}
+        accessibilityRole="button"
+        accessibilityLabel={`${tr(kk.communityDua.screenTitle)}. ${tr(kk.duas.communityDuaHint)}`}
+      >
+        <View style={styles.communityIconWrap}>
+          <MaterialCommunityIcons name={hubIcons.comm} size={28} color={colors.accent} />
+        </View>
+        <View style={styles.communityTextCol}>
+          <Text style={styles.communityTitle}>{tr(kk.communityDua.screenTitle)}</Text>
+          <Text style={styles.communitySub} numberOfLines={2}>
+            {tr(kk.duas.communityDuaHint)}
+          </Text>
+        </View>
+        <Text style={styles.communityChev}>›</Text>
+      </Pressable>
+
       {DUA_CATEGORIES.map((cat) => {
         const isCategoryOpen = !!categoryOpen[cat.title];
         return (
@@ -90,9 +115,9 @@ export function DuasScreen({ navigation }: Props) {
               style={({ pressed }) => [styles.catHead, pressed && styles.catHeadPressed]}
               accessibilityRole="button"
               accessibilityState={{ expanded: isCategoryOpen }}
-              accessibilityLabel={`${cat.title}. ${kk.duas.duaCount(cat.blocks.length)}`}
+              accessibilityLabel={`${tr(cat.title)}. ${tr(kk.duas.duaCount(cat.blocks.length))}`}
               accessibilityHint={
-                isCategoryOpen ? kk.duas.categoryCollapseHint : kk.duas.categoryExpandHint
+                isCategoryOpen ? tr(kk.duas.categoryCollapseHint) : tr(kk.duas.categoryExpandHint)
               }
             >
               <View style={styles.catHeadText}>
@@ -113,8 +138,8 @@ export function DuasScreen({ navigation }: Props) {
                         style={({ pressed }) => [styles.duaNameBlock, pressed && styles.duaNameBlockPressed]}
                         accessibilityRole="button"
                         accessibilityState={{ expanded: open }}
-                        accessibilityLabel={`${b.title}. ${b.ar}`}
-                        accessibilityHint={open ? kk.duas.collapseTapHint : kk.duas.expandTapHint}
+                        accessibilityLabel={`${tr(b.title)}. ${b.ar}`}
+                        accessibilityHint={open ? tr(kk.duas.collapseTapHint) : tr(kk.duas.expandTapHint)}
                       >
                         <Text style={styles.cardTitle}>{tr(b.title)}</Text>
                         <Text style={styles.ar}>{b.ar}</Text>
@@ -122,7 +147,7 @@ export function DuasScreen({ navigation }: Props) {
                         {open ? (
                           <View style={styles.detailBody}>
                             <Text style={styles.caption}>{tr(kk.duas.translitCaption)}</Text>
-                            <Text style={styles.kiril}>{pickBestTranslit(b.ar, b.translitKk)}</Text>
+                            <Text style={styles.kiril}>{tr(pickBestTranslit(b.ar, b.translitKk))}</Text>
                             <Text style={styles.caption}>{tr(kk.duas.meaningCaption)}</Text>
                             <Text style={styles.kk}>{tr(b.meaningKk)}</Text>
                           </View>
@@ -155,17 +180,15 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.card,
       borderRadius: 14,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.accent,
     },
-    communityThumbWrap: { width: 48, height: 48, borderRadius: 12, overflow: "hidden" },
-    communityThumb: { width: 48, height: 48, borderRadius: 12 },
-    communityThumbOverlay: {
-      ...StyleSheet.absoluteFillObject,
+    communityIconWrap: {
       width: 48,
       height: 48,
       borderRadius: 12,
-      backgroundColor: "#FFFFFF",
-      opacity: 0.12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.accentSurface,
     },
     communityTextCol: { flex: 1, minWidth: 0 },
     communityTitle: {
@@ -180,7 +203,7 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 18,
     },
     communityChev: {
-      color: colors.muted,
+      color: colors.accent,
       fontSize: 22,
       fontWeight: "700",
       paddingLeft: 4,

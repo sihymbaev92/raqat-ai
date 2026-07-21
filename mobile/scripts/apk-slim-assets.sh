@@ -15,7 +15,6 @@ CDN_ONLY_PATHS=(
   "assets/hajj/muftyat"
   "assets/tajweed/muftyat"
   "assets/bundled/offline-auto-translations-core.json"
-  "assets/bundled/quran-translations-offline.json"
   "assets/bundled/great-words-catalog.json"
   "assets/bundled/halal-companies-snapshot.json"
 )

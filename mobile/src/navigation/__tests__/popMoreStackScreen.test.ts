@@ -20,11 +20,25 @@ describe("popMoreStackScreen", () => {
     expect(navigation.goBack).not.toHaveBeenCalled();
   });
 
-  it("treats missing index as root", () => {
+  it("returns false when navigator is unfocused (stale after remount)", () => {
     const navigation = {
-      getState: () => ({ routes: [{}] }),
+      getState: () => ({ index: 2, routes: [{}, {}, {}] }),
       goBack: jest.fn(),
+      isFocused: () => false,
+      canGoBack: () => true,
     };
     expect(popMoreStackScreen(navigation as never)).toBe(false);
+    expect(navigation.goBack).not.toHaveBeenCalled();
+  });
+
+  it("returns false when canGoBack is false", () => {
+    const navigation = {
+      getState: () => ({ index: 2, routes: [{}, {}, {}] }),
+      goBack: jest.fn(),
+      isFocused: () => true,
+      canGoBack: () => false,
+    };
+    expect(popMoreStackScreen(navigation as never)).toBe(false);
+    expect(navigation.goBack).not.toHaveBeenCalled();
   });
 });

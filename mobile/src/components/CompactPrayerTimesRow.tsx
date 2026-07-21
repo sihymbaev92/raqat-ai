@@ -6,7 +6,8 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
 import { useAppLocale } from "../i18n/runtime";
-import { parseMinutes, nextSalatHighlightKey } from "../utils/prayerSchedule";
+import { parseMinutes, currentSalatHighlightKey } from "../utils/prayerSchedule";
+import { fixedSizeTextProps } from "../theme/textLayoutGuard";
 
 export type PrayerTimeCell = { key: string; time: string };
 
@@ -23,6 +24,37 @@ export function shortPrayerName(key: string): string {
     isha: kk.prayer.ishaShort,
   };
   return m[key] ?? key;
+}
+
+/**
+ * Басты бет жолағы: кішкентай енде «Ақшам/Құптан» кесілмейтін қысқа нұсқа.
+ * micro — Fold cover / тар телефон; compact — 6 ұяшық тығыз.
+ */
+export function shortPrayerNameForStrip(
+  key: string,
+  density: "normal" | "compact" | "micro" = "normal"
+): string {
+  if (density === "micro") {
+    const micro: Record<string, string> = {
+      fajr: "Таң",
+      sun: "Күн",
+      dhuhr: "Бес",
+      asr: "Екі",
+      maghrib: "Ақш",
+      isha: "Құп",
+    };
+    return micro[key] ?? shortPrayerName(key);
+  }
+  if (density === "compact") {
+    const compact: Record<string, string> = {
+      dhuhr: "Бес",
+      asr: "Екін",
+      maghrib: "Ақш",
+      isha: "Құпт",
+    };
+    return compact[key] ?? shortPrayerName(key);
+  }
+  return shortPrayerName(key);
 }
 
 type MciName = ComponentProps<typeof MaterialCommunityIcons>["name"];
@@ -131,10 +163,10 @@ function RowCells({
             <View style={[styles.cellIconBadge, { backgroundColor: pv.soft }]}>
               <MaterialCommunityIcons name={pv.icon} size={iconSz} color={pv.fg} />
             </View>
-            <Text style={[ab, r.key === "isha" && styles.abbrIsha]} numberOfLines={1}>
+            <Text style={[ab, r.key === "isha" && styles.abbrIsha]} numberOfLines={1} {...fixedSizeTextProps}>
               {shortPrayerName(r.key)}
             </Text>
-            <Text style={[ck, { color: pv.fg }]} numberOfLines={1}>
+            <Text style={[ck, { color: pv.fg }]} numberOfLines={1} {...fixedSizeTextProps}>
               {r.time?.trim() ? r.time : "—"}
             </Text>
           </View>
@@ -181,7 +213,7 @@ export function CompactPrayerTimesRow({
       {scheduleList ? (
         <View style={styles.scheduleWrap}>
           {data.map((r, idx) => {
-            const hk = highlightKey ?? nextSalatHighlightKey(data);
+            const hk = highlightKey ?? currentSalatHighlightKey(data);
             const highlighted = Boolean(hk && r.key === hk);
             const iconSz = 21;
             const pv = prayerVisual(r.key, dark);
@@ -225,7 +257,7 @@ export function CompactPrayerTimesRow({
           nestedScrollEnabled
         >
           {data.map((r) => {
-            const hk = highlightKey ?? nextSalatHighlightKey(data);
+            const hk = highlightKey ?? currentSalatHighlightKey(data);
             const highlighted = Boolean(hk && r.key === hk);
             const iconSz = sixRowsCompact ? 17 : 20;
             const pv = prayerVisual(r.key, dark);

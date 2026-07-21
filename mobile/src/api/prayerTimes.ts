@@ -143,7 +143,8 @@ async function fetchMuftyatCity(city: string, country: string): Promise<MuftyatC
     if (!r.ok) return null;
     const payload = (await r.json()) as { results?: MuftyatCity[] };
     const rows = Array.isArray(payload.results) ? payload.results : [];
-    return rows.find((row) => isLikelyCityMatch(row, query)) ?? rows[0] ?? null;
+    // Тек нақты сәйкестік — rows[0] кездейсоқ қаланы алмас үшін.
+    return rows.find((row) => isLikelyCityMatch(row, query)) ?? null;
   })().catch(() => null);
   muftyatCityCache.set(key, task);
   return task;
@@ -190,11 +191,27 @@ export function parseMuftyatPrayerRow(
 async function fetchPrayerTimesByMuftyatForDate(
   city: string,
   country: string,
-  when: Date
+  when: Date,
+  coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerTimesResult | null> {
-  const officialCity = await fetchMuftyatCity(city, country);
-  const lat = parseNumber(officialCity?.lat);
-  const lng = parseNumber(officialCity?.lng);
+  // GPS/құрылғы координаты бар болса — қала атауы іздеуін өткізіп, сол нүкте бойынша ҚМДБ кестесі.
+  // (ауыл атауы Muftyat-тан басқа қаланы «ұстап» алмас үшін)
+  let lat: number | null = null;
+  let lng: number | null = null;
+  if (
+    coordsHint &&
+    Number.isFinite(coordsHint.lat) &&
+    Number.isFinite(coordsHint.lon) &&
+    Math.abs(coordsHint.lat) <= 90 &&
+    Math.abs(coordsHint.lon) <= 180
+  ) {
+    lat = coordsHint.lat;
+    lng = coordsHint.lon;
+  } else {
+    const officialCity = await fetchMuftyatCity(city, country);
+    lat = parseNumber(officialCity?.lat);
+    lng = parseNumber(officialCity?.lng);
+  }
   if (lat == null || lng == null) return null;
 
   const rows = await fetchMuftyatYearRows(when.getFullYear(), lat, lng);
@@ -353,7 +370,7 @@ export async function fetchPrayerTimesForLocation(
   method: number = APP_PRAYER_CALCULATION_METHOD,
   coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerTimesResult> {
-  const official = await fetchPrayerTimesByMuftyatForDate(city, country, new Date());
+  const official = await fetchPrayerTimesByMuftyatForDate(city, country, new Date(), coordsHint);
   if (official) return official;
 
   const coords =
@@ -481,7 +498,7 @@ export async function fetchPrayerTimesForLocationForDate(
   method: number = APP_PRAYER_CALCULATION_METHOD,
   coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerTimesResult> {
-  const official = await fetchPrayerTimesByMuftyatForDate(city, country, when);
+  const official = await fetchPrayerTimesByMuftyatForDate(city, country, when, coordsHint);
   if (official) return official;
 
   const coords =

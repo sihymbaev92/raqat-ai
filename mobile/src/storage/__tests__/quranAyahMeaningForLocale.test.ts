@@ -32,4 +32,14 @@ describe("quranAyahMeaningForLocale", () => {
     const meaning = quranAyahMeaningForLocale({ numberInSurah: 1, surahNumber: 1 }, "kk");
     expect(meaning.length).toBeGreaterThan(10);
   });
+
+  it("never falls back to Kazakh meanings under ru/en", () => {
+    const kkOnly = {
+      numberInSurah: 1,
+      surahNumber: 999,
+      textKk: "Аса қамқор, ерекше мейірімді Алланың атымен бастаймын.",
+    };
+    expect(quranAyahMeaningForLocale(kkOnly, "ru")).toBe("");
+    expect(quranAyahMeaningForLocale(kkOnly, "en")).toBe("");
+  });
 });

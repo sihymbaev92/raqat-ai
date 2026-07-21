@@ -50,10 +50,20 @@ export function quranAudioDownloadTaskAt(index: number, edition?: string): Quran
   const local = ix - block.start;
   const globalAyah = local + 1;
   const ref = globalAyahToRef(globalAyah);
+  let reciterLabel = block.labelKk;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getCurrentLocale } = require("../i18n/runtime") as typeof import("../i18n/runtime");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { resolveKkAutoTranslationText } = require("../quran/useKkAutoTranslator") as typeof import("../quran/useKkAutoTranslator");
+    reciterLabel = resolveKkAutoTranslationText(block.labelKk, getCurrentLocale(), {});
+  } catch {
+    /* keep labelKk */
+  }
   return {
     index: ix,
     edition: block.edition,
-    reciterLabel: block.labelKk,
+    reciterLabel,
     kind: "ayah",
     surah: ref.surah,
     ayah: ref.ayah,

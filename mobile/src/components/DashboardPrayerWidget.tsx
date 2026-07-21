@@ -19,6 +19,7 @@ import { locationIcons } from "../theme/appIcons";
 import { PrayerQiblaChip } from "./PrayerQiblaChip";
 import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
 import { qiblaAlignHint } from "../lib/qiblaHints";
+import { isPlusCodePlaceName } from "../services/devicePrayerLocation";
 import { prayerVisual, shortPrayerName } from "./CompactPrayerTimesRow";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -34,6 +35,7 @@ import {
   secondsUntilNextSalat,
   formatSecondsAsHms,
   nextSalatRow,
+  currentSalatRow,
   progressBetweenScheduledPrayers,
   minutesUntilNextSalat,
   displayPrayerRowsFromNext,
@@ -48,6 +50,9 @@ import { LiveWeatherChip } from "./LiveWeatherChip";
 import type { OpenMeteoCurrent } from "../services/openMeteoCurrent";
 import { useAppLocale } from "../i18n/runtime";
 import { BRAND_FONT_FACE } from "../fonts/brandFont";
+import {
+  fixedSizeTextProps,
+} from "../theme/textLayoutGuard";
 
 const KAABA_ICON_IMAGE = require("../../assets/menu-icons/header-qibla-kaaba-gemini-transparent.png");
 
@@ -276,6 +281,16 @@ function LivePrayerIcon({
     inputRange: [-10, 10],
     outputRange: ["-10deg", "10deg"],
   });
+  const outlineOffsets = [
+    [-1.5, 0],
+    [1.5, 0],
+    [0, -1.5],
+    [0, 1.5],
+    [-1.2, -1.2],
+    [1.2, -1.2],
+    [-1.2, 1.2],
+    [1.2, 1.2],
+  ] as const;
   return (
     <Animated.View
       pointerEvents="none"
@@ -287,10 +302,66 @@ function LivePrayerIcon({
         transform: [{ translateY: floatY }, { rotate }, { scale: pulse }],
       }}
     >
-      <View style={{ zIndex: 2 }}>
+      <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+        {outlineOffsets.map(([dx, dy], i) => (
+          <MaterialCommunityIcons
+            key={i}
+            name={name}
+            size={size}
+            color="#000000"
+            style={{ position: "absolute", left: dx, top: dy }}
+          />
+        ))}
         <MaterialCommunityIcons name={name} size={size} color={color} />
       </View>
     </Animated.View>
+  );
+}
+
+/** Ақ мәтін + қалың қара контур (textShadow жеткіліксіз болғанда) */
+function HeroOutlinedText({
+  children,
+  style,
+  outlineWidth = 2,
+  ...rest
+}: React.ComponentProps<typeof Text> & { outlineWidth?: number }) {
+  const offsets = React.useMemo(() => {
+    const pts: Array<[number, number]> = [];
+    const step = outlineWidth <= 1.5 ? 0.85 : 0.75;
+    for (let x = -outlineWidth; x <= outlineWidth; x += step) {
+      for (let y = -outlineWidth; y <= outlineWidth; y += step) {
+        if (x === 0 && y === 0) continue;
+        if (x * x + y * y > outlineWidth * outlineWidth + 0.5) continue;
+        pts.push([x, y]);
+      }
+    }
+    return pts;
+  }, [outlineWidth]);
+
+  return (
+    <View style={{ alignItems: "center", justifyContent: "center", width: "100%", minWidth: 0, maxWidth: "100%" }}>
+      {offsets.map(([dx, dy], i) => (
+        <Text
+          key={i}
+          {...rest}
+          style={[
+            style,
+            {
+              position: "absolute",
+              color: "#000000",
+              transform: [{ translateX: dx }, { translateY: dy }],
+              textShadowColor: "transparent",
+              textShadowRadius: 0,
+            },
+          ]}
+        >
+          {children}
+        </Text>
+      ))}
+      <Text {...rest} style={style}>
+        {children}
+      </Text>
+    </View>
   );
 }
 
@@ -465,12 +536,13 @@ function parseMinutes(t: string): number {
 function timelineStateForRow(
   row: PrayerRow,
   next: PrayerRow | null,
+  current: PrayerRow | null,
   now: Date
 ): "past" | "current" | "next" | "upcoming" {
   const nowM = now.getHours() * 60 + now.getMinutes();
   const rowM = parseMinutes(row.time);
+  if (current && row.key === current.key) return "current";
   if (next && row.key === next.key) return "next";
-  if (rowM >= 0 && Math.abs(rowM - nowM) <= 2) return "current";
   if (rowM >= 0 && rowM < nowM) return "past";
   return "upcoming";
 }
@@ -480,13 +552,11 @@ function PrayerCountdownHms({
   tomorrowRows = null,
   pending = false,
   style,
-  maxFontSizeMultiplier = 1.12,
 }: {
   rows: PrayerRow[];
   tomorrowRows?: PrayerRow[] | null;
   pending?: boolean;
   style?: object;
-  maxFontSizeMultiplier?: number;
 }) {
   const [tick, setTick] = useState(() => new Date());
   useEffect(() => {
@@ -498,7 +568,7 @@ function PrayerCountdownHms({
       ? "—"
       : formatSecondsAsHms(secondsUntilNextSalat(rows, tick, tomorrowRows));
   return (
-    <Text style={style} numberOfLines={1} maxFontSizeMultiplier={maxFontSizeMultiplier}>
+    <Text style={style} numberOfLines={1} {...fixedSizeTextProps}>
       {text}
     </Text>
   );
@@ -529,13 +599,18 @@ function DashboardPrayerWidget({
   const locale = useAppLocale();
   const { tr } = useKkAutoTranslator();
   const cityDisplayLabel = useCallback(
-    (raw: string) => (raw.trim() ? cityLabelForLocale(raw.trim(), locale, { tr }) : ""),
+    (raw: string) => {
+      const t = raw.trim();
+      if (!t || isPlusCodePlaceName(t)) return "";
+      return cityLabelForLocale(t, locale, { tr });
+    },
     [locale, tr]
   );
   const styles = useMemo(() => makeStyles(compact, colors), [compact, colors]);
   /** Кесте/прогресс — сирек; HMS — жеке 1s child. */
   const [now, setNow] = useState(() => new Date());
   const nextResolved = next ?? nextSalatRow(rows, tomorrowRows, now);
+  const currentResolved = currentSalatRow(rows, now);
   const leftName = nextResolved ? shortPrayerName(nextResolved.key) : "—";
   const salatTimes = useMemo(
     () => rows.filter((r) => r.key !== "sun" && r.time?.trim()).map((r) => r.time),
@@ -631,7 +706,7 @@ function DashboardPrayerWidget({
                   style={({ pressed }) => [styles.mockupCityRow, pressed && { opacity: 0.86 }]}
                 >
                   <LiveLocationPin size={15} color="rgba(255,255,255,0.92)" />
-                  <Text style={styles.mockupCityText} numberOfLines={1}>
+                  <Text style={styles.mockupCityText} numberOfLines={1} {...fixedSizeTextProps}>
                     {mockupCityKk}
                   </Text>
                 </Pressable>
@@ -647,10 +722,10 @@ function DashboardPrayerWidget({
             )}
           >
             <View style={styles.mockupNextLeft}>
-              <Text style={styles.mockupKicker} numberOfLines={1}>
+              <Text style={styles.mockupKicker} numberOfLines={1} {...fixedSizeTextProps}>
                 {kk.dashboard.nextPrayer}
               </Text>
-              <Text style={styles.mockupNextName} numberOfLines={1} maxFontSizeMultiplier={1.35}>
+              <Text style={styles.mockupNextName} numberOfLines={1} {...fixedSizeTextProps}>
                 {leftName} · {nextTimeLine}
               </Text>
             </View>
@@ -673,44 +748,39 @@ function DashboardPrayerWidget({
             </View>
           </View>
           {stripRows.length ? (
-            <View style={styles.mockupStrip}>
+            <View style={styles.mockupStrip} accessibilityRole="summary">
               {stripRows.map((r) => {
-                const isNext = nextResolved?.key === r.key;
+                const isCurrent = currentResolved?.key === r.key;
                 const t = r.time.trim().split(/\s+/)[0] ?? "—";
                 const vis = prayerVisual(r.key, isDark);
                 const name = shortPrayerName(r.key);
-                const denseStrip = stripRows.length >= 6;
                 return (
                   <View
                     key={r.key}
-                    style={[styles.mockupStripCell, isNext && styles.mockupStripCellActive]}
+                    style={[styles.mockupStripCell, isCurrent && styles.mockupStripCellActive]}
                   >
                     <LivePrayerIcon
                       name={vis.icon}
-                      size={denseStrip ? 16 : 18}
-                      color={vis.fg}
+                      size={14}
+                      color="#FFFFFF"
                       prayerKey={r.key}
-                      active={isNext}
+                      active={isCurrent}
                     />
                     <Text
-                      style={[
-                        styles.mockupStripName,
-                        denseStrip && styles.mockupStripNameDense,
-                        isNext && styles.mockupStripNameActive,
-                      ]}
+                      style={[styles.mockupStripName, isCurrent && styles.mockupStripNameActive]}
                       numberOfLines={1}
-                      maxFontSizeMultiplier={1.35}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.55}
+                      {...fixedSizeTextProps}
                     >
                       {name}
                     </Text>
                     <Text
-                      style={[
-                        styles.mockupStripTime,
-                        denseStrip && styles.mockupStripTimeDense,
-                        isNext && styles.mockupStripTimeActive,
-                      ]}
+                      style={[styles.mockupStripTime, isCurrent && styles.mockupStripTimeActive]}
                       numberOfLines={1}
-                      maxFontSizeMultiplier={1.35}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
+                      {...fixedSizeTextProps}
                     >
                       {t}
                     </Text>
@@ -951,10 +1021,9 @@ function DashboardPrayerWidget({
                     tomorrowRows={tomorrowRows}
                     pending={pending}
                     style={styles.topCountdownHms}
-                    maxFontSizeMultiplier={1.08}
                   />
                 </View>
-                <Text style={styles.topCountdownApprox} numberOfLines={1} maxFontSizeMultiplier={1.1}>
+                <Text style={styles.topCountdownApprox} numberOfLines={1} {...fixedSizeTextProps}>
                   {approxLeft}
                 </Text>
               </>
@@ -997,8 +1066,8 @@ function DashboardPrayerWidget({
         ) : showFullSchedule ? (
           <View style={styles.rowsBlock}>
             {displayRows.map((r) => {
-              const state = timelineStateForRow(r, nextResolved, now);
-              const isHi = state === "next" || state === "current";
+              const state = timelineStateForRow(r, nextResolved, currentResolved, now);
+              const isHi = state === "current";
               const isPast = state === "past";
               const t = r.time?.trim() ? r.time.trim().split(/\s+/)[0] : "—";
               const name = r.label?.trim() ? r.label.trim() : shortPrayerName(r.key);
@@ -1078,14 +1147,14 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
   /** Мешіт hero фонында контраст — accent teal фонмен араласып кетпейді */
   const heroTextShadow = Platform.select({
     ios: {
-      textShadowColor: "rgba(0,0,0,0.55)",
+      textShadowColor: "rgba(0,0,0,0.85)",
       textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 4,
+      textShadowRadius: 2,
     },
     android: {
-      textShadowColor: "rgba(0,0,0,0.55)",
+      textShadowColor: "rgba(0,0,0,0.85)",
       textShadowOffset: { width: 0, height: 1 },
-      textShadowRadius: 3,
+      textShadowRadius: 2,
     },
     default: {},
   });
@@ -1520,7 +1589,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       overflow: "hidden",
       position: "relative",
       flex: 1,
-      minHeight: 104,
+      minHeight: 148,
       backgroundColor: "#0a1520",
     },
     mockupShellImage: {
@@ -1545,20 +1614,19 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     mockupInner: {
       position: "relative",
       flex: 1,
-      justifyContent: "space-between",
-      paddingHorizontal: 10,
-      paddingTop: 4,
-      paddingBottom: 4,
-      gap: 2,
+      justifyContent: "flex-start",
+      paddingHorizontal: 8,
+      paddingTop: 6,
+      paddingBottom: 8,
+      gap: 4,
     },
     mockupMetaRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       position: "relative",
-      minHeight: 28,
-      marginTop: -1,
-      marginBottom: -1,
+      minHeight: 42,
+      marginBottom: 0,
       zIndex: 2,
     },
     mockupMetaLeft: {
@@ -1652,9 +1720,9 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       justifyContent: "space-between",
       gap: 8,
       paddingTop: 0,
-      marginTop: -1,
+      marginTop: 2,
       marginBottom: 0,
-      minHeight: 33,
+      minHeight: 30,
       position: "relative",
       zIndex: 2,
     },
@@ -1662,13 +1730,13 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
       flex: 1,
       minWidth: 0,
       maxWidth: "39%",
-      gap: 2,
+      gap: 1,
       alignItems: "flex-start",
       justifyContent: "center",
     },
     mockupNextName: {
       color: "#FFFFFF",
-      fontSize: 17,
+      fontSize: 16,
       fontFamily: BRAND_FONT_FACE.extrabold,
       fontWeight: "800",
       letterSpacing: 0.2,
@@ -1693,7 +1761,7 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupNextHms: {
       color: "#FFFFFF",
-      fontSize: 20,
+      fontSize: 18,
       fontFamily: BRAND_FONT_FACE.extrabold,
       fontWeight: "800",
       fontVariant: ["tabular-nums"],
@@ -1703,59 +1771,71 @@ function makeStyles(compact: boolean, colors: ThemeColors) {
     },
     mockupStrip: {
       flexDirection: "row",
+      flexWrap: "nowrap",
       alignItems: "stretch",
       justifyContent: "space-between",
       gap: 2,
-      marginTop: 4,
+      marginTop: "auto",
+      width: "100%",
+      paddingVertical: 5,
+      paddingHorizontal: 2,
+      borderRadius: 10,
+      backgroundColor: "rgba(0,0,0,0.72)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(255,255,255,0.35)",
     },
     mockupStripCell: {
       flex: 1,
+      minWidth: 0,
       alignItems: "center",
-      paddingVertical: 6,
+      justifyContent: "center",
+      paddingVertical: 3,
       paddingHorizontal: 1,
-      borderRadius: 10,
-      gap: 2,
+      borderRadius: 8,
+      gap: 1,
     },
     mockupStripCellActive: {
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "rgba(74, 222, 128, 0.28)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "#4ADE80",
     },
     mockupStripName: {
       color: "#FFFFFF",
-      fontSize: 13,
+      fontSize: 11,
       fontFamily: BRAND_FONT_FACE.extrabold,
-      fontWeight: "800",
-      lineHeight: 16,
+      fontWeight: "900",
+      lineHeight: 13,
       textAlign: "center",
-      ...heroTextShadow,
+      width: "100%",
+      includeFontPadding: false,
+      textShadowColor: "#000000",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 1,
     },
     mockupStripNameActive: {
-      color: "#1B4332",
+      color: "#FFFFFF",
       fontFamily: BRAND_FONT_FACE.extrabold,
-      fontWeight: "800",
-    },
-    mockupStripNameDense: {
-      fontSize: 12,
-      lineHeight: 15,
+      fontWeight: "900",
     },
     mockupStripTime: {
       color: "#FFFFFF",
-      fontSize: 15,
+      fontSize: 12,
       fontFamily: BRAND_FONT_FACE.extrabold,
-      fontWeight: "800",
-      lineHeight: 18,
+      fontWeight: "900",
+      lineHeight: 14,
       fontVariant: ["tabular-nums"],
-      letterSpacing: 0.35,
-      ...heroTextShadow,
+      letterSpacing: 0,
+      textAlign: "center",
+      width: "100%",
+      includeFontPadding: false,
+      textShadowColor: "#000000",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 1,
     },
     mockupStripTimeActive: {
-      color: "#1B4332",
+      color: "#FFFFFF",
       fontFamily: BRAND_FONT_FACE.extrabold,
-      fontWeight: "800",
-    },
-    mockupStripTimeDense: {
-      fontSize: 14,
-      lineHeight: 17,
-      letterSpacing: 0.2,
+      fontWeight: "900",
     },
     mockupWeatherText: {
       color: "#FFFFFF",

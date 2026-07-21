@@ -56,6 +56,7 @@ export function CommunityDuaScreen(_props: Props) {
   const mapLoadError = useCallback((code: string | null) => {
     if (code === "api_missing") return kk.communityDua.apiMissing;
     if (code === "network") return kk.communityDua.loadErrorNetwork;
+    if (code === "server" || code === "database_error") return kk.communityDua.loadErrorServer;
     return kk.communityDua.loadError;
   }, []);
 
@@ -99,6 +100,14 @@ export function CommunityDuaScreen(_props: Props) {
       }
       if (r.status === 429) {
         setErr(kk.communityDua.rateLimit);
+        return;
+      }
+      if (r.status === 503 || r.detail === "database_error" || r.detail === "network") {
+        setErr(kk.communityDua.loadErrorServer);
+        return;
+      }
+      if (typeof r.status === "number" && r.status >= 500) {
+        setErr(kk.communityDua.loadErrorWithStatus(r.status));
         return;
       }
       setErr(kk.communityDua.loadError);

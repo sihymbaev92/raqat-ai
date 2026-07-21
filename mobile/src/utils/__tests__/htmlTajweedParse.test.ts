@@ -6,19 +6,21 @@ import {
 } from "../htmlTajweedParse";
 
 describe("htmlTajweedParse", () => {
-  it("parses font color tags into inline runs normalized to standard palette", () => {
+  it("keeps Al Quran Cloud official hex on font tags", () => {
     const runs = htmlFontTajweedRuns(
-      'بِسْمِ <font color="#009900">ٱ</font>للَّ<font color="#DD0000">هِ</font>'
+      'بِسْمِ <font color="#FF7E1E">ٱ</font>للَّ<font color="#537FFF">هِ</font>'
     );
     expect(runs.length).toBeGreaterThanOrEqual(3);
-    expect(runs.some((r) => r.color === "#00C853")).toBe(true);
-    expect(runs.some((r) => r.color === "#DD2C00")).toBe(true);
+    expect(runs.some((r) => r.color === "#FF7E1E")).toBe(true);
+    expect(runs.some((r) => r.color === "#537FFF")).toBe(true);
   });
 
-  it("normalizes known API hex to standard colors", () => {
-    expect(normalizeTajweedHtmlColor("#1A237E", false)).toBe("#1A237E");
-    expect(normalizeTajweedHtmlColor("#FFD600", false)).toBe("#FFD600");
-    expect(normalizeTajweedHtmlColor("#AA00FF", false)).toBe("#00C853");
+  it("maps legacy hex to Al Quran Cloud group representatives", () => {
+    expect(normalizeTajweedHtmlColor("#DD0008", false)).toBe("#DD0008");
+    expect(normalizeTajweedHtmlColor("#009900", false)).toBe("#FF7E1E");
+    expect(normalizeTajweedHtmlColor("#DD0000", false)).toBe("#537FFF");
+    expect(normalizeTajweedHtmlColor("#AA00FF", false)).toBe("#FF7E1E");
+    expect(normalizeTajweedHtmlColor("#1A237E", false)).toBe("#DD0008");
   });
 
   it("strips font tags to plain arabic", () => {

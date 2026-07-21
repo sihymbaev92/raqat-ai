@@ -10,8 +10,10 @@ import {
 } from "./azanLocalePatches";
 import { CRITICAL_UI_LOCALE_PATCHES } from "./criticalUiLocalePatches";
 import { FEATURE_LOCALE_PATCHES } from "./featureLocalePatches";
+import { collectKkStringLeaves, findKyLocaleLeaks } from "./localeLeakScan";
 import { CORE_SCREEN_LOCALE_PATCHES } from "./localePatchesCoreScreens";
 import { EXTENDED_LOCALE_PATCHES } from "./localePatchesExtended";
+import { RU_RESIDUAL_CHROME_PATCH } from "./ruResidualChromePatch";
 import {
   areOfflineAutoTranslationsReady,
   ensureOfflineAutoTranslationsLoaded,
@@ -32,6 +34,28 @@ export type AppLocale =
   | "uz"
   | "tr"
   | "ar";
+
+/** Ағымдағы UI тіліндегі тіл атауы (nativeLabel емес — ru-да «Казахский»). */
+export function appLocaleDisplayLabel(id: AppLocale): string {
+  switch (id) {
+    case "kk":
+      return kk.settings.languageKk;
+    case "ru":
+      return kk.settings.languageRu;
+    case "en":
+      return kk.settings.languageEn;
+    case "ky":
+      return kk.settings.languageKy;
+    case "uz":
+      return kk.settings.languageUz;
+    case "tr":
+      return kk.settings.languageTr;
+    case "ar":
+      return kk.settings.languageAr;
+    default:
+      return id;
+  }
+}
 
 export type AppLocaleOption = {
   id: AppLocale;
@@ -128,9 +152,11 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroHadithTitle: "Достоверные хадисы",
       heroDuaTitle: "Дуа сообщества",
       heroDuaSub: "Поделиться · амин",
-      heroAiStripTitle: "Дереккөз хаб",
+      heroAiStripTitle: "Центр источников",
+      dailyAiLabel: "Центр источников",
+      promoAiHeadline: "Центр источников",
       promoHalalHeadline: "ХАЛАЛ ДАМУ",
-      promoHolidayKurbanTitle: "Курбан айт",
+      promoHolidayKurbanTitle: "Курбан-байрам",
       quickMenu: "Еще",
       duasShort: "Дуа",
       settingsShort: "Настройки",
@@ -138,7 +164,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       quranShort: "Коран",
       tileSeerah: "Сира",
       tileHadith: "Хадисы",
-      arabicLettersTile: "Таджвид",
+      arabicLettersTile: "Алфавит",
       traditionTileShort: "Религия и традиции",
       traditionDinHubLabel: "Религия и традиции",
       radialLauncherMenuA11y: "Основные разделы",
@@ -235,6 +261,13 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
         meaning:
           "О Аллах, Господь этого полного азана и совершаемой молитвы! Даруй Мухаммаду василя, достоинство и высокую степень! Возведи его на обещанное Тобой «восхваляемое место». Ты не нарушаешь Своего обещания.",
       },
+      enteredFajr: "Наступило время фаджра",
+      enteredDhuhr: "Наступило время зухра",
+      enteredAsr: "Наступило время аср",
+      enteredMaghrib: "Наступило время магриба",
+      enteredIsha: "Наступило время иша",
+      enteredDefault: "Наступило время намаза",
+      enteredGeneric: (label: string) => `Наступило время: ${label}`,
     },
     aiChat: {
       kbShelfSourceLabel: "Источник",
@@ -273,6 +306,46 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       chQuran: "Источник",
       chNote: "Примечание",
     },
+    duas: {
+      intro:
+        "Дуа собраны в 8 разделах: повседневные, омовение, здоровье, путешествие, зикр, хадж, знание/ризык и 10 коротких зикров. Дуа внутри намаза здесь нет — смотрите раздел «Зикры».\n\nНиже можно перейти к разделам. Нажмите название раздела — откроется список. В карточке виден арабский текст; повторное нажатие показывает чтение и смысл.",
+      communityDuaHint: "Чтение, «Амин» и публикация",
+      menzikirTitle: "Разделы (8)",
+      menzikirTotal: (sections: number, duas: number) => `${sections} раздел · всего ${duas} дуа`,
+      menzikirJumpHint: "Нажмите строку, чтобы перейти к разделу",
+      duaCount: (n: number) => `${n} дуа`,
+      categoryExpandHint: "Показать дуа в разделе",
+      categoryCollapseHint: "Скрыть список дуа",
+      translitCaption: "Чтение (транскрипция)",
+      meaningCaption: "Смысл (перевод)",
+      expandTapHint: "Нажмите, чтобы открыть чтение и смысл",
+      collapseTapHint: "Нажмите ещё раз, чтобы свернуть — останется только текст дуа",
+      searchPlaceholder: "Поиск: тема, арабский, транскрипция или смысл…",
+      searchHint:
+        "При вводе подходящие разделы откроются сами. Чтобы очистить — оставьте поле пустым.",
+      noSearchResults: "Дуа с таким словом не найдены — попробуйте другое ключевое слово.",
+      expandAllCategories: "Открыть все разделы",
+      collapseAllCategories: "Закрыть все разделы",
+    },
+    tasbih: {
+      screenTitle: "Зикры",
+      zikirSection: "Зикры",
+      listSubtitle:
+        "В каждом разделе — арабский текст зикра, название и прогресс на чётках.",
+      openCounterA11y: "Открыть счётчик",
+      collapseDhikrA11y: "Скрыть зикр",
+      backToList: "К списку",
+      zikirToggleOpen: "Скрыть зикры",
+      zikirToggleClosed: "Показать зикры",
+      zikirHeaderClosedHint: "Другой зикр · открыть список",
+      zikirHeaderA11y: "Открыть или скрыть список зикров",
+      pickDhikr: "Выберите зикр",
+      goalLabel: "Цель (повторы)",
+      goalInfiniteA11y: "Без лимита",
+      tapHint: "Считайте, нажимая на круг ниже.",
+      tapA11y: "Нажмите чётки, чтобы считать",
+      meaningLabel: "Смысл",
+    },
     quran: {
       listTitle: "Суры Корана",
       readerSettingsTitle: "Настройки чтения",
@@ -295,7 +368,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       hajjTitle: "Хадж",
       halalTitle: "ХАЛАЛ ДАМУ",
       traditionTitle: "Религия и традиции",
-      kurbanAitTitle: "Курбан айт",
+      kurbanAitTitle: "Курбан-байрам",
       halalHeroTagRegistry: "Официальный реестр",
       halalHeroTagVerify: "Проверка продукта",
     },
@@ -318,7 +391,17 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       cardTitle: "Экосистема",
     },
     tajweedGuide: {
-      screenTitle: "Таджвид",
+      screenTitle: "Арабский алфавит",
+      shortTitle: "Алфавит",
+      alphabetHeading: "Арабский алфавит",
+      alphabetExampleLabel: "Пример",
+      alphabetLegendHeavy: "Твёрдый",
+      alphabetLegendLight: "Мягкий",
+      alphabetSpeechError: "Звук не воспроизвёлся. Проверьте, что звук на телефоне включён.",
+      listenLetterA11y: (nameKk: string, ar: string) => `${nameKk}, ${ar} — слушать`,
+      sectionBookSub: (_pages: number) => "Алфавит и правила · переход к главе",
+      tocGroupPreface: "Предисловие и введение",
+      tocJumpHint: "Нажмите строку, чтобы перейти к разделу",
     },
     knowledgePortal: {
       screenTitle: "Статьи",
@@ -327,10 +410,14 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "Настройки",
       subtitle: "Внешний вид, язык, кибла, вход и поддержка.",
       languageSection: "Язык",
-      languageSectionSub: "Меню и навигация работают на казахском, русском и английском.",
-      languageKk: "Қазақша",
+      languageSectionSub: "Меню и навигация работают на 7 языках: казахский, русский, английский, киргизский, узбекский, турецкий и арабский.",
+      languageKk: "Казахский",
       languageRu: "Русский",
-      languageEn: "English",
+      languageEn: "Английский",
+      languageKy: "Киргизский",
+      languageUz: "Узбекский",
+      languageTr: "Турецкий",
+      languageAr: "Арабский",
       sectionAppearance: "Внешний вид",
       themeBackgroundTitle: "Фон",
       themeBackgroundCompactHint: "Светлые и темные темы",
@@ -430,7 +517,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       quranShort: "Quran",
       tileSeerah: "Seerah",
       tileHadith: "Hadiths",
-      arabicLettersTile: "Tajweed",
+      arabicLettersTile: "Alphabet",
       traditionTileShort: "Faith and tradition",
       traditionDinHubLabel: "Faith and tradition",
       radialLauncherMenuA11y: "Main services",
@@ -527,6 +614,13 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
         meaning:
           "O Allah, Lord of this complete adhan and the prayer being established! Grant Muhammad the wasilah, virtue and the high rank. Raise him to the praised station You promised. You never break Your promise.",
       },
+      enteredFajr: "Fajr time has entered",
+      enteredDhuhr: "Dhuhr time has entered",
+      enteredAsr: "Asr time has entered",
+      enteredMaghrib: "Maghrib time has entered",
+      enteredIsha: "Isha time has entered",
+      enteredDefault: "Prayer time has entered",
+      enteredGeneric: (label: string) => `${label} time has entered`,
     },
     aiChat: {
       kbShelfSourceLabel: "Source",
@@ -610,7 +704,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       cardTitle: "Ecosystem",
     },
     tajweedGuide: {
-      screenTitle: "Tajweed",
+      screenTitle: "Alphabet",
     },
     knowledgePortal: {
       screenTitle: "Articles",
@@ -619,10 +713,14 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       title: "Settings",
       subtitle: "Appearance, language, qibla, sign-in and support.",
       languageSection: "Language",
-      languageSectionSub: "Menus and navigation work in Kazakh, Russian and English.",
-      languageKk: "Қазақша",
-      languageRu: "Русский",
+      languageSectionSub: "Menus and navigation work in seven languages: Kazakh, Russian, English, Kyrgyz, Uzbek, Turkish and Arabic.",
+      languageKk: "Kazakh",
+      languageRu: "Russian",
       languageEn: "English",
+      languageKy: "Kyrgyz",
+      languageUz: "Uzbek",
+      languageTr: "Turkish",
+      languageAr: "Arabic",
       sectionAppearance: "Appearance",
       themeBackgroundTitle: "Background",
       themeBackgroundCompactHint: "Light and dark themes",
@@ -679,7 +777,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Куран", heroHadithTitle: "Сахих хадистер", heroDuaTitle: "Коом дубасы",
       heroDuaSub: "Бөлүшүү · аамийн", heroAiStripTitle: "Дереккөз хаб", promoHalalHeadline: "ХАЛАЛ ДАМУ",
       promoHolidayKurbanTitle: "Курман айт", quickMenu: "Дагы", duasShort: "Дубалар", settingsShort: "Жөндөөлөр",
-      telegramShort: "Telegram", quranShort: "Куран", tileSeerah: "Сира", tileHadith: "Хадистер", arabicLettersTile: "Тажвид", traditionTileShort: "Дин жана салт",
+      telegramShort: "Telegram", quranShort: "Куран", tileSeerah: "Сира", tileHadith: "Хадистер", arabicLettersTile: "Алфавит", traditionTileShort: "Дин жана салт",
       traditionDinHubLabel: "Дин жана салт", radialLauncherMenuA11y: "Негизги бөлүмдөр", radialLauncherFabLabel: "Меню",
     },
     prayer: {
@@ -747,12 +845,12 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       },
     },
     ecosystem: { cardTitle: "Экосистема" },
-    tajweedGuide: { screenTitle: "Тажвид" },
+    tajweedGuide: { screenTitle: "Алфавит" },
     knowledgePortal: { screenTitle: "Макалалар" },
     settings: {
       title: "Жөндөөлөр", subtitle: "Көрүнүш, тил, кыбыла, кирүү жана колдоо.",
       languageSection: "Тил", languageSectionSub: "Меню жана навигация тандалган тилде иштейт.",
-      languageKk: "Қазақша", languageRu: "Русский", languageEn: "English",
+      languageKk: "Qazaqsha", languageRu: "Русский", languageEn: "English",
       sectionAppearance: "Көрүнүш", themeBackgroundTitle: "Фон", themeBackgroundCompactHint: "Жарык жана караңгы темалар",
       colorPaletteTitle: "Акцент түсү", colorPaletteHint: "Баскычтар менен белгилердин түсү.",
       accountSection: "Аккаунт", accountSectionSub: "Кирүү тарых менен прогрессти синхрондойт.",
@@ -797,7 +895,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Qur'on", heroHadithTitle: "Sahih hadislar", heroDuaTitle: "Jamoa duosi",
       heroDuaSub: "Ulashish · omin", heroAiStripTitle: "Source hub", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Qurbon hayit", quickMenu: "Yana", duasShort: "Duolar", settingsShort: "Sozlamalar",
-      telegramShort: "Telegram", quranShort: "Qur'on", tileSeerah: "Siyra", tileHadith: "Hadislar", arabicLettersTile: "Tajvid", traditionTileShort: "Din va urf-odat",
+      telegramShort: "Telegram", quranShort: "Qur'on", tileSeerah: "Siyra", tileHadith: "Hadislar", arabicLettersTile: "Alifbo", traditionTileShort: "Din va urf-odat",
       traditionDinHubLabel: "Din va urf-odat", radialLauncherMenuA11y: "Asosiy bo'limlar", radialLauncherFabLabel: "Menyu",
     },
     prayer: {
@@ -836,12 +934,12 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       },
     },
     ecosystem: { cardTitle: "Ekotizim" },
-    tajweedGuide: { screenTitle: "Tajvid" },
+    tajweedGuide: { screenTitle: "Alifbo" },
     knowledgePortal: { screenTitle: "Maqolalar" },
     settings: {
       title: "Sozlamalar", subtitle: "Ko'rinish, til, qibla, kirish va qo'llab-quvvatlash.",
       languageSection: "Til", languageSectionSub: "Menyu va navigatsiya tanlangan tilda ishlaydi.",
-      languageKk: "Қазақша", languageRu: "Русский", languageEn: "English",
+      languageKk: "Qazaqsha", languageRu: "Русский", languageEn: "English",
       sectionAppearance: "Ko'rinish", themeBackgroundTitle: "Fon", themeBackgroundCompactHint: "Yorug' va qorong'i mavzular",
       colorPaletteTitle: "Urg'u rangi", colorPaletteHint: "Tugma va belgilar rangi.",
       accountSection: "Hisob", accountSectionSub: "Kirish tarix va progressni sinxronlaydi.",
@@ -886,7 +984,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "Kur'an", heroHadithTitle: "Sahih hadisler", heroDuaTitle: "Topluluk duası",
       heroDuaSub: "Paylaş · amin", heroAiStripTitle: "Kaynak merkezi", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "Kurban Bayramı", quickMenu: "Daha", duasShort: "Dualar", settingsShort: "Ayarlar",
-      telegramShort: "Telegram", quranShort: "Kur'an", tileSeerah: "Siyer", tileHadith: "Hadisler", arabicLettersTile: "Tecvid", traditionTileShort: "Din ve gelenek",
+      telegramShort: "Telegram", quranShort: "Kur'an", tileSeerah: "Siyer", tileHadith: "Hadisler", arabicLettersTile: "Alfabe", traditionTileShort: "Din ve gelenek",
       traditionDinHubLabel: "Din ve gelenek", radialLauncherMenuA11y: "Ana bölümler", radialLauncherFabLabel: "Menü",
     },
     prayer: {
@@ -925,12 +1023,12 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       },
     },
     ecosystem: { cardTitle: "Ekosistem" },
-    tajweedGuide: { screenTitle: "Tecvid" },
+    tajweedGuide: { screenTitle: "Alfabe" },
     knowledgePortal: { screenTitle: "Makaleler" },
     settings: {
       title: "Ayarlar", subtitle: "Görünüm, dil, kıble, giriş ve destek.",
       languageSection: "Dil", languageSectionSub: "Menü ve gezinme seçilen dilde çalışır.",
-      languageKk: "Қазақша", languageRu: "Русский", languageEn: "English",
+      languageKk: "Qazaqsha", languageRu: "Русский", languageEn: "English",
       sectionAppearance: "Görünüm", themeBackgroundTitle: "Arka plan", themeBackgroundCompactHint: "Açık ve koyu temalar",
       colorPaletteTitle: "Vurgu rengi", colorPaletteHint: "Düğme ve simge rengi.",
       accountSection: "Hesap", accountSectionSub: "Giriş geçmişi ve ilerlemeyi senkronlar.",
@@ -975,7 +1073,7 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       heroQuranTitle: "القرآن", heroHadithTitle: "أحاديث صحيحة", heroDuaTitle: "دعاء الجماعة",
       heroDuaSub: "مشاركة · آمين", heroAiStripTitle: "Source hub", promoHalalHeadline: "HALAL DAMU",
       promoHolidayKurbanTitle: "عيد الأضحى", quickMenu: "المزيد", duasShort: "الأدعية", settingsShort: "الإعدادات",
-      telegramShort: "Telegram", quranShort: "القرآن", tileSeerah: "السيرة", tileHadith: "الأحاديث", arabicLettersTile: "التجويد", traditionTileShort: "الدين والتقاليد",
+      telegramShort: "Telegram", quranShort: "القرآن", tileSeerah: "السيرة", tileHadith: "الأحاديث", arabicLettersTile: "الألفباء", traditionTileShort: "الدين والتقاليد",
       traditionDinHubLabel: "الدين والتقاليد", radialLauncherMenuA11y: "الأقسام الرئيسية", radialLauncherFabLabel: "القائمة",
     },
     prayer: {
@@ -1014,12 +1112,12 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       },
     },
     ecosystem: { cardTitle: "المنظومة" },
-    tajweedGuide: { screenTitle: "التجويد" },
+    tajweedGuide: { screenTitle: "الألفباء" },
     knowledgePortal: { screenTitle: "المقالات" },
     settings: {
       title: "الإعدادات", subtitle: "المظهر واللغة والقبلة وتسجيل الدخول والدعم.",
       languageSection: "اللغة", languageSectionSub: "تعمل القائمة والتنقل باللغة المختارة.",
-      languageKk: "Қазақша", languageRu: "Русский", languageEn: "English",
+      languageKk: "Qazaqsha", languageRu: "Русский", languageEn: "English",
       sectionAppearance: "المظهر", themeBackgroundTitle: "الخلفية", themeBackgroundCompactHint: "سمات فاتحة وداكنة",
       colorPaletteTitle: "لون التمييز", colorPaletteHint: "لون الأزرار والرموز.",
       accountSection: "الحساب", accountSectionSub: "تسجيل الدخول يزامن السجل والتقدم.",
@@ -1129,7 +1227,82 @@ function mergeManualLocalePatches(target: Exclude<AppLocale, "kk">): Record<stri
   if (feature) applyIntoTarget(merged, feature as Record<string, unknown>);
   if (critical) applyIntoTarget(merged, critical as Record<string, unknown>);
   applyIntoTarget(merged, LOCALE_PATCHES[target] as Record<string, unknown>);
+  if (target === "ru") {
+    applyIntoTarget(merged, RU_RESIDUAL_CHROME_PATCH as unknown as Record<string, unknown>);
+  }
   return merged;
+}
+
+/** Қалған қазақ әріпті chrome жолдарын сөздіктен немесе «…»-пен жабу (allowlist өткізбейді). */
+function scrubRemainingKazakhLetters(target: OfflineAutoTranslateTarget): void {
+  const KK_SPECIFIC = /[әғқңөұүіһӘҒҚҢӨҰҮІҺ]/;
+  const leaks =
+    target === "ky"
+      ? findKyLocaleLeaks(kk)
+      : collectKkStringLeaves(kk).filter(
+          ({ path, value }) =>
+            KK_SPECIFIC.test(value) &&
+            !path.includes("languageKk") &&
+            path !== "settings.languageKk" &&
+            value.trim() !== "ҚМДБ"
+        );
+  if (!leaks.length) return;
+  const root = kk as unknown as Record<string, unknown>;
+  for (const { path, value } of leaks) {
+    const parts = path.replace(/\[(\d+)\]/g, ".$1").split(".").filter(Boolean);
+    let cur: unknown = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (cur == null || typeof cur !== "object") {
+        cur = null;
+        break;
+      }
+      cur = (cur as Record<string, unknown>)[parts[i]!];
+    }
+    if (cur == null || typeof cur !== "object") continue;
+    const leaf = parts[parts.length - 1]!;
+    const parent = cur as Record<string, unknown>;
+    if (typeof parent[leaf] !== "string") continue;
+    parent[leaf] = getOfflineAutoTranslation(value, target) ?? "…";
+  }
+}
+
+const KK_LETTER_RE = /[әғқңөұүіһӘҒҚҢӨҰҮІҺ]/;
+
+function localizeReturnedString(text: string, target: OfflineAutoTranslateTarget): string {
+  if (!KK_LETTER_RE.test(text)) return text;
+  if (text.trim() === "ҚМДБ") return text;
+  /** Тек ҚМДБ қысқартуындағы Қ — рұқсат. */
+  if (text.includes("ҚМДБ") && !KK_LETTER_RE.test(text.replace(/ҚМДБ/g, ""))) return text;
+  return getOfflineAutoTranslation(text, target) ?? "…";
+}
+
+/**
+ * `kk` ішіндегі форматтер функциялар applyLocale кезінде ауыспайды —
+ * қайтарылған жолдарды офлайн сөздіктен / «…» арқылы жабамыз.
+ */
+function wrapKkFunctionsForLocale(target: OfflineAutoTranslateTarget): void {
+  const walk = (node: unknown): void => {
+    if (node == null || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    const obj = node as Record<string, unknown>;
+    for (const key of Object.keys(obj)) {
+      const value = obj[key];
+      if (typeof value === "function") {
+        const original = value as (...args: unknown[]) => unknown;
+        obj[key] = (...args: unknown[]) => {
+          const result = original(...args);
+          if (typeof result === "string") return localizeReturnedString(result, target);
+          return result;
+        };
+        continue;
+      }
+      walk(value);
+    }
+  };
+  walk(kk);
 }
 
 export function applyLocale(next: AppLocale): void {
@@ -1149,6 +1322,8 @@ export function applyLocale(next: AppLocale): void {
       kk as unknown as Record<string, unknown>,
       mergeManualLocalePatches(next)
     );
+    scrubRemainingKazakhLetters(next as OfflineAutoTranslateTarget);
+    wrapKkFunctionsForLocale(next as OfflineAutoTranslateTarget);
   } else {
     invalidateOfflineLocaleTreeCache();
   }
@@ -1215,6 +1390,13 @@ export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
   } catch {
     /* ignore */
   }
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const translit = require("../quran/quranTranslitScript") as typeof import("../quran/quranTranslitScript");
+    await translit.ensureDefaultQuranTranslitScript(next);
+  } catch {
+    /* ignore */
+  }
   if (Platform.OS !== "web" && process.env.NODE_ENV !== "test") {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1228,6 +1410,8 @@ export async function setCurrentLocale(nextRaw: AppLocale): Promise<void> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
+      /** Тіл таңдағанда core сөздікті күту — әйтпесе ~70% қазақша қалады. */
+      await m.ensureI18nOfflineDictionary(next);
       m.scheduleLocaleContentDownload(next);
     } catch {
       /* ignore */
@@ -1251,7 +1435,7 @@ export function useLocaleRevision(): number {
 
 /**
  * Бут кезінде сақталған тілді оқып, негізгі `kk` мәтін объектісіне тиісті patch енгіземіз.
- * APK slim UI pack-ты күтеміз (локал, жылдам); CDN core (~30MB) фонға.
+ * APK slim + мүмкін болса core сөздік (ensureI18nOfflineDictionary).
  */
 export async function hydrateLocale(): Promise<AppLocale> {
   let next: AppLocale = "kk";
@@ -1289,6 +1473,7 @@ export async function hydrateLocale(): Promise<AppLocale> {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
+      await m.ensureI18nOfflineDictionary(next);
       m.scheduleLocaleContentDownload(next);
     } catch {
       /* ignore */

@@ -23,19 +23,19 @@ export function KazakhGreatWordsEntryScreen({ route, navigation }: Props) {
   const author = entry ? getAuthorById(entry.authorId) : undefined;
   const mergedMeta =
     entry?.mergedCount && entry.mergedAuthorNames?.length
-      ? `${g.mergedTopicMeta(entry.mergedCount)} · ${entry.mergedAuthorNames.join(", ")}`
+      ? `${tr(g.mergedTopicMeta(entry.mergedCount))} · ${entry.mergedAuthorNames.map((n) => tr(n)).join(", ")}`
       : null;
 
   useLayoutEffect(() => {
     const t = entry?.title?.trim();
     const short = t && t.length > 42 ? `${t.slice(0, 40)}…` : t;
-    navigation.setOptions({ title: short ?? g.entryScreenTitle });
-  }, [navigation, entry, g.entryScreenTitle]);
+    navigation.setOptions({ title: tr(short ?? g.entryScreenTitle) });
+  }, [navigation, entry, g.entryScreenTitle, tr]);
 
   if (!entry) {
     return (
       <View style={styles.center}>
-        <Text style={styles.muted}>{g.entryNotFound}</Text>
+        <Text style={styles.muted}>{tr(g.entryNotFound)}</Text>
       </View>
     );
   }
@@ -47,8 +47,8 @@ export function KazakhGreatWordsEntryScreen({ route, navigation }: Props) {
       </Text>
       <Text style={styles.meta} selectable>
         {mergedMeta ??
-          `${g.attributionPrefix} ${author?.name ?? entry.authorId}${
-            entry.karaSozNumber != null ? ` · ${g.karaSozLabel(entry.karaSozNumber)}` : ""
+          `${tr(g.attributionPrefix)} ${tr(author?.name ?? entry.authorId)}${
+            entry.karaSozNumber != null ? ` · ${tr(g.karaSozLabel(entry.karaSozNumber))}` : ""
           }`}
       </Text>
       <Text style={styles.body} selectable>

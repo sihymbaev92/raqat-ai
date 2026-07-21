@@ -10,6 +10,7 @@
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+  <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
   <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
@@ -79,6 +80,16 @@
     <receiver android:name=".PrayerAzanAlarmReceiver" android:exported="false">
       <intent-filter>
         <action android:name="kz.raqat.app.action.PRAYER_AZAN_FULLSCREEN"/>
+      </intent-filter>
+    </receiver>
+    <receiver android:name=".PrayerAzanStopReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="kz.raqat.app.action.PRAYER_AZAN_STOP"/>
+      </intent-filter>
+    </receiver>
+    <receiver android:name=".PrayerAzanUnlockReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.USER_PRESENT"/>
       </intent-filter>
     </receiver>
     <receiver android:name=".PrayerAzanQaReceiver" android:exported="true">

@@ -6,8 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { APP_BRAND_KK } from "../i18n/kk";
 import {
   APP_LOCALE_OPTIONS,
+  appLocaleDisplayLabel,
   setCurrentLocale,
-  useAppLocale,
   type AppLocale,
 } from "../i18n/runtime";
 import { useI18n } from "../i18n/useI18n";
@@ -22,31 +22,24 @@ type Props = {
 };
 
 /**
- * Бірінші орнату: тіл таңдалмай тұрып негізгі UI ашылмайды.
- * Таңдау бірден `setCurrentLocale` арқылы қолданылады — бүкіл қолданба сол тілде.
+ * Бірінші орнату: тілді басқанда бірден жалғасады (төменгі CTA жоқ).
  */
 export function OnboardingLanguageScreen({ onComplete }: Props) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
-  const locale = useAppLocale();
   const t = useI18n();
-  const [selected, setSelected] = useState<AppLocale>(locale);
+  const [selected, setSelected] = useState<AppLocale | null>(null);
   const [busy, setBusy] = useState(false);
 
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const onSelect = (id: AppLocale) => {
     if (busy) return;
-    setSelected(id);
-    void setCurrentLocale(id);
-  };
-
-  const onContinue = () => {
-    if (busy) return;
     setBusy(true);
+    setSelected(id);
     void (async () => {
       try {
-        await setCurrentLocale(selected);
+        await setCurrentLocale(id);
         await setOnboardingDone();
         onComplete();
       } finally {
@@ -71,7 +64,7 @@ export function OnboardingLanguageScreen({ onComplete }: Props) {
           {APP_LOCALE_OPTIONS.map((opt, i) => {
             const sel = selected === opt.id;
             const last = i === APP_LOCALE_OPTIONS.length - 1;
-            const label = formatAppLocaleLabel(opt.id, opt.nativeLabel);
+            const label = formatAppLocaleLabel(opt.id, appLocaleDisplayLabel(opt.id));
             return (
               <Pressable
                 key={opt.id}
@@ -82,13 +75,16 @@ export function OnboardingLanguageScreen({ onComplete }: Props) {
                   pressed && { opacity: 0.9 },
                 ]}
                 onPress={() => onSelect(opt.id)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: sel }}
+                accessibilityRole="button"
+                accessibilityState={{ selected: sel, busy }}
                 accessibilityLabel={label}
                 disabled={busy}
+                testID={`onboarding-language-${opt.id}`}
               >
                 <Text style={[styles.rowLabel, sel && styles.rowLabelSelected]}>{label}</Text>
-                {sel ? (
+                {busy && selected === opt.id ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : sel ? (
                   <MaterialIcons name="check-circle" size={22} color={colors.accent} />
                 ) : (
                   <View style={{ width: 22 }} />
@@ -97,24 +93,6 @@ export function OnboardingLanguageScreen({ onComplete }: Props) {
             );
           })}
         </View>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.cta,
-            (busy || pressed) && { opacity: 0.88 },
-          ]}
-          onPress={onContinue}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel={t.onboarding.start}
-          testID="onboarding-language-continue"
-        >
-          {busy ? (
-            <ActivityIndicator color="#0A0E13" />
-          ) : (
-            <Text style={styles.ctaLabel}>{t.onboarding.start}</Text>
-          )}
-        </Pressable>
       </ScreenFitScrollView>
     </View>
   );
@@ -159,7 +137,6 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
       backgroundColor: colors.card,
       overflow: "hidden",
-      marginBottom: 22,
     },
     row: {
       flexDirection: "row",
@@ -184,19 +161,6 @@ function makeStyles(colors: ThemeColors) {
       marginRight: 10,
     },
     rowLabelSelected: {
-      fontWeight: "800",
-    },
-    cta: {
-      backgroundColor: colors.accent,
-      borderRadius: 14,
-      minHeight: 52,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 18,
-    },
-    ctaLabel: {
-      color: "#0A0E13",
-      fontSize: 16,
       fontWeight: "800",
     },
   });

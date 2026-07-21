@@ -39,10 +39,15 @@
   <string name="prayer_azan_entered_for_label">%1$s намазы кірді</string>
   <string name="prayer_azan_channel_name">Азан</string>
   <string name="prayer_azan_channel_desc">Намаз уақыты кіргенде азан экранын автоматты көрсету</string>
+  <string name="prayer_azan_quiet_channel_name">Азан (фон)</string>
+  <string name="prayer_azan_quiet_channel_desc">Азан беті ашық кезде — төбе баннерсіз</string>
   <string name="prayer_azan_notif_body_no_time">Азан · ашу үшін басыңыз</string>
   <string name="prayer_azan_notif_body_with_time">%1$s · Азан · ашу үшін басыңыз</string>
+  <string name="prayer_azan_notif_body_quiet">Азан оқылуда</string>
+  <string name="prayer_azan_notif_body_quiet_with_time">%1$s · Азан оқылуда</string>
   <string name="prayer_azan_notif_body_fsi_denied">Азан беті ашылмады — хабарламаны басыңыз</string>
   <string name="prayer_azan_notif_body_fsi_denied_with_time">%1$s · Азан беті үшін хабарламаны басыңыз</string>
+  <string name="prayer_azan_notif_stop">Өшіру</string>
   <string name="prayer_azan_lock_subtitle">Азан оқылуда</string>
   <string name="prayer_azan_lock_subtitle_with_time">%1$s · Азан оқылуда</string>
   <string name="prayer_azan_lock_dismiss">Жабу</string>

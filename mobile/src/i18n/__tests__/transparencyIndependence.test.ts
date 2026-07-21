@@ -16,10 +16,10 @@ describe("transparency / independence (KNB–QMDb posture)", () => {
     expect(kk.prayer.sourceMethodHint).toMatch(/ресми қолданба белгісі емес/i);
   });
 
-  it("keeps unmoderated community posting off and privacy URL public", () => {
-    expect(COMMUNITY_DUA_PUBLIC_POSTING_ENABLED).toBe(false);
+  it("allows community dua posting and keeps privacy URL public", () => {
+    expect(COMMUNITY_DUA_PUBLIC_POSTING_ENABLED).toBe(true);
     expect(PRIVACY_POLICY_URL).toMatch(/^https:\/\/rahatomir\.com\/privacy\/?$/);
-    expect(kk.communityDua.postingDisabled.length).toBeGreaterThan(20);
+    expect(kk.communityDua.placeholder.length).toBeGreaterThan(5);
   });
 
   it("exposes settings transparency copy", () => {

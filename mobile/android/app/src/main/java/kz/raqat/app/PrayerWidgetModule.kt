@@ -132,6 +132,7 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
     ctx.getSharedPreferences("raqat_prayer_widget", android.content.Context.MODE_PRIVATE)
       .edit()
       .putString("json", json)
+      .putLong("weather_fetched_at_ms", System.currentTimeMillis())
       .apply()
     try {
       PrayerWidgetViews.updateAllWidgets(ctx)
@@ -249,6 +250,17 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
     }
   }
 
+  /** Азан беті ашық — төбедегі heads-up баннерді жасыру. */
+  @ReactMethod
+  fun suppressAzanHeadsUp() {
+    try {
+      PrayerAzanDelivery.suppressAzanHeadsUpWhileUiShowing(reactApplicationContext.applicationContext)
+      PrayerAzanDelivery.scheduleSuppressAzanHeadsUp(reactApplicationContext.applicationContext)
+    } catch (_: Throwable) {
+      /* no-op */
+    }
+  }
+
   @ReactMethod
   fun clearLegacyAzanNotifications() {
     PrayerLegacyNotificationCleaner.clear(reactApplicationContext.applicationContext)
@@ -301,7 +313,38 @@ class PrayerWidgetModule(reactContext: ReactApplicationContext) :
     map.putString("lastError", prefs.getString(keyLastError, null))
     map.putBoolean("exactAlarmPermissionGranted", exactAllowed)
     map.putBoolean("fullScreenIntentAllowed", PrayerAzanDelivery.canUseFullScreenIntent(ctx))
+    map.putBoolean(
+      "overlayAllowed",
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        android.provider.Settings.canDrawOverlays(ctx)
+      } else {
+        true
+      }
+    )
     promise.resolve(map)
+  }
+
+  /** Honor: құлып үстінде азан беті үшін «басқа қолданбалар үстінен» рұқсаты. */
+  @ReactMethod
+  fun openOverlayPermissionSettings(promise: Promise) {
+    val ctx = reactApplicationContext.applicationContext
+    android.os.Handler(android.os.Looper.getMainLooper()).post {
+      try {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+          promise.resolve(false)
+          return@post
+        }
+        val intent =
+          Intent(
+            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:${ctx.packageName}")
+          ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+        ctx.startActivity(intent)
+        promise.resolve(true)
+      } catch (t: Throwable) {
+        promise.reject("ERR_OVERLAY_SETTINGS", t.message, t)
+      }
+    }
   }
 
   /** Android 14+: full-screen intent (құлып экранында азан беті) рұқсатын ашу. */

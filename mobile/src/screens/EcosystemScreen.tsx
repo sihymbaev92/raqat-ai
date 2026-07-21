@@ -55,7 +55,7 @@ export function EcosystemScreen() {
       {catalog.map((item) => (
         <View key={item.id} style={styles.catalogCard}>
           <View style={styles.catalogTop}>
-            <Text style={styles.catalogName}>{item.name}</Text>
+            <Text style={styles.catalogName}>{tr(item.name)}</Text>
             <Text style={styles.typeBadge}>{institutionTypeLabel(item.type)}</Text>
           </View>
           {item.country ? <Text style={styles.catalogMeta}>{tr(item.country)}</Text> : null}

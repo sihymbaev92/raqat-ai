@@ -29,9 +29,6 @@ export const LOCALE_LEAK_ALLOW_SUBSTRINGS = [
   "QMDB",
   "ҚМДБ",
   "KMDMB",
-  "Дереккөз хаб",
-  "Дереккөз",
-  "дереккөз",
   "native azan",
   "Native azan",
   "http",
@@ -103,6 +100,38 @@ export function findKyLocaleLeaks(kkRoot: unknown): LocaleLeak[] {
   return collectKkStringLeaves(kkRoot).filter(
     ({ path, value }) => !isAllowedKyLocaleLeak(value, path)
   );
+}
+
+/** Probe formatter functions with sample args; find Kazakh-letter return values. */
+export function collectKkFunctionReturnLeaks(
+  kkRoot: unknown,
+  prefix = "",
+  out: LocaleLeak[] = []
+): LocaleLeak[] {
+  if (typeof kkRoot === "function") {
+    const samples: unknown[][] = [[], [1], [1, 2], ["x"], ["x", 1], [1, "x"], [3, "test"], [10, 50]];
+    for (const args of samples) {
+      try {
+        const result = (kkRoot as (...a: unknown[]) => unknown)(...args);
+        if (typeof result === "string" && !isAllowedLocaleLeak(result, prefix)) {
+          out.push({ path: prefix, value: result });
+          break;
+        }
+      } catch {
+        /* arity / type mismatch */
+      }
+    }
+    return out;
+  }
+  if (kkRoot == null || typeof kkRoot !== "object") return out;
+  if (Array.isArray(kkRoot)) {
+    kkRoot.forEach((item, i) => collectKkFunctionReturnLeaks(item, `${prefix}[${i}]`, out));
+    return out;
+  }
+  for (const [k, v] of Object.entries(kkRoot as Record<string, unknown>)) {
+    collectKkFunctionReturnLeaks(v, prefix ? `${prefix}.${k}` : k, out);
+  }
+  return out;
 }
 
 /** Sample critical UI keys that must never stay Kazakh in Russian. */

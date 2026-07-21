@@ -9,6 +9,7 @@ import { getCityApproxCoords, getKzPresetCoords } from "../constants/kzCities";
 import { kk } from "../i18n/kk";
 import { getCurrentLocale } from "../i18n/runtime";
 import { fetchOpenMeteoCurrent } from "../services/openMeteoCurrent";
+import type { OpenMeteoCurrent } from "../services/openMeteoCurrent";
 
 const KEY = "raqat_prayer_cache_v2";
 const BY_CITY_KEY = "raqat_prayer_cache_by_city_v1";
@@ -65,14 +66,20 @@ function cachedPrayerCoords(payload: PrayerTimesResult): { lat: number; lon: num
   return getKzPresetCoords(payload.city, payload.country) ?? getCityApproxCoords(payload.city);
 }
 
-async function buildWidgetPayload(payload: CachedPrayer): Promise<Record<string, unknown>> {
+async function buildWidgetPayload(
+  payload: CachedPrayer,
+  weatherOverride?: OpenMeteoCurrent | null
+): Promise<Record<string, unknown>> {
   const base: Record<string, unknown> = { ...payload };
   const coords = cachedPrayerCoords(payload);
   if (coords) {
     base.latitude = coords.lat;
     base.longitude = coords.lon;
     try {
-      const w = await fetchOpenMeteoCurrent(coords.lat, coords.lon);
+      const w =
+        weatherOverride !== undefined
+          ? weatherOverride
+          : await fetchOpenMeteoCurrent(coords.lat, coords.lon);
       if (w) {
         base.weatherTempC = w.tempC;
         base.weatherCode = w.wmoCode;
@@ -115,12 +122,15 @@ export function pushNativeWidgetQiblaHeading(headingDeg: number): void {
   }
 }
 
-async function pushNativePrayerWidgetIfNeeded(payload: CachedPrayer): Promise<void> {
+async function pushNativePrayerWidgetIfNeeded(
+  payload: CachedPrayer,
+  weatherOverride?: OpenMeteoCurrent | null
+): Promise<void> {
   if (Platform.OS === "web") return;
   try {
     const native = prayerWidgetNative();
     if (!native?.setPayload) return;
-    const enriched = await buildWidgetPayload(payload);
+    const enriched = await buildWidgetPayload(payload, weatherOverride);
     native.setPayload(JSON.stringify(enriched));
   } catch {
     /* native module missing */
@@ -167,9 +177,11 @@ export async function savePrayerCache(data: PrayerTimesResult): Promise<void> {
 }
 
 /** Қолданба ашылғанда / кэшті native widget-ке синхрондау (Android + iOS). */
-export async function syncNativePrayerWidgetFromStorage(): Promise<void> {
+export async function syncNativePrayerWidgetFromStorage(
+  weatherOverride?: OpenMeteoCurrent | null
+): Promise<void> {
   const c = await loadPrayerCache();
   if (c) {
-    await pushNativePrayerWidgetIfNeeded(c);
+    await pushNativePrayerWidgetIfNeeded(c, weatherOverride);
   }
 }

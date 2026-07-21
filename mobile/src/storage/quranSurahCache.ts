@@ -47,7 +47,8 @@ export type CachedAyah = {
 };
 
 /**
- * Таңдалған тілге сәйкес аят мағынасы. Аударма жүктелмеген болса — қазақшаға қайтады.
+ * Таңдалған тілге сәйкес аят мағынасы.
+ * Басқа тілде аударма жоқ болса қазақшаға қайтпайды (locale leak болмасын).
  * Араб тілінде (ar) бөлек мағына жоқ — экранда араб мәтінінің өзі тұрады.
  */
 export function quranAyahMeaningForSurah(
@@ -104,15 +105,15 @@ export function quranAyahMeaningForLocale(
   };
   switch (locale) {
     case "ru":
-      return pick(item.textRu) || bundled() || pick(item.textKk);
+      return pick(item.textRu) || bundled();
     case "en":
-      return pick(item.textEn) || bundled() || pick(item.textKk);
+      return pick(item.textEn) || bundled();
     case "tr":
-      return pick(item.textTr) || bundled() || pick(item.textKk);
+      return pick(item.textTr) || bundled();
     case "uz":
-      return pick(item.textUz) || bundled() || pick(item.textKk);
+      return pick(item.textUz) || bundled();
     case "ky":
-      return pick(item.textKy) || bundled() || pick(item.textKk);
+      return pick(item.textKy) || bundled();
     case "ar":
       return "";
     default:

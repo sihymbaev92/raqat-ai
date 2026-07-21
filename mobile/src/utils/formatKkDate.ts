@@ -66,7 +66,10 @@ const GREGORIAN_MONTHS: Record<"kk" | "ru" | "en" | "ky", readonly string[]> = {
 };
 
 function supportedDateLocale(locale?: AppLocale): "kk" | "ru" | "en" | "ky" {
-  return locale === "ru" || locale === "en" || locale === "ky" ? locale : "kk";
+  if (locale === "ru" || locale === "en" || locale === "ky") return locale;
+  if (locale === "kk" || locale == null) return "kk";
+  /** uz / tr / ar — never fall back to Kazakh month names. */
+  return "en";
 }
 
 function intlLocale(locale: "kk" | "ru" | "en" | "ky"): string {

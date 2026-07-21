@@ -3,10 +3,9 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="48dp"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingBottom="4dp">
+    android:paddingBottom="2dp">
 
   <LinearLayout
       android:id="@+id/widget_home_next_block"
@@ -23,7 +22,7 @@
         android:layout_height="wrap_content"
         android:text="@string/widget_prayer_next_heading"
         android:textColor="@color/widget_prayer_home_kicker"
-        android:textSize="13sp"
+        android:textSize="13dp"
         android:textStyle="bold"
         android:fontFamily="sans-serif"
         android:maxLines="1"
@@ -35,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="@color/widget_prayer_text"
-        android:textSize="17sp"
+        android:textSize="17dp"
         android:textStyle="bold"
         android:fontFamily="sans-serif"
         android:maxLines="1"
@@ -51,7 +50,7 @@
       android:layout_marginHorizontal="4dp"
       android:fontFamily="sans-serif"
       android:textColor="@color/widget_prayer_accent"
-      android:textSize="20sp"
+      android:textSize="20dp"
       android:textStyle="bold"
       android:countDown="true"
       android:format="%s"
@@ -89,7 +88,7 @@
           android:layout_height="wrap_content"
           android:fontFamily="sans-serif"
           android:textColor="@color/widget_prayer_text"
-          android:textSize="14sp"
+          android:textSize="14dp"
           android:textStyle="bold"
           android:maxLines="1"
           android:ellipsize="end"
@@ -102,13 +101,13 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical|end"
-        android:paddingTop="2dp">
+        android:paddingTop="0dp">
 
       <TextView
           android:id="@+id/widget_home_weather_icon"
           android:layout_width="wrap_content"
           android:layout_height="wrap_content"
-          android:textSize="15sp"
+          android:textSize="15dp"
           android:includeFontPadding="false"
           android:paddingEnd="3dp" />
 
@@ -118,7 +117,7 @@
           android:layout_height="wrap_content"
           android:fontFamily="sans-serif"
           android:textColor="@color/widget_prayer_text"
-          android:textSize="15sp"
+          android:textSize="15dp"
           android:textStyle="bold"
           android:maxLines="1"
           android:includeFontPadding="false" />

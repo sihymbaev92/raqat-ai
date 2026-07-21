@@ -20,6 +20,33 @@ export function nextSalatHighlightKey(rows: { key: string; time: string }[]): st
 }
 
 /**
+ * Қазір кіріп тұрған парыз намаз (уақыты өткен соңғы парыз).
+ * Таңға дейін — құптан (кешегі терезе). Күн шығу есептелмейді.
+ */
+export function currentSalatRow<T extends { key: string; time: string }>(
+  rows: T[],
+  now: Date = new Date()
+): T | null {
+  const salat = rows.filter((r) => r.key !== "sun" && r.time?.trim());
+  if (!salat.length) return null;
+  const nowM = now.getHours() * 60 + now.getMinutes();
+  let current: T | null = null;
+  for (const r of salat) {
+    if (parseMinutes(r.time) <= nowM) current = r;
+  }
+  // Таңға дейін: кешегі құптан терезесі — бүгінгі соңғы парыз (әдетте isha)
+  return current ?? salat[salat.length - 1] ?? null;
+}
+
+/** Басты бет жолағында белгілеу: кіріп тұрған намаз (келесі емес). */
+export function currentSalatHighlightKey(
+  rows: { key: string; time: string }[],
+  now: Date = new Date()
+): string | null {
+  return currentSalatRow(rows, now)?.key ?? null;
+}
+
+/**
  * Бүгінгі кестеден кейінгі парыз намаз жолы.
  * Бүгінгі барлық намаз өткен болса, `tomorrowRows` болса сондағы бірінші парызды (әдетте таң) қайтарады.
  */

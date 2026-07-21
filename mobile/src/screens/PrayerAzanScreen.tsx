@@ -26,6 +26,7 @@ import {
   playNativePrayerAzanDuaAudio,
   prayerEnteredTitleForSlot,
   stopNativePrayerAzanAudio,
+  suppressAzanHeadsUpBanner,
 } from "../services/prayerFullScreenAzan";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PrayerAzan">;
@@ -162,6 +163,8 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
     duaStartedRef.current = false;
     closingRef.current = false;
     lineOffsetsRef.current = [];
+    // Төбедегі «Выключить / Открыть» heads-up баннерді жасыру — толық экран беті қалады.
+    suppressAzanHeadsUpBanner();
     if (soundId !== "off") {
       if (useNativeAzan) {
         // Delivery may already be playing; if idle, start now (iOS AlarmKit open path).

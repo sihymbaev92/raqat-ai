@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useAppLocale } from "../../i18n/runtime";
+import { useAppLocale, useLocaleRevision } from "../../i18n/runtime";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Location from "expo-location";
@@ -73,6 +73,7 @@ function mergeCompanyList(
 
 export function HalalCatalogTabPanel({ active, colors }: Props) {
   useAppLocale();
+  const localeRev = useLocaleRevision();
   const { isDark } = useAppTheme();
   const [catalogItems, setCatalogItems] = useState<HalalDamuCompanyCard[]>(() =>
     enrichHalalCompanyCardsFromBulkCache(getHalalHubInstantCatalog())
@@ -274,7 +275,7 @@ export function HalalCatalogTabPanel({ active, colors }: Props) {
         value: String(km),
         label: kk.features.halalNearbyRadiusKm(km),
       })),
-    []
+    [localeRev]
   );
 
   const listHeader = useMemo(

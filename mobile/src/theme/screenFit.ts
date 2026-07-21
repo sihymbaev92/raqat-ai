@@ -10,11 +10,16 @@ export type ScreenFitMetrics = {
   maxContentWidth: number;
   contentWidth: number;
   fontScale: number;
+  /** Толық экранға сыйдыру коэффициенті (кішкентай экранда < 1). */
+  layoutScale: number;
 };
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
 }
+
+/** Дизайн базасы — осы енге қатысты авто масштаб. */
+const DESIGN_WIDTH = 390;
 
 export function resolveScreenFitMetrics(width: number, height: number): ScreenFitMetrics {
   const safeWidth = Math.max(1, Math.round(width || 1));
@@ -23,17 +28,19 @@ export function resolveScreenFitMetrics(width: number, height: number): ScreenFi
   const isCompactPhone = shortest < 360 || safeHeight < 640;
   const isWide = safeWidth >= 720;
   const horizontalPadding = isCompactPhone
-    ? 10
+    ? 8
     : safeWidth < 390
-      ? 12
+      ? 10
       : safeWidth < 600
-        ? 16
+        ? 14
         : safeWidth < 900
-          ? 20
+          ? 18
           : 24;
+  // Телефонда толық ен — бос жиек қалдырмау.
   const maxContentWidth = isWide ? 720 : safeWidth;
   const contentWidth = Math.max(1, Math.min(safeWidth, maxContentWidth) - horizontalPadding * 2);
-  const fontScale = clamp(shortest / 390, 0.92, isWide ? 1.08 : 1);
+  const fontScale = clamp(shortest / DESIGN_WIDTH, 0.88, isWide ? 1.08 : 1);
+  const layoutScale = clamp(safeWidth / DESIGN_WIDTH, 0.82, isWide ? 1 : 1.06);
   return {
     width: safeWidth,
     height: safeHeight,
@@ -43,6 +50,7 @@ export function resolveScreenFitMetrics(width: number, height: number): ScreenFi
     maxContentWidth,
     contentWidth,
     fontScale,
+    layoutScale,
   };
 }
 

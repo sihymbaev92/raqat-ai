@@ -24,6 +24,7 @@ type PrayerWidgetNativeModule = {
     lastError?: string | null;
     exactAlarmPermissionGranted?: boolean;
     fullScreenIntentAllowed?: boolean;
+    overlayAllowed?: boolean;
   }>;
   stopNativeAzanAudio?: () => void;
   playNativeAzanAudio?: (soundId: string) => void;
@@ -47,6 +48,7 @@ type PrayerWidgetNativeModule = {
   isAzanSessionActive?: () => Promise<boolean>;
   clearLegacyAzanNotifications?: () => void;
   finishAzanDelivery?: () => void;
+  suppressAzanHeadsUp?: () => void;
   requestAlarmKitAuthorization?: () => Promise<{
     authorized?: boolean;
     state?: string;
@@ -252,6 +254,7 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
   lastError: string | null;
   exactAlarmPermissionGranted: boolean | null;
   fullScreenIntentAllowed: boolean | null;
+  overlayAllowed: boolean | null;
 }> {
   if (Platform.OS !== "android" && Platform.OS !== "ios") {
     return {
@@ -259,6 +262,7 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
       lastError: null,
       exactAlarmPermissionGranted: null,
       fullScreenIntentAllowed: null,
+      overlayAllowed: null,
     };
   }
   try {
@@ -270,6 +274,7 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
         typeof diag?.exactAlarmPermissionGranted === "boolean" ? diag.exactAlarmPermissionGranted : null,
       fullScreenIntentAllowed:
         typeof diag?.fullScreenIntentAllowed === "boolean" ? diag.fullScreenIntentAllowed : null,
+      overlayAllowed: typeof diag?.overlayAllowed === "boolean" ? diag.overlayAllowed : null,
     };
   } catch (e) {
     return {
@@ -277,6 +282,7 @@ export async function getFullScreenAzanAlarmDiagnostics(): Promise<{
       lastError: e instanceof Error ? e.message : "Native diagnostics unavailable",
       exactAlarmPermissionGranted: null,
       fullScreenIntentAllowed: null,
+      overlayAllowed: null,
     };
   }
 }
@@ -490,6 +496,16 @@ export function finishAzanDelivery(): void {
   }
   stopNativePrayerAzanAudio();
   clearLegacyNativeAzanNotifications();
+}
+
+/** Төбедегі азан heads-up баннерін жасыру (толық экран беті қалады). */
+export function suppressAzanHeadsUpBanner(): void {
+  if (Platform.OS !== "android") return;
+  try {
+    PrayerWidget?.suppressAzanHeadsUp?.();
+  } catch {
+    /* no-op */
+  }
 }
 
 export function playNativePrayerAzanAudio(soundId: PrayerNotifSoundId): boolean {

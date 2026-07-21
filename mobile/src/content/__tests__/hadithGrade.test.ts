@@ -16,4 +16,10 @@ describe("hadithGrade localization", () => {
     expect(resolveHadithGradeText("صحيح")).toBe(kk.hadith.gradeSahih);
     expect(kk.hadith.gradeSahih).toMatch(/sahih/i);
   });
+
+  it("does not surface Kazakh-letter grades under ru", async () => {
+    await setCurrentLocale("ru");
+    const out = resolveHadithGradeText("хасан");
+    expect(out).not.toMatch(/[әғқңөұүіһӘҒҚҢӨҰҮІҺ]/);
+  });
 });

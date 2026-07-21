@@ -35,8 +35,19 @@
   <string name="prayer_azan_entered_for_label">%1$s time has entered</string>
   <string name="prayer_azan_channel_name">Adhan</string>
   <string name="prayer_azan_channel_desc">Automatically show the adhan screen when prayer time enters</string>
+  <string name="prayer_azan_quiet_channel_name">Adhan (background)</string>
+  <string name="prayer_azan_quiet_channel_desc">While adhan screen is open — no heads-up banner</string>
+  <string name="prayer_azan_notif_body_quiet">Adhan playing</string>
+  <string name="prayer_azan_notif_body_quiet_with_time">%1$s · Adhan playing</string>
   <string name="prayer_azan_notif_body_no_time">Adhan · tap to open</string>
   <string name="prayer_azan_notif_body_with_time">%1$s · Adhan</string>
+  <string name="prayer_azan_notif_body_fsi_denied">Adhan screen did not open — tap the notification</string>
+  <string name="prayer_azan_notif_body_fsi_denied_with_time">%1$s · tap the notification to open adhan</string>
+  <string name="prayer_azan_notif_stop">Stop</string>
+  <string name="prayer_azan_lock_subtitle">Adhan is playing</string>
+  <string name="prayer_azan_lock_subtitle_with_time">%1$s · adhan is playing</string>
+  <string name="prayer_azan_lock_dismiss">Close</string>
+  <string name="prayer_azan_lock_open_app">Open app</string>
 
   <string name="widget_prayer_row_fajr">Fajr</string>
   <string name="widget_prayer_row_sun">Sunrise</string>

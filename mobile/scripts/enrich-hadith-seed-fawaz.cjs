@@ -108,23 +108,38 @@ async function main() {
     process.stdout.write("\n");
   }
 
-  seed.version = Math.max(seed.version || 0, 7);
+  const hasKyUz = hadiths.some(
+    (h) =>
+      ((h.textKy || "").trim() || (h.textUz || "").trim()) &&
+      String(h.kyUzSourceLabel || "").toLowerCase().includes("hadeethenc")
+  );
+  const prevEditions = (seed.provenance && seed.provenance.editions) || {};
+  seed.version = Math.max(seed.version || 0, 10);
   seed.provenance = {
     ...(seed.provenance || {}),
     origin: "RAQAT · trusted multilingual hadith seed",
-    evidenceKk:
-      "Қазақша: қолданба ішіндегі сенімді каталог. Араб: түпнұсқа. en/ru/tr: fawazahmed0/hadith-api (MIT). ky/uz: сенімді ашық цифрлық басылым әзірге жоқ — тізім бос.",
+    evidenceKk: hasKyUz
+      ? "Қазақша: қолданба ішіндегі сенімді каталог. Араб: түпнұсқа. en/ru/tr: fawazahmed0/hadith-api (MIT). ky/uz: HadeethEnc.com."
+      : "Қазақша: қолданба ішіндегі сенімді каталог. Араб: түпнұсқа. en/ru/tr: fawazahmed0/hadith-api (MIT). ky/uz: сенімді ашық цифрлық басылым әзірге жоқ — тізім бос.",
     recordedAt: new Date().toISOString(),
     licenseHint:
-      "ar=original; kk=in-app QMDB-cited catalog; en/ru/tr=fawazahmed0/hadith-api; no machine translation of hadith body.",
+      "ar=original; kk=in-app QMDB-cited catalog; en/ru/tr=fawazahmed0/hadith-api; ky/uz=HadeethEnc when present; no machine translation of hadith body.",
     editions: {
       en: "eng-bukhari / eng-muslim (fawazahmed0)",
       ru: "rus-bukhari / rus-muslim (fawazahmed0)",
       tr: "tur-bukhari / tur-muslim (fawazahmed0)",
       ar: "ara text in seed",
       kk: "kz-trusted catalog",
-      ky: "pending licensed edition",
-      uz: "pending licensed edition",
+      ky: hasKyUz
+        ? prevEditions.ky && /hadeethenc/i.test(String(prevEditions.ky))
+          ? prevEditions.ky
+          : "HadeethEnc.com (matched rows)"
+        : "pending licensed edition",
+      uz: hasKyUz
+        ? prevEditions.uz && /hadeethenc/i.test(String(prevEditions.uz))
+          ? prevEditions.uz
+          : "HadeethEnc.com (matched rows)"
+        : "pending licensed edition",
     },
   };
 
