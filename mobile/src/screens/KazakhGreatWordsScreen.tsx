@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useNavigation } from "@react-navigation/native";
@@ -43,142 +43,193 @@ export function KazakhGreatWordsScreen(_props: Props) {
     if (catalogReady) setCatalogTick((n) => n + 1);
   }, [catalogReady]);
   const stats = useMemo(() => getGreatWordsStats(), [catalogTick]);
-  const authors = useMemo(() => getGreatWordsAuthors(), [catalogTick]);
+  const authors = useMemo(
+    () => getGreatWordsAuthors().filter((a) => a.id !== "editorial" && a.id !== "sana"),
+    [catalogTick]
+  );
   const mergedTopics = useMemo(() => getMergedGreatWordsTopics(10), [catalogTick]);
   const reflectiveEntries = useMemo(() => getReflectiveGreatWordsEntries(6), [catalogTick]);
 
   const searchHits = useMemo(() => {
     const query = q.trim();
     if (!query) return null as GreatWordsEntry[] | null;
-    return searchGreatWordsEntries(query);
+    return searchGreatWordsEntries(query).filter((e) => e.authorId !== "sana");
   }, [q]);
   const topicHits = useMemo(() => {
     const query = q.trim();
     if (!query) return null as GreatWordsMergedTopic[] | null;
-    return searchMergedGreatWordsTopics(query, 10);
+    return searchMergedGreatWordsTopics(query, 10)
+      .map((topic) => ({
+        ...topic,
+        authorNames: topic.authorNames.filter((n) => n !== "Сананы ашатын сөздер"),
+        entries: topic.entries.filter((e) => e.authorId !== "sana"),
+      }))
+      .filter((topic) => topic.entries.length > 0);
   }, [q]);
+  const hubMergedTopics = useMemo(
+    () =>
+      mergedTopics
+        .map((topic) => ({
+          ...topic,
+          authorNames: topic.authorNames.filter((n) => n !== "Сананы ашатын сөздер"),
+          entries: topic.entries.filter((e) => e.authorId !== "sana"),
+        }))
+        .filter((topic) => topic.entries.length > 0)
+        .slice(0, 10),
+    [mergedTopics]
+  );
 
-  const renderAuthor = ({ item }: { item: GreatWordsAuthor }) => {
-    const n = countEntriesForAuthor(item.id);
-    return (
-      <Pressable
-        style={({ pressed }) => [styles.authorCard, pressed && { opacity: 0.9 }]}
-        onPress={() => navigation.navigate("KazakhGreatWordsAuthor", { authorId: item.id })}
-        accessibilityRole="button"
-        accessibilityLabel={g.authorCardA11y(tr(item.name), n)}
-      >
-        <Text style={styles.authorName} numberOfLines={2}>
-          {tr(item.name)}
+  const searching = searchHits != null;
+  const searchData = useMemo(() => (searchHits ?? []).slice(0, 80), [searchHits]);
+
+  const renderAuthor = useCallback(
+    ({ item }: { item: GreatWordsAuthor }) => {
+      const n = countEntriesForAuthor(item.id);
+      return (
+        <Pressable
+          style={({ pressed }) => [styles.authorCard, pressed && { opacity: 0.9 }]}
+          onPress={() => navigation.navigate("KazakhGreatWordsAuthor", { authorId: item.id })}
+          accessibilityRole="button"
+          accessibilityLabel={g.authorCardA11y(tr(item.name), n)}
+        >
+          <Text style={styles.authorName} numberOfLines={2}>
+            {tr(item.name)}
+          </Text>
+          <Text style={styles.authorPeriod} numberOfLines={1}>
+            {tr(item.period)}
+          </Text>
+          <Text style={styles.authorCount}>{tr(g.worksCount(n))} ›</Text>
+        </Pressable>
+      );
+    },
+    [g, navigation, styles, tr]
+  );
+
+  const renderSearchHit = useCallback(
+    ({ item }: { item: GreatWordsEntry }) => {
+      const au = getAuthorById(item.authorId);
+      return (
+        <Pressable
+          style={({ pressed }) => [styles.hitRow, pressed && { opacity: 0.9 }]}
+          onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: item.id })}
+          accessibilityRole="button"
+          accessibilityLabel={`${tr(item.title)}. ${tr(au?.name ?? "")}`}
+        >
+          <Text style={styles.hitTitle} numberOfLines={2}>
+            {tr(item.title)}
+          </Text>
+          <Text style={styles.hitMeta} numberOfLines={1}>
+            {tr(au?.name ?? item.authorId)}
+          </Text>
+        </Pressable>
+      );
+    },
+    [navigation, styles, tr]
+  );
+
+  const listHeader = useMemo(
+    () => (
+      <View>
+        <Text style={styles.rootTitle} accessibilityRole="header">
+          {tr(KAZAKH_GREAT_WORDS_ROOT_TITLE)}
         </Text>
-        <Text style={styles.authorPeriod} numberOfLines={1}>
-          {tr(item.period)}
+        <Text style={styles.lead} selectable>
+          {tr(KAZAKH_GREAT_WORDS_ROOT_LEAD)}
         </Text>
-        <Text style={styles.authorCount}>
-          {tr(g.worksCount(n))} ›
+        <Text style={styles.statsLine} selectable>
+          {tr(g.statsLine(stats.authors, stats.entries))}
         </Text>
-      </Pressable>
-    );
-  };
+        <Text style={styles.topicStatsLine} selectable>
+          {tr(g.mergedStatsLine(stats.mergedTopics, stats.reflectiveEntries))}
+        </Text>
+        <Text style={styles.disclaimer} selectable>
+          {tr(g.disclaimer)}
+        </Text>
+        <Text style={styles.disclaimerSecondary} selectable>
+          {tr(g.editorialNote)}
+        </Text>
+        <TextInput
+          value={q}
+          onChangeText={setQ}
+          placeholder={tr(g.searchPlaceholder)}
+          placeholderTextColor={colors.muted}
+          style={styles.search}
+          accessibilityLabel={tr(g.searchA11y)}
+        />
 
-  return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.rootTitle} accessibilityRole="header">
-        {tr(KAZAKH_GREAT_WORDS_ROOT_TITLE)}
-      </Text>
-      <Text style={styles.lead} selectable>
-        {tr(KAZAKH_GREAT_WORDS_ROOT_LEAD)}
-      </Text>
-      <Text style={styles.statsLine} selectable>
-        {tr(g.statsLine(stats.authors, stats.entries))}
-      </Text>
-      <Text style={styles.topicStatsLine} selectable>
-        {tr(g.mergedStatsLine(stats.mergedTopics, stats.reflectiveEntries))}
-      </Text>
-      <Text style={styles.disclaimer} selectable>
-        {tr(g.disclaimer)}
-      </Text>
-      <Text style={styles.disclaimerSecondary} selectable>
-        {tr(g.editorialNote)}
-      </Text>
-      <TextInput
-        value={q}
-        onChangeText={setQ}
-        placeholder={tr(g.searchPlaceholder)}
-        placeholderTextColor={colors.muted}
-        style={styles.search}
-        accessibilityLabel={tr(g.searchA11y)}
-      />
+        {catalogLoading ? (
+          <View style={styles.catalogLoading}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.catalogLoadingTxt}>{tr(g.loadingCatalog)}</Text>
+          </View>
+        ) : null}
+        {catalogFailed ? <Text style={styles.catalogFailed}>{tr(g.catalogLoadFailed)}</Text> : null}
 
-      {catalogLoading ? (
-        <View style={styles.catalogLoading}>
-          <ActivityIndicator color={colors.accent} />
-          <Text style={styles.catalogLoadingTxt}>{tr(g.loadingCatalog)}</Text>
-        </View>
-      ) : null}
-      {catalogFailed ? (
-        <Text style={styles.catalogFailed}>{tr(g.catalogLoadFailed)}</Text>
-      ) : null}
+        {searching ? (
+          <>
+            {topicHits && topicHits.length > 0 ? (
+              <>
+                <Text style={styles.sectionTitle}>{tr(g.mergedTopicsTitle)}</Text>
+                {topicHits.map((topic) => (
+                  <MergedTopicRow
+                    key={topic.id}
+                    topic={topic}
+                    colors={colors}
+                    tr={tr}
+                    onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: topic.id })}
+                  />
+                ))}
+              </>
+            ) : null}
+            <Text style={styles.sectionTitle}>{tr(g.searchResultsTitle)}</Text>
+            {searchData.length === 0 ? <Text style={styles.empty}>{tr(g.emptySearch)}</Text> : null}
+          </>
+        ) : (
+          <>
+            <Text style={styles.sectionTitle}>{tr(g.authorsSectionTitle)}</Text>
+            <Text style={styles.sectionSub}>{tr(g.authorsSectionHint)}</Text>
+          </>
+        )}
+      </View>
+    ),
+    [
+      catalogFailed,
+      catalogLoading,
+      colors,
+      g,
+      navigation,
+      q,
+      searchData.length,
+      searching,
+      stats.authors,
+      stats.entries,
+      stats.mergedTopics,
+      stats.reflectiveEntries,
+      styles,
+      topicHits,
+      tr,
+    ]
+  );
 
-      {searchHits != null ? (
-        <>
-          {topicHits && topicHits.length > 0 ? (
-            <>
-              <Text style={styles.sectionTitle}>{tr(g.mergedTopicsTitle)}</Text>
-              {topicHits.map((topic) => (
-                <MergedTopicRow
-                  key={topic.id}
-                  topic={topic}
-                  colors={colors}
-                  tr={tr}
-                  onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: topic.id })}
-                />
-              ))}
-            </>
+  const listFooter = useMemo(() => {
+    if (searching) {
+      return (
+        <View>
+          {searchHits && searchHits.length > 80 ? (
+            <Text style={styles.moreHint}>{g.searchMoreHint(searchHits.length)}</Text>
           ) : null}
-          <Text style={styles.sectionTitle}>{tr(g.searchResultsTitle)}</Text>
-          {searchHits.length === 0 ? (
-            <Text style={styles.empty}>{tr(g.emptySearch)}</Text>
-          ) : (
-            searchHits.slice(0, 80).map((e) => {
-              const au = getAuthorById(e.authorId);
-              return (
-                <Pressable
-                  key={e.id}
-                  style={({ pressed }) => [styles.hitRow, pressed && { opacity: 0.9 }]}
-                  onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: e.id })}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${tr(e.title)}. ${tr(au?.name ?? "")}`}
-                >
-                  <Text style={styles.hitTitle} numberOfLines={2}>
-                    {tr(e.title)}
-                  </Text>
-                  <Text style={styles.hitMeta} numberOfLines={1}>
-                    {tr(au?.name ?? e.authorId)} · {e.id}
-                  </Text>
-                </Pressable>
-              );
-            })
-          )}
-          {searchHits.length > 80 ? <Text style={styles.moreHint}>{g.searchMoreHint(searchHits.length)}</Text> : null}
-        </>
-      ) : (
-        <>
-          <Text style={styles.sectionTitle}>{tr(g.mergedTopicsTitle)}</Text>
-          <Text style={styles.sectionSub}>{tr(g.mergedTopicsHint)}</Text>
-          {mergedTopics.map((topic) => (
-            <MergedTopicRow
-              key={topic.id}
-              topic={topic}
-              colors={colors}
-              tr={tr}
-              onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: topic.id })}
-            />
-          ))}
-
-          <Text style={styles.sectionTitle}>{tr(g.reflectiveWritingsTitle)}</Text>
-          <Text style={styles.sectionSub}>{tr(g.reflectiveWritingsHint)}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.reflectiveRow}>
-            {reflectiveEntries.map((entry) => {
+          <GuideAutoTranslateBanner colors={colors} visible={translated} />
+        </View>
+      );
+    }
+    return (
+      <View>
+        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>{tr(g.reflectiveWritingsTitle)}</Text>
+        <Text style={styles.sectionSub}>{tr(g.reflectiveWritingsHint)}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.reflectiveRow}>
+          {reflectiveEntries
+            .filter((entry) => entry.authorId !== "sana")
+            .map((entry) => {
               const au = getAuthorById(entry.authorId);
               return (
                 <Pressable
@@ -186,31 +237,83 @@ export function KazakhGreatWordsScreen(_props: Props) {
                   style={({ pressed }) => [styles.reflectiveCard, pressed && { opacity: 0.9 }]}
                   onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: entry.id })}
                   accessibilityRole="button"
-                  accessibilityLabel={tr(entry.title)}
+                  accessibilityLabel={`${tr(entry.title)}. ${tr(au?.name ?? "")}`}
                 >
-                  <Text style={styles.reflectiveTitle} numberOfLines={3}>{tr(entry.title)}</Text>
-                  <Text style={styles.reflectiveMeta} numberOfLines={1}>{tr(au?.name ?? entry.authorId)}</Text>
-                  <Text style={styles.reflectiveBody} numberOfLines={4}>{tr(entry.body)}</Text>
+                  <Text style={styles.reflectiveMeta} numberOfLines={1}>
+                    {tr(au?.name ?? entry.authorId)}
+                  </Text>
+                  <Text style={styles.reflectiveTitle} numberOfLines={3}>
+                    {tr(entry.title)}
+                  </Text>
+                  <Text style={styles.reflectiveBody} numberOfLines={4}>
+                    {tr(entry.body)}
+                  </Text>
                 </Pressable>
               );
             })}
-          </ScrollView>
+        </ScrollView>
 
-          <Text style={styles.sectionTitle}>{tr(g.authorsSectionTitle)}</Text>
-          <Text style={styles.sectionSub}>{tr(g.authorsSectionHint)}</Text>
-          <FlatList
-            data={authors}
-            keyExtractor={(a) => a.id}
-            renderItem={renderAuthor}
-            numColumns={2}
-            columnWrapperStyle={styles.authorRow}
-            scrollEnabled={false}
-            keyboardShouldPersistTaps="handled"
+        <Text style={styles.sectionTitle}>{tr(g.mergedTopicsTitle)}</Text>
+        <Text style={styles.sectionSub}>{tr(g.mergedTopicsHint)}</Text>
+        {hubMergedTopics.map((topic) => (
+          <MergedTopicRow
+            key={topic.id}
+            topic={topic}
+            colors={colors}
+            tr={tr}
+            onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: topic.id })}
           />
-        </>
-      )}
-      <GuideAutoTranslateBanner colors={colors} visible={translated} />
-    </ScrollView>
+        ))}
+        <GuideAutoTranslateBanner colors={colors} visible={translated} />
+      </View>
+    );
+  }, [
+    colors,
+    g,
+    hubMergedTopics,
+    navigation,
+    reflectiveEntries,
+    searchHits,
+    searching,
+    styles,
+    tr,
+    translated,
+  ]);
+
+  if (searching) {
+    return (
+      <FlatList
+        style={styles.root}
+        contentContainerStyle={styles.content}
+        data={searchData}
+        keyExtractor={(e) => e.id}
+        renderItem={renderSearchHit}
+        ListHeaderComponent={listHeader}
+        ListFooterComponent={listFooter}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        windowSize={7}
+        maxToRenderPerBatch={10}
+      />
+    );
+  }
+
+  return (
+    <FlatList
+      style={styles.root}
+      contentContainerStyle={styles.content}
+      data={authors}
+      keyExtractor={(a) => a.id}
+      renderItem={renderAuthor}
+      numColumns={2}
+      columnWrapperStyle={styles.authorRow}
+      ListHeaderComponent={listHeader}
+      ListFooterComponent={listFooter}
+      keyboardShouldPersistTaps="handled"
+      initialNumToRender={8}
+      windowSize={7}
+      maxToRenderPerBatch={8}
+    />
   );
 }
 
@@ -234,10 +337,15 @@ function MergedTopicRow({
       accessibilityLabel={tr(topic.title)}
     >
       <View style={styles.topicRowText}>
-        <Text style={styles.topicTitle} numberOfLines={2}>{tr(topic.title)}</Text>
-        <Text style={styles.topicMeta} numberOfLines={2}>
-          {topic.entries.length} {tr(kk.features.greatWordsGuide.topicEntriesSuffix)} ·{" "}
+        <Text style={styles.topicAuthors} numberOfLines={2}>
           {topic.authorNames.slice(0, 4).map((n) => tr(n)).join(", ")}
+          {topic.authorNames.length > 4 ? "…" : ""}
+        </Text>
+        <Text style={styles.topicTitle} numberOfLines={2}>
+          {tr(topic.title)}
+        </Text>
+        <Text style={styles.topicMeta} numberOfLines={1}>
+          {topic.entries.length} {tr(kk.features.greatWordsGuide.topicEntriesSuffix)}
         </Text>
       </View>
       <Text style={styles.rowArrow}>›</Text>
@@ -316,6 +424,7 @@ function makeStyles(colors: ThemeColors) {
       color: colors.text,
       marginBottom: 6,
     },
+    sectionTitleSpaced: { marginTop: 8 },
     sectionSub: {
       fontSize: 13,
       lineHeight: 20,
@@ -335,6 +444,7 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 8,
     },
     topicRowText: { flex: 1, minWidth: 0 },
+    topicAuthors: { fontSize: 12, fontWeight: "800", color: colors.accent, marginBottom: 4, lineHeight: 17 },
     topicTitle: { fontSize: 15, fontWeight: "900", color: colors.text },
     topicMeta: { fontSize: 12, color: colors.muted, marginTop: 4, lineHeight: 17 },
     rowArrow: { fontSize: 22, color: colors.muted, fontWeight: "200" },
@@ -362,8 +472,8 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 16,
       padding: 12,
     },
-    reflectiveTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900", color: colors.text },
-    reflectiveMeta: { fontSize: 12, color: colors.accent, fontWeight: "800", marginTop: 6 },
+    reflectiveTitle: { fontSize: 15, lineHeight: 20, fontWeight: "900", color: colors.text, marginTop: 6 },
+    reflectiveMeta: { fontSize: 12, color: colors.accent, fontWeight: "800" },
     reflectiveBody: { fontSize: 12, lineHeight: 18, color: colors.muted, marginTop: 8 },
     authorCard: {
       flex: 1,
@@ -374,7 +484,7 @@ function makeStyles(colors: ThemeColors) {
       borderRadius: 14,
       padding: 12,
     },
-    authorName: { fontSize: 15, fontWeight: "800", color: colors.text },
+    authorName: { fontSize: 15, fontWeight: "900", color: colors.text },
     authorPeriod: { fontSize: 11, color: colors.muted, marginTop: 4 },
     authorCount: { fontSize: 12, fontWeight: "700", color: colors.accent, marginTop: 8 },
     hitRow: {

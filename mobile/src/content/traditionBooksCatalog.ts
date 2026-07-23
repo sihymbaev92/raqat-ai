@@ -108,6 +108,7 @@ function greatWordsBadge(): string {
 
 const WISDOM_BOOK_TITLES: Partial<Record<string, string>> = {
   abai: "Абай Құнанбаев. Қара сөздері",
+  sana: "Сананы ашатын даналық сөздер",
   shokan: "Шоқан Уәлиханов. Ойлар мен зерттеулер",
   makhambet: "Махамбет Өтемісұлы. Өлең мен нақыл",
   ybyray: "Ыбырай Алтынсарин. Ағартушылық сөздері",
@@ -115,6 +116,12 @@ const WISDOM_BOOK_TITLES: Partial<Record<string, string>> = {
   mirzhakyp: "Міржақып Дулатов. Қоғам мен білім",
   akhmet: "Ахмет Байтұрсынұлы. Тіл мен мәдениет",
   magzhan: "Мағжан Жұмабаев. Поэзия мен ой",
+  zhambyl: "Жамбыл Жабаев. Жыр мен толғау",
+  mukagali: "Мұқағали Мақатаев. Өлең мен жүрек",
+  saken: "Сәкен Сейфуллин. Жаңа заман жырлары",
+  ilyas: "Ілияс Жансүгіров. Поэма мен ой",
+  suyinbay: "Сүйінбай Аронұлы. Айтыс пен даналық",
+  kasym: "Қасым Аманжолов. Ерлік пен лирика",
   zhuban: "Жұбан Молдағалиев. Ақындық мұра",
   tulen: "Төлеген Қайыркенов. Дана сөздер",
   omarkhan: "Омархан Әбікеев. Өсиет пен нақыл",
@@ -136,7 +143,7 @@ function wisdomWorksLabel(n: number): string {
 
 function buildWisdomAuthorBooks(): TraditionBookEntry[] {
   return getGreatWordsAuthors()
-    .filter((a) => a.id !== "editorial")
+    .filter((a) => a.id !== "editorial" && a.id !== "sana")
     .map((author) => {
       const n = countEntriesForAuthor(author.id);
       const title = WISDOM_BOOK_TITLES[author.id] ?? author.name;
@@ -379,12 +386,12 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
     id: "qibla",
     group: "faith",
     title: "Құбыла",
-    subtitle: "Компас · камера · бағыт",
+    subtitle: "Компас · бағыт",
     summary:
-      "Телефон сенсорларымен Қағбаға бағыт; компас және камера режимі; орынды жаңарту.",
-    contents: ["Компас көрінісі", "Камера режимі", "Бағыт калибрлеу", "Қысқа нұсқау"],
+      "Телефон сенсорларымен Қағбаға бағыт; компас; орынды жаңарту.",
+    contents: ["Компас көрінісі", "Бағыт калибрлеу", "Қысқа нұсқау"],
     religionLink: "Намазда құбыла — шариғат шарты; саяхатта да қолданылады.",
-    howToRead: ["Намаз алдында бағытты тексеру.", "Металл жақын болмасын.", "Камера режимін жарықта қолдану."],
+    howToRead: ["Намаз алдында бағытты тексеру.", "Телефонды жазық ұстау.", "Металл жақын болмасын."],
     action: { kind: "rootScreen", screen: "Qibla" },
   },
   {

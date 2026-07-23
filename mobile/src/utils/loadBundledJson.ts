@@ -11,16 +11,6 @@ import {
   readAsStringAsync,
   writeAsStringAsync,
 } from "expo-file-system/legacy";
-import mosques2gisApk from "../../assets/bundled/mosques-2gis-kz.json";
-import offlineAutoTranslationsApk from "../../assets/bundled/offline-auto-translations-apk.json";
-import hadithFromDbSeedApk from "../../assets/bundled/hadith-from-db-seed.json";
-import quranEnTranslitApk from "../../assets/bundled/quran-en-transliteration-full.json";
-import quranKkFromDbApk from "../../assets/bundled/quran-kk-from-db.json";
-import quranTajweedApk from "../../assets/bundled/quran-tajweed-offline.json";
-import quranTranslationsApk from "../../assets/bundled/quran-translations-offline.json";
-import quranUthmaniApk from "../../assets/bundled/quran-uthmani-full.json";
-import surahListApk from "../../assets/bundled/surah-list-api.json";
-import { bundledJsonRemoteUrl } from "../config/bundledJsonBase";
 import { bundledJsonDownloadUrls } from "../config/bundledJsonFallbacks";
 import type { BundledJsonName } from "./bundledJsonTypes";
 import { isApkBundledJson, isRemoteBundledJson } from "./bundledJsonTypes";
@@ -38,20 +28,34 @@ const memory = new Map<string, unknown>();
 const inflight = new Map<string, Promise<unknown>>();
 
 /**
- * APK-да болуы тиіс JSON — static import (Metro object ретінде бандлға кіреді).
+ * APK JSON — lazy require (Metro inlineRequires: тек сұралған файл materialize болады).
  * Asset.fromModule JSON-ға жарамайды: require object қайтарса URI жоқ, CDN 521-де аударма жоғалады.
  */
-const APK_JSON_INLINE: Partial<Record<BundledJsonName, unknown>> = {
-  "surah-list-api.json": surahListApk,
-  "mosques-2gis-kz.json": mosques2gisApk,
-  "quran-kk-from-db.json": quranKkFromDbApk,
-  "quran-uthmani-full.json": quranUthmaniApk,
-  "quran-en-transliteration-full.json": quranEnTranslitApk,
-  "quran-tajweed-offline.json": quranTajweedApk,
-  "quran-translations-offline.json": quranTranslationsApk,
-  "hadith-from-db-seed.json": hadithFromDbSeedApk,
-  "offline-auto-translations-apk.json": offlineAutoTranslationsApk,
+const APK_JSON_LOADERS: Partial<Record<BundledJsonName, () => unknown>> = {
+  "surah-list-api.json": () => require("../../assets/bundled/surah-list-api.json"),
+  "mosques-2gis-kz.json": () => require("../../assets/bundled/mosques-2gis-kz.json"),
+  "quran-kk-from-db.json": () => require("../../assets/bundled/quran-kk-from-db.json"),
+  "quran-uthmani-full.json": () => require("../../assets/bundled/quran-uthmani-full.json"),
+  "quran-en-transliteration-full.json": () =>
+    require("../../assets/bundled/quran-en-transliteration-full.json"),
+  "quran-tajweed-offline.json": () => require("../../assets/bundled/quran-tajweed-offline.json"),
+  "quran-translations-offline.json": () =>
+    require("../../assets/bundled/quran-translations-offline.json"),
+  "hadith-from-db-seed.json": () => require("../../assets/bundled/hadith-from-db-seed.json"),
+  "offline-auto-translations-apk.json": () =>
+    require("../../assets/bundled/offline-auto-translations-apk.json"),
+  "great-words-catalog.json": () => require("../../assets/bundled/great-words-catalog.json"),
 };
+
+function loadApkJsonInline(name: BundledJsonName): unknown | undefined {
+  const loader = APK_JSON_LOADERS[name];
+  if (!loader) return undefined;
+  return loader();
+}
+
+function hasApkJsonLoader(name: BundledJsonName): boolean {
+  return APK_JSON_LOADERS[name] != null;
+}
 
 export class BundledJsonMissingError extends Error {
   readonly jsonName: BundledJsonName;
@@ -141,23 +145,23 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
 }
 
 async function loadFromNativeAssetFallback(name: BundledJsonName): Promise<unknown | null> {
-  if (!isApkBundledJson(name)) return null;
-  const inline = APK_JSON_INLINE[name];
-  if (inline != null && typeof inline === "object") {
-    return inline;
-  }
-  /** Ескі/сирек: сандық asset module id қалса. */
-  if (typeof inline === "number") {
-    try {
+  if (!isApkBundledJson(name) || !hasApkJsonLoader(name)) return null;
+  try {
+    const inline = loadApkJsonInline(name);
+    if (inline != null && typeof inline === "object") {
+      return inline;
+    }
+    /** Ескі/сирек: сандық asset module id қалса. */
+    if (typeof inline === "number") {
       const asset = Asset.fromModule(inline);
       await asset.downloadAsync();
       const uri = asset.localUri ?? asset.uri;
       if (!uri) return null;
       const raw = await readAsStringAsync(uri);
       return JSON.parse(raw) as unknown;
-    } catch {
-      return null;
     }
+  } catch {
+    return null;
   }
   return null;
 }
@@ -211,7 +215,7 @@ export async function isBundledJsonCached(name: BundledJsonName): Promise<boolea
   if (memory.has(name)) return true;
   const cached = await readCachedBundledJsonFile(name);
   if (cached != null) return true;
-  return isApkBundledJson(name) && APK_JSON_INLINE[name] != null;
+  return isApkBundledJson(name) && hasApkJsonLoader(name);
 }
 
 export async function downloadBundledJsonToCache<T>(
@@ -264,6 +268,11 @@ function isValidApkBundledPayload(name: BundledJsonName, data: unknown): boolean
   if (name === "surah-list-api.json") {
     const rows = (data as { data?: unknown[] })?.data;
     return Array.isArray(rows) && rows.length >= 114;
+  }
+  if (name === "great-words-catalog.json") {
+    const authors = (data as { authors?: unknown[] })?.authors;
+    const entries = (data as { entries?: unknown[] })?.entries;
+    return Array.isArray(authors) && authors.length >= 10 && Array.isArray(entries) && entries.length >= 40;
   }
   return true;
 }

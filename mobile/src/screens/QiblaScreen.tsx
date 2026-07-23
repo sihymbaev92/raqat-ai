@@ -9,10 +9,8 @@ import {
   Platform,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
-import { useFocusEffect, useRoute, type RouteProp } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { QiblaSensorProvider, useQiblaSensor } from "../context/QiblaSensorContext";
-import type { RootStackParamList } from "../navigation/types";
-import { QiblaArCameraView } from "../components/QiblaArCameraView";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
@@ -51,8 +49,6 @@ function formatAccuracyMeters(m: number | null | undefined, t: ReturnType<typeof
   return t.qibla.accuracyM(Math.max(1, Math.round(m)));
 }
 
-type QiblaRoute = RouteProp<RootStackParamList, "Qibla">;
-
 export function QiblaScreen() {
   useAppLocale();
   return (
@@ -65,13 +61,6 @@ export function QiblaScreen() {
 function QiblaScreenContent() {
   const { colors } = useAppTheme();
   const t = useI18n();
-  const route = useRoute<QiblaRoute>();
-  const initialMode = route.params?.mode === "camera" ? "camera" : "compass";
-  const [viewMode, setViewMode] = useState<"compass" | "camera">(initialMode);
-
-  useEffect(() => {
-    if (route.params?.mode === "camera") setViewMode("camera");
-  }, [route.params?.mode]);
   const {
     perm,
     bearing,
@@ -233,48 +222,6 @@ function QiblaScreenContent() {
       contentContainerStyle={styles.pad}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.modeRow}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.modeChip,
-            viewMode === "compass" && styles.modeChipActive,
-            pressed && { opacity: 0.9 },
-          ]}
-          onPress={() => setViewMode("compass")}
-          accessibilityRole="button"
-          accessibilityState={{ selected: viewMode === "compass" }}
-        >
-          <Text style={[styles.modeTxt, viewMode === "compass" && styles.modeTxtActive]}>
-            {kk.qibla.modeCompass}
-          </Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.modeChip,
-            viewMode === "camera" && styles.modeChipActive,
-            pressed && { opacity: 0.9 },
-          ]}
-          onPress={() => setViewMode("camera")}
-          accessibilityRole="button"
-          accessibilityState={{ selected: viewMode === "camera" }}
-        >
-          <Text style={[styles.modeTxt, viewMode === "camera" && styles.modeTxtActive]}>
-            {kk.qibla.modeCamera}
-          </Text>
-        </Pressable>
-      </View>
-
-      {viewMode === "camera" ? (
-        <QiblaArCameraView
-          colors={colors}
-          layout="inline"
-          style={styles.cameraPane}
-          onClose={() => setViewMode("compass")}
-        />
-      ) : null}
-
-      {viewMode === "compass" ? (
-      <>
       <View style={[styles.arrowPanel, { position: "relative" }]}>
         {bearing != null && !effectiveHeadingHasSample ? (
           <View
@@ -456,8 +403,6 @@ function QiblaScreenContent() {
       </Pressable>
 
       <Text style={styles.hint}>{kk.qibla.magnetHint}</Text>
-      </>
-      ) : null}
     </ScrollView>
   );
 }
@@ -586,13 +531,6 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.card,
     },
     secondaryBtnTxt: { color: colors.accent, fontWeight: "600", fontSize: 15 },
-    cameraPane: { marginBottom: 16 },
-    modeRow: {
-      flexDirection: "row",
-      gap: 8,
-      justifyContent: "center",
-      marginBottom: 12,
-    },
     motionModeRow: {
       flexDirection: "row",
       gap: 8,

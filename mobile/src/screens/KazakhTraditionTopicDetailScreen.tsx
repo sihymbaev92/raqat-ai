@@ -14,6 +14,7 @@ import {
   getRelatedTraditionAudios,
   getTraditionTopicById,
 } from "../content/traditionTopicsCatalog";
+import { getTraditionTopicDepth } from "../content/traditionTopicDepth";
 import { TraditionReligiousEvidenceSection } from "../components/tradition/TraditionReligiousEvidenceSection";
 import { isTraditionFavorite, toggleTraditionFavorite } from "../storage/traditionFavorites";
 import { useAutoTranslatedFields } from "../quran/useAutoTranslatedFields";
@@ -84,6 +85,10 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
   );
   const relatedArticles = useMemo(
     () => (topic ? getRelatedTraditionArticles(topic.id) : []),
+    [topic]
+  );
+  const topicDepth = useMemo(
+    () => (topic ? getTraditionTopicDepth(topic.id) : undefined),
     [topic]
   );
 
@@ -182,6 +187,21 @@ export function KazakhTraditionTopicDetailScreen({ route }: Props) {
       ) : null}
 
       <TraditionReligiousEvidenceSection topicId={topic.id} palette={palette} nav={nav} tr={tr} />
+
+      {topicDepth?.vignettes?.length ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{t.features.traditionGuide.situationExamplesTitle}</Text>
+          {topicDepth.vignettes.map((v, index) => (
+            <View key={`v-${index}`} style={styles.vignetteRow}>
+              <Text style={styles.vignetteNo}>{index + 1}.</Text>
+              <Text style={styles.bodyFlex}>{tr(v)}</Text>
+            </View>
+          ))}
+          {topicDepth.closing ? (
+            <Text style={[styles.body, styles.vignetteClosing]}>{tr(topicDepth.closing)}</Text>
+          ) : null}
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{t.features.traditionGuide.howToHoldTitle}</Text>
@@ -364,6 +384,17 @@ function makeStyles(p: TraditionKazakhPalette) {
     cardTitleInline: { color: p.text, fontSize: 15, fontWeight: "900", flex: 1 },
     cardTitleGap: { marginTop: 14 },
     body: { color: p.muted, fontSize: 14, lineHeight: 21, fontWeight: "600" },
+    bodyFlex: { flex: 1, color: p.muted, fontSize: 14, lineHeight: 21, fontWeight: "600" },
+    vignetteRow: { flexDirection: "row", gap: 8, marginBottom: 10, alignItems: "flex-start" },
+    vignetteNo: { color: p.bannerBg, fontSize: 13, fontWeight: "900", marginTop: 2 },
+    vignetteClosing: {
+      marginTop: 4,
+      paddingTop: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: p.border,
+      color: p.text,
+      fontWeight: "700",
+    },
     stepRow: { flexDirection: "row", gap: 10, marginBottom: 10, alignItems: "flex-start" },
     stepNo: {
       width: 26,

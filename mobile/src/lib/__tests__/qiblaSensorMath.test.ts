@@ -31,8 +31,8 @@ describe("qiblaSensorMath", () => {
     expect(Math.abs(az)).toBeLessThan(Math.PI);
   });
 
-  test("upright portrait: remapped heading stays finite", () => {
-    /** Телефон тік: gravity ≈ +Y */
+  test("upright portrait: device-Y heading stays finite", () => {
+    /** Телефон тік: gravity ≈ +Y — remap жоқ, Y-ось heading */
     const gravity = { x: 0, y: 9.81, z: 0 };
     const mag = { x: 0, y: 0, z: -40 };
     const fused = headingDegFromGravityMagnetic(gravity, mag);

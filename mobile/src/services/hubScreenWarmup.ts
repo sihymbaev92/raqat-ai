@@ -46,12 +46,15 @@ function ensureKmdbWarm(): Promise<void> {
           import("../screens/KmdbHubScreen"),
           import("../components/OfficialSiteFullWebView"),
           import("../components/kmdb/NearbyMosquesPanel"),
-          import("../components/officialSiteWebViewReload").then((m) =>
-            m.prefetchOfficialSiteWebPages([MUFTYAT_KK_HOME_URL, FATUA_KK_HOME_URL])
-          ),
-          prefetchMosques2gisCatalog(),
         ])
       )
+      .then(async () => {
+        await runWhenHeavyWorkAllowed();
+        void import("../components/officialSiteWebViewReload").then((m) =>
+          m.prefetchOfficialSiteWebPages([MUFTYAT_KK_HOME_URL, FATUA_KK_HOME_URL])
+        );
+        void prefetchMosques2gisCatalog();
+      })
       .then(() => undefined)
       .catch(() => undefined);
   }
@@ -61,15 +64,6 @@ function ensureKmdbWarm(): Promise<void> {
 /** Dashboard «ҚМДБ» батырмасын basу алдында — chunk + muftyat/fatua DNS/TLS + мешіт каталогы. */
 export function warmKmdbHubScreen(): void {
   void ensureKmdbWarm();
-}
-
-/** Навигация алдында қысқа күту — Suspense спиннерін азайту. */
-export function awaitKmdbHubWarm(maxWaitMs = 400): Promise<void> {
-  const warm = ensureKmdbWarm();
-  return Promise.race([
-    warm,
-    new Promise<void>((resolve) => setTimeout(resolve, maxWaitMs)),
-  ]);
 }
 
 function ensureHalalWarm(): Promise<void> {
@@ -83,13 +77,15 @@ function ensureHalalWarm(): Promise<void> {
         Promise.all([
           import("../screens/HalalScreen"),
           import("../components/OfficialSiteFullWebView"),
-          import("../services/halalHubBootstrap").then(async (m) => {
-            await runWhenHeavyWorkAllowed();
-            m.getHalalHubInstantCatalog();
-            void m.prefetchHalalDamuHub();
-          }),
         ])
       )
+      .then(async () => {
+        await runWhenHeavyWorkAllowed();
+        const m = await import("../services/halalHubBootstrap");
+        // Каталогты навигациядан кейін — басуды бөгемеу
+        m.getHalalHubInstantCatalog();
+        void m.prefetchHalalDamuHub();
+      })
       .then(() => undefined)
       .catch(() => undefined);
   }
@@ -99,18 +95,4 @@ function ensureHalalWarm(): Promise<void> {
 /** Dashboard «Halal Damu» батырмасын basу алдында. */
 export function warmHalalHubScreen(): void {
   void ensureHalalWarm();
-}
-
-export function awaitHalalHubWarm(maxWaitMs = 400): Promise<void> {
-  const warm = ensureHalalWarm();
-  return Promise.race([
-    warm,
-    new Promise<void>((resolve) => setTimeout(resolve, maxWaitMs)),
-  ]);
-}
-
-/** Boot: KMDB бірден, Halal кейін — тек қолмен шақыру үшін (авто-warmup өшірілген). */
-export function warmHotHubScreens(): void {
-  warmKmdbHubScreen();
-  setTimeout(() => warmHalalHubScreen(), 5_000);
 }

@@ -6,10 +6,12 @@ import {
 import seedBundle from "../../../assets/bundled/halal-products-seed-kz.json";
 
 type SeedItem = {
+  gtin?: string;
   title: string;
   ingredients?: string | null;
   certificateStatus?: string | null;
   companyId?: number | null;
+  note?: string | null;
 };
 
 const seedItems = (seedBundle as { items: SeedItem[] }).items;
@@ -17,7 +19,8 @@ const hasLatinAndCyrillic = (word: string) => /[A-Za-z]/.test(word) && /[А-Яа
 
 describe("halalProductsSeedKz", () => {
   it("loads bundled seed count", () => {
-    expect(getHalalProductsSeedCount()).toBeGreaterThan(50);
+    expect(getHalalProductsSeedCount()).toBeGreaterThan(3000);
+    expect(getHalalProductsSeedCount()).toBe(seedItems.length);
   });
 
   it("finds product by exact GTIN", () => {
@@ -37,6 +40,16 @@ describe("halalProductsSeedKz", () => {
     const hit = lookupHalalProductsSeedByBarcode("4607025392015");
     expect(hit.length).toBe(1);
     expect(hit[0]?.title.toLowerCase()).toContain("айран");
+  });
+
+  it("indexes expanded OFF GTINs from bundled seed", () => {
+    const offish = seedItems.filter((item) => (item.note ?? "").includes("open_food_facts"));
+    expect(offish.length).toBeGreaterThan(100);
+    const sample = offish[0];
+    expect(sample?.gtin).toBeTruthy();
+    const hit = lookupHalalProductsSeedByBarcode(sample!.gtin!);
+    expect(hit.length).toBe(1);
+    expect(hit[0]?.fromRaqatSeed).toBe(true);
   });
 
   it("finds seed when searching numeric barcode string", () => {
@@ -64,14 +77,7 @@ describe("halalProductsSeedKz", () => {
     const risky = seedItems.filter((item) => /шошқа/i.test(item.ingredients ?? ""));
 
     expect(risky.length).toBeGreaterThan(0);
-    expect(risky).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          certificateStatus: "review_required",
-          companyId: null,
-        }),
-      ])
-    );
+    expect(risky.every((item) => item.certificateStatus === "review_required")).toBe(true);
     expect(risky.every((item) => item.certificateStatus !== "active")).toBe(true);
   });
 });

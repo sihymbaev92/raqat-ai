@@ -37,6 +37,8 @@ const MIN_FREE_DISK_BYTES = 250 * 1024 * 1024;
 const MAX_FAILED_ITEMS = 200;
 
 let loopRunning = false;
+/** Кейінгі kick/loop тоқтату (тест teardown / pause). */
+let loopToken = 0;
 
 export type QuranAudioDownloadResumeOptions = {
   budgetFiles?: number;
@@ -61,7 +63,11 @@ function networkTypeLabel(type: Network.NetworkStateType | undefined): string {
 }
 
 export async function canDownloadQuranAudioNow(allowMobileData: boolean): Promise<NetworkGate> {
-  if (Platform.OS === "web") return { ok: false, reason: "web unsupported" };
+  try {
+    if (Platform.OS === "web") return { ok: false, reason: "web unsupported" };
+  } catch {
+    return { ok: false, reason: "platform unavailable" };
+  }
   try {
     const state = await Network.getNetworkStateAsync();
     if (!state.isConnected || state.type === Network.NetworkStateType.NONE) {
@@ -270,14 +276,20 @@ export async function resumeQuranAudioDownloads(
 }
 
 export async function kickQuranAudioAutoDownloadLoop(): Promise<void> {
-  if (Platform.OS === "web" || loopRunning) return;
+  try {
+    if (Platform.OS === "web" || loopRunning) return;
+  } catch {
+    return;
+  }
   const { prefs, state } = await loadQuranAudioDownloadSnapshot();
   if (prefs.paused || !hasPendingQuranAudioDownloads(state)) return;
 
+  const token = loopToken;
   loopRunning = true;
   try {
-    while (true) {
+    while (token === loopToken) {
       const snap = await resumeQuranAudioDownloads({ budgetFiles: DEFAULT_CHUNK_FILES, source: "foreground" });
+      if (token !== loopToken) return;
       const status = aggregateQuranAudioDownloadStatus(snap.prefs, snap.state);
       if (
         snap.prefs.paused ||
@@ -290,8 +302,15 @@ export async function kickQuranAudioAutoDownloadLoop(): Promise<void> {
       await new Promise((resolve) => setTimeout(resolve, LOOP_DELAY_MS));
     }
   } finally {
-    loopRunning = false;
+    if (token === loopToken) loopRunning = false;
+    else loopRunning = false;
   }
+}
+
+/** Фондық auto-download циклін тоқтату (тест / pause). */
+export function cancelQuranAudioAutoDownloadLoop(): void {
+  loopToken += 1;
+  loopRunning = false;
 }
 
 export async function resumeQuranAudioDownloadsInBackground(): Promise<QuranAudioDownloadSnapshot> {
@@ -359,6 +378,7 @@ export async function setQuranAudioAllowMobileData(allowMobileData: boolean): Pr
 }
 
 export async function pauseQuranAudioDownloads(): Promise<QuranAudioDownloadSnapshot> {
+  cancelQuranAudioAutoDownloadLoop();
   const prefs = await patchQuranAudioDownloadPrefs({ paused: true });
   const state = await loadQuranAudioDownloadState();
   return { prefs, state };

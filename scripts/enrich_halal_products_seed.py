@@ -117,6 +117,9 @@ def enrich_companies(rows: list[dict[str, str]], dry_run: bool) -> int:
         brand = (row.get("brand") or "").strip()
         if not brand:
             continue
+        ingredients = (row.get("ingredients") or "").lower()
+        if "шошқа" in ingredients or "свинин" in ingredients or "pork" in ingredients:
+            continue
         if brand not in brand_cache:
             cid = None
             for q in BRAND_SEARCH.get(brand, [brand]):

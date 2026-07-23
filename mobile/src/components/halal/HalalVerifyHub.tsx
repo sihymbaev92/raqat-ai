@@ -11,6 +11,8 @@ import { useAppLocale } from "../../i18n/runtime";
 
 export type HalalCheckFlowPhase = null | "registry";
 
+const QUICK_ECODE_CHIPS = ["E120", "E441", "E471", "E904", "желатин", "шеллак"] as const;
+
 type Props = {
   colors: ThemeColors;
   productStatusChips: HalalFilterChip[];
@@ -20,9 +22,17 @@ type Props = {
   checkErr: string | null;
   checkFlowPhase: HalalCheckFlowPhase;
   lastBarcode: string | null;
+  searchQuery: string;
+  onSearchQueryChange: (q: string) => void;
+  onSearchSubmit: (q: string) => void;
+  onPasteIngredients: () => void;
   onOpenBarcode: () => void;
-  onSubmitBarcode: (barcode: string) => void;
 };
+
+function isMostlyBarcodeDigits(q: string): boolean {
+  const digits = q.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 14 && digits.length >= q.replace(/\s/g, "").length - 1;
+}
 
 export function HalalVerifyHub({
   colors,
@@ -33,20 +43,28 @@ export function HalalVerifyHub({
   checkErr,
   checkFlowPhase,
   lastBarcode,
+  searchQuery,
+  onSearchQueryChange,
+  onSearchSubmit,
+  onPasteIngredients,
   onOpenBarcode,
-  onSubmitBarcode,
 }: Props) {
   useAppLocale();
   const { isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors, isDark), [colors, isDark]);
-  const isWeb = Platform.OS === "web";
-  const [manualBarcode, setManualBarcode] = useState("");
+  const [localHint, setLocalHint] = useState(false);
 
-  const submitManual = () => {
-    const digits = manualBarcode.replace(/\D/g, "").trim();
-    if (digits.length < 4) return;
-    onSubmitBarcode(digits);
+  const submitSearch = () => {
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setLocalHint(true);
+      return;
+    }
+    setLocalHint(false);
+    onSearchSubmit(q);
   };
+
+  const canSearch = searchQuery.trim().length >= 2;
 
   return (
     <View style={styles.card}>
@@ -55,7 +73,7 @@ export function HalalVerifyHub({
         <Text style={styles.headTitle}>{kk.features.halalCheckSectionTitle}</Text>
       </View>
 
-      <Text style={styles.lead}>{kk.features.halalBarcodeOnlyLead}</Text>
+      <Text style={styles.lead}>{kk.features.halalVerifyLead}</Text>
 
       <HalalFilterChipRow
         chips={productStatusChips}
@@ -72,66 +90,119 @@ export function HalalVerifyHub({
         </View>
       ) : null}
 
-      {isWeb ? (
-        <View style={styles.webBarcodeBlock}>
-          <View style={styles.webBarcodeRow}>
-            <MaterialIcons name="qr-code-2" size={22} color={colors.muted} />
-            <TextInput
-              value={manualBarcode}
-              onChangeText={setManualBarcode}
-              placeholder={kk.features.halalBarcodeWebPlaceholder}
-              placeholderTextColor={colors.muted}
-              style={styles.webBarcodeInput}
-              keyboardType="number-pad"
-              inputMode="numeric"
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={20}
-              accessibilityLabel={kk.features.halalBarcodeWebPlaceholder}
-              onSubmitEditing={submitManual}
-              returnKeyType="search"
-            />
-          </View>
-          <Pressable
-            onPress={submitManual}
-            disabled={checkBusy || manualBarcode.replace(/\D/g, "").length < 4}
-            style={({ pressed }) => [
-              styles.runBtn,
-              pressed && !checkBusy && { opacity: 0.92 },
-              (checkBusy || manualBarcode.replace(/\D/g, "").length < 4) && { opacity: 0.65 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={kk.features.halalBarcodeCheckBtn}
-          >
-            {checkBusy ? (
-              <RaqatOrnamentSpinner size={22} />
-            ) : (
-              <>
-                <MaterialIcons name="search" size={20} color="#fff" />
-                <Text style={styles.runTxt}>{kk.features.halalBarcodeCheckBtn}</Text>
-              </>
-            )}
-          </Pressable>
+      <View style={styles.searchBlock}>
+        <View style={styles.searchRow}>
+          <MaterialIcons name="science" size={22} color={colors.muted} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={(t) => {
+              setLocalHint(false);
+              onSearchQueryChange(t);
+            }}
+            placeholder={kk.features.halalGoodsQuickPlaceholder}
+            placeholderTextColor={colors.muted}
+            style={styles.searchInput}
+            autoCapitalize="none"
+            autoCorrect={false}
+            multiline
+            maxLength={2000}
+            accessibilityLabel={kk.features.halalGoodsQuickPlaceholder}
+            onSubmitEditing={submitSearch}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable
+              onPress={() => onSearchQueryChange("")}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={kk.common.close}
+            >
+              <MaterialIcons name="close" size={20} color={colors.muted} />
+            </Pressable>
+          ) : null}
         </View>
-      ) : (
         <Pressable
-          onPress={onOpenBarcode}
-          disabled={checkBusy}
+          onPress={submitSearch}
+          disabled={checkBusy || !canSearch}
           style={({ pressed }) => [
-            styles.actionTile,
-            pressed && !checkBusy && { opacity: 0.92 },
-            checkBusy && { opacity: 0.65 },
+            styles.runBtn,
+            pressed && !checkBusy && canSearch && { opacity: 0.92 },
+            (checkBusy || !canSearch) && { opacity: 0.65 },
           ]}
           accessibilityRole="button"
-          accessibilityLabel={kk.features.halalCheckBarcodeBtn}
+          accessibilityLabel={kk.features.halalCheckRun}
         >
-          <MaterialIcons name="qr-code-scanner" size={32} color={colors.accent} />
-          <Text style={styles.actionLbl} numberOfLines={2}>
-            {kk.features.halalCheckBarcodeBtn}
-          </Text>
-          <Text style={styles.actionSub}>{kk.features.halalBarcodeOnlyHint}</Text>
+          {checkBusy ? (
+            <RaqatOrnamentSpinner size={22} />
+          ) : (
+            <>
+              <MaterialIcons name="search" size={20} color="#fff" />
+              <Text style={styles.runTxt}>
+                {isMostlyBarcodeDigits(searchQuery)
+                  ? kk.features.halalBarcodeCheckBtn
+                  : kk.features.halalCheckRun}
+              </Text>
+            </>
+          )}
         </Pressable>
-      )}
+        {localHint ? <Text style={styles.hintTxt}>{kk.features.halalCheckMin2}</Text> : null}
+        <Text style={styles.hintTxt}>{kk.features.halalCheckTryEcodeHint}</Text>
+        <Text style={styles.hintTxt}>{kk.features.halalVerifyPasteIngredientsHint}</Text>
+        <Pressable
+          onPress={onPasteIngredients}
+          disabled={checkBusy}
+          style={({ pressed }) => [
+            styles.pasteBtn,
+            pressed && !checkBusy && { opacity: 0.9 },
+            checkBusy && { opacity: 0.55 },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={kk.features.halalCheckPasteIngredientsCta}
+        >
+          <MaterialIcons name="content-paste" size={18} color={colors.accent} />
+          <Text style={styles.pasteBtnTxt}>{kk.features.halalCheckPasteIngredientsCta}</Text>
+        </Pressable>
+        <Text style={styles.quickLabel}>{kk.features.halalVerifyQuickCodesHint}</Text>
+        <View style={styles.quickRow}>
+          {QUICK_ECODE_CHIPS.map((chip) => (
+            <Pressable
+              key={chip}
+              disabled={checkBusy}
+              onPress={() => {
+                onSearchQueryChange(chip);
+                onSearchSubmit(chip);
+              }}
+              style={({ pressed }) => [
+                styles.quickChip,
+                pressed && !checkBusy && { opacity: 0.88 },
+                checkBusy && { opacity: 0.55 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={chip}
+            >
+              <Text style={styles.quickChipTxt}>{chip}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
+
+      <Pressable
+        onPress={onOpenBarcode}
+        disabled={checkBusy}
+        style={({ pressed }) => [
+          styles.actionTile,
+          pressed && !checkBusy && { opacity: 0.92 },
+          checkBusy && { opacity: 0.65 },
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={kk.features.halalCheckBarcodeBtn}
+      >
+        <MaterialIcons name="qr-code-scanner" size={28} color={colors.accent} />
+        <Text style={styles.actionLbl} numberOfLines={2}>
+          {kk.features.halalCheckBarcodeBtn}
+        </Text>
+        <Text style={styles.actionSub}>{kk.features.halalBarcodeOnlyHint}</Text>
+      </Pressable>
 
       {lastBarcode ? (
         <Text style={styles.lastBarcode} accessibilityLabel={kk.features.halalLastBarcodeLabel(lastBarcode)}>
@@ -192,12 +263,84 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       fontWeight: "700",
       color: colors.text,
     },
+    searchBlock: {
+      marginTop: 4,
+      gap: 8,
+      marginBottom: 4,
+    },
+    searchRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
+      borderRadius: 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      paddingHorizontal: 10,
+      paddingVertical: Platform.OS === "ios" ? 10 : 6,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+      minHeight: 40,
+      maxHeight: 120,
+      textAlignVertical: "top",
+    },
+    hintTxt: {
+      fontSize: 12,
+      lineHeight: 17,
+      color: colors.muted,
+      fontWeight: "600",
+    },
+    pasteBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      alignSelf: "flex-start",
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    pasteBtnTxt: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.accent,
+    },
+    quickLabel: {
+      marginTop: 4,
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    quickRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    quickChip: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+    },
+    quickChipTxt: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.accent,
+    },
     actionTile: {
-      minHeight: 112,
+      minHeight: 96,
       alignItems: "center",
       justifyContent: "center",
-      gap: 6,
-      paddingVertical: 16,
+      gap: 4,
+      paddingVertical: 14,
       paddingHorizontal: 12,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
@@ -218,29 +361,6 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
       color: colors.muted,
       textAlign: "center",
       paddingHorizontal: 8,
-    },
-    webBarcodeBlock: {
-      marginTop: 8,
-      gap: 10,
-    },
-    webBarcodeRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-      borderRadius: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.border,
-      backgroundColor: colors.bg,
-      paddingHorizontal: 10,
-      paddingVertical: Platform.OS === "ios" ? 8 : 4,
-    },
-    webBarcodeInput: {
-      flex: 1,
-      fontSize: 17,
-      fontWeight: "700",
-      color: colors.text,
-      minHeight: 40,
-      fontVariant: ["tabular-nums"],
     },
     runBtn: {
       flexDirection: "row",

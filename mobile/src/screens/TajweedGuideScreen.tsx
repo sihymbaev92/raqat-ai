@@ -37,6 +37,26 @@ export function TajweedGuideScreen() {
     setReaderPage(page);
   }, []);
 
+  const onOpenColoredList = useCallback(() => {
+    navigation.navigate("HatimTajweedList");
+  }, [navigation]);
+
+  const onOpenQuran = useCallback(() => {
+    void (async () => {
+      const { setQuranTajweedColorsEnabled } = await import("../storage/quranReaderPrefs");
+      const { navigateToQuranSurah } = await import("../navigation/navigateToMoreStack");
+      await setQuranTajweedColorsEnabled(true);
+      navigateToQuranSurah(
+        {
+          surahNumber: 1,
+          englishName: "Al-Fatiha",
+          arabicName: "الفاتحة",
+        },
+        navigation
+      );
+    })();
+  }, [navigation]);
+
   if (readerPage != null) {
     return (
       <View style={[styles.readerRoot, { backgroundColor: colors.bg }]}>
@@ -56,7 +76,11 @@ export function TajweedGuideScreen() {
       contentContainerStyle={styles.homeContent}
       keyboardShouldPersistTaps="handled"
     >
-      <TajweedGuideHome onOpenPage={onOpenPage} />
+      <TajweedGuideHome
+        onOpenPage={onOpenPage}
+        onOpenQuran={onOpenQuran}
+        onOpenColoredList={onOpenColoredList}
+      />
     </ScrollView>
   );
 }

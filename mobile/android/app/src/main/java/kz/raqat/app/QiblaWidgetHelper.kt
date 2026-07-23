@@ -12,7 +12,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import kotlin.math.acos
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -89,33 +88,14 @@ object QiblaWidgetHelper {
   }
 
   /**
-   * Жазық: телефон үсті (Y) — құбыла иінінің «жоғары» белгісі.
-   * Тік/қиғаш: артқы камера бағыты (−Z) — экранға қарап тұрып Қағбаға бет бұру.
+   * Компас: телефон үсті (Y) — экран көрсеткісінің «жоғары» белгісі.
+   * Камера осіне remap (−Z) жойылды: тік ұстағанда құбыла бағыты шатасатын.
+   * Жазық ұстау ұсынылады.
    */
   fun headingFromRotationMatrix(rotIn: FloatArray): Float? {
     if (rotIn.size < 9) return null
-    val outR = FloatArray(9)
     val orient = FloatArray(3)
-    val r8 = rotIn[8].coerceIn(-1f, 1f)
-    val inclinationRad = acos(r8.toDouble())
-    val flat =
-      inclinationRad < Math.toRadians(25.0) || inclinationRad > Math.toRadians(155.0)
-    val matrix =
-      if (flat) {
-        rotIn
-      } else if (
-        SensorManager.remapCoordinateSystem(
-          rotIn,
-          SensorManager.AXIS_X,
-          SensorManager.AXIS_Z,
-          outR
-        )
-      ) {
-        outR
-      } else {
-        rotIn
-      }
-    SensorManager.getOrientation(matrix, orient)
+    SensorManager.getOrientation(rotIn, orient)
     var az = Math.toDegrees(orient[0].toDouble()).toFloat()
     if (!az.isFinite()) return null
     az = (az + 360f) % 360f

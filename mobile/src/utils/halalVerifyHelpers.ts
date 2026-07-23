@@ -10,7 +10,7 @@ import {
 import { INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
 import type { HalalFilterChip } from "../components/HalalFilterChipRow";
 
-export const HALAL_VERIFY_DEBOUNCE_MS = 260;
+export const HALAL_VERIFY_DEBOUNCE_MS = 420;
 
 export type HalalCheckSummaryTone = "ok" | "warn" | "bad" | "neutral";
 
@@ -37,15 +37,25 @@ export function buildHalalCheckSummary(
 ): HalalCheckSummary | null {
   if (!products.length && !additives.length && !companies.length) return null;
   const productTones = products.map((p) => halalCertTone(p.certificateStatus));
-  if (productTones.includes("bad")) {
+  const additiveRisks = additives.map((a) => (a.risk || "").toUpperCase());
+  const hasHaramAdditive = additiveRisks.includes("HARAM");
+  const hasMushkilAdditive = additiveRisks.includes("MUSHKIL");
+
+  if (productTones.includes("bad") || hasHaramAdditive) {
     return {
       tone: "bad",
-      title: kk.features.halalVerifySummaryBadTitle,
-      body: kk.features.halalVerifySummaryBadBody,
+      title: hasHaramAdditive
+        ? kk.features.halalVerifySummaryHaramAdditiveTitle
+        : kk.features.halalVerifySummaryBadTitle,
+      body: hasHaramAdditive
+        ? kk.features.halalVerifySummaryHaramAdditiveBody(
+            additives.filter((a) => (a.risk || "").toUpperCase() === "HARAM").length,
+          )
+        : kk.features.halalVerifySummaryBadBody,
       icon: "report-problem",
     };
   }
-  if (productTones.includes("ok")) {
+  if (productTones.includes("ok") && !hasMushkilAdditive) {
     return {
       tone: "ok",
       title: kk.features.halalVerifySummaryOkTitle,
@@ -56,9 +66,23 @@ export function buildHalalCheckSummary(
   if (additives.length > 0) {
     return {
       tone: "warn",
-      title: kk.features.halalVerifySummaryAdditiveTitle,
-      body: kk.features.halalVerifySummaryAdditiveBody(additives.length),
+      title: hasMushkilAdditive
+        ? kk.features.halalVerifySummaryMushkilAdditiveTitle
+        : kk.features.halalVerifySummaryAdditiveTitle,
+      body: hasMushkilAdditive
+        ? kk.features.halalVerifySummaryMushkilAdditiveBody(
+            additives.filter((a) => (a.risk || "").toUpperCase() === "MUSHKIL").length,
+          )
+        : kk.features.halalVerifySummaryAdditiveBody(additives.length),
       icon: "science",
+    };
+  }
+  if (productTones.includes("ok")) {
+    return {
+      tone: "ok",
+      title: kk.features.halalVerifySummaryOkTitle,
+      body: kk.features.halalVerifySummaryOkBody(products.length),
+      icon: "verified",
     };
   }
   if (companies.length > 0) {

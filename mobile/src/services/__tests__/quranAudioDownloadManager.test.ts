@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Network from "expo-network";
 import {
   canDownloadQuranAudioNow,
+  cancelQuranAudioAutoDownloadLoop,
   queueReciterEditionDownload,
   resumeQuranAudioDownloads,
 } from "../quranAudioDownloadManager";
@@ -38,6 +39,11 @@ const isQuranAudioCachedMock = isQuranAudioCached as jest.MockedFunction<typeof 
 const downloadQuranAudioToCacheMock = downloadQuranAudioToCache as jest.MockedFunction<
   typeof downloadQuranAudioToCache
 >;
+
+afterEach(async () => {
+  cancelQuranAudioAutoDownloadLoop();
+  await patchQuranAudioDownloadPrefs({ paused: true });
+});
 
 describe("canDownloadQuranAudioNow", () => {
   beforeEach(() => {
@@ -78,6 +84,7 @@ describe("canDownloadQuranAudioNow", () => {
 
 describe("resumeQuranAudioDownloads", () => {
   beforeEach(async () => {
+    cancelQuranAudioAutoDownloadLoop();
     await AsyncStorage.clear();
     getNetworkStateAsync.mockReset();
     getNetworkStateAsync.mockResolvedValue({
@@ -147,6 +154,7 @@ describe("resumeQuranAudioDownloads", () => {
 
   it("queues a single reciter edition without downloading others", async () => {
     await queueReciterEditionDownload(QURAN_HUSARY_EDITION);
+    cancelQuranAudioAutoDownloadLoop();
     downloadQuranAudioToCacheMock.mockResolvedValue({ uri: "/cache/1.mp3", bytes: 1000, alreadyCached: false });
 
     await resumeQuranAudioDownloads({ budgetFiles: 2, source: "settings" });

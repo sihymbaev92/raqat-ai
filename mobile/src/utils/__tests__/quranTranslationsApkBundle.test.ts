@@ -12,6 +12,12 @@ describe("quran multi-lang APK bundle", () => {
     expect(pack?.approxMb).toBeLessThanOrEqual(8);
   });
 
+  it("ships great-words authors catalog in APK (offline)", () => {
+    expect(APK_BUNDLED_JSON).toContain("great-words-catalog.json");
+    expect(REMOTE_BUNDLED_JSON).not.toContain("great-words-catalog.json");
+    expect(APK_SLIM_REMOTE_JSON).not.toContain("great-words-catalog.json");
+  });
+
   it("offline JSON has five reading locales and no stub-lang fields", () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const bundle = require("../../../assets/bundled/quran-translations-offline.json") as {

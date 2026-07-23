@@ -316,7 +316,12 @@ export function HalalScreen({ navigation, route }: Props) {
         >
           {verifyMounted ? (
             <Suspense fallback={null}>
-              <HalalVerifyTabPanel colors={colors} isDark={isDark} insets={insets} />
+              <HalalVerifyTabPanel
+                colors={colors}
+                isDark={isDark}
+                insets={insets}
+                onOpenInstitutions={() => setActiveTabId("institutions")}
+              />
             </Suspense>
               ) : null}
             </View>

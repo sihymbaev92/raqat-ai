@@ -4,6 +4,7 @@ import {
   companyToHalalProductItem,
   isHalalCertifiedCompany,
   resolveHalalProductBrowse,
+  resolveHalalProductSearch,
 } from "../halalProductSearch";
 
 function mockCompany(partial: Partial<HalalDamuCompanyCard> & { id: number; title: string }): HalalDamuCompanyCard {
@@ -48,6 +49,32 @@ describe("halalProductSearch", () => {
     expect(out.fromProducers).toBe(false);
     expect(out.items.length).toBeGreaterThan(0);
     expect(out.items[0]?.fromRaqatSeed).toBe(true);
+    expect(out.error).toBeUndefined();
+    spy.mockRestore();
+  });
+
+  it("resolveHalalProductSearch does not surface API network error when seed hits", async () => {
+    const spy = jest
+      .spyOn(halalDamuWp, "searchHalalDamuProducts")
+      .mockResolvedValue({ items: [], error: "network" });
+    const out = await resolveHalalProductSearch("айран", [], { limit: 5 });
+    expect(out.fromSeed).toBe(true);
+    expect(out.items.length).toBeGreaterThan(0);
+    expect(out.error).toBeUndefined();
+    spy.mockRestore();
+  });
+
+  it("resolveHalalProductSearch falls back to certified producers from catalog", async () => {
+    const spy = jest.spyOn(halalDamuWp, "searchHalalDamuProducts").mockResolvedValue({ items: [] });
+    const catalog = [
+      mockCompany({ id: 99, title: "UniqueHalalProducerXYZ", certificateStatus: "active" }),
+      mockCompany({ id: 100, title: "Expired Dairy", certificateStatus: "expired" }),
+    ];
+    const out = await resolveHalalProductSearch("UniqueHalalProducerXYZ", catalog, { limit: 5 });
+    expect(out.fromProducers).toBe(true);
+    expect(out.fromSeed).toBeFalsy();
+    expect(out.items.some((p) => p.companyId === 99 && p.fromCertifiedProducer)).toBe(true);
+    expect(out.items.every((p) => p.companyId !== 100)).toBe(true);
     spy.mockRestore();
   });
 

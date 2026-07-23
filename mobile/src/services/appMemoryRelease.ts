@@ -85,6 +85,8 @@ export async function releaseAppHeavyMemory(): Promise<void> {
     safe("halalSeed", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../services/halalProductsSeedKz").releaseHalalProductsSeedMemory();
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../services/halalAdditivesSeedKz").releaseHalalAdditivesSeedMemory();
     }),
     safe("halalCompanies", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

@@ -1379,6 +1379,8 @@ export type HalalDamuAdditiveItem = {
   id: number;
   title: string;
   description: string | null;
+  /** RAQAT seed: HARAM | MUSHKIL | REFERENCE */
+  risk?: string | null;
 };
 
 function parseAdditiveItem(raw: Record<string, unknown>): HalalDamuAdditiveItem {

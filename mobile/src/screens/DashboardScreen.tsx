@@ -45,7 +45,7 @@ import { RaqatOrnamentSpinner } from "../components/RaqatOrnamentSpinner";
 import { DashboardQaumDuaBanner } from "../components/dashboard/DashboardQaumDuaBanner";
 import { DashboardHomeServicesGrid } from "../components/dashboard/DashboardHomeServicesGrid";
 import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../config/dashboardHomeServices";
-import { awaitKmdbHubWarm, warmHalalHubScreen, warmKmdbHubScreen } from "../services/hubScreenWarmup";
+import { warmHalalHubScreen, warmKmdbHubScreen } from "../services/hubScreenWarmup";
 import { QiblaSensorProvider, useQiblaStable } from "../context/QiblaSensorContext";
 import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
 import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
@@ -721,11 +721,8 @@ function DashboardScreenContent({
   const goKmdbHub = useCallback(
     () => {
       if (openWebRoute("/more/kmdb")) return;
-      void (async () => {
-        warmKmdbHubScreen();
-        await awaitKmdbHubWarm(350);
-        navigateToMoreStackScreen("KmdbHub", undefined, navigation);
-      })();
+      warmKmdbHubScreen();
+      navigateToMoreStackScreen("KmdbHub", undefined, navigation);
     },
     [navigation]
   );
@@ -733,7 +730,7 @@ function DashboardScreenContent({
     () => {
       if (openWebRoute("/more/halal")) return;
       warmHalalHubScreen();
-      navigateToMoreStackScreen("Halal", { initialTab: "site" }, navigation);
+      navigateToMoreStackScreen("Halal", { initialTab: "verify" }, navigation);
     },
     [navigation]
   );
@@ -778,7 +775,6 @@ function DashboardScreenContent({
       void import("../screens/HadithHubScreen");
     } else if (key === "kmdb") {
       warmKmdbHubScreen();
-      void awaitKmdbHubWarm(500);
     } else if (key === "halal") {
       warmHalalHubScreen();
     }

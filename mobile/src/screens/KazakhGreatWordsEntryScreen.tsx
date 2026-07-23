@@ -40,14 +40,20 @@ export function KazakhGreatWordsEntryScreen({ route, navigation }: Props) {
     );
   }
 
+  const authorName = tr(author?.name ?? entry.authorId);
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <Text style={styles.authorName} selectable accessibilityRole="header">
+        {authorName}
+      </Text>
+      {author?.period ? <Text style={styles.authorPeriod}>{tr(author.period)}</Text> : null}
       <Text style={styles.title} accessibilityRole="header">
         {tr(entry.title)}
       </Text>
       <Text style={styles.meta} selectable>
         {mergedMeta ??
-          `${tr(g.attributionPrefix)} ${tr(author?.name ?? entry.authorId)}${
+          `${tr(g.attributionPrefix)} ${authorName}${
             entry.karaSozNumber != null ? ` · ${tr(g.karaSozLabel(entry.karaSozNumber))}` : ""
           }`}
       </Text>
@@ -65,6 +71,8 @@ function makeStyles(colors: ThemeColors) {
     content: { padding: 16, paddingBottom: 40 },
     center: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
     muted: { color: colors.muted, fontSize: 15 },
+    authorName: { fontSize: 15, fontWeight: "900", color: colors.accent, marginBottom: 2 },
+    authorPeriod: { fontSize: 12, color: colors.muted, marginBottom: 10, fontWeight: "600" },
     title: { fontSize: 18, fontWeight: "900", color: colors.text, marginBottom: 8, lineHeight: 26 },
     meta: { fontSize: 12, color: colors.muted, marginBottom: 16, fontStyle: "italic" },
     body: { fontSize: 15, lineHeight: 24, color: colors.text, fontWeight: "500" },

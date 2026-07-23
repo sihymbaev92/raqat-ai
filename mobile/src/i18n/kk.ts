@@ -449,7 +449,7 @@ export const kk = {
     shortTitle: "Әліпби",
     screenTitle: "Араб әліпбиі",
     intro:
-      "Нөлден бастаңыз: алдымен 28 әріп, кейін дыбыс пен ережелер, сосын оқулық. Қысқа сүре — соңында, әріптерді танығаннан кейін.",
+      "Нөлден бастаңыз: әріп → оқулық → Құран оқу. Алдымен 28 әріп, кейін дыбыс пен ережелер, сосын оқулық; дайын болсаңыз — бірден Әл-Фатиханы ашыңыз.",
     sourceSafetyNote:
       "Оқулықтағы аят мағыналары мен мысалдар оқу мақсатына берілген. Діни үкім, терең тәфсір немесе даулы мәселе үшін ҚМДБ бағыты мен білікті ұстаз түсіндірмесіне сүйеніңіз.",
     sectionAlphabet: "1-қадам",
@@ -499,10 +499,15 @@ export const kk = {
     alphabetSelectHint: "Әріпті таңдаңыз — атауы, дыбысы және қысқа мысал осында шығады.",
     alphabetToneHeavy: "Дыбыс: жуан (тәхфим)",
     alphabetToneLight: "Дыбыс: жіңішке (тарқиқ)",
-    practiceCtaTitle: "4-қадам: қысқа сүре оқу",
-    practiceCtaHint: "Әріп пен ережеден кейін. Әл-Фатиха — түссіз мәтін.",
+    openQuranCta: "Құран оқу · Әл-Фатиха",
+    openQuranHint: "Әріпті үйреніп, бірден тәжуид түстерімен оқуға өтіңіз.",
+    openQuranA11y: "Әл-Фатиханы тәжуид түстерімен ашу",
+    openColoredListCta: "Түстермен сүрелер",
+    openColoredListA11y: "Тәжуид түстерімен сүрелер тізімін ашу",
+    practiceCtaTitle: "Құран оқу · Әл-Фатиха",
+    practiceCtaHint: "Әріпті үйреніп, бірден тәжуид түстерімен оқуға өтіңіз.",
     practiceCtaBtn: "Ашу",
-    practiceCtaA11y: "Әл-Фатиханы түссіз ашу",
+    practiceCtaA11y: "Әл-Фатиханы тәжуид түстерімен ашу",
   },
   duas: {
     intro:
@@ -545,7 +550,7 @@ export const kk = {
     retryLocation: "Қайта алу",
     hintPending: "Орын мен магнитометр дайын болғанда көрсеткі пайда болады.",
     hintAligned:
-      "Көрсеткі Қағба жаққа қарағанда тұрақталды. Телефонды жазық ұстаңыз немесе экранға қарап тұрып бетіңізді Қағбаға бұрыңыз. Магнит белдеу мен металл дәлдікті өзгертуі мүмкін.",
+      "Көрсеткі Қағба жаққа қарағанда тұрақталды. Телефонды жазық ұстаңыз — үстіңгі жиегі Қағбаға қарасын. Магнит белдеу мен металл дәлдікті өзгертуі мүмкін.",
     hintTurnCw: "Сағат тілі бойынша телефонды баяу бұраңыз — көрсеткі Қағбаға қарағанша.",
     hintTurnCcw: "Сағат тіліне қарсы телефонды баяу бұраңыз — көрсеткі Қағбаға қарағанша.",
     /** Құбыла экранындағы дәл градус жолы (maxDeg = QIBLA_ALIGN_THRESHOLD_DEG, qiblaHints). */
@@ -595,16 +600,6 @@ export const kk = {
     calibrationMedium: "Дәлдік: орта",
     calibrationLow: "Дәлдік: төмен",
     magnetHint: "Дәлдікке металл заттар мен қапсырма әсер етуі мүмкін.",
-    modeCompass: "Компас",
-    modeCamera: "Камера",
-    cameraTitle: "Құбыла · камера",
-    cameraBodyHint: "Телефонды баяу бұрыңыз — көрсеткі Қағбаға қарағанша.",
-    cameraWebUnavailable: "Камера режимі тек телефонда (iOS/Android) қолжетімді.",
-    cameraPermTitle: "Камера рұқсаты",
-    cameraPermBody: "Алдыңғы камера арқылы құбыла бағытын көру үшін рұқсат қажет.",
-    cameraPermCta: "Рұқсат сұрау",
-    cameraBackToCompass: "Компас режиміне",
-    headerLongPressCamera: "Ұзақ басу — камера режимі",
     headerTapQibla: "Құбыла экранына өту",
   },
   communityDua: {
@@ -1033,10 +1028,27 @@ export const kk = {
     halalTitle: "ХАЛАЛ ДАМУ",
     halalBarcodeOnlyLead:
       "Штрихкодты сканерлеңіз немесе нөмірін енгізіңіз. Нәтижені ресми тізілімдегі өндіруші және сертификатпен салыстырыңыз.",
+    halalVerifyLead:
+      "E‑код (мыс. E471), өнім атауы немесе штрихкод енгізіңіз. Камерамен де сканерлеуге болады. Нәтиже — анықтама; ресми пәтуа емес.",
     halalBarcodeWebPlaceholder: "Штрихкод нөмірін енгізіңіз",
     halalBarcodeCheckBtn: "Штрихкодты тексеру",
     halalBarcodeOnlyHint: "Камерамен сканерлеу немесе штрихкод нөмірін қолмен енгізу",
-    halalLastBarcodeLabel: (barcode: string) => `Соңғы штрихкод: ${barcode}`,
+    halalLastBarcodeLabel: (barcode: string) => `Соңғы сұрау: ${barcode}`,
+    halalCheckTryEcodeHint: "Қаптамадағы E‑кодты (мыс. E471) немесе өнім атауын жоғарыдағы іздеуге енгізіңіз.",
+    halalAdditiveRiskHaram: "Харам ықтимал",
+    halalAdditiveRiskMushkil: "Күдікті — тегін тексеріңіз",
+    halalAdditiveRiskReference: "Анықтама",
+    halalVerifyQuickCodesHint: "Жиі кездесетін кодтар",
+    halalVerifyPasteIngredientsHint: "Қаптамадағы құрамды толық қойып талдауға болады (E471, желатин…).",
+    halalVerifySummaryHaramAdditiveTitle: "Харам болуы ықтимал қоспа",
+    halalVerifySummaryHaramAdditiveBody: (count: number) =>
+      `${count} қоспа харам ықтимал деп белгіленген. Ресми пәтуа емес — құрам мен сертификатты қайта тексеріңіз.`,
+    halalVerifySummaryMushkilAdditiveTitle: "Күдікті қоспа табылды",
+    halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+      `${count} қоспа күдікті. Тегі (жануар/өсімдік) және халал сертификатты тексеріңіз.`,
+    halalCheckPasteIngredientsCta: "Құрамды қойып талдау",
+    halalCheckPasteEmpty: "Буферде құрам мәтіні жоқ. Қаптамадағы құрамды көшіріп, қайта басыңыз.",
+    halalProductNoIngredients: "Құрам мәтіні осы жазбада жоқ. E‑кодты немесе қаптамадағы құрамды іздеуге қойыңыз.",
     halalRefreshA11y: "Сайтты жаңарту",
     halalHeroTagRegistry: "Ресми тізілім",
     halalHeroTagVerify: "Өнім тексеру",
@@ -1053,6 +1065,8 @@ export const kk = {
       "Қолданба алдымен өнім атауы/штрихкод анықтамасын қарайды, содан кейін өндірушіні ресми Halal Damu сертификатты ұйымдар тізілімімен салыстырады.",
     halalProductsApiEmptySeed: (count: number) =>
       `Анықтамада ${count} штрихкод бар. Соңғы шешім үшін өнім атауын, құрамын және өндіруші сертификатын қатар тексеріңіз.`,
+    halalAdditivesApiEmptySeed: (count: number) =>
+      `E-код анықтамасы: ${count} қоспа (офлайн). Ресми пәтуа емес — күдікті болса құрамын тексеріңіз.`,
     halalProductsApiLearnMore: "Толығырақ",
     halalMapTabTitle: "Картадан халал алған мекемелер",
     halalMapTabHint:
@@ -1248,7 +1262,11 @@ export const kk = {
     halalCheckCompaniesShort: "Ұйымдар (3+ таңба)",
     halalCheckNoData:
       "Өнім/қосымша табылмады. «Ұйымдар» бөлімінен өндірушіні іздеңіз немесе ресми сайттан толық тексеріңіз.",
+    halalCheckNoBarcodeTitle: "Штрихкод базада жоқ",
+    halalCheckNoBarcodeBody:
+      "Бұл штрихкод RAQAT анықтамасында жоқ (Halal Damu өнім API әлі бос). Қаптамадағы E‑кодты немесе өндіруші атауын іздеңіз.",
     halalCheckOpenOfficial: "halaldamu.kz сайтында іздеу",
+    halalCheckOpenInstitutionsHint: "Ұйымдар табында өндірушіні іздеңіз",
     halalVerifySummaryOkTitle: "Тізілімде халал жазба табылды",
     halalVerifySummaryOkBody: (count: number) =>
       `${count} өнім ресми тізілімнен шықты. Сертификат пен дереккөзді төмендегі карточкадан тексеріңіз.`,
@@ -1418,7 +1436,7 @@ export const kk = {
       emptySearch: "Сәйкес бөлім табылмады.",
       nothingFound: "Ештеңе табылмады",
       elderReadBtn: "Үлкен кісіге дауыстап оқу",
-      topicsLeadShort: "Ырым мен дәстүрдің дінмен байланысы — жеңіл түсіндірме",
+      topicsLeadShort: "Дәстүр мен ырымды дінмен қалай үйлестіру",
       aboutSectionTitle: "Бұл бөлім не туралы?",
       aboutSectionBody:
         "Дін — өлшем. Дәстүр — игі әдеп. Ырым — әдеп немесе сенім болуы мүмкін. Әр тақырыпта екі жауап: дінмен қалай үйлеседі және қай жерде шек.",
@@ -1438,9 +1456,17 @@ export const kk = {
       dinDasturConnectionTitle: "Дін, дәстүр және ырым",
       dinDasturPointsTitle: "Үш анық ой",
       dinDasturRulesTitle: "Негізгі ережелер",
+      situationExamplesTitle: "Жағдайлық мысал",
       dinDasturFoundationBtn: "Негізді оқу",
       dinDasturYrymBtn: "Ырымдар және дін",
       dinDasturBataBtn: (n: number) => `Бата мәтіндері (${n})`,
+      /** Дін мен дәстүр басты экраны: Абай «Қара сөз» */
+      asylSozCtaTitle: "Асыл сөздер",
+      asylSozCtaSub: "Абай · ақындар · даналық",
+      asylSozCtaA11y: "Асыл сөздер — қазақ ақындарының сөздерін ашу",
+      sanaSozCtaTitle: "Сананы ашатын сөздер",
+      sanaSozCtaSub: "Ой · білім · өзін тану",
+      sanaSozCtaA11y: "Сананы ашатын даналық сөздерді ашу",
       bataCountLabel: (n: number) => `${n} бата`,
       bataShowMore: (n: number) => `Тағы ${n} бата көрсету`,
       bataShowLess: "Жию",
@@ -1566,7 +1592,7 @@ export const kk = {
       greatWordsNavEyebrow: "Асыл сөздер",
       greatWordsNavTitle: "Қазақтың керемет сөздері",
       greatWordsNavSub:
-        "Шешейдің ақыл сөздері, сананы ашатын даналық, Абайдың «Қара сөз» толық мәтіні (45 сөз), ұстаздар мен әулиелер рухындағы сөздер.",
+        "Шешейдің ақыл сөздері, Абайдың «Қара сөз» толық мәтіні (45 сөз), ұстаздар мен ақындар сөздері.",
       sectionAsylSozTitle: "Асыл сөздер",
       sectionAsylSozSubtitle: "Қазақ дана авторлары · іздеу · Абай «Қара сөз»",
       sectionAsylSozIntro:

@@ -55,7 +55,7 @@ function buildDisplay(hadithId: string, corpus: HadithCorpus | null): DisplayHad
       reference: trusted.reference,
       arabic: trusted.arabic,
       textKk: trusted.textKk,
-      narratorKk: trusted.narratorKk,
+      narratorKk: trusted.narratorKk ?? "",
       grade: trusted.grade,
       citation: trusted.sourceCitationKk,
       sourceLabel: trusted.sourceLabelKk,

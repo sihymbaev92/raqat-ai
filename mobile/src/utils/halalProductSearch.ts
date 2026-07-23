@@ -12,7 +12,7 @@ import {
   listHalalProductsSeedBrowse,
   searchHalalProductsSeed,
 } from "../services/halalProductsSeedKz";
-import { INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
+import { filterHalalCompaniesInstant, INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
 
 const BAD_CERT = new Set([
   "expired",
@@ -67,7 +67,7 @@ export async function resolveHalalProductBrowse(
 
   const seedItems = listHalalProductsSeedBrowse(limit);
   if (seedItems.length > 0) {
-    return { items: seedItems, fromProducers: false, fromSeed: true, error: api.error };
+    return { items: seedItems, fromProducers: false, fromSeed: true };
   }
 
   return { items: [], fromProducers: false, fromSeed: false, error: api.error };
@@ -91,7 +91,15 @@ export async function resolveHalalProductSearch(
 
   const seedItems = searchHalalProductsSeed(q, limit);
   if (seedItems.length > 0) {
-    return { items: seedItems, fromProducers: false, fromSeed: true, error: api.error };
+    return { items: seedItems, fromProducers: false, fromSeed: true };
+  }
+
+  const producers = filterHalalCompaniesInstant(catalog, q, { limit })
+    .filter(isHalalCertifiedCompany)
+    .map(companyToHalalProductItem)
+    .slice(0, limit);
+  if (producers.length > 0) {
+    return { items: producers, fromProducers: true, fromSeed: false, error: api.error };
   }
 
   return { items: [], fromProducers: false, fromSeed: false, error: api.error };

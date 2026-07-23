@@ -147,7 +147,7 @@ export type RootStackParamList = {
         nativeAudio?: string;
       }
     | undefined;
-  Qibla: { mode?: "compass" | "camera" } | undefined;
+  Qibla: undefined;
   MoreStack: NavigatorScreenParams<MoreStackParamList>;
 };
 

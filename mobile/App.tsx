@@ -24,7 +24,6 @@ import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore"
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
 import { hydrateLocale, useAppLocale } from "./src/i18n/runtime";
 import { getOnboardingDone } from "./src/storage/prefs";
-import { OnboardingLanguageScreen } from "./src/screens/OnboardingLanguageScreen";
 import { runAfterInteractions } from "./src/utils/uiDefer";
 import { trackNavigationPlausible } from "./src/navigation/navigationPlausible";
 import { isPlausibleEnabled, trackPlausiblePageview } from "./src/services/plausible";
@@ -32,8 +31,14 @@ import * as Linking from "expo-linking";
 import { trackUsageEvent } from "./src/services/usageAnalytics";
 import { ScreenFitProvider, useScreenFitMetrics, webViewportClampStyle } from "./src/theme/screenFit";
 
+const OnboardingLanguageScreen = React.lazy(() =>
+  import("./src/screens/OnboardingLanguageScreen").then((m) => ({
+    default: m.OnboardingLanguageScreen,
+  }))
+);
+
 const APP_STATE_SYNC_COOLDOWN_MS = 60_000;
-const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 1_800;
+const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 2_400;
 /** Рұқсаттар UI дайын болғаннан кейін бірден — баптауға кірмей. */
 const FIRST_LAUNCH_PERMISSIONS_DELAY_MS = 280;
 
@@ -129,13 +134,6 @@ export default function App() {
 
         if (!azanLockScreenLaunch) {
           await hydrateRaqatApiBaseOverride();
-          try {
-            await import("./src/security/appSecurityShield").then((m) =>
-              m.evaluateAppSecurityPosture(true)
-            );
-          } catch {
-            /* security shield — fail open for prayer UX */
-          }
           onboardingDone = await getOnboardingDone();
           if (!onboardingDone && Platform.OS === "android") {
             try {
@@ -176,6 +174,13 @@ export default function App() {
       }
 
       runAfterInteractions(() => {
+        if (!azanLockScreenLaunch) {
+          void import("./src/security/appSecurityShield")
+            .then((m) => m.evaluateAppSecurityPosture(true))
+            .catch(() => {
+              /* security shield — fail open for prayer UX */
+            });
+        }
         void import("./src/fonts/brandFont")
           .then((m) => m.loadBrandFont())
           .catch(() => {});
@@ -364,7 +369,15 @@ export default function App() {
               <AppSafeAreaFrame>
                 {needsLanguageOnboarding ? (
                   <>
-                    <OnboardingLanguageScreen onComplete={onLanguageOnboardingComplete} />
+                    <React.Suspense
+                      fallback={
+                        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                          <ActivityIndicator size="large" color={colorScheme === "dark" ? "#38B2AC" : "#C9A227"} />
+                        </View>
+                      }
+                    >
+                      <OnboardingLanguageScreen onComplete={onLanguageOnboardingComplete} />
+                    </React.Suspense>
                     <ThemedStatusBar />
                   </>
                 ) : (

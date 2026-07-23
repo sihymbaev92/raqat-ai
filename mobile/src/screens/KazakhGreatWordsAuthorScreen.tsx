@@ -49,24 +49,38 @@ export function KazakhGreatWordsAuthorScreen({ route, navigation }: Props) {
     );
   }
 
-  const renderItem = ({ item }: { item: GreatWordsEntry }) => (
-    <Pressable
-      style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
-      onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: item.id })}
-      accessibilityRole="button"
-      accessibilityLabel={g.entryRowA11y(tr(item.title))}
-    >
-      <Text style={styles.rowTitle} numberOfLines={3}>
-        {tr(item.title)}
-      </Text>
-      {item.mergedCount ? (
-        <Text style={styles.rowSub} numberOfLines={1}>
-          {tr(g.mergedEntryCount(item.mergedCount))}
-        </Text>
-      ) : null}
-      <Text style={styles.rowChev}>›</Text>
-    </Pressable>
-  );
+  const renderItem = ({ item }: { item: GreatWordsEntry }) => {
+    const authorLabel =
+      item.mergedAuthorNames?.length
+        ? item.mergedAuthorNames.slice(0, 3).map((n) => tr(n)).join(", ") +
+          (item.mergedAuthorNames.length > 3 ? "…" : "")
+        : tr(author?.name ?? "");
+    const subParts = [
+      authorLabel,
+      item.mergedCount ? tr(g.mergedEntryCount(item.mergedCount)) : null,
+      item.karaSozNumber != null ? tr(g.karaSozLabel(item.karaSozNumber)) : null,
+    ].filter(Boolean);
+    return (
+      <Pressable
+        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
+        onPress={() => navigation.navigate("KazakhGreatWordsEntry", { entryId: item.id })}
+        accessibilityRole="button"
+        accessibilityLabel={`${g.entryRowA11y(tr(item.title))}. ${authorLabel}`}
+      >
+        <View style={styles.rowText}>
+          <Text style={styles.rowTitle} numberOfLines={3}>
+            {tr(item.title)}
+          </Text>
+          {subParts.length ? (
+            <Text style={styles.rowSub} numberOfLines={2}>
+              {subParts.join(" · ")}
+            </Text>
+          ) : null}
+        </View>
+        <Text style={styles.rowChev}>›</Text>
+      </Pressable>
+    );
+  };
 
   return (
     <View style={styles.root}>
@@ -109,8 +123,9 @@ function makeStyles(colors: ThemeColors) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: colors.border,
     },
-    rowTitle: { flex: 1, fontSize: 16, fontWeight: "800", color: colors.text },
-    rowSub: { fontSize: 12, color: colors.muted },
+    rowText: { flex: 1, minWidth: 0, gap: 4 },
+    rowTitle: { fontSize: 16, fontWeight: "800", color: colors.text },
+    rowSub: { fontSize: 12, color: colors.accent, fontWeight: "700", lineHeight: 17 },
     rowChev: { fontSize: 22, color: colors.muted },
   });
 }

@@ -1,8 +1,10 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { kk } from "../i18n/kk";
+import { useI18n } from "../i18n/useI18n";
 import { useAppLocale } from "../i18n/runtime";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
@@ -16,6 +18,8 @@ type Props = {
   compact?: boolean;
   /** Топтар бойынша топтау (бастапқы «Тәжуид» беті сияқты). */
   grouped?: boolean;
+  /** Compact режимде түсті сүрелер тізіміне өту. */
+  onOpenColoredList?: () => void;
 };
 
 function RuleLine({
@@ -44,9 +48,14 @@ function RuleLine({
   );
 }
 
-export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Props) {
+export function TajweedRulesLegendPanel({
+  compact = false,
+  grouped = true,
+  onOpenColoredList,
+}: Props) {
   useAppLocale();
   const { tr } = useKkAutoTranslator();
+  const t = useI18n();
   const { colors, isDark } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const metaByRule = useMemo(
@@ -79,7 +88,19 @@ export function TajweedRulesLegendPanel({ compact = false, grouped = true }: Pro
       {ruleList}
       <Text style={styles.helperNote}>{kk.quran.tajweedHelperLegendNote}</Text>
       {compact ? (
-        <Text style={styles.compactFoot}>{kk.tajweedGuide.quranColorsHint}</Text>
+        <>
+          <Text style={styles.compactFoot}>{kk.tajweedGuide.quranColorsHint}</Text>
+          {onOpenColoredList ? (
+            <Pressable
+              onPress={onOpenColoredList}
+              style={({ pressed }) => [styles.coloredListBtn, pressed && { opacity: 0.9 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t.tajweedGuide.openColoredListA11y}
+            >
+              <Text style={styles.coloredListBtnText}>{t.tajweedGuide.openColoredListCta}</Text>
+            </Pressable>
+          ) : null}
+        </>
       ) : (
         <Text style={styles.foot}>{kk.quran.tajweedSourceNote}</Text>
       )}
@@ -125,5 +146,21 @@ function makeStyles(colors: ThemeColors) {
     helperNote: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 2 },
     foot: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 6 },
     compactFoot: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 4 },
+    coloredListBtn: {
+      alignSelf: "flex-start",
+      marginTop: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      backgroundColor: colors.accentSurface,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    coloredListBtnText: {
+      color: colors.accent,
+      fontSize: 14,
+      fontWeight: "800",
+      lineHeight: 20,
+    },
   });
 }

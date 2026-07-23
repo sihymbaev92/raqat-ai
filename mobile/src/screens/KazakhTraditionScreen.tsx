@@ -19,6 +19,7 @@ import {
   type TraditionTopic,
 } from "../content/traditionTopicsCatalog";
 import { DinDasturConnectionCard } from "../components/tradition/DinDasturConnectionCard";
+import { DinMenDasturQuickGuideStrip } from "../components/tradition/DinMenDasturQuickGuideStrip";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { useI18n } from "../i18n/useI18n";
 
@@ -110,8 +111,10 @@ export function KazakhTraditionScreen() {
 
   const queryNorm = deferredQuery.trim().toLocaleLowerCase("kk-KZ");
   const visibleTopics = useMemo(() => {
+    /** Негіз бен ырым — жоғарыдағы картада ашылады; тізімде қайталанбайды. */
+    const base = topics.filter((topic) => !FOUNDATION_IDS.has(topic.id));
     const byCat =
-      filter === "all" ? topics : topics.filter((topic) => topic.categories.includes(filter));
+      filter === "all" ? base : base.filter((topic) => topic.categories.includes(filter));
     if (!queryNorm) return byCat;
     return byCat.filter((topic) => {
       const haystack = [topic.title, topic.subtitle, topic.summary, topic.religionLink]
@@ -128,37 +131,28 @@ export function KazakhTraditionScreen() {
 
   const renderTopic = useCallback(
     ({ item: topic }: { item: TraditionTopic }) => {
-      const isFoundation = FOUNDATION_IDS.has(topic.id);
       return (
         <Pressable
           oyuBackdrop={false}
           onPress={() => openTopic(topic.id)}
-          style={({ pressed }) => [
-            styles.topicRow,
-            isFoundation && styles.topicRowFoundation,
-            pressed && { opacity: 0.92 },
-          ]}
+          style={({ pressed }) => [styles.topicRow, pressed && { opacity: 0.92 }]}
           accessibilityRole="button"
           accessibilityLabel={tr(topic.title)}
         >
-          <View style={[styles.topicIcon, isFoundation && styles.topicIconFoundation]}>
-            <MaterialIcons
-              name={topic.id === "yrymdar-men-din" ? "shield" : isFoundation ? "mosque" : "menu-book"}
-              size={20}
-              color={isFoundation ? palette.buttonGoldText : palette.goldMuted}
-            />
+          <View style={styles.topicIcon}>
+            <MaterialIcons name="menu-book" size={18} color={palette.goldMuted} />
           </View>
           <View style={styles.topicText}>
             <Text style={styles.topicTitle}>{tr(topic.title)}</Text>
-            <Text style={styles.topicSub} numberOfLines={2}>
+            <Text style={styles.topicSub} numberOfLines={1}>
               {tr(topic.subtitle)}
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={22} color={palette.muted} />
+          <MaterialIcons name="chevron-right" size={20} color={palette.muted} />
         </Pressable>
       );
     },
-    [openTopic, palette.buttonGoldText, palette.goldMuted, palette.muted, styles, tr]
+    [openTopic, palette.goldMuted, palette.muted, styles, tr]
   );
 
   return (
@@ -170,8 +164,8 @@ export function KazakhTraditionScreen() {
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: Math.max(insets.top, 10),
-          paddingBottom: 28 + Math.max(insets.bottom, 8),
+          paddingTop: Math.max(insets.top, 8),
+          paddingBottom: 24 + Math.max(insets.bottom, 8),
         },
       ]}
       keyboardShouldPersistTaps="handled"
@@ -187,9 +181,7 @@ export function KazakhTraditionScreen() {
             <View style={styles.heroShade} />
             <View style={styles.heroCopy}>
               <Text style={styles.heroTitle}>{t.features.traditionTitle}</Text>
-              <Text style={styles.heroSub}>
-                {t.features.traditionGuide.topicsLeadShort}
-              </Text>
+              <Text style={styles.heroSub}>{t.features.traditionGuide.topicsLeadShort}</Text>
             </View>
           </View>
 
@@ -199,6 +191,35 @@ export function KazakhTraditionScreen() {
             onOpenFoundation={() => openTopic("dastur-men-din-negiz")}
             onOpenYrym={() => openTopic("yrymdar-men-din")}
           />
+
+          <DinMenDasturQuickGuideStrip palette={palette} tr={tr} onOpenTopic={openTopic} />
+
+          <View style={styles.ctaRow}>
+            <Pressable
+              oyuBackdrop={false}
+              onPress={() => nav.navigate("KazakhGreatWords")}
+              style={({ pressed }) => [styles.ctaHalf, pressed && { opacity: 0.92 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t.features.traditionGuide.asylSozCtaA11y}
+            >
+              <MaterialIcons name="auto-stories" size={20} color={palette.bannerBg} />
+              <Text style={styles.ctaHalfTitle} numberOfLines={2}>
+                {t.features.traditionGuide.asylSozCtaTitle}
+              </Text>
+            </Pressable>
+            <Pressable
+              oyuBackdrop={false}
+              onPress={() => nav.navigate("KazakhGreatWordsAuthor", { authorId: "sana" })}
+              style={({ pressed }) => [styles.ctaHalf, pressed && { opacity: 0.92 }]}
+              accessibilityRole="button"
+              accessibilityLabel={t.features.traditionGuide.sanaSozCtaA11y}
+            >
+              <MaterialIcons name="psychology" size={20} color={palette.bannerBg} />
+              <Text style={styles.ctaHalfTitle} numberOfLines={2}>
+                {t.features.traditionGuide.sanaSozCtaTitle}
+              </Text>
+            </Pressable>
+          </View>
 
           <View style={styles.searchCard}>
             <MaterialIcons name="search" size={18} color={palette.goldMuted} />
@@ -268,77 +289,93 @@ function makeStyles(p: TraditionKazakhPalette) {
     root: { flex: 1, backgroundColor: p.screenBg },
     content: { paddingHorizontal: 16 },
     heroCard: {
-      height: 168,
-      borderRadius: 20,
+      height: 112,
+      borderRadius: 16,
       overflow: "hidden",
-      marginBottom: 12,
+      marginBottom: 10,
       backgroundColor: p.brown,
     },
     heroImage: { width: "100%", height: "100%" },
-    heroShade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(28,18,10,0.46)" },
-    heroCopy: { position: "absolute", left: 16, right: 16, bottom: 16 },
-    heroTitle: { color: p.headerText, fontSize: 24, fontWeight: "900", letterSpacing: -0.3 },
-    heroSub: { color: p.headerSubtext, fontSize: 13, fontWeight: "600", marginTop: 4, lineHeight: 18 },
+    heroShade: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(28,18,10,0.48)" },
+    heroCopy: { position: "absolute", left: 14, right: 14, bottom: 12 },
+    heroTitle: { color: p.headerText, fontSize: 20, fontWeight: "900", letterSpacing: -0.2 },
+    heroSub: { color: p.headerSubtext, fontSize: 12, fontWeight: "600", marginTop: 3, lineHeight: 16 },
+    ctaRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+    ctaHalf: {
+      flex: 1,
+      minHeight: 72,
+      backgroundColor: p.cardBg,
+      borderRadius: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: p.goldMuted,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 6,
+    },
+    ctaHalfTitle: {
+      color: p.text,
+      fontSize: 12,
+      fontWeight: "900",
+      textAlign: "center",
+      lineHeight: 16,
+    },
     searchCard: {
       flexDirection: "row",
       alignItems: "center",
       gap: 8,
       backgroundColor: p.cardBg,
-      borderRadius: 14,
+      borderRadius: 12,
       paddingHorizontal: 12,
-      paddingVertical: Platform.OS === "ios" ? 11 : 4,
-      marginBottom: 12,
+      paddingVertical: Platform.OS === "ios" ? 10 : 2,
+      marginBottom: 10,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: p.border,
     },
-    searchInput: { flex: 1, color: p.text, fontSize: 15, fontWeight: "600", paddingVertical: 8 },
-    filters: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 },
+    searchInput: { flex: 1, color: p.text, fontSize: 14, fontWeight: "600", paddingVertical: 8 },
+    filters: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 10 },
     filterChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
       borderRadius: 999,
       backgroundColor: p.chipBg,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: p.border,
     },
     filterChipActive: { backgroundColor: p.chipActiveBg, borderColor: p.goldMuted },
-    filterChipText: { color: p.chipText, fontSize: 13, fontWeight: "700" },
+    filterChipText: { color: p.chipText, fontSize: 12, fontWeight: "700" },
     filterChipTextActive: { color: p.chipActiveText },
     listTitle: {
       color: p.text,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: "900",
-      marginBottom: 8,
+      marginBottom: 6,
       paddingHorizontal: 2,
     },
     topicRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: 10,
       backgroundColor: p.cardBg,
-      borderRadius: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      marginBottom: 8,
+      borderRadius: 12,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      marginBottom: 6,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: p.border,
     },
-    topicRowFoundation: {
-      backgroundColor: p.goldSurface,
-      borderColor: p.goldMuted,
-    },
     topicIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
+      width: 34,
+      height: 34,
+      borderRadius: 10,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: p.chipBg,
     },
-    topicIconFoundation: { backgroundColor: p.buttonGoldBg },
-    topicText: { flex: 1, minWidth: 0, gap: 2 },
-    topicTitle: { color: p.text, fontSize: 15, fontWeight: "900" },
-    topicSub: { color: p.muted, fontSize: 12, lineHeight: 16, fontWeight: "600" },
+    topicText: { flex: 1, minWidth: 0, gap: 1 },
+    topicTitle: { color: p.text, fontSize: 14, fontWeight: "900" },
+    topicSub: { color: p.muted, fontSize: 11, lineHeight: 15, fontWeight: "600" },
     empty: { color: p.muted, textAlign: "center", marginTop: 24, fontWeight: "700" },
     autoTranslateBanner: {
       flexDirection: "row",

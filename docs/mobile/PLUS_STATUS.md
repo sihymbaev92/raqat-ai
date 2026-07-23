@@ -26,18 +26,25 @@
 | Stale preflight “1200 sourceOnly” | **Updated** manual gates text |
 | Multi-lang Quran on CDN (~18 MB) | **APK-bundled** ru/en/tr/uz/ky only (~5 MB); native editions (not gtx) |
 | Hadith bodies in UI MT pack | **Excluded** — pack = chrome/guides only; hadith uses fawaz/HadeethEnc/kz-trusted |
+| Halal paste CTA cleared search | **Fixed** — clipboard → analyze/search |
+| Halal empty → institutions dead hint | **CTA** opens Institutions tab |
+| Halal seed CSV/JSON drift + dup GTIN | **Cleaned** — 3760 items, skipped 0 |
+| KMDB/Halal nav wait 350–500 ms | **Removed** — fire-and-forget warm |
+| Home lazy Suspense after boot | **Eager Dashboard** |
+| Dead `awaitKmdbHubWarm` exports | **Removed** |
 
 ## Still external / honest gates
 
-| Item | Why not faked | Status 2026-07-21 |
+| Item | Why not faked | Status 2026-07-23 |
 |------|----------------|-------------------|
-| VPS CDN origin 521 | Needs SSH deploy (`deploy_mushaf_cdn_assets.ps1`) | **Blocked:** host key rotated; `Permission denied (publickey)` — install key via Hetzner Console (see `docs/mobile/CDN_DEPLOY_SSH.md`) |
+| VPS CDN origin 521 | Needs SSH deploy (`deploy_mushaf_cdn_assets.ps1`) | **Blocked:** host key / publickey — see `docs/mobile/CDN_DEPLOY_SSH.md` |
 | Play Internal upload | Manual Console upload | AAB built locally — upload still manual |
 | Scholar sign-off | `approvedForPublicRelease` stays **false** until real reviewer | Unchanged |
 | Azan 3×3 OEM QA | Physical devices (code/OEM helpers improved) | UX copy improved (tap notification when screen on / FSI denied) |
 | Account cross-device sync reliability | Backend + network dependent | API host down until VPS restored |
 | iOS Apple Developer | Paid Program + EAS | Unchanged |
 | Guide prose MT quality (duas/namaz/hajj) | gtx + banner; patches override chrome | Human patches grow over time |
+| Halal Damu products API empty | Official API still `items: []` | Seed + E-code UX covers offline |
 
 ## Metrics
 

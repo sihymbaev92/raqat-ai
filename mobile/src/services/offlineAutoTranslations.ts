@@ -1,4 +1,3 @@
-import offlineAutoTranslationsApk from "../../assets/bundled/offline-auto-translations-apk.json";
 import { isUsableOfflineAutoTranslation } from "./offlineAutoTranslationSafety";
 import { releaseBundledJsonMemory, tryLoadBundledJson } from "../utils/loadBundledJson";
 
@@ -42,9 +41,10 @@ function mergeTargets(
   };
 }
 
-/** APK slim pack — sync seed (async CDN/tryLoad-қа тәуелді емес). */
+/** APK slim pack — lazy require (kk boot-та 6.8MB сөздік жүктелмейді). */
 function cloneApkInlineBundle(): OfflineAutoTranslationBundle {
-  const apk = offlineAutoTranslationsApk as OfflineAutoTranslationBundle;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const apk = require("../../assets/bundled/offline-auto-translations-apk.json") as OfflineAutoTranslationBundle;
   if (!apk?.targets || Object.keys(apk.targets).length === 0) return {};
   return mergeTargets({}, apk);
 }
@@ -60,9 +60,6 @@ function seedApkBundleSync(): boolean {
 export function seedApkOfflineTranslationsSync(): boolean {
   return seedApkBundleSync();
 }
-
-/** Модуль жүктелгенде бірден — hydrate/setLocale алдында сөздік дайын. */
-seedApkBundleSync();
 
 function loadBundleFromAsset(): OfflineAutoTranslationBundle {
   if (!bundle.targets) {

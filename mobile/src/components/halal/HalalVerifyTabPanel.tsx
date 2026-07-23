@@ -34,7 +34,22 @@ import { HalalProductsApiBanner } from "./HalalProductsApiBanner";
 import { HalalVerifyHub, type HalalCheckFlowPhase } from "./HalalVerifyHub";
 import { kk } from "../../i18n/kk";
 import { HALAL_HUB_LIST_OPTS, prefetchHalalDamuHub, readHalalHubCatalogSnapshot } from "../../services/halalHubBootstrap";
-import { getHalalProductsSeedCount, mergeHalalProductItems, prefetchHalalProductsSeedIndex, searchHalalProductsSeed, lookupHalalProductsSeedByBarcode } from "../../services/halalProductsSeedKz";
+import {
+  getHalalProductsSeedCount,
+  HALAL_PRODUCTS_SEED_COUNT_HINT,
+  mergeHalalProductItems,
+  prefetchHalalProductsSeedIndex,
+  searchHalalProductsSeed,
+  lookupHalalProductsSeedByBarcode,
+} from "../../services/halalProductsSeedKz";
+import {
+  analyzeIngredientsText,
+  getHalalAdditivesSeedCount,
+  HALAL_ADDITIVES_SEED_COUNT_HINT,
+  mergeHalalAdditiveItems,
+  searchHalalAdditivesSeed,
+} from "../../services/halalAdditivesSeedKz";
+import { isLikelyBarcodeDigitsQuery } from "../../utils/halalEcodeExtract";
 import { probeHalalProductsApi, type HalalProductsApiProbe } from "../../services/halalProductsApiProbe";
 import {
   clearHalalScanResults,
@@ -59,15 +74,20 @@ import {
   goodsProductStatusChips,
   HALAL_VERIFY_DEBOUNCE_MS,
 } from "../../utils/halalVerifyHelpers";
-import { runAfterInteractions } from "../../utils/uiDefer";
+import { runAfterInteractions, runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
+
+function additivesFromIngredientTexts(texts: (string | null | undefined)[]): HalalDamuAdditiveItem[] {
+  return analyzeIngredientsText(texts.filter(Boolean).join("\n"));
+}
 
 type Props = {
   colors: ThemeColors;
   isDark: boolean;
   insets: EdgeInsets;
+  onOpenInstitutions?: () => void;
 };
 
-export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
+export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions }: Props) {
   useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const productStatusChips = useMemo(() => goodsProductStatusChips(), []);
@@ -99,7 +119,8 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
 
   const screenActiveRef = useRef(true);
   const lookupGenerationRef = useRef(0);
-  const seedProductCount = useMemo(() => getHalalProductsSeedCount(), []);
+  const [seedProductCount, setSeedProductCount] = useState(HALAL_PRODUCTS_SEED_COUNT_HINT);
+  const [seedAdditiveCount, setSeedAdditiveCount] = useState(HALAL_ADDITIVES_SEED_COUNT_HINT);
 
   const productQueryOpts = useMemo(
     () => ({
@@ -129,7 +150,16 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     useCallback(() => {
       screenActiveRef.current = true;
       void prefetchHalalDamuHub();
-      prefetchHalalProductsSeedIndex();
+      void runWhenHeavyWorkAllowed().then(() => {
+        if (!screenActiveRef.current) return;
+        prefetchHalalProductsSeedIndex();
+        try {
+          setSeedProductCount(getHalalProductsSeedCount());
+          setSeedAdditiveCount(getHalalAdditivesSeedCount());
+        } catch {
+          /* best-effort */
+        }
+      });
       void readHalalHubCatalogSnapshot().then((snap) => {
         if (snap?.items.length) setCatalogItems(snap.items);
       });
@@ -195,16 +225,27 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
           searchHalalDamuAdditives(q, { perPage: INSTANT_HALAL_SEARCH_LIMIT }),
         ]);
         if (gen !== lookupGenerationRef.current) return;
-        const hasError = Boolean(prodResolved.error || add.error);
-        if (hasError) setCheckErr(kk.features.halalHubNetworkErr);
         const products = mergeHalalProductItems(prodResolved.items, instantSeedProducts);
+        let additives = mergeHalalAdditiveItems(
+          add.items,
+          searchHalalAdditivesSeed(q, INSTANT_HALAL_SEARCH_LIMIT),
+        );
+        additives = mergeHalalAdditiveItems(additives, analyzeIngredientsText(q));
+        additives = mergeHalalAdditiveItems(
+          additives,
+          additivesFromIngredientTexts(products.map((p) => p.ingredients)),
+        );
+        const hasLocalHits = products.length > 0 || additives.length > 0;
+        const hasError = Boolean(prodResolved.error || add.error);
+        /** Seed/кэш нәтижесі бар болса желі қатесін көрсетпеу — API бос/қолжетімсіз жиі. */
+        setCheckErr(hasError && !hasLocalHits ? kk.features.halalHubNetworkErr : null);
         setCheckProducts(products);
-        setCheckAdditives(add.items);
+        setCheckAdditives(additives);
         setCheckCompanies([]);
-        if (!hasError) {
+        if (!hasError || hasLocalHits) {
           writeHalalLookupCache(cacheKey, {
             products,
-            additives: add.items,
+            additives,
             companies: [],
           });
         }
@@ -221,26 +262,12 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     [productQueryOpts, goodsProductStatusFilter],
   );
 
-  const runTextHalalCheck = useCallback(async () => {
-    const q = checkInput.trim();
-    if (q.length < 2) {
-      Alert.alert(kk.common.error, kk.features.halalCheckMin2);
-      return;
-    }
-    setCheckBusy(true);
-    setLastCheckQuery(q);
-    try {
-      await lookupHalalRegistry(q, { useMainBusy: true, silentBusy: true });
-    } finally {
-      setCheckBusy(false);
-    }
-  }, [checkInput, lookupHalalRegistry]);
-
   const applyBarcodePipeline = useCallback(
-    async (raw: string, opts?: { silentBusy?: boolean }) => {
+    async (raw: string, _opts?: { silentBusy?: boolean }) => {
       const trimmed = raw.trim();
       if (!trimmed) return;
       setCheckInput(trimmed);
+      setGoodsQuick(trimmed);
       const digits = trimmed.replace(/\D/g, "");
       setLastCheckQuery(digits || trimmed);
       setCheckLookupDone(false);
@@ -269,14 +296,30 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
           );
         }
         if (merged.length === 0 && (trimmed.length >= 2 || digits.length >= 2)) {
-          const fallback = await resolveHalalProductSearch(digits || trimmed, catalogItemsRef.current, barcodeQueryOpts);
+          const fallback = await resolveHalalProductSearch(
+            digits || trimmed,
+            catalogItemsRef.current,
+            barcodeQueryOpts,
+          );
           merged = mergeHalalProductItems(merged, fallback.items);
         }
-        if ((byBc.error || byTxt.error || add.error) && merged.length === 0) {
-          setCheckErr(kk.features.halalHubNetworkErr);
-        }
+        setCheckErr(null);
         setCheckProducts(merged);
-        setCheckAdditives(add.items);
+        let additives = mergeHalalAdditiveItems(
+          add.items,
+          searchHalalAdditivesSeed(
+            digits.length >= 2 && digits.length <= 5 ? `e${digits}` : trimmed,
+            INSTANT_HALAL_SEARCH_LIMIT,
+          ),
+        );
+        additives = mergeHalalAdditiveItems(
+          additives,
+          additivesFromIngredientTexts(merged.map((p) => p.ingredients)),
+        );
+        if (merged.length === 0 && !isLikelyBarcodeDigitsQuery(trimmed)) {
+          additives = mergeHalalAdditiveItems(additives, analyzeIngredientsText(trimmed));
+        }
+        setCheckAdditives(additives);
         setCheckCompanies([]);
         void pushHalalLookupHistory(digits || trimmed, "barcode");
         const bcKey = digits || trimmed;
@@ -284,7 +327,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
           const nextScan = await pushHalalScanResult({
             barcode: bcKey,
             products: merged,
-            additives: add.items,
+            additives,
             companies: [],
           });
           setScanResults(nextScan);
@@ -296,6 +339,48 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     },
     [barcodeQueryOpts, goodsProductStatusFilter],
   );
+
+  const runUnifiedSearch = useCallback(
+    async (raw: string) => {
+      const q = raw.trim();
+      if (q.length < 2) {
+        Alert.alert(kk.common.error, kk.features.halalCheckMin2);
+        return;
+      }
+      setCheckInput(q);
+      setGoodsQuick(q);
+      setLastCheckQuery(q);
+      if (isLikelyBarcodeDigitsQuery(q)) {
+        await applyBarcodePipeline(q);
+        return;
+      }
+      setCheckBusy(true);
+      try {
+        await lookupHalalRegistry(q, { useMainBusy: true, silentBusy: true });
+      } finally {
+        setCheckBusy(false);
+      }
+    },
+    [applyBarcodePipeline, lookupHalalRegistry],
+  );
+
+  const pasteIngredientsFromClipboard = useCallback(() => {
+    void (async () => {
+      try {
+        const pasted = (await Clipboard.getStringAsync()).trim();
+        if (pasted.length < 2) {
+          Alert.alert(kk.common.error, kk.features.halalCheckPasteEmpty);
+          return;
+        }
+        setGoodsQuick(pasted);
+        setCheckInput(pasted);
+        setLastCheckQuery(pasted.slice(0, 80));
+        void runUnifiedSearch(pasted);
+      } catch {
+        Alert.alert(kk.common.error, kk.features.halalCheckPasteEmpty);
+      }
+    })();
+  }, [runUnifiedSearch]);
 
   const restoreScanSnapshot = useCallback((snap: HalalScanResultSnapshot) => {
     setCheckInput(snap.barcode);
@@ -328,24 +413,41 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
     let cancelled = false;
     const task = runAfterInteractions(() => {
       if (cancelled || !screenActiveRef.current) return;
+      if (isLikelyBarcodeDigitsQuery(goodsQuickDebounced)) {
+        void applyBarcodePipeline(goodsQuickDebounced);
+        return;
+      }
       void lookupHalalRegistry(goodsQuickDebounced, { useMainBusy: false });
     });
     return () => {
       cancelled = true;
       task.cancel();
     };
-  }, [goodsQuickDebounced, lookupHalalRegistry, goodsProductStatusFilter]);
+  }, [goodsQuickDebounced, lookupHalalRegistry, applyBarcodePipeline, goodsProductStatusFilter]);
 
   useEffect(() => {
     if (checkInputDebounced.length < 2) return;
     if (checkFlowPhase) return;
     if (!screenActiveRef.current) return;
+    // goodsQuick debounce already drives live search — avoid double fetch
+    if (checkInputDebounced === goodsQuickDebounced) return;
     const gen = ++lookupGenerationRef.current;
     void (async () => {
-      await lookupHalalRegistry(checkInputDebounced, { useMainBusy: false });
+      if (isLikelyBarcodeDigitsQuery(checkInputDebounced)) {
+        await applyBarcodePipeline(checkInputDebounced);
+      } else {
+        await lookupHalalRegistry(checkInputDebounced, { useMainBusy: false });
+      }
       if (gen !== lookupGenerationRef.current) return;
     })();
-  }, [checkInputDebounced, lookupHalalRegistry, goodsProductStatusFilter, checkFlowPhase]);
+  }, [
+    checkInputDebounced,
+    goodsQuickDebounced,
+    lookupHalalRegistry,
+    applyBarcodePipeline,
+    goodsProductStatusFilter,
+    checkFlowPhase,
+  ]);
 
   const renderCheckProduct = (p: HalalDamuProductItem) => (
     <HalalProductResultCard
@@ -382,6 +484,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
       isDark={isDark}
       title={a.title}
       description={a.description}
+      risk={a.risk}
       onPress={() => setAdditiveDetail(a)}
     />
   );
@@ -399,6 +502,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
           probe={productsApiProbe}
           loading={productsApiProbeLoading}
           seedCount={seedProductCount}
+          additiveSeedCount={seedAdditiveCount}
           onOpenDocs={() => openExternal(halalDamuSiteHomeUrl())}
         />
 
@@ -411,8 +515,14 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
           checkErr={checkErr}
           checkFlowPhase={checkFlowPhase}
           lastBarcode={lastCheckQuery}
+          searchQuery={goodsQuick}
+          onSearchQueryChange={(q) => {
+            setGoodsQuick(q);
+            setCheckInput(q);
+          }}
+          onSearchSubmit={(q) => void runUnifiedSearch(q)}
+          onPasteIngredients={pasteIngredientsFromClipboard}
           onOpenBarcode={() => setScanOpen(true)}
-          onSubmitBarcode={(barcode) => void applyBarcodePipeline(barcode)}
         />
 
         {checkSummary && checkLookupDone && !checkFlowPhase ? (
@@ -546,7 +656,69 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
 
         {checkLookupDone && !checkFlowPhase && checkProducts.length + checkAdditives.length === 0 ? (
           <View style={styles.checkEmptyBlock}>
-            <Text style={[styles.hint, { color: colors.muted }]}>{kk.features.halalCheckNoData}</Text>
+            {(() => {
+              const barcodeDigits = (lastCheckQuery ?? "").replace(/\D/g, "");
+              const looksLikeBarcode = barcodeDigits.length >= 8 && barcodeDigits.length <= 14;
+              if (looksLikeBarcode) {
+                return (
+                  <>
+                    <Text style={[styles.verifySummaryTitle, { color: colors.text, marginBottom: 6 }]}>
+                      {kk.features.halalCheckNoBarcodeTitle}
+                    </Text>
+                    <Text style={[styles.hint, { color: colors.muted }]}>{kk.features.halalCheckNoBarcodeBody}</Text>
+                    <Text style={[styles.hint, { color: colors.muted, marginTop: 8 }]}>
+                      {kk.features.halalCheckTryEcodeHint}
+                    </Text>
+                    <Text style={[styles.hint, { color: colors.muted, marginTop: 8 }]}>
+                      {kk.features.halalVerifyPasteIngredientsHint}
+                    </Text>
+                    <Text style={[styles.hint, { color: colors.muted, marginTop: 8 }]}>
+                      {kk.features.halalCheckOpenInstitutionsHint}
+                    </Text>
+                  </>
+                );
+              }
+              return (
+                <>
+                  <Text style={[styles.hint, { color: colors.muted }]}>{kk.features.halalCheckNoData}</Text>
+                  <Text style={[styles.hint, { color: colors.muted, marginTop: 8 }]}>
+                    {kk.features.halalVerifyPasteIngredientsHint}
+                  </Text>
+                </>
+              );
+            })()}
+            <Pressable
+              onPress={pasteIngredientsFromClipboard}
+              style={({ pressed }) => [
+                styles.checkOfficialBtn,
+                { borderColor: colors.border, backgroundColor: colors.card, marginBottom: 8 },
+                pressed && { opacity: 0.92 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={kk.features.halalCheckPasteIngredientsCta}
+            >
+              <MaterialIcons name="content-paste" size={20} color={colors.accent} />
+              <Text style={[styles.checkOfficialBtnTxt, { color: colors.accent }]}>
+                {kk.features.halalCheckPasteIngredientsCta}
+              </Text>
+            </Pressable>
+            {onOpenInstitutions ? (
+              <Pressable
+                onPress={onOpenInstitutions}
+                style={({ pressed }) => [
+                  styles.checkOfficialBtn,
+                  { borderColor: colors.border, backgroundColor: colors.card, marginBottom: 8 },
+                  pressed && { opacity: 0.92 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={kk.features.halalCheckOpenInstitutionsHint}
+              >
+                <MaterialIcons name="business" size={20} color={colors.accent} />
+                <Text style={[styles.checkOfficialBtnTxt, { color: colors.accent }]}>
+                  {kk.features.halalCheckOpenInstitutionsHint}
+                </Text>
+              </Pressable>
+            ) : null}
             {lastCheckQuery?.trim() ? (
               <Pressable
                 onPress={() => openExternal(halalDamuRegistryWebSearchUrl(lastCheckQuery))}
@@ -623,7 +795,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
             <Text style={[styles.additiveModalBody, { color: colors.text }]}>
               {productDetail?.ingredients?.trim()
                 ? productDetail.ingredients
-                : kk.features.halalProductsApiEmptyBody}
+                : kk.features.halalProductNoIngredients}
             </Text>
           </ScrollView>
         </View>
@@ -649,6 +821,15 @@ export function HalalVerifyTabPanel({ colors, isDark, insets }: Props) {
             </Pressable>
           </View>
           <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 24 + insets.bottom }}>
+            {additiveDetail?.risk ? (
+              <Text style={[styles.additiveModalBody, { color: colors.accent, marginBottom: 10, fontWeight: "800" }]}>
+                {(additiveDetail.risk || "").toUpperCase() === "HARAM"
+                  ? kk.features.halalAdditiveRiskHaram
+                  : (additiveDetail.risk || "").toUpperCase() === "MUSHKIL"
+                    ? kk.features.halalAdditiveRiskMushkil
+                    : kk.features.halalAdditiveRiskReference}
+              </Text>
+            ) : null}
             <Text style={[styles.additiveModalBody, { color: colors.text }]}>
               {additiveDetail?.description?.trim() ? additiveDetail.description : kk.features.halalAdditiveNoDesc}
             </Text>

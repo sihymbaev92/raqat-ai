@@ -1,6 +1,6 @@
 {
   "name": "raqat-mobile",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -28,8 +28,11 @@
     "generate:icon": "python scripts/generate-app-icon.py",
     "fetch:azan": "python scripts/fetch_prayer_azan_assets.py",
     "halal:seed": "python ../scripts/enrich_halal_products_seed.py",
+    "halal:seed:off": "python ../scripts/expand_halal_products_seed_from_off.py",
     "official-books:sync": "python ../scripts/scrape_official_books.py",
     "halal:seed:build": "python ../scripts/build_halal_products_seed_json.py",
+    "halal:additives:build": "python ../scripts/build_halal_additives_seed.py",
+    "halal:seed:additives": "python ../scripts/build_halal_additives_seed.py",
     "build:apk": "node scripts/build-apk-node.cjs release",
     "qa:android:release": "powershell -ExecutionPolicy Bypass -File scripts/android-release-smoke.ps1",
     "qa:azan:locked": "powershell -ExecutionPolicy Bypass -File scripts/azan-locked-screen-qa.ps1 -GrantExactAlarm -WhitelistBattery",

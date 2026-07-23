@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Animated, AppState, Easing, Platform, StyleSheet, View } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QiblaArrowPointer } from "./QiblaArrowPointer";
-import { QiblaArCameraModal } from "./QiblaArCameraModal";
 import { useQiblaMotion, useQiblaStable } from "../context/QiblaSensorContext";
 import { qiblaAlignHint } from "../lib/qiblaHints";
 import type { ThemeColors } from "../theme/colors";
@@ -22,7 +21,6 @@ type Props = {
 export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "default" }: Props) {
   useAppLocale();
   const insets = useSafeAreaInsets();
-  const [cameraOpen, setCameraOpen] = useState(false);
   const { bearing, resumeHeadingSubscription } = useQiblaStable();
   const { rotateDeg, headingHasSample } = useQiblaMotion();
   const bearingReady = bearing != null;
@@ -115,7 +113,6 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
   }, [headingHasSample, resumeHeadingSubscription]);
 
   return (
-    <>
       <View
         style={{
           width: ringOuter,
@@ -158,8 +155,6 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
         ) : null}
         <Pressable
           onPress={onPress}
-          onLongPress={() => setCameraOpen(true)}
-          delayLongPress={380}
           style={{
             width: chipSize,
             height: chipSize,
@@ -198,7 +193,7 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
           }}
           accessibilityRole="button"
           accessibilityLabel={kk.tabs.qibla}
-          accessibilityHint={`${kk.qibla.headerTapQibla}. ${kk.qibla.headerLongPressCamera}`}
+          accessibilityHint={kk.qibla.headerTapQibla}
         >
           <View style={{ opacity: motionReady ? 1 : 0.85 }} pointerEvents="none">
             <QiblaArrowPointer
@@ -220,8 +215,6 @@ export function PrayerQiblaChip({ colors, onPress, variant = "hero", size = "def
           </View>
         </Pressable>
       </View>
-      <QiblaArCameraModal visible={cameraOpen} colors={colors} onClose={() => setCameraOpen(false)} />
-    </>
   );
 }
 

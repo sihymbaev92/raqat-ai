@@ -21,14 +21,17 @@ import {
 import { tajweedSectionDisplayTitle } from "../content/tajweedSectionTitlesLocale";
 import { useAppLocale } from "../i18n/runtime";
 import type { MoreStackParamList } from "../navigation/types";
+import { navigateToQuranSurah } from "../navigation/navigateToMoreStack";
 import { setQuranTajweedColorsEnabled } from "../storage/quranReaderPrefs";
 
 type Props = {
   onOpenPage: (page: number) => void;
+  onOpenQuran?: () => void;
+  onOpenColoredList?: () => void;
 };
 
-/** Нөлден оқу: әліпби → ережелер → оқулық → қысқа сүре. Түстер — кейін. */
-export function TajweedGuideHome({ onOpenPage }: Props) {
+/** Нөлден оқу: әліпби → Құранға кіру → ережелер → оқулық. */
+export function TajweedGuideHome({ onOpenPage, onOpenQuran, onOpenColoredList }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const locale = useAppLocale();
@@ -46,20 +49,35 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
     [locale, tr]
   );
 
-  const openPlainFatiha = useCallback(async () => {
+  const openColoredList = useCallback(() => {
+    if (onOpenColoredList) {
+      onOpenColoredList();
+      return;
+    }
+    navigation.navigate("HatimTajweedList");
+  }, [navigation, onOpenColoredList]);
+
+  const openColoredFatiha = useCallback(async () => {
     if (openingSurah) return;
+    if (onOpenQuran) {
+      onOpenQuran();
+      return;
+    }
     setOpeningSurah(true);
     try {
-      await setQuranTajweedColorsEnabled(false);
-      navigation.navigate("QuranSurah", {
-        surahNumber: 1,
-        englishName: "Al-Fatiha",
-        arabicName: "الفاتحة",
-      });
+      await setQuranTajweedColorsEnabled(true);
+      navigateToQuranSurah(
+        {
+          surahNumber: 1,
+          englishName: "Al-Fatiha",
+          arabicName: "الفاتحة",
+        },
+        navigation
+      );
     } finally {
       setOpeningSurah(false);
     }
-  }, [navigation, openingSurah]);
+  }, [navigation, onOpenQuran, openingSurah]);
 
   return (
     <View style={styles.wrap}>
@@ -70,6 +88,31 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
       </View>
 
       <TajweedAlphabetGrid />
+
+      <View style={styles.studyCard}>
+        <Text style={styles.studyCardHint}>{t.tajweedGuide.openQuranHint}</Text>
+        <Pressable
+          onPress={() => void openColoredFatiha()}
+          disabled={openingSurah}
+          style={({ pressed }) => [styles.practiceCta, pressed && { opacity: 0.92 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t.tajweedGuide.openQuranA11y}
+        >
+          {openingSurah ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.practiceTitle}>{t.tajweedGuide.openQuranCta}</Text>
+          )}
+        </Pressable>
+        <Pressable
+          onPress={openColoredList}
+          style={({ pressed }) => [styles.secondaryLink, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t.tajweedGuide.openColoredListA11y}
+        >
+          <Text style={styles.secondaryLinkText}>{t.tajweedGuide.openColoredListCta}</Text>
+        </Pressable>
+      </View>
 
       <GuideAccordionSection
         title={tr(kk.tajweedGuide.sectionLaterTitle)}
@@ -124,26 +167,8 @@ export function TajweedGuideHome({ onOpenPage }: Props) {
         onToggle={() => setRulesOpen((o) => !o)}
         colors={colors}
       >
-        <TajweedRulesLegendPanel compact />
+        <TajweedRulesLegendPanel compact onOpenColoredList={openColoredList} />
       </GuideAccordionSection>
-
-      <Pressable
-        onPress={() => void openPlainFatiha()}
-        disabled={openingSurah}
-        style={({ pressed }) => [styles.practiceCta, pressed && { opacity: 0.92 }]}
-        accessibilityRole="button"
-        accessibilityLabel={t.tajweedGuide.practiceCtaA11y}
-      >
-        <View style={styles.practiceTextCol}>
-          <Text style={styles.practiceTitle}>{t.tajweedGuide.practiceCtaTitle}</Text>
-          <Text style={styles.practiceHint}>{t.tajweedGuide.practiceCtaHint}</Text>
-        </View>
-        {openingSurah ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.practiceBtn}>{t.tajweedGuide.practiceCtaBtn}</Text>
-        )}
-      </Pressable>
 
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </View>
@@ -180,34 +205,50 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 21,
       marginTop: 2,
     },
+    studyCard: {
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      padding: 14,
+      marginTop: 10,
+      marginBottom: 10,
+      gap: 10,
+    },
+    studyCardHint: {
+      color: colors.muted,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "600",
+    },
     practiceCta: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 12,
       backgroundColor: colors.accent,
       borderRadius: 16,
       paddingHorizontal: 14,
       paddingVertical: 14,
-      marginTop: 10,
-      marginBottom: 14,
     },
-    practiceTextCol: { flex: 1, gap: 3 },
     practiceTitle: {
       color: "#FFFFFF",
       fontSize: 16,
       fontWeight: "900",
       lineHeight: 21,
+      textAlign: "center",
+      flex: 1,
     },
-    practiceHint: {
-      color: "rgba(255,255,255,0.9)",
-      fontSize: 13,
-      lineHeight: 18,
-      fontWeight: "600",
+    secondaryLink: {
+      alignSelf: "flex-start",
+      paddingVertical: 4,
+      paddingHorizontal: 2,
     },
-    practiceBtn: {
-      color: "#FFFFFF",
+    secondaryLinkText: {
+      color: colors.accent,
       fontSize: 14,
-      fontWeight: "900",
+      fontWeight: "800",
+      lineHeight: 20,
     },
     studyHint: {
       color: colors.muted,

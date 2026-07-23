@@ -371,6 +371,28 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "Курбан-байрам",
       halalHeroTagRegistry: "Официальный реестр",
       halalHeroTagVerify: "Проверка продукта",
+      halalCheckNoBarcodeTitle: "Штрихкод не найден в базе",
+      halalCheckNoBarcodeBody:
+        "Официальный API продуктов Halal Damu пока пуст, а в справочнике RAQAT этого штрихкода нет. Найдите производителя во вкладке «Учреждения» или проверьте на halaldamu.kz.",
+      halalCheckOpenInstitutionsHint: "Ищите производителя во вкладке «Учреждения»",
+      halalVerifyLead:
+        "Введите E‑код (напр. E471), название продукта или штрихкод. Можно сканировать камерой. Результат — справочный; не официальная фетва.",
+      halalCheckTryEcodeHint: "Введите E‑код с упаковки (напр. E471) или название продукта в поиск выше.",
+      halalAdditiveRiskHaram: "Вероятно харам",
+      halalAdditiveRiskMushkil: "Сомнительно — проверьте происхождение",
+      halalAdditiveRiskReference: "Справка",
+      halalVerifyQuickCodesHint: "Частые коды",
+      halalVerifyPasteIngredientsHint:
+        "Можно вставить полный состав с упаковки (E471, желатин…) и разобрать.",
+      halalVerifySummaryHaramAdditiveTitle: "Добавка, вероятно харам",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} добавка(и) отмечены как вероятно харам. Это не фетва — перепроверьте состав и сертификат.`,
+      halalVerifySummaryMushkilAdditiveTitle: "Найдена сомнительная добавка",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} добавка(и) сомнительны. Проверьте происхождение (животное/растительное) и халяль-сертификат.`,
+      halalCheckPasteIngredientsCta: "Вставить состав и разобрать",
+      halalCheckPasteEmpty: "В буфере нет текста состава. Скопируйте состав с упаковки и нажмите снова.",
+      halalProductNoIngredients: "В этой записи нет текста состава. Введите E‑код или состав с упаковки в поиск.",
     },
     seerah: {
       title: "Сира",
@@ -684,6 +706,28 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "Eid al-Adha",
       halalHeroTagRegistry: "Official registry",
       halalHeroTagVerify: "Product check",
+      halalCheckNoBarcodeTitle: "Barcode not in the database",
+      halalCheckNoBarcodeBody:
+        "The official Halal Damu products API is still empty, and this barcode is not in the RAQAT reference list. Search for the producer under Institutions or check on halaldamu.kz.",
+      halalCheckOpenInstitutionsHint: "Search for the producer under the Institutions tab",
+      halalVerifyLead:
+        "Enter an E‑code (e.g. E471), product name, or barcode. You can also scan with the camera. Result is reference only — not an official fatwa.",
+      halalCheckTryEcodeHint: "Enter the E‑code from the pack (e.g. E471) or the product name in the search above.",
+      halalAdditiveRiskHaram: "Likely haram",
+      halalAdditiveRiskMushkil: "Doubtful — check the source",
+      halalAdditiveRiskReference: "Reference",
+      halalVerifyQuickCodesHint: "Common codes",
+      halalVerifyPasteIngredientsHint:
+        "You can paste the full ingredients list from the pack (E471, gelatin…) for analysis.",
+      halalVerifySummaryHaramAdditiveTitle: "Additive likely haram",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} additive(s) flagged as likely haram. Not a fatwa — recheck the ingredients and certificate.`,
+      halalVerifySummaryMushkilAdditiveTitle: "Doubtful additive found",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} additive(s) are doubtful. Check origin (animal/plant) and the halal certificate.`,
+      halalCheckPasteIngredientsCta: "Paste ingredients to analyze",
+      halalCheckPasteEmpty: "Clipboard has no ingredients text. Copy the pack list and try again.",
+      halalProductNoIngredients: "No ingredients text in this record. Enter an E‑code or paste the pack list.",
     },
     seerah: {
       title: "Seerah",
@@ -832,6 +876,27 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
       kurbanAitTitle: "Курман айт",
       halalHeroTagRegistry: "Расмий тизмек",
       halalHeroTagVerify: "Өнүм текшерүү",
+      halalVerifyLead:
+        "E-код (мис. E471), өнүм аты же штрихкод киргизиңиз. Камера менен да сканерлесе болот. Жыйынтык — маалымат; расмий фатва эмес.",
+      halalCheckTryEcodeHint: "Таңгактагы E-кодду (мис. E471) же өнүм атын жогорудагы издөөгө киргизиңиз.",
+      halalAdditiveRiskHaram: "Харам болушу мүмкүн",
+      halalAdditiveRiskMushkil: "Шүбөлүү — текшериңиз",
+      halalAdditiveRiskReference: "Маалымат",
+      halalVerifyQuickCodesHint: "Көп кездешкен коддор",
+      halalVerifyPasteIngredientsHint: "Таңгактагы курамды толук коюп талдоого болот (E471, желатин…).",
+      halalVerifySummaryHaramAdditiveTitle: "Харам болушу мүмкүн кошумча",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} кошумча харам болушу мүмкүн деп белгиленген. Расмий фатва эмес — курам менен сертификатты кайра текшериңиз.`,
+      halalVerifySummaryMushkilAdditiveTitle: "Шүбөлүү кошумча табылды",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} кошумча шүбөлүү. Тегин (жаныбар/өсүмдүк) жана халал сертификатты текшериңиз.`,
+      halalCheckPasteIngredientsCta: "Курамды коюп талдоо",
+      halalCheckPasteEmpty: "Буферде курам тексти жок. Таңгактагы курамды көчүрүп, кайра басыңыз.",
+      halalProductNoIngredients: "Бул жазууда курам тексти жок. E-кодду же таңгактагы курамды издөөгө коюңуз.",
+      halalCheckNoBarcodeTitle: "Штрихкод базадан табылган жок",
+      halalCheckNoBarcodeBody:
+        "Halal Damu өнүм API бош, RAQAT аныктамасында да бул штрихкод жок. Өндүрүүчүнү «Мекемелер» өтмөгүнөн издеңиз же halaldamu.kz текшериңиз.",
+      halalCheckOpenInstitutionsHint: "Өндүрүүчүнү «Мекемелер» өтмөгүнөн издеңиз",
     },
     seerah: { title: "Сира" },
     hadith: {
@@ -921,6 +986,29 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "Xatm", hajjTitle: "Haj", halalTitle: "HALAL DAMU", traditionTitle: "Din va urf-odat",
       kurbanAitTitle: "Qurbon hayit",
+      halalHeroTagRegistry: "Rasmiy reestr",
+      halalHeroTagVerify: "Mahsulot tekshiruvi",
+      halalVerifyLead:
+        "E-kod (masalan E471), mahsulot nomi yoki shtrixkod kiriting. Kamerada ham skanerlash mumkin. Natija — ma'lumotnoma; rasmiy fatvo emas.",
+      halalCheckTryEcodeHint: "Qadoqdagi E-kodni (masalan E471) yoki mahsulot nomini yuqoridagi qidiruvga kiriting.",
+      halalAdditiveRiskHaram: "Harom bo'lishi mumkin",
+      halalAdditiveRiskMushkil: "Shubhali — manbani tekshiring",
+      halalAdditiveRiskReference: "Ma'lumotnoma",
+      halalVerifyQuickCodesHint: "Tez-tez uchraydigan kodlar",
+      halalVerifyPasteIngredientsHint: "Qadoqdagi tarkibni to'liq qo'yib tahlil qilish mumkin (E471, jelatin…).",
+      halalVerifySummaryHaramAdditiveTitle: "Harom bo'lishi mumkin qo'shimcha",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} qo'shimcha harom bo'lishi mumkin deb belgilangan. Rasmiy fatvo emas — tarkib va sertifikatni qayta tekshiring.`,
+      halalVerifySummaryMushkilAdditiveTitle: "Shubhali qo'shimcha topildi",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} qo'shimcha shubhali. Kelib chiqishi (hayvon/o'simlik) va halal sertifikatni tekshiring.`,
+      halalCheckPasteIngredientsCta: "Tarkibni qo'yib tahlil qilish",
+      halalCheckPasteEmpty: "Buferda tarkib matni yo'q. Qadoqdagi tarkibni nusxalang va qayta bosing.",
+      halalProductNoIngredients: "Bu yozuvda tarkib matni yo'q. E-kod yoki qadoqdagi tarkibni qidiruvga qo'ying.",
+      halalCheckNoBarcodeTitle: "Shtrixkod bazada yo'q",
+      halalCheckNoBarcodeBody:
+        "Halal Damu mahsulot API bo'sh, RAQAT ma'lumotnomasida ham bu shtrixkod yo'q. Ishlab chiqaruvchini «Muassasalar» bo'limidan qidiring yoki halaldamu.kz tekshiring.",
+      halalCheckOpenInstitutionsHint: "Ishlab chiqaruvchini «Muassasalar» bo'limidan qidiring",
     },
     seerah: { title: "Siyra" },
     hadith: {
@@ -1010,6 +1098,29 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "Hatim", hajjTitle: "Hac", halalTitle: "HALAL DAMU", traditionTitle: "Din ve gelenek",
       kurbanAitTitle: "Kurban Bayramı",
+      halalHeroTagRegistry: "Resmi kayıt",
+      halalHeroTagVerify: "Ürün kontrolü",
+      halalVerifyLead:
+        "E-kod (örn. E471), ürün adı veya barkod girin. Kamerayla da tarayabilirsiniz. Sonuç bilgilendirme amaçlıdır; resmi fetva değildir.",
+      halalCheckTryEcodeHint: "Ambalajdaki E-kodu (örn. E471) veya ürün adını yukarıdaki aramaya girin.",
+      halalAdditiveRiskHaram: "Muhtemelen haram",
+      halalAdditiveRiskMushkil: "Şüpheli — kaynağı kontrol edin",
+      halalAdditiveRiskReference: "Bilgi",
+      halalVerifyQuickCodesHint: "Sık kodlar",
+      halalVerifyPasteIngredientsHint: "Ambalajdaki içeriği yapıştırıp analiz edebilirsiniz (E471, jelatin…).",
+      halalVerifySummaryHaramAdditiveTitle: "Muhtemelen haram katkı",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} katkı muhtemelen haram olarak işaretlendi. Resmi fetva değil — içeriği ve sertifikayı yeniden kontrol edin.`,
+      halalVerifySummaryMushkilAdditiveTitle: "Şüpheli katkı bulundu",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} katkı şüpheli. Kaynağı (hayvansal/bitkisel) ve halal sertifikayı kontrol edin.`,
+      halalCheckPasteIngredientsCta: "İçeriği yapıştırıp analiz et",
+      halalCheckPasteEmpty: "Panoda içerik metni yok. Ambalajdaki içeriği kopyalayıp tekrar deneyin.",
+      halalProductNoIngredients: "Bu kayıtta içerik metni yok. E-kod veya ambalaj içeriğini aramaya girin.",
+      halalCheckNoBarcodeTitle: "Barkod veritabanında yok",
+      halalCheckNoBarcodeBody:
+        "Halal Damu ürün API'si boş ve RAQAT referansında da bu barkod yok. Üreticiyi «Kurumlar» sekmesinde arayın veya halaldamu.kz kontrol edin.",
+      halalCheckOpenInstitutionsHint: "Üreticiyi «Kurumlar» sekmesinde arayın",
     },
     seerah: { title: "Siyer" },
     hadith: {
@@ -1099,6 +1210,29 @@ const LOCALE_PATCHES: Record<Exclude<AppLocale, "kk">, LocalePatch<typeof kk>> =
     features: {
       hatimTitle: "ختمة", hajjTitle: "الحج", halalTitle: "HALAL DAMU", traditionTitle: "الدين والتقاليد",
       kurbanAitTitle: "عيد الأضحى",
+      halalHeroTagRegistry: "السجل الرسمي",
+      halalHeroTagVerify: "فحص المنتج",
+      halalVerifyLead:
+        "أدخل رمز E (مثل E471) أو اسم المنتج أو الباركود. يمكن أيضاً المسح بالكاميرا. النتيجة مرجعية وليست فتوى رسمية.",
+      halalCheckTryEcodeHint: "أدخل رمز E من العبوة (مثل E471) أو اسم المنتج في البحث أعلاه.",
+      halalAdditiveRiskHaram: "محتمل الحرام",
+      halalAdditiveRiskMushkil: "مشكوك — تحقق من المصدر",
+      halalAdditiveRiskReference: "مرجع",
+      halalVerifyQuickCodesHint: "رموز شائعة",
+      halalVerifyPasteIngredientsHint: "يمكن لصق قائمة المكونات كاملة من العبوة (E471، جيلاتين…) للتحليل.",
+      halalVerifySummaryHaramAdditiveTitle: "مكون محتمل الحرام",
+      halalVerifySummaryHaramAdditiveBody: (count: number) =>
+        `${count} مكوّن(ات) موسومة كمحتملة الحرام. ليست فتوى رسمية — أعد التحقق من المكونات والشهادة.`,
+      halalVerifySummaryMushkilAdditiveTitle: "وُجد مكوّن مشكوك فيه",
+      halalVerifySummaryMushkilAdditiveBody: (count: number) =>
+        `${count} مكوّن(ات) مشكوك فيها. تحقق من المصدر (حيواني/نباتي) وشهادة الحلال.`,
+      halalCheckPasteIngredientsCta: "الصق المكونات للتحليل",
+      halalCheckPasteEmpty: "لا يوجد نص مكونات في الحافظة. انسخ قائمة العبوة وحاول مجدداً.",
+      halalProductNoIngredients: "لا يوجد نص مكونات في هذا السجل. أدخل رمز E أو الصق قائمة العبوة.",
+      halalCheckNoBarcodeTitle: "الباركود غير موجود في القاعدة",
+      halalCheckNoBarcodeBody:
+        "واجهة منتجات Halal Damu فارغة، وهذا الباركود غير موجود في مرجع RAQAT. ابحث عن المنتج في تبويب «المؤسسات» أو تحقق على halaldamu.kz.",
+      halalCheckOpenInstitutionsHint: "ابحث عن المنتج في تبويب «المؤسسات»",
     },
     seerah: { title: "السيرة" },
     hadith: {
@@ -1457,27 +1591,33 @@ export async function hydrateLocale(): Promise<AppLocale> {
   }
   applyLocale(next);
   emitLocaleChange();
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const reading = require("../quran/quranReadingLocale") as typeof import("../quran/quranReadingLocale");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const translit = require("../quran/quranTranslitScript") as typeof import("../quran/quranTranslitScript");
-    await Promise.all([
-      reading.ensureDefaultQuranReadingLocale(next),
-      translit.ensureDefaultQuranTranslitScript(next),
-    ]);
-  } catch {
-    /* ignore */
-  }
-  if (next !== "kk" && process.env.NODE_ENV !== "test") {
+
+  // Quran / CDN сөздік — UI-дан кейін (boot spinner ұзармасын)
+  const localeForBg = next;
+  void (async () => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
-      await m.ensureI18nOfflineDictionary(next);
-      m.scheduleLocaleContentDownload(next);
+      const reading = require("../quran/quranReadingLocale") as typeof import("../quran/quranReadingLocale");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const translit = require("../quran/quranTranslitScript") as typeof import("../quran/quranTranslitScript");
+      await Promise.all([
+        reading.ensureDefaultQuranReadingLocale(localeForBg),
+        translit.ensureDefaultQuranTranslitScript(localeForBg),
+      ]);
     } catch {
       /* ignore */
     }
-  }
+    if (localeForBg !== "kk" && process.env.NODE_ENV !== "test") {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const m = require("../services/localeContentDownload") as typeof import("../services/localeContentDownload");
+        await m.ensureI18nOfflineDictionary(localeForBg);
+        m.scheduleLocaleContentDownload(localeForBg);
+      } catch {
+        /* ignore */
+      }
+    }
+  })();
+
   return next;
 }

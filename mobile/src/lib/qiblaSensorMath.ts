@@ -99,8 +99,13 @@ export function isRotationMatrixMostlyFlat(R: ArrayLike<number>): boolean {
 }
 
 export function headingDegFromRotationMatrix9(R: ArrayLike<number>): number | null {
-  const matrix = isRotationMatrixMostlyFlat(R) ? R : remapRotationMatrixAxisXAxisZ(R) ?? R;
-  const rad = azimuthRadFromRotationMatrix9(matrix);
+  /**
+   * Компас UI: көрсеткі экранның **үстіңгі** жиегіне қарайды.
+   * AXIS_X/AXIS_Z remap (камера −Z) тік ұстағанда азимутты артқы камераға байлап,
+   * көрсеткі мен «тура» белгісін шатастырады — камера режимі жойылғандықтан remap жоқ.
+   * Телефонды жазық ұстау — ең тұрақты нәтиже.
+   */
+  const rad = azimuthRadFromRotationMatrix9(R);
   let deg = (rad * 180) / Math.PI;
   if (!Number.isFinite(deg)) {
     return null;

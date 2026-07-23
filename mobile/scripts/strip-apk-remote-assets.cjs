@@ -13,7 +13,6 @@ const manifestPath = path.join(mobileRoot, ".content-pack-staging", "manifest.js
 
 const REMOTE_JSON = [
   "offline-auto-translations-core.json",
-  "great-words-catalog.json",
   "halal-companies-snapshot.json",
 ];
 

@@ -20,10 +20,15 @@ type HalalProductsSeedBundle = {
   items: HalalProductSeedEntry[];
 };
 
+/** Баннер үшін — JSON parse жоқ (алғашқы кадр). Нақты санау getHalalProductsSeedCount(). */
+export const HALAL_PRODUCTS_SEED_COUNT_HINT = 3760;
+
 let byBarcode: Map<string, HalalProductSeedEntry> | null = null;
 let seedBundleCache: HalalProductsSeedBundle | null = null;
 let titleSearchList: HalalProductSeedEntry[] | null = null;
 let titleSearchRows: { entry: HalalProductSeedEntry; haystack: string; idx: number }[] | null = null;
+/** token (≥3) → row indices — O(1) кандидаттар. */
+let tokenIndex: Map<string, number[]> | null = null;
 let browseList: HalalProductSeedEntry[] | null = null;
 
 function getSeedBundle(): HalalProductsSeedBundle {
@@ -43,24 +48,46 @@ function barcodeLookupKeys(digits: string): string[] {
   return halalBarcodeLookupKeys(digits);
 }
 
+function normalizeSearchQuery(q: string): string {
+  return q
+    .trim()
+    .toLowerCase()
+    .replace(/[«»"']/g, "")
+    .replace(/\s+/g, " ");
+}
+
 function ensureIndex(): void {
   if (byBarcode) return;
   const bundle = getSeedBundle();
   const map = new Map<string, HalalProductSeedEntry>();
-  for (const item of bundle.items ?? []) {
+  const items = bundle.items ?? [];
+  const rows: { entry: HalalProductSeedEntry; haystack: string; idx: number }[] = [];
+  const tokens = new Map<string, number[]>();
+
+  for (let idx = 0; idx < items.length; idx++) {
+    const item = items[idx]!;
     const gtin = normalizeBarcodeDigits(item.gtin);
-    if (!gtin) continue;
-    for (const key of barcodeLookupKeys(gtin)) {
-      if (!map.has(key)) map.set(key, item);
+    if (gtin) {
+      for (const key of barcodeLookupKeys(gtin)) {
+        if (!map.has(key)) map.set(key, item);
+      }
+    }
+    const haystack = normalizeSearchQuery(
+      [item.title, item.brand ?? "", item.ingredients ?? "", item.gtin].join(" "),
+    );
+    rows.push({ entry: item, haystack, idx });
+    for (const tok of haystack.split(" ")) {
+      if (tok.length < 3) continue;
+      const bucket = tokens.get(tok);
+      if (bucket) bucket.push(idx);
+      else tokens.set(tok, [idx]);
     }
   }
+
   byBarcode = map;
-  titleSearchList = bundle.items ?? [];
-  titleSearchRows = titleSearchList.map((entry, idx) => ({
-    entry,
-    idx,
-    haystack: normalizeSearchQuery([entry.title, entry.brand ?? "", entry.ingredients ?? "", entry.gtin].join(" ")),
-  }));
+  titleSearchList = items;
+  titleSearchRows = rows;
+  tokenIndex = tokens;
 }
 
 function seedEntryToProduct(entry: HalalProductSeedEntry, index: number): HalalDamuProductItem {
@@ -107,12 +134,26 @@ export function prefetchHalalProductsSeedIndex(): void {
   }
 }
 
-function normalizeSearchQuery(q: string): string {
-  return q
-    .trim()
-    .toLowerCase()
-    .replace(/[«»"']/g, "")
-    .replace(/\s+/g, " ");
+function candidateRowIndices(q: string, tokens: string[]): number[] | null {
+  const index = tokenIndex;
+  if (!index) return null;
+
+  // Толық сөйлем / бір token — индекс арқылы кандидаттар
+  const primary = tokens.length === 1 ? tokens[0]! : q.includes(" ") ? null : q;
+  if (primary && primary.length >= 3) {
+    const exact = index.get(primary);
+    if (exact && exact.length > 0) return exact;
+  }
+
+  // Бірнеше token: ең сирек token бойынша кандидаттар
+  let best: number[] | null = null;
+  for (const t of tokens) {
+    if (t.length < 3) continue;
+    const bucket = index.get(t);
+    if (!bucket || bucket.length === 0) continue;
+    if (!best || bucket.length < best.length) best = bucket;
+  }
+  return best;
 }
 
 /** Атау / бренд / құрам / GTIN бойынша seed іздеу (2+ таңба). */
@@ -128,18 +169,32 @@ export function searchHalalProductsSeed(query: string, limit = 20): HalalDamuPro
   }
 
   const tokens = q.split(" ").filter((t) => t.length >= 2);
+  const rows = titleSearchRows ?? [];
   const scored: { entry: HalalProductSeedEntry; score: number; idx: number }[] = [];
-  (titleSearchRows ?? []).forEach(({ entry, haystack: hay, idx }) => {
+
+  const candidateIdx = candidateRowIndices(q, tokens);
+  const scan: { entry: HalalProductSeedEntry; haystack: string; idx: number }[] =
+    candidateIdx != null
+      ? candidateIdx.map((i) => rows[i]!).filter(Boolean)
+      : rows;
+
+  for (const row of scan) {
+    const { entry, haystack: hay, idx } = row;
     if (hay.includes(q)) {
       scored.push({ entry, score: 100, idx });
-      return;
+      if (scored.length >= limit && candidateIdx != null) {
+        // Нақты токен кандидаттарында жеткілікті exact hit
+        break;
+      }
+      continue;
     }
     let score = 0;
     for (const t of tokens) {
       if (hay.includes(t)) score += 10;
     }
     if (score > 0) scored.push({ entry, score, idx });
-  });
+  }
+
   scored.sort((a, b) => b.score - a.score || a.idx - b.idx);
   const seen = new Set<string>();
   const out: HalalDamuProductItem[] = [];
@@ -171,6 +226,7 @@ export function releaseHalalProductsSeedMemory(): void {
   seedBundleCache = null;
   titleSearchList = null;
   titleSearchRows = null;
+  tokenIndex = null;
   browseList = null;
 }
 

@@ -12,10 +12,18 @@ type Props = {
   probe: HalalProductsApiProbe | null;
   loading: boolean;
   seedCount?: number;
+  additiveSeedCount?: number;
   onOpenDocs?: () => void;
 };
 
-export function HalalProductsApiBanner({ colors, probe, loading, seedCount = 0, onOpenDocs }: Props) {
+export function HalalProductsApiBanner({
+  colors,
+  probe,
+  loading,
+  seedCount = 0,
+  additiveSeedCount = 0,
+  onOpenDocs,
+}: Props) {
   useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -39,6 +47,11 @@ export function HalalProductsApiBanner({ colors, probe, loading, seedCount = 0, 
         {seedCount > 0 ? (
           <Text style={[styles.body, { color: colors.muted, marginTop: 4 }]}>
             {kk.features.halalProductsApiEmptySeed(seedCount)}
+          </Text>
+        ) : null}
+        {additiveSeedCount > 0 ? (
+          <Text style={[styles.body, { color: colors.muted, marginTop: 4 }]}>
+            {kk.features.halalAdditivesApiEmptySeed(additiveSeedCount)}
           </Text>
         ) : null}
       </View>

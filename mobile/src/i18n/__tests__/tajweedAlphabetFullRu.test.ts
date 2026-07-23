@@ -1,4 +1,4 @@
-﻿import { setCurrentLocale } from "../runtime";
+import { setCurrentLocale } from "../runtime";
 import { kk } from "../kk";
 import { tajweedLetterDisplayName } from "../../content/tajweedLetterNamesLocale";
 import { tajweedSectionDisplayTitle } from "../../content/tajweedSectionTitlesLocale";
@@ -31,6 +31,8 @@ describe("tajweed alphabet screen full RU", () => {
       kk.tajweedGuide.sectionBook,
       kk.tajweedGuide.alphabetTapHint,
       kk.tajweedGuide.chaptersHint,
+      kk.tajweedGuide.openQuranCta,
+      kk.tajweedGuide.openColoredListCta,
       kk.tajweedGuide.practiceCtaTitle,
       kk.dashboard.tajweedCardSub,
     ];

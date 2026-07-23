@@ -1,7 +1,6 @@
 /** Release APK stash/strip — CDN + FileSystem cache (rahatomir.com/assets/bundled). */
 export const APK_SLIM_REMOTE_JSON = [
   "offline-auto-translations-core.json",
-  "great-words-catalog.json",
   "halal-companies-snapshot.json",
 ] as const;
 

@@ -157,7 +157,7 @@ const NATIVE_EXPO_CONFIG = {
   },
   android: {
     softwareKeyboardLayoutMode: "resize",
-    versionCode: 11,
+    versionCode: 12,
     adaptiveIcon: {
       foregroundImage: "./assets/adaptive-icon.png",
       backgroundColor: "#000000",
@@ -197,7 +197,7 @@ module.exports = ({ config }) => {
     ...config,
     name: "RAHAT OMIR",
     slug: "raqat-mobile",
-    version: "1.1.1",
+    version: "1.1.2",
     owner: "raqat-omir",
     web: {
       favicon: "./assets/favicon.png",

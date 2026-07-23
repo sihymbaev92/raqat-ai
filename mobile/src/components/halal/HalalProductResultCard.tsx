@@ -28,31 +28,55 @@ type AdditiveProps = {
   isDark: boolean;
   title: string;
   description?: string | null;
+  risk?: string | null;
   onPress: () => void;
 };
 
 type Props = ProductProps | AdditiveProps;
 
+function additiveTone(risk: string | null | undefined): "ok" | "warn" | "bad" | "neutral" {
+  const r = (risk || "").toUpperCase();
+  if (r === "HARAM") return "bad";
+  if (r === "MUSHKIL") return "warn";
+  if (r === "REFERENCE") return "neutral";
+  return "neutral";
+}
+
 export function HalalProductResultCard(props: Props) {
   useAppLocale();
   const { colors, isDark } = props;
-  const tone = props.kind === "product" ? halalCertTone(props.certificateStatus) : "neutral";
+  const tone =
+    props.kind === "product" ? halalCertTone(props.certificateStatus) : additiveTone(props.risk);
   const accent = halalCertBadgeColors(tone, isDark).dot;
   const styles = useMemo(() => makeStyles(colors, accent), [colors, accent]);
 
   if (props.kind === "additive") {
+    const risk = (props.risk || "").toUpperCase();
+    const riskLabel =
+      risk === "HARAM"
+        ? kk.features.halalAdditiveRiskHaram
+        : risk === "MUSHKIL"
+          ? kk.features.halalAdditiveRiskMushkil
+          : kk.features.halalAdditiveRiskReference;
     return (
       <Pressable
         onPress={props.onPress}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
         accessibilityRole="button"
-        accessibilityLabel={props.title}
+        accessibilityLabel={`${props.title}. ${riskLabel}`}
       >
         <View style={styles.accentBar} />
-        <MaterialIcons name="science" size={20} color={colors.accent} />
+        <MaterialIcons
+          name={risk === "HARAM" ? "report-problem" : risk === "MUSHKIL" ? "warning" : "science"}
+          size={20}
+          color={accent}
+        />
         <View style={styles.body}>
           <Text style={styles.title} numberOfLines={2}>
             {props.title}
+          </Text>
+          <Text style={[styles.verification, { color: accent }]} numberOfLines={1}>
+            {riskLabel}
           </Text>
           {props.description ? (
             <Text style={styles.sub} numberOfLines={3}>

@@ -146,7 +146,7 @@ export function SavedTabScreen() {
           <Text style={styles.emptyText}>{st.emptyHint}</Text>
           <View style={styles.quickRow}>
             <QuickButton label={st.quickHatim} onPress={() => navigateToMoreStackScreen("Hatim", undefined, navigation)} />
-            <QuickButton label={st.quickHalal} onPress={() => navigateToMoreStackScreen("Halal", undefined, navigation)} />
+            <QuickButton label={st.quickHalal} onPress={() => navigateToMoreStackScreen("Halal", { initialTab: "verify" }, navigation)} />
           </View>
         </View>
       ) : null}
