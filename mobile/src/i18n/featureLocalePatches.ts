@@ -55,7 +55,7 @@ const tajweedRu: QuranTajweedPatch = {
   tajweedPanelOff: "Выключить",
   tajweedModeLabel: "Цвета таджвида",
   tajweedModeHint:
-    "Хатым (QCF4): King Fahd QCF V4 COLR — цветной таджвид внутри букв (Quran Foundation CDN). Чтение суры: теги Al Quran Cloud «quran-tajweed». Сначала офлайн seed в приложении, затем кеш и API.",
+    "Хатым (QCF4): King Fahd QCF V4 COLR — цветной таджвид внутри букв (связность сохраняется). Для ихфа — тег Al Quran Cloud. Чтение суры: «quran-tajweed». Сначала офлайн seed, затем кеш/API.",
   tajweedLoading: "Загрузка текста таджвида…",
   tajweedLoadFailedHint:
     "Не удалось загрузить текст таджвида. Проверьте интернет и обновите экран. Если офлайн seed недоступен — обновите приложение.",
@@ -79,7 +79,7 @@ const tajweedEn: QuranTajweedPatch = {
   tajweedPanelOff: "Off",
   tajweedModeLabel: "Tajweed colors",
   tajweedModeHint:
-    "Khatm (QCF4): King Fahd QCF V4 COLR — in-glyph colored tajweed (Quran Foundation CDN). Surah reading: Al Quran Cloud «quran-tajweed» tags. Uses bundled offline seed first, then cache/API.",
+    "Khatm (QCF4): King Fahd QCF V4 COLR — multi-color tajweed inside glyphs (joining preserved). Ikhfa uses Al Quran Cloud tags. Surah reading: «quran-tajweed» tags. Bundled offline seed first, then cache/API.",
   tajweedLoading: "Loading tajweed text…",
   tajweedLoadFailedHint:
     "Could not load tajweed text. Check your connection and refresh. If offline seed is missing, update the app.",
@@ -103,7 +103,7 @@ const tajweedKy: QuranTajweedPatch = {
   tajweedPanelOff: "Өчүрүү",
   tajweedModeLabel: "Тажвид түстөрү",
   tajweedModeHint:
-    "Хатым (QCF4): King Fahd QCF V4 COLR — Sajda сыяктуу тамга ичиндеги түстүү тажвид. Сүрө окуу: Al Quran Cloud «quran-tajweed» тегдери. Алды менен колдонмодогу офлайн seed, андан кийин кеш/API.",
+    "Хатым (QCF4): King Fahd QCF V4 COLR — тамга ичиндеги түстүү тажвид. Ихфа үчүн Al Quran Cloud теги. Сүрө окуу: «quran-tajweed». Алды менен офлайн seed, андан кийин кеш/API.",
   tajweedLoading: "Тажвид тексти жүктөлүүдө…",
   tajweedLoadFailedHint:
     "Тажвид тексти жүктөлбөдү. Интернетти текшерип, экранды жаңыртыңыз. Офлайн seed жок болсо — колдонмону жаңыртыңыз.",
@@ -127,7 +127,7 @@ const tajweedUz: QuranTajweedPatch = {
   tajweedPanelOff: "O'chirish",
   tajweedModeLabel: "Tajvid ranglari",
   tajweedModeHint:
-    "Xatm (QCF4): King Fahd QCF V4 COLR — harf ichidagi rangli tajvid (Quran Foundation CDN). Sura o'qish: Al Quran Cloud «quran-tajweed» teglari. Avvalo ilovadagi oflayn seed, keyin kesh/API.",
+    "Xatm (QCF4): King Fahd QCF V4 COLR — harf ichidagi rangli tajvid. Ihfa uchun Al Quran Cloud tegi. Sura o'qish: «quran-tajweed». Avvalo oflayn seed, keyin kesh/API.",
   tajweedLoading: "Tajvid matni yuklanmoqda…",
   tajweedLoadFailedHint:
     "Tajvid matni yuklanmadi. Internetni tekshiring va ekranni yangilang. Oflayn seed bo'lmasa — ilovani yangilang.",
@@ -151,7 +151,7 @@ const tajweedTr: QuranTajweedPatch = {
   tajweedPanelOff: "Kapat",
   tajweedModeLabel: "Tecvid renkleri",
   tajweedModeHint:
-    "Hatim (QCF4): King Fahd QCF V4 COLR — harf içi renkli tecvid (Quran Foundation CDN). Sure okuma: Al Quran Cloud «quran-tajweed» etiketleri. Önce uygulama içi çevrimdışı seed, sonra önbellek/API.",
+    "Hatim (QCF4): King Fahd QCF V4 COLR — harf içi renkli tecvid. Ihfa için Al Quran Cloud etiketi. Sure okuma: «quran-tajweed». Önce çevrimdışı seed, sonra önbellek/API.",
   tajweedLoading: "Tecvid metni yükleniyor…",
   tajweedLoadFailedHint:
     "Tecvid metni yüklenemedi. İnterneti kontrol edin ve ekranı yenileyin. Çevrimdışı seed yoksa uygulamayı güncelleyin.",
@@ -300,7 +300,7 @@ const tajweedAr: QuranTajweedPatch = {
   tajweedPanelOff: "إيقاف",
   tajweedModeLabel: "ألوان التجويد",
   tajweedModeHint:
-    "الختمة (QCF4): King Fahd QCF V4 COLR — تجويد ملوّن داخل الحروف. قراءة السورة: وسوم Al Quran Cloud «quran-tajweed». أولاً البذرة دون اتصال، ثم الذاكرة المؤقتة/API.",
+    "الختمة (QCF4): King Fahd QCF V4 COLR — تجويد ملوّن داخل الحروف. للإخفاء وسم Al Quran Cloud. قراءة السورة: «quran-tajweed». أولاً البذرة دون اتصال، ثم الذاكرة المؤقتة/API.",
   tajweedLoading: "جارٍ تحميل نص التجويد…",
   tajweedLoadFailedHint:
     "تعذّر تحميل نص التجويد. تحقق من الإنترنت وحدّث الشاشة. إن لم تتوفر البذرة دون اتصال فحدّث التطبيق.",

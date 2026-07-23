@@ -58,9 +58,6 @@ import {
 } from "../../quran/mushafAyahMarkerStyle";
 import {
   tajweedRuleForWordGlyph,
-  tajweedWordCharRuns,
-  tajweedWordHasPerLetterColoring,
-  type TajweedRuleKey,
 } from "../../utils/alquranTajweedParse";
 import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
 import {
@@ -639,7 +636,6 @@ export function MushafBookPageQcf4({
                   : wordOrdinal;
               const taggedAyah =
                 ref != null ? tajweedTaggedByAyah.get(`${ref.surah}:${ref.ayah}`) : undefined;
-              const readableWord = qcf4ReadableText(word);
               const nextWord = line.words[wi + 1];
               const tajweedPaint = resolveQcf4TajweedPaint({
                 useColrGlyphs,
@@ -649,19 +645,10 @@ export function MushafBookPageQcf4({
                 wordIndex: wordRuleIndex,
                 glyphIndexInWord: glyphIndexInWordByRenderKey.get(`${line.line}:${wi}`) ?? 0,
               });
-              const usePerLetterTajweed =
-                showTajweedColors &&
-                !useColrGlyphs &&
-                word.type === "word" &&
-                Boolean(taggedAyah) &&
-                wordRuleIndex != null &&
-                tajweedWordHasPerLetterColoring(taggedAyah, wordRuleIndex);
-              const tajweedCharRuns = usePerLetterTajweed
-                ? tajweedWordCharRuns(taggedAyah, wordRuleIndex!, readableWord)
-                : [];
-              const tajweedRule = usePerLetterTajweed
-                ? undefined
-                : tajweedPaint.mode === "tag" && tajweedPaint.rule
+              // Бір QCF4 глиф = тұтас лигатура. Nested әріп Text арабды үзеді —
+              // тек сөз/глиф деңгейіндегі Al Quran Cloud түсі (легенда hex).
+              const tajweedRule =
+                tajweedPaint.mode === "tag" && tajweedPaint.rule
                   ? tajweedPaint.rule
                   : ref != null && wordRuleIndex != null && !useColrGlyphs
                     ? tajweedRuleForWordGlyph(
@@ -681,14 +668,14 @@ export function MushafBookPageQcf4({
                 fontFamily:
                   useColrGlyphFont
                     ? qcf4ColrFontFamilyName(page.mushafPageNumber)
-                    : usePerLetterTajweed || readableWebText
+                    : readableWebText
                       ? QCF4_READABLE_WEB_FONT
                       : qcf4FontFamilyName(word.font),
                 fontSize: displayedFontSize,
                 lineHeight: glyphLineHeight,
                 paddingHorizontal: glyphSideBearingPad,
                 marginHorizontal: glyphSideBearingMargin,
-                fontWeight: (usePerLetterTajweed || readableWebText ? "700" : "600") as "700" | "600",
+                fontWeight: (readableWebText ? "700" : "600") as "700" | "600",
                 color:
                   word.type === "surah_header"
                     ? QCF4_AYAH_MARKER_BLUE
@@ -696,14 +683,12 @@ export function MushafBookPageQcf4({
                       ? tajweedColorForRule(tajweedRule, isDark)
                       : st.mushafAyahTxt.color,
                 textShadowColor:
-                  !readableWebText && !usePerLetterTajweed && !useColrGlyphFont && word.type !== "surah_header"
+                  !readableWebText && !useColrGlyphFont && word.type !== "surah_header"
                     ? st.mushafAyahTxt.color
                     : "transparent",
                 textShadowOffset:
-                  readableWebText || usePerLetterTajweed || useColrGlyphFont
-                    ? undefined
-                    : { width: 0.25, height: 0 },
-                textShadowRadius: readableWebText || usePerLetterTajweed || useColrGlyphFont ? 0 : 0.45,
+                  readableWebText || useColrGlyphFont ? undefined : { width: 0.25, height: 0 },
+                textShadowRadius: readableWebText || useColrGlyphFont ? 0 : 0.45,
                 transform: stretchGlyph ? [{ scaleY: glyphVisualScaleY }] : undefined,
                 backgroundColor: isCurrentPlayingWord
                   ? "rgba(16, 185, 129, 0.34)"
@@ -734,17 +719,6 @@ export function MushafBookPageQcf4({
                       variant="qcom"
                     />
                   </View>
-                ) : usePerLetterTajweed ? (
-                  <Text style={glyphTextStyle}>
-                    {tajweedCharRuns.map((run, ri) => (
-                      <Text
-                        key={`${wordRuleIndex}-${ri}`}
-                        style={run.rule ? { color: tajweedColorForRule(run.rule, isDark) } : undefined}
-                      >
-                        {run.text}
-                      </Text>
-                    ))}
-                  </Text>
                 ) : (
                   <Text
                     style={glyphTextStyle}

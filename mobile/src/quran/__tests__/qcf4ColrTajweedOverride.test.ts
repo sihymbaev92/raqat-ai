@@ -32,6 +32,17 @@ describe("qcf4ColrSuppressTajweedColor", () => {
   });
 });
 
+describe("qcf4ColrPreferApiTagOverColr", () => {
+  it("overrides COLR only for ikhfa so other rules keep in-glyph multi-color", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { qcf4ColrPreferApiTagOverColr } = require("../qcf4ColrTajweedOverride");
+    expect(qcf4ColrPreferApiTagOverColr(word("مِنْ"), word("بَعْدِ"), "f")).toBe(true);
+    expect(qcf4ColrPreferApiTagOverColr(word("مِن"), undefined, "g")).toBe(false);
+    expect(qcf4ColrPreferApiTagOverColr(word("قَدْ"), undefined, "q")).toBe(false);
+    expect(qcf4ColrPreferApiTagOverColr(word("الرَّحْمَٰنِ"), undefined, undefined)).toBe(false);
+  });
+});
+
 describe("qcf4HatimLineJustifyContent", () => {
   it("right-aligns hatim lines (flex-start in row-reverse)", () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

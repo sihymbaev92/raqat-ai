@@ -29,7 +29,11 @@ export function qcf4ColrSuppressTajweedColor(word: Qcf4Word, nextWord?: Qcf4Word
   return IZHAR_FIRST_RE.test(nextLetter);
 }
 
-/** Prefer Al Quran Cloud tag color over COLR for selected rules (ikhfa on tanween). */
+/**
+ * Prefer Al Quran Cloud tag color over COLR only where COLR ink is known wrong
+ * (ikhfa / tanween). Other rules keep COLR so multiple colors stay inside one
+ * ligature glyph — nested Text letter spans break Arabic joining.
+ */
 export function qcf4ColrPreferApiTagOverColr(
   _word: Qcf4Word,
   _nextWord?: Qcf4Word,

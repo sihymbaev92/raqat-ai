@@ -13,6 +13,10 @@ import {
   stripHtmlFontTajweedTags,
   type HtmlFontTajweedRun,
 } from "../utils/htmlTajweedParse";
+import {
+  TajweedColoredArabicWebView,
+  tajweedHtmlWebViewSupported,
+} from "./TajweedColoredArabicWebView";
 
 type Props = {
   taggedText: string;
@@ -23,16 +27,12 @@ type Props = {
   nestedInText?: boolean;
 };
 
-/** Тәжуид span-дарына width/flex шектеулерін алу — мәтін ағынымен wrap; әріп шеті кесілмесін. */
+/** Тәжуид span-дарына width/flex шектеулерін алу — мәтін ағынымен wrap; әріп арасын ашпау. */
 export function inlineTajweedSpanStyle(
   baseStyle: TextStyle,
   color?: string,
-  opts?: { compact?: boolean }
+  _opts?: { compact?: boolean }
 ): TextStyle {
-  const fontSize = typeof baseStyle.fontSize === "number" ? baseStyle.fontSize : 24;
-  const spanPad = opts?.compact
-    ? 0
-    : Math.max(1, Math.ceil(fontSize * (Platform.OS === "android" ? 0.055 : 0.035)));
   return {
     ...baseStyle,
     flexGrow: undefined,
@@ -43,7 +43,7 @@ export function inlineTajweedSpanStyle(
     maxWidth: undefined,
     alignSelf: undefined,
     marginHorizontal: 0,
-    paddingHorizontal: spanPad,
+    paddingHorizontal: 0,
     includeFontPadding: true,
     textAlign: "right",
     writingDirection: "rtl",
@@ -89,6 +89,12 @@ function plainFallback(raw: string, plainText: string | undefined): string {
   return raw.trim();
 }
 
+function resolveInk(baseStyle: TextStyle, isDark: boolean): string {
+  const c = baseStyle.color;
+  if (typeof c === "string" && c.trim()) return c;
+  return isDark ? "#F5F5F5" : "#111111";
+}
+
 const rtlHostStyle = {
   width: "100%" as const,
   alignSelf: "stretch" as const,
@@ -96,8 +102,8 @@ const rtlHostStyle = {
 };
 
 /**
- * Тәжуид түстері — Al Quran `[g[` тегтері немесе HTML `<font color>` енін шектемей,
- * негізгі Text ағынымен wrap рендер (оңнан солға).
+ * Тәжуид түстері — native-та WebView HTML (араб қосылады + түстер сақталады);
+ * nested/web — RN Text fallback.
  */
 export function TajweedColoredArabicText({
   taggedText,
@@ -108,6 +114,9 @@ export function TajweedColoredArabicText({
 }: Props) {
   const raw = (taggedText ?? "").trim();
   const htmlMode = isHtmlFontTajweedText(raw);
+  const hasMarkup = htmlMode || raw.includes("[");
+  const ink = resolveInk(baseStyle, isDark);
+
   const bracketRuns = useMemo(
     () => (!htmlMode && raw.includes("[") ? tajweedColoredRuns(raw) : []),
     [htmlMode, raw]
@@ -115,6 +124,20 @@ export function TajweedColoredArabicText({
   const htmlRuns = useMemo(() => (htmlMode ? htmlFontTajweedRuns(raw, isDark) : []), [htmlMode, raw, isDark]);
 
   if (!raw) return null;
+
+  // Native: браузер shaping — түстер де, әріп байланысы да.
+  if (!nestedInText && hasMarkup && tajweedHtmlWebViewSupported()) {
+    return (
+      <View style={rtlHostStyle}>
+        <TajweedColoredArabicWebView
+          taggedText={raw}
+          baseStyle={baseStyle}
+          isDark={isDark}
+          ink={ink}
+        />
+      </View>
+    );
+  }
 
   const rtlStyle: TextStyle = {
     ...inlineTajweedSpanStyle(baseStyle),

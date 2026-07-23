@@ -12,12 +12,24 @@ function word(text: string): Qcf4Word {
 }
 
 describe("resolveQcf4TajweedPaint", () => {
-  it("uses COLR when glyphs active and no API override", () => {
+  it("uses COLR when glyphs active so in-glyph multi-color stays joined", () => {
     expect(
       resolveQcf4TajweedPaint({
         useColrGlyphs: true,
         word: word("الرَّحْمَٰنِ"),
         taggedAyah: "[h:2[ٱ][l[ل]رَّحْمَ[n[ـٰ]نِ",
+        wordIndex: 0,
+        glyphIndexInWord: 0,
+      }).mode
+    ).toBe("colr");
+  });
+
+  it("keeps COLR when no API tag rule is mapped to the glyph", () => {
+    expect(
+      resolveQcf4TajweedPaint({
+        useColrGlyphs: true,
+        word: word("الرَّحْمَٰنِ"),
+        taggedAyah: null,
         wordIndex: 0,
         glyphIndexInWord: 0,
       }).mode
@@ -45,6 +57,28 @@ describe("resolveQcf4TajweedPaint", () => {
     });
     expect(paint.mode).toBe("tag");
     expect(paint.rule).toBe("f");
+  });
+
+  it("keeps COLR for ghunnah/qalqalah (multi-color inside glyph)", () => {
+    expect(
+      resolveQcf4TajweedPaint({
+        useColrGlyphs: true,
+        word: word("مِن"),
+        taggedAyah: "قَالُوا [g[مِن] رَبِّهِمْ",
+        wordIndex: 1,
+        glyphIndexInWord: 0,
+      }).mode
+    ).toBe("colr");
+
+    expect(
+      resolveQcf4TajweedPaint({
+        useColrGlyphs: true,
+        word: word("قَدْ"),
+        taggedAyah: "[q[قَدْ]",
+        wordIndex: 0,
+        glyphIndexInWord: 0,
+      }).mode
+    ).toBe("colr");
   });
 
   it("uses per-glyph tag colors when COLR inactive", () => {
