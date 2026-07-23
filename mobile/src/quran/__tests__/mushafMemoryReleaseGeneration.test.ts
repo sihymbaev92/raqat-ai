@@ -1,12 +1,14 @@
 import {
   cancelScheduledMushafMemoryRelease,
   scheduleReleaseMushafScreenMemory,
+  takeMushafNeedsReloadAfterInterruptedRelease,
   touchMushafAccess,
 } from "../mushafMemoryRelease";
 
 describe("mushafMemoryRelease generation cancel", () => {
   afterEach(() => {
     cancelScheduledMushafMemoryRelease();
+    takeMushafNeedsReloadAfterInterruptedRelease();
     jest.useRealTimers();
   });
 
@@ -19,5 +21,14 @@ describe("mushafMemoryRelease generation cancel", () => {
     await Promise.resolve();
     await Promise.resolve();
     expect(onReleased).not.toHaveBeenCalled();
+  });
+
+  it("flags UI reload when focus returns during an in-flight release", async () => {
+    jest.useFakeTimers();
+    scheduleReleaseMushafScreenMemory({ delayMs: 50, onReleased: jest.fn() });
+    jest.advanceTimersByTime(50);
+    touchMushafAccess();
+    expect(takeMushafNeedsReloadAfterInterruptedRelease()).toBe(true);
+    expect(takeMushafNeedsReloadAfterInterruptedRelease()).toBe(false);
   });
 });

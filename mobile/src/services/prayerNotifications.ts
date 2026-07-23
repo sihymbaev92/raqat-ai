@@ -205,11 +205,12 @@ async function fetchPrayerDaysAhead(
   city: string,
   country: string,
   anchor: Date,
-  shiftMin: number = 0
+  shiftMin: number = 0,
+  coordsHint?: { lat: number; lon: number } | null
 ): Promise<PrayerDayBucket[]> {
   const tasks = Array.from({ length: PRAYER_FETCH_DAYS }, (_, i) => {
     const day = localDayAtNoon(anchor, i);
-    return fetchPrayerTimesForLocationForDate(city, country, day).then((pt) => ({
+    return fetchPrayerTimesForLocationForDate(city, country, day, undefined, coordsHint).then((pt) => ({
       day,
       pt: shiftMin === 0 ? pt : applyPrayerTimeShift(pt, shiftMin),
     }));
@@ -454,8 +455,12 @@ export async function reschedulePrayerNotifications(
     ]);
     const now = Date.now();
     const anchor = localDayAtNoon(new Date(), 0);
+    const coordsHint =
+      Number.isFinite(data.latitude) && Number.isFinite(data.longitude)
+        ? { lat: data.latitude as number, lon: data.longitude as number }
+        : null;
 
-    const fetched = await fetchPrayerDaysAhead(data.city, data.country, anchor, shiftMin);
+    const fetched = await fetchPrayerDaysAhead(data.city, data.country, anchor, shiftMin, coordsHint);
     const scheduleData =
       shiftMin !== 0 && !opts.prayerTimesAlreadyAdjusted ? applyPrayerTimeShift(data, shiftMin) : data;
     const dayBuckets = buildPrayerDayBuckets(scheduleData, fetched, anchor);
@@ -598,13 +603,19 @@ export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
     return rescheduleFromCacheInFlight;
   }
   rescheduleFromCacheInFlight = (async () => {
-    do {
-      rescheduleFromCacheNeedsRerun = false;
-      await reschedulePrayerNotificationsFromCacheBody();
-    } while (rescheduleFromCacheNeedsRerun);
-  })().finally(() => {
-    rescheduleFromCacheInFlight = null;
-  });
+    try {
+      do {
+        rescheduleFromCacheNeedsRerun = false;
+        await reschedulePrayerNotificationsFromCacheBody();
+      } while (rescheduleFromCacheNeedsRerun);
+    } finally {
+      rescheduleFromCacheInFlight = null;
+      /** do/while мен finally арасындағы TOCTOU — dirty болса қайта бастау. */
+      if (rescheduleFromCacheNeedsRerun) {
+        await reschedulePrayerNotificationsFromCache();
+      }
+    }
+  })();
   return rescheduleFromCacheInFlight;
 }
 

@@ -159,7 +159,7 @@ import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { useAppLocale } from "../i18n/runtime";
 import { useQuranReadingLocale } from "../quran/quranReadingLocale";
 import { useQuranTranslitScript } from "../quran/quranTranslitScript";
-import { touchMushafAccess, scheduleReleaseMushafScreenMemory } from "../quran/mushafMemoryRelease";
+import { touchMushafAccess, scheduleReleaseMushafScreenMemory, takeMushafNeedsReloadAfterInterruptedRelease } from "../quran/mushafMemoryRelease";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   getQuranSurahTranslation,
@@ -690,7 +690,8 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       touchMushafAccess();
-      if (mushafNeedsReloadAfterMemoryReleaseRef.current) {
+      const interrupted = takeMushafNeedsReloadAfterInterruptedRelease();
+      if (interrupted || mushafNeedsReloadAfterMemoryReleaseRef.current) {
         mushafNeedsReloadAfterMemoryReleaseRef.current = false;
         setLoading(true);
         setLoadKey((k) => k + 1);

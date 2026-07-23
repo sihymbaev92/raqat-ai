@@ -523,13 +523,29 @@ export function PrayerTimesScreen() {
         if (
           cached &&
           !cached.error &&
+          cached.city === cityName &&
+          cached.country === countryName &&
           isPrayerTimesResultForLocalToday(cached)
         ) {
-          setResult(
-            alignPrayerTimesToShift(cached, effectiveMode === "mosque" ? effectiveShift : 0, {
-              missingAppliedMeans: cached.appliedShiftMin == null ? "alreadyDesired" : "raw",
-            }),
-          );
+          const cachedOut = alignPrayerTimesToShift(cached, effectiveMode === "mosque" ? effectiveShift : 0, {
+            missingAppliedMeans: cached.appliedShiftMin == null ? "alreadyDesired" : "raw",
+          });
+          setResult(cachedOut);
+          if (!isCurrentRequest()) return;
+          try {
+            const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
+            if (!isCurrentRequest()) return;
+            await savePrayerCache(cachedOut, {
+              appliedShiftMin: cachedOut.appliedShiftMin ?? (effectiveMode === "mosque" ? effectiveShift : 0),
+            });
+            await reschedulePrayerNotifications(cachedOut, {
+              enabled: en,
+              iftarExtra: ift,
+              prayerTimesAlreadyAdjusted: true,
+            });
+          } catch {
+            /* кесте көрсетіле береді */
+          }
           return;
         }
         const message = e instanceof Error ? e.message : "Network error";
@@ -600,7 +616,11 @@ export function PrayerTimesScreen() {
       const tm = new Date();
       tm.setDate(tm.getDate() + 1);
       tm.setHours(12, 0, 0, 0);
-      const ptRaw = await fetchPrayerTimesForLocationForDate(city, country, tm);
+      const coordsHint =
+        result && Number.isFinite(result.latitude) && Number.isFinite(result.longitude)
+          ? { lat: result.latitude as number, lon: result.longitude as number }
+          : getKzPresetCoords(city, country);
+      const ptRaw = await fetchPrayerTimesForLocationForDate(city, country, tm, undefined, coordsHint);
       const pt =
         sourceMode === "mosque" && mosqueShiftMin !== 0
           ? applyPrayerTimeShift(ptRaw, mosqueShiftMin)
@@ -612,7 +632,7 @@ export function PrayerTimesScreen() {
     return () => {
       cancelled = true;
     };
-  }, [hasData, carouselCells, city, country, salatMinute, mosqueShiftMin, sourceMode]);
+  }, [hasData, carouselCells, city, country, salatMinute, mosqueShiftMin, sourceMode, result]);
 
   const togglePrayerSound = useCallback(
     async (key: PrayerNotifSalatKey) => {

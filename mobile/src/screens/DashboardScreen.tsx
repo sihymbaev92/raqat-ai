@@ -18,6 +18,7 @@ import {
   isPrayerTimesResultForLocalToday,
   type PrayerTimesResult,
 } from "../api/prayerTimes";
+import { alignPrayerTimesToCurrentScheduleShift } from "../services/prayerMosqueShiftAlign";
 import { useAppTheme } from "../theme/ThemeContext";
 import { BRAND_FONT_FACE } from "../fonts/brandFont";
 import { kk, APP_BRAND_KK } from "../i18n/kk";
@@ -106,6 +107,14 @@ function weatherCoordsFromPrayerResult(d: Pick<PrayerTimesResult, "latitude" | "
 async function getDashboardPrayerShiftMin(): Promise<number> {
   const [sourceMode, shiftMin] = await Promise.all([getPrayerSourceMode(), getPrayerMosqueShiftMin()]);
   return sourceMode === "mosque" ? shiftMin : 0;
+}
+
+function prayerCacheAlignOpts(cached: { appliedShiftMin?: number }): {
+  missingAppliedMeans: "alreadyDesired" | "raw";
+} {
+  return {
+    missingAppliedMeans: cached.appliedShiftMin == null ? "alreadyDesired" : "raw",
+  };
 }
 
 function signedDegHomeHeader(c: number): string {
@@ -426,12 +435,16 @@ function DashboardScreenContent({
         if (!cancelled) setTomorrowRows(null);
         return;
       }
-      const { city, country } = await resolvePrayerScheduleLocation();
+      const loc = await resolvePrayerScheduleLocation();
+      const { city, country } = loc;
       const tm = new Date();
       tm.setDate(tm.getDate() + 1);
       tm.setHours(12, 0, 0, 0);
       const [ptRaw, shiftMin] = await Promise.all([
-        fetchPrayerTimesForLocationForDate(city, country, tm),
+        fetchPrayerTimesForLocationForDate(city, country, tm, undefined, {
+          lat: loc.lat,
+          lon: loc.lon,
+        }),
         getDashboardPrayerShiftMin(),
       ]);
       const pt = shiftMin === 0 ? ptRaw : applyPrayerTimeShift(ptRaw, shiftMin);
@@ -469,10 +482,12 @@ function DashboardScreenContent({
       isPrayerTimesResultForLocalToday(cached);
 
     if (mode === "focus" && cacheRecent && cached) {
-      setRows(rowsFromResult(cached));
-      setCityLabel(cached.city);
-      setCountryLabel(cached.country);
-      setWeatherCoordOverride(weatherCoordsFromPrayerResult(cached));
+      const aligned = await alignPrayerTimesToCurrentScheduleShift(cached, prayerCacheAlignOpts(cached));
+      if (!isCurrent()) return;
+      setRows(rowsFromResult(aligned));
+      setCityLabel(aligned.city);
+      setCountryLabel(aligned.country);
+      setWeatherCoordOverride(weatherCoordsFromPrayerResult(aligned));
       setFromCache(true);
       setErr(null);
       return;
@@ -487,10 +502,12 @@ function DashboardScreenContent({
       !cached.error &&
       isPrayerTimesResultForLocalToday(cached)
     ) {
-      setRows(rowsFromResult(cached));
-      setCityLabel(cached.city);
-      setCountryLabel(cached.country);
-      setWeatherCoordOverride(weatherCoordsFromPrayerResult(cached));
+      const aligned = await alignPrayerTimesToCurrentScheduleShift(cached, prayerCacheAlignOpts(cached));
+      if (!isCurrent()) return;
+      setRows(rowsFromResult(aligned));
+      setCityLabel(aligned.city);
+      setCountryLabel(aligned.country);
+      setWeatherCoordOverride(weatherCoordsFromPrayerResult(aligned));
       setFromCache(true);
       setErr(null);
       usedCache = true;
@@ -545,10 +562,15 @@ function DashboardScreenContent({
       setWeatherCoordOverride({ lat: loc.lat, lon: loc.lon });
       if (cached && cached.city === loc.city && cached.country === loc.country && !cached.error) {
         if (isPrayerTimesResultForLocalToday(cached)) {
-          setRows(rowsFromResult(cached));
-          setCityLabel(cached.city);
-          setCountryLabel(cached.country);
-          setWeatherCoordOverride(weatherCoordsFromPrayerResult(cached));
+          const aligned = await alignPrayerTimesToCurrentScheduleShift(
+            cached,
+            prayerCacheAlignOpts(cached),
+          );
+          if (cancelled) return;
+          setRows(rowsFromResult(aligned));
+          setCityLabel(aligned.city);
+          setCountryLabel(aligned.country);
+          setWeatherCoordOverride(weatherCoordsFromPrayerResult(aligned));
           setFromCache(true);
           setErr(null);
           /** Хабарламалар кестесін UI сызылғаннан кейін — бірінші кадрды бұғаттамау.

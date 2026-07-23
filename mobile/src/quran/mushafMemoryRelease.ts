@@ -9,13 +9,26 @@ let scheduledReleaseTimer: ReturnType<typeof setTimeout> | null = null;
 let scheduledOnReleased: (() => void) | null = null;
 /** Фокус қайта келгенде ескі release.then(cb) stub беттерді өшірмесін. */
 let mushafReleaseGeneration = 0;
+/** Іске қосылған release (await) — mid-flight cancel кезінде UI reload керек. */
+let releaseInFlightGeneration: number | null = null;
+let pendingUiReloadAfterInterruptedRelease = false;
 
 /** Қысқа навигацияда кэш сақталады; ұзақ idle (~45с) кейін босатылады. */
 export const MUSHAF_MEMORY_RELEASE_DELAY_MS = 45_000;
 
 export function touchMushafAccess(): void {
   lastMushafTouchAt = Date.now();
+  if (releaseInFlightGeneration != null) {
+    pendingUiReloadAfterInterruptedRelease = true;
+  }
   cancelScheduledMushafMemoryRelease();
+}
+
+/** Фокусқа қайту: mid-flight release үзілсе true — loadKey bump керек. */
+export function takeMushafNeedsReloadAfterInterruptedRelease(): boolean {
+  const v = pendingUiReloadAfterInterruptedRelease;
+  pendingUiReloadAfterInterruptedRelease = false;
+  return v;
 }
 
 /** Фонға кеткенде Құран кэшін ұзақ ұстамау — keep терезесі. */
@@ -53,14 +66,24 @@ export function scheduleReleaseMushafScreenMemory(
     if (generation !== mushafReleaseGeneration) return;
     const cb = scheduledOnReleased;
     scheduledOnReleased = null;
-    void releaseMushafScreenMemory().then(() => {
-      if (generation !== mushafReleaseGeneration) return;
-      try {
-        cb?.();
-      } catch {
-        /* */
-      }
-    });
+    releaseInFlightGeneration = generation;
+    void releaseMushafScreenMemory()
+      .then(() => {
+        if (generation !== mushafReleaseGeneration) {
+          pendingUiReloadAfterInterruptedRelease = true;
+          return;
+        }
+        try {
+          cb?.();
+        } catch {
+          /* */
+        }
+      })
+      .finally(() => {
+        if (releaseInFlightGeneration === generation) {
+          releaseInFlightGeneration = null;
+        }
+      });
   }, delayMs);
 }
 

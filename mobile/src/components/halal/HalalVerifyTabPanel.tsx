@@ -73,6 +73,7 @@ import {
   fastSeedProductsForQuery,
   goodsProductStatusChips,
   HALAL_VERIFY_DEBOUNCE_MS,
+  productMatchesGoodsStatusFilter,
 } from "../../utils/halalVerifyHelpers";
 import { runAfterInteractions, runWhenHeavyWorkAllowed } from "../../utils/uiDefer";
 
@@ -304,6 +305,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
           );
           merged = mergeHalalProductItems(merged, fallback.items);
         }
+        merged = merged.filter((p) => productMatchesGoodsStatusFilter(p, goodsProductStatusFilter));
         setCheckErr(null);
         setCheckProducts(merged);
         let additives = mergeHalalAdditiveItems(
