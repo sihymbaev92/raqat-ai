@@ -42,6 +42,13 @@ describe("halalProductsSeedKz", () => {
     expect(hit[0]?.title.toLowerCase()).toContain("айран");
   });
 
+  it("preserves seed certificateStatus instead of forcing reference", () => {
+    const active = lookupHalalProductsSeedByBarcode("4607025392228");
+    expect(active[0]?.certificateStatus).toBe("active");
+    const risky = lookupHalalProductsSeedByBarcode("4607025392529");
+    expect(risky[0]?.certificateStatus).toBe("review_required");
+  });
+
   it("indexes expanded OFF GTINs from bundled seed", () => {
     const offish = seedItems.filter((item) => (item.note ?? "").includes("open_food_facts"));
     expect(offish.length).toBeGreaterThan(100);

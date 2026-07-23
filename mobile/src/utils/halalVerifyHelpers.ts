@@ -30,6 +30,40 @@ export function goodsProductStatusChips(): HalalFilterChip[] {
   ];
 }
 
+const PORK_HINT_RE = /шошқа|свинин|pork|харам|haram/i;
+
+/** UI чиптері (halal/doubtful/haram) ↔ сертификат/құрам мәні. */
+export function productMatchesGoodsStatusFilter(
+  product: HalalDamuProductItem,
+  status?: string,
+): boolean {
+  const chip = status?.trim().toLowerCase() ?? "";
+  if (!chip) return true;
+
+  const cert = (product.certificateStatus ?? "").trim().toLowerCase();
+  const tone = halalCertTone(cert);
+  const haystack = [product.ingredients, product.seedNote, product.title]
+    .filter(Boolean)
+    .join(" ");
+  const looksPorkOrHaram = PORK_HINT_RE.test(haystack);
+
+  if (chip === "halal") {
+    return (tone === "ok" || cert === "halal") && !looksPorkOrHaram;
+  }
+  if (chip === "doubtful") {
+    return (
+      tone === "warn" ||
+      cert === "doubtful" ||
+      cert === "mushkil" ||
+      cert === "review_required"
+    );
+  }
+  if (chip === "haram") {
+    return tone === "bad" || cert === "haram" || looksPorkOrHaram;
+  }
+  return cert === chip;
+}
+
 export function buildHalalCheckSummary(
   products: HalalDamuProductItem[],
   additives: HalalDamuAdditiveItem[],
@@ -40,8 +74,11 @@ export function buildHalalCheckSummary(
   const additiveRisks = additives.map((a) => (a.risk || "").toUpperCase());
   const hasHaramAdditive = additiveRisks.includes("HARAM");
   const hasMushkilAdditive = additiveRisks.includes("MUSHKIL");
+  const hasPorkOrHaramProduct = products.some((p) =>
+    PORK_HINT_RE.test([p.ingredients, p.seedNote, p.title].filter(Boolean).join(" ")),
+  );
 
-  if (productTones.includes("bad") || hasHaramAdditive) {
+  if (productTones.includes("bad") || hasHaramAdditive || hasPorkOrHaramProduct) {
     return {
       tone: "bad",
       title: hasHaramAdditive
@@ -106,12 +143,6 @@ export function fastSeedProductsForQuery(query: string, status?: string): HalalD
       ? []
       : searchHalalProductsSeed(digits || q, INSTANT_HALAL_SEARCH_LIMIT);
   const seed = mergeHalalProductItems(barcodeHits, textHits);
-  const s = status?.trim().toLowerCase();
-  if (!s) return seed;
-  return seed.filter(
-    (p) =>
-      p.fromRaqatSeed === true ||
-      p.verificationStatus === "raqat_reference" ||
-      (p.certificateStatus ?? "").toLowerCase() === s
-  );
+  if (!status?.trim()) return seed;
+  return seed.filter((p) => productMatchesGoodsStatusFilter(p, status));
 }

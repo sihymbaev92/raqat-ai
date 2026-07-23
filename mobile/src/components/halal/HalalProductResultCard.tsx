@@ -45,8 +45,14 @@ function additiveTone(risk: string | null | undefined): "ok" | "warn" | "bad" | 
 export function HalalProductResultCard(props: Props) {
   useAppLocale();
   const { colors, isDark } = props;
+  const productStatus =
+    props.kind === "product"
+      ? props.certificateStatus && props.certificateStatus !== "reference"
+        ? props.certificateStatus
+        : props.producerCertificateStatus || props.certificateStatus
+      : undefined;
   const tone =
-    props.kind === "product" ? halalCertTone(props.certificateStatus) : additiveTone(props.risk);
+    props.kind === "product" ? halalCertTone(productStatus) : additiveTone(props.risk);
   const accent = halalCertBadgeColors(tone, isDark).dot;
   const styles = useMemo(() => makeStyles(colors, accent), [colors, accent]);
 
@@ -135,7 +141,7 @@ export function HalalProductResultCard(props: Props) {
             {producerLine}
           </Text>
         ) : null}
-        <HalalCertBadge status={props.certificateStatus} colors={colors} isDark={isDark} compact />
+        <HalalCertBadge status={productStatus} colors={colors} isDark={isDark} compact />
       </View>
       {props.barcode && props.onCopyBarcode ? (
         <Pressable

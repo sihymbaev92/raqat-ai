@@ -92,13 +92,14 @@ function ensureIndex(): void {
 
 function seedEntryToProduct(entry: HalalProductSeedEntry, index: number): HalalDamuProductItem {
   const gtin = normalizeBarcodeDigits(entry.gtin);
+  const status = (entry.certificateStatus || "reference").trim() || "reference";
   return {
     id: -(index + 1),
     title: entry.title,
     barcode: gtin || null,
-    certificateStatus: "reference",
+    certificateStatus: status,
     verificationStatus: "raqat_reference",
-    producerCertificateStatus: entry.certificateStatus || null,
+    producerCertificateStatus: status,
     companyId: entry.companyId ?? undefined,
     fromRaqatSeed: true,
     ingredients: entry.ingredients,

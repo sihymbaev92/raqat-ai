@@ -126,7 +126,7 @@ const NATIVE_EXPO_CONFIG = {
     entitlements: {
       "com.apple.security.application-groups": ["group.kz.raqat.app"],
     },
-    buildNumber: process.env.RAQAT_IOS_BUILD_NUMBER || "12",
+    buildNumber: process.env.RAQAT_IOS_BUILD_NUMBER || "13",
     infoPlist: {
       CFBundleURLTypes: [
         {

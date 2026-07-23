@@ -132,9 +132,10 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
 
   const barcodeQueryOpts = useMemo(
     () => ({
+      status: goodsProductStatusFilter.trim() || undefined,
       perPage: INSTANT_HALAL_SEARCH_LIMIT,
     }),
-    [],
+    [goodsProductStatusFilter],
   );
 
   const checkSummary = useMemo(
