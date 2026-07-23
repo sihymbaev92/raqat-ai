@@ -133,8 +133,11 @@ export default function App() {
         }
 
         if (!azanLockScreenLaunch) {
-          await hydrateRaqatApiBaseOverride();
-          onboardingDone = await getOnboardingDone();
+          const [onboarding] = await Promise.all([
+            getOnboardingDone(),
+            hydrateRaqatApiBaseOverride().catch(() => {}),
+          ]);
+          onboardingDone = onboarding;
           if (!onboardingDone && Platform.OS === "android") {
             try {
               const { ensurePrayerAzanShouldBypassOnboarding } = await import(

@@ -43,12 +43,24 @@ describe("productMatchesGoodsStatusFilter", () => {
     ingredients: "шошқа еті",
   };
 
-  it("maps active to halal and pork review to haram", () => {
+  it("maps active to halal and pork review to haram only", () => {
     expect(productMatchesGoodsStatusFilter(active, "halal")).toBe(true);
     expect(productMatchesGoodsStatusFilter(active, "haram")).toBe(false);
     expect(productMatchesGoodsStatusFilter(review, "halal")).toBe(false);
     expect(productMatchesGoodsStatusFilter(review, "haram")).toBe(true);
-    expect(productMatchesGoodsStatusFilter(review, "doubtful")).toBe(true);
+    expect(productMatchesGoodsStatusFilter(review, "doubtful")).toBe(false);
+  });
+
+  it("does not treat educational titles with the word haram as haram products", () => {
+    const educational: HalalDamuProductItem = {
+      id: 3,
+      title: "halal oder haram",
+      barcode: "3",
+      certificateStatus: "active",
+      ingredients: "су, тұз",
+    };
+    expect(productMatchesGoodsStatusFilter(educational, "halal")).toBe(true);
+    expect(productMatchesGoodsStatusFilter(educational, "haram")).toBe(false);
   });
 });
 

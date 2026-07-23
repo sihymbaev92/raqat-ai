@@ -5,10 +5,8 @@ import { kk } from "../i18n/kk";
 import {
   getIftarEnabled,
   getNotifEnabled,
-  getPrayerMosqueShiftMin,
   getPrayerNotifMutedSalatKeys,
   getPrayerNotifSoundId,
-  getPrayerSourceMode,
   getSelectedCity,
   PRAYER_NOTIF_SALAT_KEYS,
   type PrayerNotifSalatKey,
@@ -16,6 +14,11 @@ import {
 } from "../storage/prefs";
 import { loadPrayerCache, loadPrayerCacheForCity, savePrayerCache } from "../storage/prayerCache";
 import { refreshPrayerCacheIfCalendarStale } from "./prayerDaySelfHeal";
+import {
+  alignPrayerTimesToCurrentScheduleShift,
+  alignPrayerTimesToShift,
+  getPrayerScheduleShiftMin,
+} from "./prayerMosqueShiftAlign";
 import { AndroidNotificationPriority } from "expo-notifications";
 import { getQuickActionCategoryId } from "./notificationQuickActions";
 import { syncHatimReminderSchedule } from "./hatimReminderNotifications";
@@ -266,11 +269,6 @@ function isPrayerNotifSalatKey(value: unknown): value is PrayerNotifSalatKey {
   return typeof value === "string" && (PRAYER_NOTIF_SALAT_KEYS as string[]).includes(value);
 }
 
-async function getPrayerScheduleShiftMin(): Promise<number> {
-  const [sourceMode, shiftMin] = await Promise.all([getPrayerSourceMode(), getPrayerMosqueShiftMin()]);
-  return sourceMode === "mosque" ? shiftMin : 0;
-}
-
 /**
  * Android 8+ үшін арна дыбысын дұрыс ойнату: әр таңдауға жеке channelId.
  * iOS дыбысын `content.sound` анықтайды.
@@ -499,14 +497,17 @@ export async function reschedulePrayerNotifications(
 
 /** Қолданба ашылғанда / фоннан оралғанда / background fetch — алдымен кэшті жаңарту, содан жоспарлау. */
 let rescheduleFromCacheInFlight: Promise<void> | null = null;
+/** In-flight кезінде жаңа ығысу/қала сұрауы келсе — цикл соңында қайта жүгіру. */
+let rescheduleFromCacheNeedsRerun = false;
 
 async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
   await refreshPrayerCacheIfCalendarStale();
-  const [enabled, iftar, cached, selected] = await Promise.all([
+  const [enabled, iftar, cached, selected, desiredShift] = await Promise.all([
     getNotifEnabled(),
     getIftarEnabled(),
     loadPrayerCache(),
     getSelectedCity(),
+    getPrayerScheduleShiftMin(),
   ]);
   if (!cached || cached.error) {
     /** Кэш әлі жүктелмесе немесе уақытша қате болса — бұрын жоспарланған native азан оятқыштарын өшірмейміз. */
@@ -516,9 +517,9 @@ async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
     try {
       const freshRaw = await fetchPrayerTimesForLocation(selected.city, selected.country);
       if (!freshRaw.error) {
-        const shift = await getPrayerScheduleShiftMin();
-        const fresh = shift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, shift);
-        await savePrayerCache(fresh);
+        const fresh =
+          desiredShift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, desiredShift);
+        await savePrayerCache(fresh, { appliedShiftMin: desiredShift });
         await reschedulePrayerNotifications(fresh, {
           enabled,
           iftarExtra: iftar,
@@ -531,7 +532,16 @@ async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
     }
     const prior = await loadPrayerCacheForCity(selected.city, selected.country);
     if (prior && !prior.error) {
-      await reschedulePrayerNotifications(prior, {
+      const aligned = await alignPrayerTimesToCurrentScheduleShift(prior, {
+        missingAppliedMeans: prior.appliedShiftMin == null ? "alreadyDesired" : "raw",
+      });
+      if (
+        aligned.fajr !== prior.fajr ||
+        aligned.appliedShiftMin !== (prior.appliedShiftMin ?? desiredShift)
+      ) {
+        await savePrayerCache(aligned, { appliedShiftMin: aligned.appliedShiftMin ?? desiredShift });
+      }
+      await reschedulePrayerNotifications(aligned, {
         enabled,
         iftarExtra: iftar,
         prayerTimesAlreadyAdjusted: true,
@@ -539,12 +549,60 @@ async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
     }
     return;
   }
-  await reschedulePrayerNotifications(cached, { enabled, iftarExtra: iftar, prayerTimesAlreadyAdjusted: true });
+
+  /**
+   * Ығысу өзгерсе немесе кэш шикі болса — UI-дағы уақытқа туралап қайта жоспарлаймыз.
+   * appliedShiftMin жоқ ескі кэш: қайта fetch (мүмкін болса), әйтпесе alreadyDesired stamp.
+   */
+  let schedulePayload: PrayerTimesResult = cached;
+  if (cached.appliedShiftMin == null) {
+    try {
+      const freshRaw = await fetchPrayerTimesForLocation(selected.city, selected.country);
+      if (!freshRaw.error) {
+        schedulePayload =
+          desiredShift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, desiredShift);
+        await savePrayerCache(schedulePayload, { appliedShiftMin: desiredShift });
+      } else {
+        schedulePayload = await alignPrayerTimesToCurrentScheduleShift(cached, {
+          missingAppliedMeans: "alreadyDesired",
+        });
+        await savePrayerCache(schedulePayload, {
+          appliedShiftMin:
+            (schedulePayload as { appliedShiftMin?: number }).appliedShiftMin ?? desiredShift,
+        });
+      }
+    } catch {
+      schedulePayload = await alignPrayerTimesToCurrentScheduleShift(cached, {
+        missingAppliedMeans: "alreadyDesired",
+      });
+      await savePrayerCache(schedulePayload, {
+        appliedShiftMin:
+          (schedulePayload as { appliedShiftMin?: number }).appliedShiftMin ?? desiredShift,
+      });
+    }
+  } else if (cached.appliedShiftMin !== desiredShift) {
+    schedulePayload = alignPrayerTimesToShift(cached, desiredShift, { missingAppliedMeans: "raw" });
+    await savePrayerCache(schedulePayload, { appliedShiftMin: desiredShift });
+  }
+
+  await reschedulePrayerNotifications(schedulePayload, {
+    enabled,
+    iftarExtra: iftar,
+    prayerTimesAlreadyAdjusted: true,
+  });
 }
 
 export async function reschedulePrayerNotificationsFromCache(): Promise<void> {
-  if (rescheduleFromCacheInFlight) return rescheduleFromCacheInFlight;
-  rescheduleFromCacheInFlight = reschedulePrayerNotificationsFromCacheBody().finally(() => {
+  if (rescheduleFromCacheInFlight) {
+    rescheduleFromCacheNeedsRerun = true;
+    return rescheduleFromCacheInFlight;
+  }
+  rescheduleFromCacheInFlight = (async () => {
+    do {
+      rescheduleFromCacheNeedsRerun = false;
+      await reschedulePrayerNotificationsFromCacheBody();
+    } while (rescheduleFromCacheNeedsRerun);
+  })().finally(() => {
     rescheduleFromCacheInFlight = null;
   });
   return rescheduleFromCacheInFlight;

@@ -35,4 +35,35 @@ describe("tajweedHtmlDocument", () => {
     expect(doc).toContain("font-size:28px");
     expect(doc).toContain("#DD0008");
   });
+
+  it("resolves htmlFont markup without leaving raw font tags", () => {
+    const runs = resolveTajweedHtmlColorRuns(
+      'قَالُوا <font color="#FF7E1E">مِن</font> رَبِّهِمْ',
+      false,
+      "#111"
+    );
+    expect(runs.some((r) => r.color === "#FF7E1E" || r.color?.toLowerCase() === "#ff7e1e")).toBe(true);
+    const body = buildTajweedColoredBodyHtml(runs);
+    expect(body).not.toContain("<font");
+    expect(body).toContain("مِن");
+  });
+
+  it("handles empty and plain untagged text", () => {
+    expect(resolveTajweedHtmlColorRuns("", false, "#111")).toEqual([]);
+    expect(resolveTajweedHtmlColorRuns("   ", false, "#111")).toEqual([]);
+    expect(resolveTajweedHtmlColorRuns("بِسْمِ ٱللَّهِ", false, "#111")).toEqual([
+      { text: "بِسْمِ ٱللَّهِ" },
+    ]);
+  });
+
+  it("clamps tiny fontSize and keeps readable lineHeight", () => {
+    const doc = buildTajweedHtmlDocument({
+      bodyHtml: "ا",
+      fontSize: 4,
+      lineHeight: 2,
+      ink: "#111",
+    });
+    expect(doc).toContain("font-size:12px");
+    expect(doc).toMatch(/line-height:1[6-9]px|line-height:[2-9]\dpx/);
+  });
 });

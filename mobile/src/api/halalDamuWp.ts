@@ -356,7 +356,7 @@ export function enrichHalalCompanyCardsFromBulkCache(
 }
 
 const wpCompanyThumbMemory = new Map<number, string>();
-const WP_THUMB_CACHE_MAX = 200;
+const WP_THUMB_CACHE_MAX = 64;
 
 function rememberWpCompanyThumb(id: number, thumb: string): void {
   if (wpCompanyThumbMemory.size >= WP_THUMB_CACHE_MAX) {

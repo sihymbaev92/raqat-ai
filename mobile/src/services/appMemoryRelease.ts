@@ -59,10 +59,19 @@ export async function releaseAppHeavyMemory(): Promise<void> {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../quran/qcf4FontLoader").clearQcf4FontLoaderCache();
     }),
+    safe("qcf4ColrFonts", () => {
+      if (keepQuranCaches) return;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../quran/qcf4ColrFontLoader").clearQcf4ColrFontLoaderCache();
+    }),
     safe("qcf4Pages", () => {
       if (keepQuranCaches) return;
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require("../quran/loadQcf4Page").clearQcf4PageCache();
+    }),
+    safe("tajweedMuftyatImages", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require("../content/tajweedMuftyatImageCache").releaseTajweedMuftyatImageMemory();
     }),
     safe("mushafPages", () => {
       if (keepQuranCaches) return;

@@ -30,7 +30,16 @@ export function goodsProductStatusChips(): HalalFilterChip[] {
   ];
 }
 
-const PORK_HINT_RE = /шошқа|свинин|pork|харам|haram/i;
+const PORK_HINT_RE = /шошқа|свинин|pork/i;
+const EXPLICIT_HARAM_NOTE_RE = /(^|[^\p{L}])(харам|haram)([^\p{L}]|$)/iu;
+
+function productLooksPorkOrHaram(product: HalalDamuProductItem): boolean {
+  const composition = [product.ingredients, product.seedNote].filter(Boolean).join(" ");
+  if (PORK_HINT_RE.test(composition)) return true;
+  if (EXPLICIT_HARAM_NOTE_RE.test(composition)) return true;
+  const cert = (product.certificateStatus ?? "").trim().toLowerCase();
+  return cert === "haram" || cert.includes("харам");
+}
 
 /** UI чиптері (halal/doubtful/haram) ↔ сертификат/құрам мәні. */
 export function productMatchesGoodsStatusFilter(
@@ -42,15 +51,13 @@ export function productMatchesGoodsStatusFilter(
 
   const cert = (product.certificateStatus ?? "").trim().toLowerCase();
   const tone = halalCertTone(cert);
-  const haystack = [product.ingredients, product.seedNote, product.title]
-    .filter(Boolean)
-    .join(" ");
-  const looksPorkOrHaram = PORK_HINT_RE.test(haystack);
+  const looksPorkOrHaram = productLooksPorkOrHaram(product);
 
   if (chip === "halal") {
     return (tone === "ok" || cert === "halal") && !looksPorkOrHaram;
   }
   if (chip === "doubtful") {
+    if (looksPorkOrHaram) return false;
     return (
       tone === "warn" ||
       cert === "doubtful" ||
@@ -74,9 +81,7 @@ export function buildHalalCheckSummary(
   const additiveRisks = additives.map((a) => (a.risk || "").toUpperCase());
   const hasHaramAdditive = additiveRisks.includes("HARAM");
   const hasMushkilAdditive = additiveRisks.includes("MUSHKIL");
-  const hasPorkOrHaramProduct = products.some((p) =>
-    PORK_HINT_RE.test([p.ingredients, p.seedNote, p.title].filter(Boolean).join(" ")),
-  );
+  const hasPorkOrHaramProduct = products.some((p) => productLooksPorkOrHaram(p));
 
   if (productTones.includes("bad") || hasHaramAdditive || hasPorkOrHaramProduct) {
     return {

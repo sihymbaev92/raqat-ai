@@ -18,22 +18,23 @@ export function halalCertTone(status: string | null | undefined): HalalCertTone 
   const s = (status ?? "").trim().toLowerCase();
   if (!s) return "neutral";
   if (
-    ["active", "valid", "approved", "certified"].some((x) => s.includes(x)) ||
+    ["active", "valid", "approved", "certified", "halal"].some((x) => s.includes(x)) ||
     s.includes("белсенді")
   ) {
     return "ok";
   }
   if (
-    ["expired", "revoked", "cancelled", "suspended", "rejected", "inactive"].some((x) =>
+    ["expired", "revoked", "cancelled", "suspended", "rejected", "inactive", "haram"].some((x) =>
       s.includes(x)
     ) ||
     s.includes("мерзімі өткен") ||
-    (s.includes("өткен") && s.includes("мерзім"))
+    (s.includes("өткен") && s.includes("мерзім")) ||
+    s.includes("харам")
   ) {
     return "bad";
   }
   if (
-    ["draft", "pending", "review"].some((x) => s.includes(x)) ||
+    ["draft", "pending", "review", "doubtful", "mushkil"].some((x) => s.includes(x)) ||
     s.includes("жоба") ||
     s.includes("күтуде")
   ) {

@@ -159,6 +159,7 @@ import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { useAppLocale } from "../i18n/runtime";
 import { useQuranReadingLocale } from "../quran/quranReadingLocale";
 import { useQuranTranslitScript } from "../quran/quranTranslitScript";
+import { touchMushafAccess, scheduleReleaseMushafScreenMemory } from "../quran/mushafMemoryRelease";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   getQuranSurahTranslation,
@@ -376,6 +377,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const [translationTargetMeaning, setTranslationTargetMeaning] = useState<string | null>(null);
   const [ayahMap, setAyahMap] = useState<MushafAyahMapFile | null>(null);
   const [loadKey, setLoadKey] = useState(0);
+  const mushafNeedsReloadAfterMemoryReleaseRef = useRef(false);
   /** Bundled Құран мәтіні web-те жүктелгенде беттер қайта сызылуы үшін. */
   const [quranTextRev, setQuranTextRev] = useState(0);
   const appLocale = useAppLocale();
@@ -687,6 +689,12 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
+      touchMushafAccess();
+      if (mushafNeedsReloadAfterMemoryReleaseRef.current) {
+        mushafNeedsReloadAfterMemoryReleaseRef.current = false;
+        setLoading(true);
+        setLoadKey((k) => k + 1);
+      }
       void (async () => {
         await persistHatimBookLockedPrefs();
         const [showArabic, showTranslit, showMeaning, tj, rec, markers, playScope] = await Promise.all([
@@ -712,6 +720,20 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         setAyahMarkers(markers);
         void preloadHatimOfflineAssets();
       })();
+      return () => {
+        /**
+         * Қысқа шығу/қайту — байытылған беттерді ұстап тұру (жылдамдық).
+         * Тек ұзақ idle кейін кэш босатылып, stub+reload қосылады.
+         */
+        scheduleReleaseMushafScreenMemory({
+          onReleased: () => {
+            mushafNeedsReloadAfterMemoryReleaseRef.current = true;
+            if (mountedRef.current) {
+              setPages(buildHatimInitialLightPages());
+            }
+          },
+        });
+      };
     }, [])
   );
 

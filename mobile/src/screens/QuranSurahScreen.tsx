@@ -37,8 +37,10 @@ import { resolveEffectiveQuranReaderNavMode } from "../quran/quranReaderModePoli
 import { useAppLocale } from "../i18n/runtime";
 import { useQuranReadingLocale } from "../quran/quranReadingLocale";
 import { useQuranTranslitScript } from "../quran/quranTranslitScript";
-import { releaseBundledQuranReaderMemory } from "../services/bundledQuranReader";
-import { releaseBundledQuranTranslationsMemory } from "../services/quranOfflineTranslations";
+import {
+  cancelScheduledQuranSurahMemoryRelease,
+  scheduleReleaseQuranSurahMemory,
+} from "../quran/quranSurahMemoryRelease";
 import { enrichAyahsFromBundledQuranDb } from "../services/quranKkBundledLookup";
 import { enrichAyahsWithAlquranTajweed, shouldShowMushafBismillahBanner } from "../services/quranSurahTajweedEnrich";
 import { hasTajweedMarkup } from "../utils/hasTajweedMarkup";
@@ -606,13 +608,13 @@ export function QuranSurahScreen({ route, navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
+      cancelScheduledQuranSurahMemoryRelease();
       void Promise.all([getAyahMarkerStyle(), getMushafDensity()]).then(([m, d]) => {
         setAyahMarkerStyleIdState(m);
         setMushafDensityState(d);
       });
       return () => {
-        releaseBundledQuranReaderMemory({ keepSurahList: true });
-        releaseBundledQuranTranslationsMemory();
+        scheduleReleaseQuranSurahMemory();
       };
     }, [])
   );

@@ -7,6 +7,8 @@ export const QURAN_TRANSLIT_SCRIPTS = ["kk", "latin"] as const;
 export type QuranTranslitScript = (typeof QURAN_TRANSLIT_SCRIPTS)[number];
 
 const QURAN_TRANSLIT_SCRIPT_KEY = "quran_translit_script_v1";
+/** Бір рет: қазақ UI-да латынға «жабысып» қалған оқылуды кириллге қайтару. */
+const QURAN_TRANSLIT_KK_CYRILLIC_RESTORE_KEY = "quran_translit_kk_cyrillic_restore_v1";
 
 const listeners = new Set<() => void>();
 let cached: QuranTranslitScript = "kk";
@@ -47,6 +49,18 @@ export async function ensureDefaultQuranTranslitScript(uiLocale: AppLocale): Pro
     return cached;
   }
   try {
+    const restored = await AsyncStorage.getItem(QURAN_TRANSLIT_KK_CYRILLIC_RESTORE_KEY);
+    if (restored !== "1") {
+      cached = "kk";
+      await AsyncStorage.setItem(QURAN_TRANSLIT_SCRIPT_KEY, "kk");
+      await AsyncStorage.setItem(QURAN_TRANSLIT_KK_CYRILLIC_RESTORE_KEY, "1");
+      emitQuranTranslitScriptChange();
+      return cached;
+    }
+  } catch {
+    /* */
+  }
+  try {
     const existing = await AsyncStorage.getItem(QURAN_TRANSLIT_SCRIPT_KEY);
     if (existing != null && existing.trim() !== "") {
       cached = normalizeQuranTranslitScript(existing);
@@ -71,6 +85,8 @@ export async function setQuranTranslitScript(next: QuranTranslitScript): Promise
   cached = next;
   try {
     await AsyncStorage.setItem(QURAN_TRANSLIT_SCRIPT_KEY, next);
+    /** Пайдаланушы таңдауы — бір реттік restore қайта жаппасын. */
+    await AsyncStorage.setItem(QURAN_TRANSLIT_KK_CYRILLIC_RESTORE_KEY, "1");
   } catch {
     /* */
   }

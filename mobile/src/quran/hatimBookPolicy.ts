@@ -6,7 +6,6 @@ import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { ensureBundledQuranTajweedLoaded } from "../services/bundledQuranTajweed";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
-import { buildMushafPagesGlobal, buildQcf4MushafPagesGlobal } from "./buildMushafPagesGlobal";
 import { loadQcf4FontMap, loadQcf4Page } from "./loadQcf4Page";
 import {
   setQuranArabicFontPreset,
@@ -62,7 +61,8 @@ export function hatimBookUsesBundledTextHafsOffline(): boolean {
 
 let preloadPromise: Promise<void> | null = null;
 
-/** Хатым: bundled мәтін + QCF4 бірінші беттер (CDN/FileSystem cache). */
+/** Хатым: қаріп + KK/uthmani карта + QCF4 бірінші беттер (CDN/FileSystem).
+ * 604 бетті толық enrich мұнда жасамаймыз — экран ашылғанда lazy/жеңілден кейін. */
 export async function preloadHatimOfflineAssets(): Promise<void> {
   if (preloadPromise) return preloadPromise;
   preloadPromise = (async () => {
@@ -71,15 +71,6 @@ export async function preloadHatimOfflineAssets(): Promise<void> {
       ensureBundledQuranReaderLoaded().catch(() => {}),
       ensureBundledQuranTajweedLoaded().catch(() => {}),
     ]);
-    try {
-      if (hatimBookUsesBundledTextHafsOffline()) {
-        buildMushafPagesGlobal();
-      } else {
-        buildQcf4MushafPagesGlobal();
-      }
-    } catch {
-      /* жеңіл/QCF4 беттер жұмыс істейді — enrich сәтсіз болса блоктамаймыз */
-    }
     if (!hatimBookUsesBundledTextHafsOffline()) {
       // Await so callers/tests don't tear down while CDN fetches still run.
       await Promise.all([

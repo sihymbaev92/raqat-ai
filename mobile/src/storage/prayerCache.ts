@@ -51,6 +51,8 @@ export type CachedPrayer = PrayerTimesResult & {
   savedAt: string;
   calculationMethod?: number;
   calculationSchool?: number;
+  /** Осы кестеге қосылған мешіт ығысуы (минут). undefined — ескі кэш. */
+  appliedShiftMin?: number;
 };
 
 function isKazakhstanPrayerCountry(country: string): boolean {
@@ -164,9 +166,18 @@ export async function loadPrayerCacheRelaxed(): Promise<CachedPrayer | null> {
   }
 }
 
-export async function savePrayerCache(data: PrayerTimesResult): Promise<void> {
+export async function savePrayerCache(
+  data: PrayerTimesResult,
+  opts?: { appliedShiftMin?: number },
+): Promise<void> {
+  const appliedShiftMin =
+    opts?.appliedShiftMin ??
+    (typeof (data as CachedPrayer).appliedShiftMin === "number"
+      ? (data as CachedPrayer).appliedShiftMin
+      : 0);
   const payload: CachedPrayer = {
     ...data,
+    appliedShiftMin,
     calculationMethod: APP_PRAYER_CALCULATION_METHOD,
     calculationSchool: APP_PRAYER_ASR_SCHOOL,
     savedAt: new Date().toISOString(),

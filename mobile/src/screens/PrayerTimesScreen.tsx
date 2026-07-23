@@ -20,6 +20,7 @@ import {
   parsePrayerResultLocalDayKey,
   type PrayerTimesResult,
 } from "../api/prayerTimes";
+import { alignPrayerTimesToShift } from "../services/prayerMosqueShiftAlign";
 import { useAppTheme } from "../theme/ThemeContext";
 import { homeHeaderContrastTextBase, homeHeaderBrandTitleStyle } from "../theme/homeHeaderContrastText";
 import { kk, APP_BRAND_KK } from "../i18n/kk";
@@ -49,8 +50,7 @@ import {
   type PrayerSourceMode,
 } from "../storage/prefs";
 import type { RootStackParamList } from "../navigation/types";
-import { savePrayerCache, syncNativePrayerWidgetFromStorage } from "../storage/prayerCache";
-import { loadPrayerCache } from "../storage/prayerCache";
+import { loadPrayerCache, savePrayerCache, syncNativePrayerWidgetFromStorage } from "../storage/prayerCache";
 import { reschedulePrayerNotifications } from "../services/prayerNotifications";
 import type { ThemeColors } from "../theme/colors";
 import { PRAYER_TIMES_SCREEN_HERO_BG } from "../config/dashboardPrayerHero";
@@ -421,18 +421,22 @@ export function PrayerTimesScreen() {
     };
   }, [weatherCoords?.lat, weatherCoords?.lon]);
 
-  const applyMosqueShift = useCallback(
-    (data: NonNullable<Awaited<ReturnType<typeof fetchPrayerTimesForLocation>>>) => {
-      if (sourceMode !== "mosque" || data.error || mosqueShiftMin === 0) return data;
-      return applyPrayerTimeShift(data, mosqueShiftMin);
-    },
-    [mosqueShiftMin, sourceMode]
-  );
-
   const fetchAndSave = useCallback(
-    async (c?: string, co?: string) => {
+    async (
+      c?: string,
+      co?: string,
+      shiftOverride?: { sourceMode: PrayerSourceMode; mosqueShiftMin: number },
+    ) => {
       const { isCurrentRequest } = beginLatestRequest(fetchSeqRef);
       setLoading(true);
+      const effectiveMode = shiftOverride?.sourceMode ?? sourceMode;
+      const effectiveShift = shiftOverride?.mosqueShiftMin ?? mosqueShiftMin;
+      const applyShift = (
+        data: NonNullable<Awaited<ReturnType<typeof fetchPrayerTimesForLocation>>>,
+      ) => {
+        if (effectiveMode !== "mosque" || data.error || effectiveShift === 0) return data;
+        return applyPrayerTimeShift(data, effectiveShift);
+      };
       let cityName: string;
       let countryName: string;
       let scheduleCoords: { lat: number; lon: number } | undefined;
@@ -457,7 +461,7 @@ export function PrayerTimesScreen() {
           undefined,
           scheduleCoords
         );
-        const out = applyMosqueShift(data);
+        const out = applyShift(data);
         if (!isCurrentRequest()) return;
         if (out.error) {
           const cached = await loadPrayerCache();
@@ -468,12 +472,17 @@ export function PrayerTimesScreen() {
             cached.country === countryName &&
             isPrayerTimesResultForLocalToday(cached)
           ) {
-            const cachedOut = applyMosqueShift(cached);
+            const cachedOut = alignPrayerTimesToShift(cached, effectiveMode === "mosque" ? effectiveShift : 0, {
+              missingAppliedMeans: cached.appliedShiftMin == null ? "alreadyDesired" : "raw",
+            });
             setResult(cachedOut);
             if (!isCurrentRequest()) return;
             try {
               const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
               if (!isCurrentRequest()) return;
+              await savePrayerCache(cachedOut, {
+                appliedShiftMin: cachedOut.appliedShiftMin ?? (effectiveMode === "mosque" ? effectiveShift : 0),
+              });
               await reschedulePrayerNotifications(cachedOut, {
                 enabled: en,
                 iftarExtra: ift,
@@ -492,7 +501,9 @@ export function PrayerTimesScreen() {
           if (!isCurrentRequest()) return;
           await addSavedCity(cityName, countryName);
           if (!isCurrentRequest()) return;
-          await savePrayerCache(out);
+          await savePrayerCache(out, {
+            appliedShiftMin: effectiveMode === "mosque" ? effectiveShift : 0,
+          });
           if (!isCurrentRequest()) return;
           const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
           if (!isCurrentRequest()) return;
@@ -514,7 +525,11 @@ export function PrayerTimesScreen() {
           !cached.error &&
           isPrayerTimesResultForLocalToday(cached)
         ) {
-          setResult(applyMosqueShift(cached));
+          setResult(
+            alignPrayerTimesToShift(cached, effectiveMode === "mosque" ? effectiveShift : 0, {
+              missingAppliedMeans: cached.appliedShiftMin == null ? "alreadyDesired" : "raw",
+            }),
+          );
           return;
         }
         const message = e instanceof Error ? e.message : "Network error";
@@ -523,7 +538,7 @@ export function PrayerTimesScreen() {
         if (isCurrentRequest()) setLoading(false);
       }
     },
-    [applyMosqueShift]
+    [mosqueShiftMin, sourceMode]
   );
 
   useFocusEffect(
@@ -544,7 +559,7 @@ export function PrayerTimesScreen() {
         setNotifEnabled(ne);
         setPrayerSoundId(sid);
         setMutedSalatKeys(mutedKeys);
-        await fetchAndSave();
+        await fetchAndSave(undefined, undefined, { sourceMode: mode, mosqueShiftMin: shift });
       })();
       return () => {
         cancelled = true;

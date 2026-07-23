@@ -22,7 +22,6 @@ import type { MoreStackParamList } from "../navigation/types";
 import {
   loadHadithCorpus,
   invalidateHadithCorpusMemoryCache,
-  releaseHadithCorpusMemoryCache,
   clearHadithCorpusStorage,
   hadithCollectionBucket,
   filterHadithCorpusForLocale,
@@ -411,11 +410,9 @@ export function HadithListScreen({ navigation }: Props) {
       } else {
         didFocusOnceRef.current = true;
       }
-      return () => {
-        setCorpus(null);
-        setLists(null);
-        releaseHadithCorpusMemoryCache();
-      };
+      /** Корпус/тізімді blur-да тазаламау — қайта ашу суық жүктеу сияқты баяулайды.
+       *  Фонда appMemoryRelease hadith кэшін босатады. */
+      return undefined;
     }, [])
   );
 

@@ -1580,17 +1580,31 @@ export async function hydrateLocale(): Promise<AppLocale> {
   }
   if (next !== "kk") {
     const target = next as OfflineAutoTranslateTarget;
+    /** Boot: APK slim pack sync — UI бірден ашылсын; толық сөздік фонда. */
     seedApkOfflineTranslationsSync();
-    await ensureOfflineAutoTranslationsLoaded(target).catch(() => {});
     if (hasOfflineAutoTranslationLocale(target)) {
       pruneOfflineAutoTranslationsToLocale(target);
       invalidateOfflineLocaleTreeCache(next);
     }
+    applyLocale(next);
+    emitLocaleChange();
+    void ensureOfflineAutoTranslationsLoaded(target)
+      .then(() => {
+        if (getCurrentLocale() !== next) return;
+        if (hasOfflineAutoTranslationLocale(target)) {
+          if (getCurrentLocale() !== next) return;
+          pruneOfflineAutoTranslationsToLocale(target);
+          invalidateOfflineLocaleTreeCache(next);
+        }
+        if (getCurrentLocale() !== next) return;
+        reapplyCurrentLocale();
+      })
+      .catch(() => {});
   } else {
     invalidateOfflineLocaleTreeCache();
+    applyLocale(next);
+    emitLocaleChange();
   }
-  applyLocale(next);
-  emitLocaleChange();
 
   // Quran / CDN сөздік — UI-дан кейін (boot spinner ұзармасын)
   const localeForBg = next;

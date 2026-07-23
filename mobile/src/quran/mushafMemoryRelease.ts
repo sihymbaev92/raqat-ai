@@ -1,17 +1,67 @@
 /**
  * Хатым/Мұсхаф экранынан шыққанда RAM-дағы ауыр кэштерді босату.
- * Debounce кейін шақырылады — тез қайта ашуда thrash болмасын.
+ * Ұзақ idle кейін — қысқа навигация thrash болмасын (жылдам қайта ашу).
  */
 
 /** Соңғы mushaf қолдану уақыты — appMemoryRelease Құран кэшін тез тазаламасын. */
 let lastMushafTouchAt = 0;
+let scheduledReleaseTimer: ReturnType<typeof setTimeout> | null = null;
+let scheduledOnReleased: (() => void) | null = null;
+/** Фокус қайта келгенде ескі release.then(cb) stub беттерді өшірмесін. */
+let mushafReleaseGeneration = 0;
+
+/** Қысқа навигацияда кэш сақталады; ұзақ idle (~45с) кейін босатылады. */
+export const MUSHAF_MEMORY_RELEASE_DELAY_MS = 45_000;
 
 export function touchMushafAccess(): void {
   lastMushafTouchAt = Date.now();
+  cancelScheduledMushafMemoryRelease();
 }
 
-export function mushafWasUsedRecently(withinMs = 8 * 60_000): boolean {
-  return Date.now() - lastMushafTouchAt < withinMs;
+/** Фонға кеткенде Құран кэшін ұзақ ұстамау — keep терезесі. */
+export function mushafWasUsedRecently(withinMs = 2 * 60_000): boolean {
+  return lastMushafTouchAt > 0 && Date.now() - lastMushafTouchAt < withinMs;
+}
+
+export function cancelScheduledMushafMemoryRelease(): void {
+  mushafReleaseGeneration += 1;
+  if (scheduledReleaseTimer) {
+    clearTimeout(scheduledReleaseTimer);
+    scheduledReleaseTimer = null;
+  }
+  scheduledOnReleased = null;
+}
+
+export type ScheduleMushafReleaseOpts = {
+  delayMs?: number;
+  /** Тек кэш шынымен босатылғанда — React state-ті stub-қа түсіру үшін. */
+  onReleased?: () => void;
+};
+
+/** Экран blur — ұзақ кідіріспен босату (қайта кіру thrash-ын болдырмау). */
+export function scheduleReleaseMushafScreenMemory(
+  delayMsOrOpts: number | ScheduleMushafReleaseOpts = MUSHAF_MEMORY_RELEASE_DELAY_MS,
+): void {
+  const opts: ScheduleMushafReleaseOpts =
+    typeof delayMsOrOpts === "number" ? { delayMs: delayMsOrOpts } : delayMsOrOpts;
+  const delayMs = opts.delayMs ?? MUSHAF_MEMORY_RELEASE_DELAY_MS;
+  cancelScheduledMushafMemoryRelease();
+  const generation = mushafReleaseGeneration;
+  scheduledOnReleased = opts.onReleased ?? null;
+  scheduledReleaseTimer = setTimeout(() => {
+    scheduledReleaseTimer = null;
+    if (generation !== mushafReleaseGeneration) return;
+    const cb = scheduledOnReleased;
+    scheduledOnReleased = null;
+    void releaseMushafScreenMemory().then(() => {
+      if (generation !== mushafReleaseGeneration) return;
+      try {
+        cb?.();
+      } catch {
+        /* */
+      }
+    });
+  }, delayMs);
 }
 
 export async function releaseMushafScreenMemory(): Promise<void> {

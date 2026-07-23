@@ -10,7 +10,7 @@ export type QuranComAyahAudioMeta = {
 };
 
 const cache = new Map<string, QuranComAyahAudioMeta | null>();
-const AUDIO_SEGMENTS_CACHE_MAX = 40;
+const AUDIO_SEGMENTS_CACHE_MAX = 16;
 
 function cacheKey(surah: number, ayah: number, reciterId: number): string {
   return `${reciterId}:${surah}:${ayah}`;

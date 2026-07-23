@@ -38,7 +38,8 @@ export function resolveQuranTranslitKk(
 
 /**
  * Көрсету: қазақ кирилл немесе латын (баптау бойынша).
- * Тіл kk емес болса — әрқашан латын (қазақ әріптері экранға шықпасын).
+ * Non-kk UI-да ensureDefaultQuranTranslitScript скриптті latin қылады;
+ * қосымша locale күші — ескі latin=kk қақтығысын болдырмау үшін.
  */
 export function resolveQuranTranslitForDisplay(
   translitRaw: string | undefined,
@@ -47,7 +48,8 @@ export function resolveQuranTranslitForDisplay(
 ): string {
   const kk = resolveQuranTranslitKk(translitRaw, arabicText);
   if (!kk) return "";
-  const forceLatin = getCurrentLocale() !== "kk" || script === "latin";
+  const uiIsKk = getCurrentLocale() === "kk";
+  const forceLatin = script === "latin" || !uiIsKk;
   return forceLatin ? kkCyrillicPhoneticToLatin(kk) : kk;
 }
 

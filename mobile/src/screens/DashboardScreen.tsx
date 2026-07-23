@@ -510,7 +510,7 @@ function DashboardScreenContent({
       setWeatherCoordOverride(weatherCoordsFromPrayerResult(fresh));
       setFromCache(false);
       setErr(null);
-      await savePrayerCache(fresh);
+      await savePrayerCache(fresh, { appliedShiftMin: shiftMin });
       const [en, iftar] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
       if (!isCurrent()) return;
       await reschedulePrayerNotifications(fresh, {
@@ -551,18 +551,13 @@ function DashboardScreenContent({
           setWeatherCoordOverride(weatherCoordsFromPrayerResult(cached));
           setFromCache(true);
           setErr(null);
-          /** Хабарламалар кестесін UI сызылғаннан кейін — бірінші кадрды бұғаттамау */
+          /** Хабарламалар кестесін UI сызылғаннан кейін — бірінші кадрды бұғаттамау.
+           *  fromCache арқылы ығысуды туралаймыз (шикі кэш азанды ерте қоймасын). */
           runAfterInteractions(() => {
             if (cancelled) return;
-            void (async () => {
-              const [en, ift] = await Promise.all([getNotifEnabled(), getIftarEnabled()]);
-              if (cancelled) return;
-              await reschedulePrayerNotifications(cached, {
-                enabled: en,
-                iftarExtra: ift,
-                prayerTimesAlreadyAdjusted: true,
-              });
-            })();
+            void import("../services/prayerNotifications")
+              .then((m) => m.reschedulePrayerNotificationsFromCache())
+              .catch(() => {});
           });
         } else {
           void load("full");
