@@ -1464,7 +1464,7 @@ export const kk = {
       asylSozCtaSub: "Абай · ақындар · даналық",
       asylSozCtaA11y: "Асыл сөздер — қазақ ақындарының сөздерін ашу",
       sanaSozCtaTitle: "Сананы ашатын сөздер",
-      sanaSozCtaSub: "Ой · білім · өзін тану",
+      sanaSozCtaSub: "Ой · білім · өзін-өзі тану",
       sanaSozCtaA11y: "Сананы ашатын даналық сөздерді ашу",
       bataCountLabel: (n: number) => `${n} бата`,
       bataShowMore: (n: number) => `Тағы ${n} бата көрсету`,
