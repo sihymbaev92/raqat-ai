@@ -600,8 +600,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
       shortTitle: "Алфавит",
       screenTitle: "Арабский алфавит",
       alphabetHeading: "Арабский алфавит",
-      intro:
-        "С нуля: буква → учебник → чтение Корана. Сначала 28 букв, затем звук и правила, потом учебник; когда готовы — сразу откройте Аль-Фатиху.",
+      intro: "28 букв",
       sectionAlphabet: "Шаг 1",
       sectionLaterTitle: "Шаг 2: звук и правила",
       sectionLaterSub: "После букв — звук, продление, гунна",
@@ -628,8 +627,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
     },
     en: {
       shortTitle: "Alphabet",
-      intro:
-        "From zero: letters → textbook → Quran reading. First the 28 letters, then sound and rules, then the textbook; when ready, open Al-Fatiha right away.",
+      intro: "28 letters",
       sectionAlphabet: "Step 1",
       sectionLaterTitle: "Step 2: sound and rules",
       sectionLaterSub: "After letters — sound, madd, ghunnah",
@@ -653,8 +651,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
     },
     ky: {
       shortTitle: "Алфавит",
-      intro:
-        "Нөлдөн: тамга → окуу китеби → Куран окуу. Адегенде 28 тамга, андан кийин үн жана эрежелер, кийин окуу китеби; даяр болсоңуз — дароо Ал-Фатиханы ачыңыз.",
+      intro: "28 тамга",
       sectionAlphabet: "1-кадам",
       sectionLaterTitle: "2-кадам: үн жана эрежелер",
       sectionLaterSub: "Тамгалардан кийин — үн, узартуу, гунна",
@@ -678,8 +675,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
     },
     uz: {
       shortTitle: "Alifbo",
-      intro:
-        "Noldan: harf → darslik → Qur'on o'qish. Avval 28 harf, keyin tovush va qoidalar, so'ng darslik; tayyor bo'lsangiz — darhol Al-Fotihani oching.",
+      intro: "28 harf",
       sectionAlphabet: "1-qadam",
       sectionLaterTitle: "2-qadam: tovush va qoidalar",
       sectionLaterSub: "Harflardan keyin — tovush, cho'zish, g'unna",
@@ -703,8 +699,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
     },
     tr: {
       shortTitle: "Alfabe",
-      intro:
-        "Sifirdan: harf → ders kitabi → Kur'an okuma. Once 28 harf, sonra ses ve kurallar, sonra ders kitabi; hazirsaniz hemen Fatiha'yi acin.",
+      intro: "28 harf",
       sectionAlphabet: "1. adim",
       sectionLaterTitle: "2. adim: ses ve kurallar",
       sectionLaterSub: "Harflerden sonra — ses, uzatma, gunne",
@@ -728,8 +723,7 @@ function alphabetTajweedChrome(locale: LeakLocale) {
     },
     ar: {
       shortTitle: "الألفباء",
-      intro:
-        "من الصفر: الحرف → الكتاب → قراءة القرآن. أولاً ٢٨ حرفاً، ثم الصوت والقواعد، ثم الكتاب؛ وإن كنت جاهزاً فافتح الفاتحة مباشرة.",
+      intro: "٢٨ حرفاً",
       sectionAlphabet: "الخطوة 1",
       sectionLaterTitle: "الخطوة 2: الصوت والقواعد",
       sectionLaterSub: "بعد الحروف — الصوت والمد والغنة",

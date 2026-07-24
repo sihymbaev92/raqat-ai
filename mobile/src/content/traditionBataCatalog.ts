@@ -24,7 +24,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "category": "daily",
     "categoryLabel": "Күнделікті",
     "topicId": "bata-beru",
-    "title": "Таңертең бата",
+    "title": "Таңертеңгі бата",
     "text": "Бисмилләһир рахманир рахим.\n\nЖаңа күн берекелі болсын.\nНиетіңіз таза, ісіңіз оң болсын.\nАлла разы болсын. Әмин.",
     "sourceLabel": "Күнделікті батасы"
   },
@@ -52,7 +52,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Күнделікті",
     "topicId": "bata-beru",
     "title": "Оқуға бата",
-    "text": "Бисмилләһир рахманир рахим.\n\nБіліміңіз нық, ақылыңыз ашық болсын.\nҒылым мен иман жолына жетектесін.\nӘмин.",
+    "text": "Бисмилләһир рахманир рахим.\n\nБіліміңіз нық, ақылыңыз ашық болсын.\nАлла ғылым мен иман жолына жетектесін.\nӘмин.",
     "sourceLabel": "Күнделікті батасы"
   },
   {
@@ -232,7 +232,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Бала",
     "topicId": "besikke-salu",
     "title": "Балаға сабыр батасы",
-    "text": "Сабырың мықты, жүрегің тыныш болсын.\nАлла иманын нығайтсын.",
+    "text": "Сабырың мықты, жүрегің тыныш болсын.\nАлла иманыңды нығайтсын.",
     "sourceLabel": "Бала батасы"
   },
   {
@@ -241,7 +241,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Бала",
     "topicId": "besikke-salu",
     "title": "Балаға береке батасы",
-    "text": "Өмірің берекелі, ниетің таза болсын.\nАлла ризығын кеңейтсін.",
+    "text": "Өмірің берекелі, ниетің таза болсын.\nАлла ризығыңды кеңейтсін.",
     "sourceLabel": "Бала батасы"
   },
   {
@@ -250,7 +250,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Бала",
     "topicId": "besikke-salu",
     "title": "Балаға қорған бата",
-    "text": "Алла сені жамандықтан сақтасын.\nЖақсы ұстаздармен жолықсын.",
+    "text": "Алла сені жамандықтан сақтасын.\nАлла жақсы ұстаздармен жолықтырсын.",
     "sourceLabel": "Бала батасы"
   },
   {
@@ -295,7 +295,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Неке/үйлену",
     "topicId": "neke-qiyu",
     "title": "Неке батасы",
-    "text": "Некеңіз берекелі, ерлі-зайыптылық тату болсын.\nАлла отбасыңызды аман ұстасын.",
+    "text": "Некеңіз берекелі, ерлі-зайыпты өмірлеріңіз тату болсын.\nАлла отбасыңызды аман ұстасын.",
     "sourceLabel": "Неке/үйлену батасы"
   },
   {
@@ -313,7 +313,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Неке/үйлену",
     "topicId": "neke-qiyu",
     "title": "Құда түсу батасы",
-    "text": "Құдалықтарыңыз берекелі, екі жақ риза болсын.\nАлла ниеттерін игілікке жеткізсін.",
+    "text": "Құдалықтарыңыз берекелі, екі жақ разы болсын.\nАлла ниеттеріңізді игілікке жеткізсін.",
     "sourceLabel": "Неке/үйлену батасы"
   },
   {
@@ -331,7 +331,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Неке/үйлену",
     "topicId": "neke-qiyu",
     "title": "Күйеуге бата",
-    "text": "Жолың ашық, отбасың тату болсын.\nАлла жүктемеңді жеңілдетсін.",
+    "text": "Жолың ашық, отбасың тату болсын.\nАлла жүгіңді жеңілдетсін.",
     "sourceLabel": "Неке/үйлену батасы"
   },
   {
@@ -358,7 +358,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Неке/үйлену",
     "topicId": "neke-qiyu",
     "title": "Үйлену тойы батасы",
-    "text": "Тойыңыз ырысты, қонақтарыңыз риза болсын.\nАлла ұрпағыңызды аман ұстасын.",
+    "text": "Тойыңыз ырысты, қонақтарыңыз разы болсын.\nАлла ұрпағыңызды аман ұстасын.",
     "sourceLabel": "Неке/үйлену батасы"
   },
   {
@@ -394,7 +394,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Сапар",
     "topicId": "bata-beru",
     "title": "Көлікке отыру батасы",
-    "text": "Жол қауіпсіз, ниетіңіз игі болсын.\nАлла қорғасын.",
+    "text": "Жолыңыз қауіпсіз, ниетіңіз игі болсын.\nАлла қорғасын.",
     "sourceLabel": "Сапар батасы"
   },
   {
@@ -430,7 +430,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Сапар",
     "topicId": "bata-beru",
     "title": "Қашық сапар батасы",
-    "text": "Ара қашықтық жүрек байланысын әлсіретпесін.\nАлла хабарласып тұруға береке берсін.",
+    "text": "Арақашықтық жүрек байланысын әлсіретпесін.\nАлла хабарласып тұруға береке берсін.",
     "sourceLabel": "Сапар батасы"
   },
   {
@@ -483,8 +483,8 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "category": "health",
     "categoryLabel": "Денсаулық",
     "topicId": "bata-beru",
-    "title": "Кәріге бата",
-    "text": "Жасыл өміріңіз ұзақ, деніңіз жеңіл болсын.\nАлла сабыр берсін.",
+    "title": "Қарияға бата",
+    "text": "Жасыңыз ұзақ, деніңіз жеңіл болсын.\nАлла сабыр берсін.",
     "sourceLabel": "Денсаулық батасы"
   },
   {
@@ -493,7 +493,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Денсаулық",
     "topicId": "bata-beru",
     "title": "Жарақатқа бата",
-    "text": "Алла жараңызды тез жаздырсын.\nҚорғаныңызды күшейтсін.",
+    "text": "Алла жараңызды тез жазсын.\nҚорғаныңызды күшейтсін.",
     "sourceLabel": "Денсаулық батасы"
   },
   {
@@ -520,7 +520,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Той/мереке",
     "topicId": "toy-madenieti",
     "title": "Наурыз батасы",
-    "text": "Жаңа көктем берекелі, үйіңізге ырыс кірсін.\nАлла шүкірге жеткізсін.",
+    "text": "Жаңа көктем берекелі болсын, үйіңізге ырыс кірсін.\nАлла шүкірге жеткізсін.",
     "sourceLabel": "Той/мереке батасы"
   },
   {
@@ -555,8 +555,8 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "category": "celebration",
     "categoryLabel": "Той/мереке",
     "topicId": "toy-madenieti",
-    "title": "Мереке ас батасы",
-    "text": "Дастархан берекелі, жүрек жылы болсын.\nАлла ризалық берсін.",
+    "title": "Мерекелік ас батасы",
+    "text": "Дастархан берекелі, жүрек жылы болсын.\nАлла разылық берсін.",
     "sourceLabel": "Той/мереке батасы"
   },
   {
@@ -574,7 +574,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Той/мереке",
     "topicId": "toy-madenieti",
     "title": "Үй тойы батасы",
-    "text": "Шаңырағыңыз берекелі, қонақтарыңыз риза болсын.\nАлла отбасыңызды аман ұстасын.",
+    "text": "Шаңырағыңыз берекелі, қонақтарыңыз разы болсын.\nАлла отбасыңызды аман ұстасын.",
     "sourceLabel": "Той/мереке батасы"
   },
   {
@@ -619,7 +619,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қонақ/ас",
     "topicId": "qonaq-kutu",
     "title": "Ас беру батасы",
-    "text": "Берген асыңыз сауапты, қабылдаушы риза болсын.\nАлла еселеп берсін.",
+    "text": "Берген асыңыз сауапты, қабылдаушы разы болсын.\nАлла еселеп берсін.",
     "sourceLabel": "Қонақ/ас батасы"
   },
   {
@@ -646,7 +646,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қонақ/ас",
     "topicId": "qonaq-kutu",
     "title": "Қонақүй иесіне бата",
-    "text": "Қонақжайлылығыңыз игілікке айналсын.\nАлла ризығын кеңейтсін.",
+    "text": "Қонақжайлылығыңыз игілікке айналсын.\nАлла ризығыңызды кеңейтсін.",
     "sourceLabel": "Қонақ/ас батасы"
   },
   {
@@ -664,7 +664,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Еңбек/білім",
     "topicId": "bata-beru",
     "title": "Кәсіп батасы",
-    "text": "Кәсібіңіз нық, клиенттеріңіз риза болсын.\nАлла ризығын кеңейтсін.",
+    "text": "Кәсібіңіз нық, клиенттеріңіз разы болсын.\nАлла ризығыңызды кеңейтсін.",
     "sourceLabel": "Еңбек/білім батасы"
   },
   {
@@ -691,7 +691,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Еңбек/білім",
     "topicId": "bata-beru",
     "title": "Дәрігерге бата",
-    "text": "Қолыңыз шипа, ниетіңіз таза болсын.\nАлла жәрдеміңізді қабыл етсін.",
+    "text": "Қолыңыз шипалы, ниетіңіз таза болсын.\nАлла жәрдеміңізді қабыл етсін.",
     "sourceLabel": "Еңбек/білім батасы"
   },
   {
@@ -700,7 +700,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Еңбек/білім",
     "topicId": "bata-beru",
     "title": "Фермерге бата",
-    "text": "Егініңіз нық, малыңыз аман болсын.\nАлла ризығын берекелі етсін.",
+    "text": "Егініңіз бітік, малыңыз аман болсын.\nАлла ризығын берекелі етсін.",
     "sourceLabel": "Еңбек/білім батасы"
   },
   {
@@ -781,7 +781,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Дін/ғибадат",
     "topicId": "bata-beru",
     "title": "Мешітке бата",
-    "text": "Қадамыңыз сауапты, жүрегіңіз тыныш болсын.\nАлла иманын нығайтсын.",
+    "text": "Қадамыңыз сауапты, жүрегіңіз тыныш болсын.\nАлла иманыңызды нығайтсын.",
     "sourceLabel": "Дін/ғибадат батасы"
   },
   {
@@ -844,7 +844,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қоғам/ел",
     "topicId": "asar",
     "title": "Асар батасы",
-    "text": "Асарыңыз берекелі, қолдасыңыз игі болсын.\nАлла сауап берсін.",
+    "text": "Асарыңыз берекелі, қолғабысыңыз игі болсын.\nАлла сауап берсін.",
     "sourceLabel": "Қоғам/ел батасы"
   },
   {
@@ -871,7 +871,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қоғам/ел",
     "topicId": "asar",
     "title": "Жастарға бата",
-    "text": "Жастар білімді, әдепті, отанына адал болсын.\nАлла жолын ашық етсін.",
+    "text": "Жастар білімді, әдепті, отанына адал болсын.\nАлла жолдарыңызды ашық етсін.",
     "sourceLabel": "Қоғам/ел батасы"
   },
   {
@@ -880,7 +880,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қоғам/ел",
     "topicId": "asar",
     "title": "Қарттарға бата",
-    "text": "Қарттар аман, құрмет артсын.\nАлла ұзақ өмір берсін.",
+    "text": "Қарттар аман, оларға деген құрмет артсын.\nАлла ұзақ өмір берсін.",
     "sourceLabel": "Қоғам/ел батасы"
   },
   {
@@ -898,7 +898,7 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "categoryLabel": "Қоғам/ел",
     "topicId": "asar",
     "title": "Жанжалдан сақтау батасы",
-    "text": "Алла жүрегіңізге сабыр, тілге игілік берсін.\nБірлік сақталсын.",
+    "text": "Алла жүрегіңізге сабыр, тіліңізге игілік берсін.\nБірлік сақталсын.",
     "sourceLabel": "Қоғам/ел батасы"
   },
   {
@@ -906,8 +906,8 @@ const RAW: Array<Omit<TraditionBataEntry, "duration"> & { duration?: string }> =
     "category": "community",
     "categoryLabel": "Қоғам/ел",
     "topicId": "asar",
-    "title": "Қала/аул батасы",
-    "text": "Ауылыңыз аман, егініңіз нық болсын.\nАлла ризығын берекелі етсін.",
+    "title": "Қала/ауыл батасы",
+    "text": "Ауылыңыз аман, егініңіз бітік болсын.\nАлла ризығын берекелі етсін.",
     "sourceLabel": "Қоғам/ел батасы"
   },
   {

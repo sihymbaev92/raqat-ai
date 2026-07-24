@@ -39,7 +39,7 @@ const LANE_META: Record<
     category: "family",
     title: "Отбасылық тәрбие",
     subtitle: "Бала, ата-ана, жеті ата, неке алдындағы жауапкершілік",
-    method: "Мақсатын түсін → отбасыға зиян келтірме → батамен бекіт",
+    method: "Мақсатын түсін → отбасына зиян келтірме → батамен бекіт",
   },
   ceremony: {
     category: "ceremony",
@@ -50,7 +50,7 @@ const LANE_META: Record<
   social: {
     category: "social",
     title: "Қоғамдық әдеп",
-    subtitle: "Қонақ, көрші, асар, сәлем, көппен қатынас",
+    subtitle: "Қонақ, көрші, асар, сәлем, көпшілікпен қарым-қатынас",
     method: "Адам құқығын сақта → риясыз көмектес → ренжітпе",
   },
   faith: {
@@ -104,7 +104,7 @@ export function getTraditionUnderstandingSteps(): TraditionUnderstandingStep[] {
     {
       id: "apply",
       title: "Қолдану",
-      body: "Бүгін отбасыда қысқа, түсінікті, қауіпсіз түрде қалай жасаймыз?",
+      body: "Бүгін отбасында қысқа, түсінікті, қауіпсіз түрде қалай жасаймыз?",
       action: "Отбасына бейімде",
     },
   ];

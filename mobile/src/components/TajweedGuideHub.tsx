@@ -30,7 +30,7 @@ type Props = {
   onOpenColoredList?: () => void;
 };
 
-/** Нөлден оқу: әліпби → Құранға кіру → ережелер → оқулық. */
+/** Нөлден оқу: әліпби → ережелер → оқулық → Құранға кіру. */
 export function TajweedGuideHome({ onOpenPage, onOpenQuran, onOpenColoredList }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -89,31 +89,6 @@ export function TajweedGuideHome({ onOpenPage, onOpenQuran, onOpenColoredList }:
 
       <TajweedAlphabetGrid />
 
-      <View style={styles.studyCard}>
-        <Text style={styles.studyCardHint}>{t.tajweedGuide.openQuranHint}</Text>
-        <Pressable
-          onPress={() => void openColoredFatiha()}
-          disabled={openingSurah}
-          style={({ pressed }) => [styles.practiceCta, pressed && { opacity: 0.92 }]}
-          accessibilityRole="button"
-          accessibilityLabel={t.tajweedGuide.openQuranA11y}
-        >
-          {openingSurah ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.practiceTitle}>{t.tajweedGuide.openQuranCta}</Text>
-          )}
-        </Pressable>
-        <Pressable
-          onPress={openColoredList}
-          style={({ pressed }) => [styles.secondaryLink, pressed && { opacity: 0.85 }]}
-          accessibilityRole="button"
-          accessibilityLabel={t.tajweedGuide.openColoredListA11y}
-        >
-          <Text style={styles.secondaryLinkText}>{t.tajweedGuide.openColoredListCta}</Text>
-        </Pressable>
-      </View>
-
       <GuideAccordionSection
         title={tr(kk.tajweedGuide.sectionLaterTitle)}
         subtitle={tr(kk.tajweedGuide.sectionLaterSub)}
@@ -169,6 +144,31 @@ export function TajweedGuideHome({ onOpenPage, onOpenQuran, onOpenColoredList }:
       >
         <TajweedRulesLegendPanel compact onOpenColoredList={openColoredList} />
       </GuideAccordionSection>
+
+      <View style={styles.studyCard}>
+        <Text style={styles.studyCardHint}>{t.tajweedGuide.openQuranHint}</Text>
+        <Pressable
+          onPress={() => void openColoredFatiha()}
+          disabled={openingSurah}
+          style={({ pressed }) => [styles.practiceCta, pressed && { opacity: 0.92 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t.tajweedGuide.openQuranA11y}
+        >
+          {openingSurah ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.practiceTitle}>{t.tajweedGuide.openQuranCta}</Text>
+          )}
+        </Pressable>
+        <Pressable
+          onPress={openColoredList}
+          style={({ pressed }) => [styles.secondaryLink, pressed && { opacity: 0.85 }]}
+          accessibilityRole="button"
+          accessibilityLabel={t.tajweedGuide.openColoredListA11y}
+        >
+          <Text style={styles.secondaryLinkText}>{t.tajweedGuide.openColoredListCta}</Text>
+        </Pressable>
+      </View>
 
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
     </View>
