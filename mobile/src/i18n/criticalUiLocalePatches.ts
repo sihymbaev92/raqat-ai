@@ -970,7 +970,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "Чтение (транскрипция)",
       readerReadingThemeHint: "Белый — светлая страница; Чёрный — тёмный фон.",
       readerReciterHint:
-        "Звук для каждого аята загружается из интернета. Смысл на экране — перевод Ерлана Алимулы; аудио «Перевод» — Халифа Алтай (казахский), Эльмир Кулиев (русский), Хакимов (кыргызский), Rowwad (узбекский) и другие языки; «Арабские чтецы» — оригинальный таджвид. Если одна версия не играет, выберите другого чтеца.",
+        "Звук для каждого аята загружается из интернета. Смысл на экране — перевод Ерлана Алимулы; аудио «Перевод» — Халифа Алтай (казахский), Эльмир Кулиев (русский), Ibrahim Walk (английский), Диянет (турецкий); кыргызский/узбекский голос — скоро; «Арабские чтецы» — оригинальный таджвид. Если одна версия не играет, выберите другого чтеца.",
     },
   },
   en: {
@@ -1149,7 +1149,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "Reading (transcription)",
       readerReadingThemeHint: "White — light page; Black — dark background.",
       readerReciterHint:
-        "Ayah audio loads from the internet. On-screen Kazakh meaning is Erlan Alimuly’s translation; «Translation» audio covers Khalifa Altai (Kazakh), Elmir Kuliev (Russian), Khakimov (Kyrgyz), Rowwad (Uzbek) and other languages; «Arabic reciters» are original tajweed. If one version fails, try another reciter.",
+        "Ayah audio loads from the internet. On-screen Kazakh meaning is Erlan Alimuly’s translation; «Translation» audio covers Khalifa Altai (Kazakh), Elmir Kuliev (Russian), Ibrahim Walk (English), Diyanet (Turkish); Kyrgyz/Uzbek voices coming soon; «Arabic reciters» are original tajweed. If one version fails, try another reciter.",
     },
   },
   ky: {
@@ -1326,7 +1326,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "Окулушу (транскрипция)",
       readerReadingThemeHint: "Ак — ачык бет; Кара — кара фон.",
       readerReciterHint:
-        "Аят сайын ун интернеттен жуктолот. Экрандагы казакча маани — Ерлан Алимулы котормосу; «Котормо» аудиосу — Халифа Алтай (казак), Эльмир Кулиев (орус), Хакимов (кыргыз), Rowwad (озбек) жана башка тилдер; «Араб карылар» — тупнуска тажвид. Бир нуска ойнобосо, башка карыга отонуз.",
+        "Аят сайын ун интернеттен жуктолот. Экрандагы казакча маани — Ерлан Алимулы котормосу; «Котормо» аудиосу — Халифа Алтай (казак), Эльмир Кулиев (орус), Ibrahim Walk (англис), Дианет (түрк); кыргыз/өзбек үн — жакында; «Араб карылар» — тупнуска тажвид. Бир нуска ойнобосо, башка карыга отонуз.",
     },
   },
   uz: {
@@ -1506,7 +1506,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "O'qilishi (transkripsiya)",
       readerReadingThemeHint: "Oq — ochiq sahifa; Qora — qora fon.",
       readerReciterHint:
-        "Oyat audiosi internetdan yuklanadi. Ekrandagi qozoqcha ma'no — Erlan Alimuly tarjimasi; «Tarjima» audiosi — Xalifa Altay (qozoq), Elmir Kuliev (rus), Xakimov (qirg'iz), Rowwad (o'zbek) va boshqa tillar; «Arab qorilar» — asl tajvid. Bir versiya o'ynamasa, boshqa qorini tanlang.",
+        "Oyat audiosi internetdan yuklanadi. Ekrandagi qozoqcha ma'no — Erlan Alimuly tarjimasi; «Tarjima» audiosi — Xalifa Altay (qozoq), Elmir Kuliev (rus), Ibrahim Walk (ingliz), Diyanet (turk); qirg'iz/o'zbek ovoz — tez orada; «Arab qorilar» — asl tajvid. Bir versiya o'ynamasa, boshqa qorini tanlang.",
     },
   },
   tr: {
@@ -1685,7 +1685,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "Okunuş (transkripsiyon)",
       readerReadingThemeHint: "Beyaz — açık sayfa; Siyah — koyu arka plan.",
       readerReciterHint:
-        "Ayet sesi internetten yüklenir. Ekrandaki Kazakça anlam Erlan Alimuly mealidir; «Meal» sesi Halife Altay (Kazakça), Elmir Kuliev (Rusça), Hakimov (Kırgızca), Rowwad (Özbekçe) ve diğer dilleri kapsar; «Arap kâriler» orijinal tecviddir. Bir sürüm çalmazsa başka kâri deneyin.",
+        "Ayet sesi internetten yüklenir. Ekrandaki Kazakça anlam Erlan Alimuly mealidir; «Meal» sesi Halife Altay (Kazakça), Elmir Kuliev (Rusça), Ibrahim Walk (İngilizce), Diyanet (Türkçe); Kırgızca/Özbekçe ses yakında; «Arap kâriler» orijinal tecviddir. Bir sürüm çalmazsa başka kâri deneyin.",
     },
   },
   ar: {
@@ -1864,7 +1864,7 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
       translitCaption: "القراءة (النسخ الصوتي)",
       readerReadingThemeHint: "أبيض — صفحة فاتحة؛ أسود — خلفية داكنة.",
       readerReciterHint:
-        "يُحمَّل صوت كل آية من الإنترنت. المعنى الظاهر على الشاشة ترجمة إرلان أليموي؛ صوت «الترجمة» يشمل خليفة ألتاي (كازاخية) وإلمير كولييف (روسية) وحكيموف (قرغيزية) وروات (أوزبكية) ولغات أخرى؛ «القرّاء العرب» تجويد أصلي. إن لم يعمل أحد الإصدارات فجرّب قارئًا آخر.",
+        "يُحمَّل صوت كل آية من الإنترنت. المعنى الظاهر على الشاشة ترجمة إرلان أليموي؛ صوت «الترجمة» يشمل خليفة ألتاي (كازاخية) وإلمير كولييف (روسية) وإبراهيم ووك (إنجليزية) وديانت (تركية)؛ الصوت القرغيزي/الأوزبكي قريبًا؛ «القرّاء العرب» تجويد أصلي. إن لم يعمل أحد الإصدارات فجرّب قارئًا آخر.",
     },
   },
 } as const satisfies Record<"ru" | "en" | "ky" | "uz" | "tr" | "ar", CriticalPatch>;

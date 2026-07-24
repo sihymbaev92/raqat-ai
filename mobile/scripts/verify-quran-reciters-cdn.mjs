@@ -3,14 +3,12 @@
  * Usage: node mobile/scripts/verify-quran-reciters-cdn.mjs
  */
 
-/** Keep in sync with `src/config/quranReciters.ts` playable editions. */
+/** Keep in sync with `src/config/quranReciters.ts` playable editions (ky/uz soon). */
 const EDITIONS = [
   "kk.khalifahaltai-audio",
   "ru.kuliev-audio",
   "en.walk",
   "tr.vakfi-audio",
-  "ky.hakimov-audio",
-  "uz.rwwad-audio",
   "ar.abdurrahmaansudais",
   "ar.abdulbasitmurattal",
   "ar.husary",
@@ -23,7 +21,7 @@ const EDITIONS = [
   "ar.muhammadayyoub",
 ];
 
-const RAQAT_HOSTED = new Set(["ky.hakimov-audio", "uz.rwwad-audio"]);
+const RAQAT_HOSTED = new Set([]);
 const RAQAT_AUDIO_BASE = "https://rahatomir.com/assets/quran/audio";
 const CDN_AYAH_192 = new Set(["ar.abdurrahmaansudais", "ar.abdulbasitmurattal", "en.walk"]);
 const SAMPLE_AYAHS = [1, 8, 255, 6236];

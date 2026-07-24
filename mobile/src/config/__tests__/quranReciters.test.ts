@@ -22,15 +22,18 @@ describe("defaultReciterEditionForAppLocale", () => {
     expect(defaultReciterEditionForAppLocale("kk")).toBe(QURAN_KK_HALIFAH_ALTAI_EDITION);
     expect(defaultReciterEditionForAppLocale("ru")).toBe(QURAN_RU_KULIEV_EDITION);
     expect(defaultReciterEditionForAppLocale("en")).toBe(QURAN_EN_WALK_EDITION);
-    expect(defaultReciterEditionForAppLocale("uz")).toBe(QURAN_UZ_RWWAD_AUDIO_EDITION);
     expect(defaultReciterEditionForAppLocale("tr")).toBe(QURAN_TR_DIYANET_EDITION);
-    expect(defaultReciterEditionForAppLocale("ky")).toBe(QURAN_KY_HAKIMOV_AUDIO_EDITION);
+    // ky/uz audio slots exist but are not playable yet → fall back to KK Altai.
+    expect(defaultReciterEditionForAppLocale("uz")).toBe(QURAN_KK_HALIFAH_ALTAI_EDITION);
+    expect(defaultReciterEditionForAppLocale("ky")).toBe(QURAN_KK_HALIFAH_ALTAI_EDITION);
   });
 });
 
 describe("QURAN_RECITER_OPTIONS catalog", () => {
   it("lists every playable edition with a Kazakh label", () => {
-    expect(QURAN_PLAYABLE_RECITER_EDITIONS.length).toBeGreaterThanOrEqual(16);
+    expect(QURAN_PLAYABLE_RECITER_EDITIONS.length).toBeGreaterThanOrEqual(14);
+    expect(QURAN_PLAYABLE_RECITER_EDITIONS).not.toContain(QURAN_KY_HAKIMOV_AUDIO_EDITION);
+    expect(QURAN_PLAYABLE_RECITER_EDITIONS).not.toContain(QURAN_UZ_RWWAD_AUDIO_EDITION);
     for (const edition of QURAN_PLAYABLE_RECITER_EDITIONS) {
       const opt = findQuranReciterOption(edition);
       expect(opt?.audioAvailable).toBe(true);
@@ -38,11 +41,13 @@ describe("QURAN_RECITER_OPTIONS catalog", () => {
     }
   });
 
-  it("enables Kyrgyz and Uzbek translation audio on RAQAT CDN", () => {
-    expect(isQuranReciterAudioAvailable(QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(true);
-    expect(isQuranReciterAudioAvailable(QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(true);
+  it("keeps Kyrgyz and Uzbek slots as coming-soon until CDN MP3 exists", () => {
+    expect(isQuranReciterAudioAvailable(QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(false);
+    expect(isQuranReciterAudioAvailable(QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(false);
     expect(QURAN_RECITER_OPTIONS.some((o) => o.edition === QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(true);
     expect(QURAN_RECITER_OPTIONS.some((o) => o.edition === QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(true);
+    expect(normalizeReciterEdition(QURAN_KY_HAKIMOV_AUDIO_EDITION)).toBe(QURAN_KK_HALIFAH_ALTAI_EDITION);
+    expect(normalizeReciterEdition(QURAN_UZ_RWWAD_AUDIO_EDITION)).toBe(QURAN_KK_HALIFAH_ALTAI_EDITION);
   });
 
   it("keeps Turkish Diyanet under the tr group", () => {

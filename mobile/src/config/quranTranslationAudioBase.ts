@@ -9,9 +9,10 @@ function normalizeBase(raw: string): string {
 }
 
 /**
- * RAQAT өз CDN — қырғыз/өзбек аударма аудиосы.
+ * RAQAT өз CDN — қырғыз/өзбек аударма аудиосы (файлдар дайын болғанда).
  * Файл жолы: `{base}/128/{edition}/{1..6236}.mp3`
  * Мысалы: https://rahatomir.com/assets/quran/audio/128/ky.hakimov-audio/1.mp3
+ * Қазір каталогта `audioAvailable: false` — picker-де «жақында».
  */
 export function getRaqatQuranTranslationAudioBaseUrl(): string {
   const env =

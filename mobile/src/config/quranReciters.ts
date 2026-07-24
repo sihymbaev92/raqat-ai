@@ -1,6 +1,7 @@
 /**
  * Аят сайын дыбыс: cdn.islamic.network/quran/audio/{128|192}/{edition}/{1..6236}.mp3
- * (Al Quran Cloud edition slug). ky/uz — RAQAT CDN (`quranTranslationAudioBase.ts`).
+ * (Al Quran Cloud edition slug). ky/uz слоттары RAQAT CDN жолына дайын,
+ * бірақ ашық MP3 әлі жоқ — `audioAvailable: false` («жақында»).
  * Кейбір араб қарилар жеке source арқылы қосылады (`quranSudaisAudio.ts`).
  */
 import type { AppLocale } from "../i18n/runtime";
@@ -35,12 +36,12 @@ export const QURAN_RU_KULIEV_EDITION = "ru.kuliev-audio";
 export const QURAN_EN_WALK_EDITION = "en.walk";
 /** Түркия — Дианет вақфы аудармасы (CDN 128 kbps). */
 export const QURAN_TR_DIYANET_EDITION = "tr.vakfi-audio";
-/** Қырғызстан — Хакимов (RAQAT CDN 128 kbps). */
+/** Қырғызстан — Хакимов (слот дайын; CDN MP3 әлі жоқ). */
 export const QURAN_KY_HAKIMOV_AUDIO_EDITION = "ky.hakimov-audio";
-/** Өзбекстан — Rowwad аудармасы (RAQAT CDN 128 kbps). */
+/** Өзбекстан — Rowwad (слот дайын; CDN MP3 әлі жоқ). */
 export const QURAN_UZ_RWWAD_AUDIO_EDITION = "uz.rwwad-audio";
 
-/** Аударма дауыстары (islamic.network + RAQAT CDN). */
+/** Аударма дауыстары (islamic.network; ky/uz — кейінгі CDN). */
 export const QURAN_TRANSLATION_RECITER_OPTIONS: QuranReciterOption[] = [
   {
     edition: QURAN_KK_HALIFAH_ALTAI_EDITION,
@@ -75,14 +76,14 @@ export const QURAN_TRANSLATION_RECITER_OPTIONS: QuranReciterOption[] = [
     labelKk: "Хакимов — қырғызша аударма",
     group: "ky",
     kind: "translation",
-    audioAvailable: true,
+    audioAvailable: false,
   },
   {
     edition: QURAN_UZ_RWWAD_AUDIO_EDITION,
     labelKk: "Rowwad — өзбекше аударма",
     group: "uz",
     kind: "translation",
-    audioAvailable: true,
+    audioAvailable: false,
   },
 ];
 
