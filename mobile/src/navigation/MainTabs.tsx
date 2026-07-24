@@ -1,7 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAppTheme } from "../theme/ThemeContext";
-import { useAppLocale } from "../i18n/runtime";
 import type { MainTabParamList } from "./types";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
 import { lazyScreen } from "./lazyScreen";
@@ -27,11 +26,9 @@ const TasbihStack = lazyScreen(() => import("./TasbihStack").then((m) => ({ defa
 /** Негізгі экрандар — таб жолағы жоқ, тек stack навигация. Home — eager (boot кейін Suspense жоқ). */
 export function MainTabs() {
   const { colors } = useAppTheme();
-  const locale = useAppLocale();
 
   return (
     <Stack.Navigator
-      key={locale}
       initialRouteName="Home"
       screenOptions={{
         ...hiddenStackHeaderOptions,

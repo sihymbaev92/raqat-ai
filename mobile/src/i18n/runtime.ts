@@ -1580,14 +1580,30 @@ export async function hydrateLocale(): Promise<AppLocale> {
   }
   if (next !== "kk") {
     const target = next as OfflineAutoTranslateTarget;
-    /** Boot: APK slim pack sync — UI бірден ашылсын; толық сөздік фонда. */
-    seedApkOfflineTranslationsSync();
-    if (hasOfflineAutoTranslationLocale(target)) {
-      pruneOfflineAutoTranslationsToLocale(target);
-      invalidateOfflineLocaleTreeCache(next);
-    }
+    /**
+     * Boot critical path: тек қолмен жазылған patch — UI бірден ашылсын.
+     * ~7MB APK сөздігі sync require UI-дан кейін (төменде).
+     */
     applyLocale(next);
     emitLocaleChange();
+    const finishOfflineSeed = () => {
+      if (getCurrentLocale() !== next) return;
+      seedApkOfflineTranslationsSync();
+      if (getCurrentLocale() !== next) return;
+      if (hasOfflineAutoTranslationLocale(target)) {
+        pruneOfflineAutoTranslationsToLocale(target);
+        invalidateOfflineLocaleTreeCache(next);
+      }
+      if (getCurrentLocale() !== next) return;
+      reapplyCurrentLocale();
+    };
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => {
+        setTimeout(finishOfflineSeed, 0);
+      });
+    } else {
+      setTimeout(finishOfflineSeed, 0);
+    }
     void ensureOfflineAutoTranslationsLoaded(target)
       .then(() => {
         if (getCurrentLocale() !== next) return;

@@ -7,7 +7,6 @@ import {
 } from "../api/halalDamuWp";
 import { hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
 import { getHalalCompaniesBundledCards, ensureHalalCompaniesSnapshotLoaded, hydrateHalalCompaniesSnapshotFromCdn } from "./halalCompaniesSnapshot";
-import { prefetchHalalProductsSeedIndex } from "./halalProductsSeedKz";
 import { warmHalalCompanyMapMarkers } from "../utils/halalMapBootstrap";
 
 /** Тізім/карта: WP логотип enrich жоқ — ашылу жылдам. */
@@ -29,7 +28,7 @@ export function prefetchHalalDamuHub(): Promise<void> {
     try {
       await ensureHalalCompaniesSnapshotLoaded();
       seedHalalCompaniesBulkFromBundled();
-      prefetchHalalProductsSeedIndex();
+      // Өнім іздеу индексі (~1.4MB) — Verify табында бөлек жүктеледі.
       warmHalalCompanyMapMarkers();
       // Параллель: диск тазалау + API база + CDN — бірінші тізімді күттірмейді.
       await Promise.all([

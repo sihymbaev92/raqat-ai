@@ -1,5 +1,4 @@
 import { FATUA_KK_HOME_URL, MUFTYAT_KK_HOME_URL } from "../config/officialIslamicSources";
-import { prefetchMosques2gisCatalog } from "../data/mosques2gisCatalog";
 import { halalDamuSiteHomeUrl } from "../api/halalDamuWp";
 import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 
@@ -53,7 +52,7 @@ function ensureKmdbWarm(): Promise<void> {
         void import("../components/officialSiteWebViewReload").then((m) =>
           m.prefetchOfficialSiteWebPages([MUFTYAT_KK_HOME_URL, FATUA_KK_HOME_URL])
         );
-        void prefetchMosques2gisCatalog();
+        // Мешіт каталогы (~MB) — KMDB экраны ашылғанда жүктеледі (NearbyMosquesPanel).
       })
       .then(() => undefined)
       .catch(() => undefined);
@@ -61,7 +60,7 @@ function ensureKmdbWarm(): Promise<void> {
   return kmdbWarm;
 }
 
-/** Dashboard «ҚМДБ» батырмасын basу алдында — chunk + muftyat/fatua DNS/TLS + мешіт каталогы. */
+/** Dashboard «ҚМДБ» батырмасын basу алдында — chunk + muftyat/fatua DNS/TLS. */
 export function warmKmdbHubScreen(): void {
   void ensureKmdbWarm();
 }

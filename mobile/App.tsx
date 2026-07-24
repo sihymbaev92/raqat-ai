@@ -22,7 +22,7 @@ import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
-import { hydrateLocale, useAppLocale } from "./src/i18n/runtime";
+import { hydrateLocale } from "./src/i18n/runtime";
 import { getOnboardingDone } from "./src/storage/prefs";
 import { runAfterInteractions } from "./src/utils/uiDefer";
 import { trackNavigationPlausible } from "./src/navigation/navigationPlausible";
@@ -108,7 +108,6 @@ function scheduleFirstLaunchPermissionsBurst(): void {
 export default function App() {
   const [bootReady, setBootReady] = useState(false);
   const [needsLanguageOnboarding, setNeedsLanguageOnboarding] = useState(false);
-  const locale = useAppLocale();
   const colorScheme = useColorScheme();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastAppStateSyncAtRef = useRef(0);
@@ -187,9 +186,6 @@ export default function App() {
         void import("./src/fonts/brandFont")
           .then((m) => m.loadBrandFont())
           .catch(() => {});
-        void import("./src/services/bundledQuranSeed")
-          .then((m) => m.seedBundledQuranCachesIfNeeded())
-          .catch(() => {});
 
         void import("./src/services/notificationQuickActions")
           .then((m) => m.initNotificationQuickActions())
@@ -215,6 +211,9 @@ export default function App() {
         }
 
         setTimeout(() => {
+          void import("./src/services/bundledQuranSeed")
+            .then((m) => m.seedBundledQuranCachesIfNeeded())
+            .catch(() => {});
           void import("./src/services/slimAssetPrefetch")
             .then((m) => m.prefetchSlimBundledAssetsOnWifi())
             .catch(() => {});
@@ -332,7 +331,6 @@ export default function App() {
   const appNavigation = (
     <>
       <NavigationContainer
-        key={locale}
         ref={rootNavigationRef}
         linking={appDeepLinking}
         onReady={() => {

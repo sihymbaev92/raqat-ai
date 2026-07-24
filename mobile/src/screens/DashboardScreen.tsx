@@ -320,6 +320,18 @@ function HomeHeaderBar({
 }
 
 export function DashboardScreen() {
+  const [qiblaReady, setQiblaReady] = useState(false);
+
+  useEffect(() => {
+    /** Бірінші кадр: сенсор/GPS жоқ — home тез сызылсын. */
+    const task = runAfterInteractions(() => setQiblaReady(true), 1_200);
+    return () => task.cancel();
+  }, []);
+
+  if (!qiblaReady) {
+    return <DashboardScreenContent qiblaEnabled={false} />;
+  }
+
   return (
     <QiblaSensorProvider>
       <DashboardScreenWithQibla />

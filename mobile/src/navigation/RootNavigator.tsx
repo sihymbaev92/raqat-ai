@@ -1,8 +1,6 @@
-import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { MainTabs } from "./MainTabs";
 import { hiddenStackHeaderOptions } from "./hiddenStackHeader";
-import { useAppLocale } from "../i18n/runtime";
 import type { RootStackParamList } from "./types";
 import { lazyScreen } from "./lazyScreen";
 
@@ -14,10 +12,8 @@ const QiblaScreen = lazyScreen(() => import("../screens/QiblaScreen").then((m) =
 const MoreNavigator = lazyScreen(() => import("./MoreStack").then((m) => ({ default: m.MoreNavigator })));
 
 export function RootNavigator() {
-  const locale = useAppLocale();
-
   return (
-    <Stack.Navigator key={locale} screenOptions={hiddenStackHeaderOptions}>
+    <Stack.Navigator screenOptions={hiddenStackHeaderOptions}>
       <Stack.Screen name="Main" component={MainTabs} />
       <Stack.Screen name="AsmaAlHusna" component={AsmaAlHusnaScreen} />
       <Stack.Screen name="PrayerTimes" component={PrayerTimesScreen} />
