@@ -5,6 +5,8 @@
 
 /** Соңғы mushaf қолдану уақыты — appMemoryRelease Құран кэшін тез тазаламасын. */
 let lastMushafTouchAt = 0;
+/** Экран фокуста (немесе фонға кетіп те) — оқып отырғанда кэшті сақтау. */
+let mushafScreenFocused = false;
 let scheduledReleaseTimer: ReturnType<typeof setTimeout> | null = null;
 let scheduledOnReleased: (() => void) | null = null;
 /** Фокус қайта келгенде ескі release.then(cb) stub беттерді өшірмесін. */
@@ -24,6 +26,16 @@ export function touchMushafAccess(): void {
   cancelScheduledMushafMemoryRelease();
 }
 
+/** Хатым экраны focus/blur — ұзақ оқу кезінде appMemoryRelease кэшті өшірмесін. */
+export function setMushafScreenFocused(focused: boolean): void {
+  mushafScreenFocused = focused;
+  if (focused) touchMushafAccess();
+}
+
+export function isMushafScreenFocused(): boolean {
+  return mushafScreenFocused;
+}
+
 /** Фокусқа қайту: mid-flight release үзілсе true — loadKey bump керек. */
 export function takeMushafNeedsReloadAfterInterruptedRelease(): boolean {
   const v = pendingUiReloadAfterInterruptedRelease;
@@ -31,8 +43,9 @@ export function takeMushafNeedsReloadAfterInterruptedRelease(): boolean {
   return v;
 }
 
-/** Фонға кеткенде Құран кэшін ұзақ ұстамау — keep терезесі. */
+/** Фонға кеткенде Құран кэшін ұзақ ұстамау — keep терезесі. Фокуста болса әрқашан keep. */
 export function mushafWasUsedRecently(withinMs = 2 * 60_000): boolean {
+  if (mushafScreenFocused) return true;
   return lastMushafTouchAt > 0 && Date.now() - lastMushafTouchAt < withinMs;
 }
 
@@ -135,6 +148,10 @@ export async function releaseMushafScreenMemory(): Promise<void> {
     safe("audioSegments", async () => {
       const { clearQuranComAudioSegmentsCache } = await import("../services/quranComAudioSegments");
       clearQuranComAudioSegmentsCache();
+    }),
+    safe("hatimPreload", async () => {
+      const { resetHatimOfflinePreloadCache } = await import("./hatimBookPolicy");
+      resetHatimOfflinePreloadCache();
     }),
   ]);
 }

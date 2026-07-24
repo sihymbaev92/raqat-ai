@@ -38,6 +38,8 @@ async function refreshUiLocaleAfterI18nPack(locale: AppLocale): Promise<void> {
     const target = locale as import("./offlineAutoTranslations").OfflineAutoTranslateTarget;
     offline.seedApkOfflineTranslationsSync();
     await offline.ensureOfflineAutoTranslationsLoaded(target);
+    /** Prune тек әлі сол тіл белсенді болса — ескі download белсенді сөздікті өшірмесін. */
+    if (getCurrentLocale() !== locale) return;
     if (!offline.hasOfflineAutoTranslationLocale(target)) return;
     offline.pruneOfflineAutoTranslationsToLocale(target);
     invalidateOfflineLocaleTreeCache(locale);

@@ -186,3 +186,8 @@ export function clearQcf4FontLoaderCache(): void {
   loaded.clear();
   inflight.clear();
 }
+
+/** Фоннан қайту: native glyph жоғалса loaded белгісін қайта тексеру. */
+export function invalidateQcf4FontLoadedMarks(): void {
+  loaded.clear();
+}

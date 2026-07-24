@@ -78,6 +78,38 @@ describe("halalProductSearch", () => {
     spy.mockRestore();
   });
 
+  it("resolveHalalProductSearch filters seed/producer rows by goods status chip", async () => {
+    const spy = jest.spyOn(halalDamuWp, "searchHalalDamuProducts").mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          title: "Milk Halal",
+          barcode: null,
+          certificateStatus: "halal",
+          imageUrl: null,
+        },
+        {
+          id: 2,
+          title: "Milk Haram",
+          barcode: null,
+          certificateStatus: "haram",
+          imageUrl: null,
+        },
+      ],
+    });
+    const haramOnly = await resolveHalalProductSearch("Milk", [], {
+      limit: 5,
+      status: "haram",
+    });
+    expect(haramOnly.items.map((p) => p.id)).toEqual([2]);
+    const halalOnly = await resolveHalalProductSearch("Milk", [], {
+      limit: 5,
+      status: "halal",
+    });
+    expect(halalOnly.items.map((p) => p.id)).toEqual([1]);
+    spy.mockRestore();
+  });
+
   it("companyToHalalProductItem maps producer fallback fields", () => {
     const c = mockCompany({ id: 42, title: "«Восток-Молоко»", certificateStatus: "active" });
     const p = companyToHalalProductItem(c);

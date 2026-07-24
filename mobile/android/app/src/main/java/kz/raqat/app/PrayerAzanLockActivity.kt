@@ -104,8 +104,11 @@ class PrayerAzanLockActivity : Activity() {
     openFullAzanScreen(label, entered, time, soundId, salatKey)
 
     // Main ашылмаса — overlay
+    val gen = PrayerAzanActiveSession.currentGeneration()
     mainHandler.postDelayed(
       {
+        if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
+        if (!PrayerAzanActiveSession.isActive(applicationContext)) return@postDelayed
         if (isFinishing || isDestroyed) return@postDelayed
         if (handedOffToMain && !hasWindowFocus()) {
           // Main алдыңғы қатарда — қабықты жабу

@@ -156,3 +156,8 @@ export function clearQcf4ColrFontLoaderCache(): void {
   inflight.clear();
   clearQcf4ColrPaletteCssCache();
 }
+
+/** Фоннан қайту: COLR glyph қайта тексеру. */
+export function invalidateQcf4ColrFontLoadedMarks(): void {
+  loaded.clear();
+}

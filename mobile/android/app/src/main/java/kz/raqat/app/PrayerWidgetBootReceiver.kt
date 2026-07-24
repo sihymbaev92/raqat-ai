@@ -19,6 +19,14 @@ class PrayerWidgetBootReceiver : BroadcastReceiver() {
     }
     val app = context.applicationContext
     PrayerAzanDeliveryService.stopRunning(app)
+    // Ескі сессия/pending reboot кейін азанды қайта қоспасын — тек болашақ оятқыштар.
+    try {
+      PrayerAzanNativePlayer.stop()
+    } catch (_: Throwable) {
+      /* */
+    }
+    PrayerAzanActiveSession.clear(app)
+    PrayerAzanPendingLaunch.clear(app)
     PrayerWidgetViews.updateAllWidgets(app)
     PrayerWidgetAlarmScheduler.scheduleNext(app)
     PrayerAzanAlarmScheduler.restore(app)

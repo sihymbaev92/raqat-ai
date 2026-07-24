@@ -12,7 +12,7 @@ import {
   type PrayerNotifSalatKey,
   type PrayerNotifSoundId,
 } from "../storage/prefs";
-import { loadPrayerCache, loadPrayerCacheForCity, savePrayerCache } from "../storage/prayerCache";
+import { loadPrayerCache, loadPrayerCacheForCity, resolvePrayerScheduleCoords, savePrayerCache } from "../storage/prayerCache";
 import { refreshPrayerCacheIfCalendarStale } from "./prayerDaySelfHeal";
 import {
   alignPrayerTimesToCurrentScheduleShift,
@@ -422,7 +422,13 @@ async function ensureAndroidNotificationPermission(N: typeof import("expo-notifi
 }
 
 /** Келесі 14 күнге дейінгі намаз уақыттары (iOS ~64 pending лимиті). Кэш бірінші — фонда желі күтпейді. */
-export async function reschedulePrayerNotifications(
+let reschedulePrayerInFlight: Promise<void> | null = null;
+let pendingRescheduleArgs: {
+  data: PrayerTimesResult;
+  opts: { enabled: boolean; iftarExtra: boolean; prayerTimesAlreadyAdjusted?: boolean };
+} | null = null;
+
+async function reschedulePrayerNotificationsBody(
   data: PrayerTimesResult,
   opts: { enabled: boolean; iftarExtra: boolean; prayerTimesAlreadyAdjusted?: boolean }
 ): Promise<void> {
@@ -455,10 +461,7 @@ export async function reschedulePrayerNotifications(
     ]);
     const now = Date.now();
     const anchor = localDayAtNoon(new Date(), 0);
-    const coordsHint =
-      Number.isFinite(data.latitude) && Number.isFinite(data.longitude)
-        ? { lat: data.latitude as number, lon: data.longitude as number }
-        : null;
+    const coordsHint = resolvePrayerScheduleCoords(data);
 
     const fetched = await fetchPrayerDaysAhead(data.city, data.country, anchor, shiftMin, coordsHint);
     const scheduleData =
@@ -467,6 +470,13 @@ export async function reschedulePrayerNotifications(
     const slots = collectUpcomingPrayerSlots(dayBuckets, now, PRAYER_SCHEDULE_LIMIT);
 
     if (slots.length === 0) {
+      /**
+       * Ертеңгі fetch сәтсіз болса (fetched бос) — қолданыстағы оятқыштарды өшірме.
+       * Әйтпесе Ишадан кейін желі үзілсе ертеңгі азан жоғалады.
+       */
+      if (fetched.length === 0) {
+        return;
+      }
       if (N) await cancelPrayerScheduledNotificationsOnly(N);
       if (N) await clearAndroidPresentedPrayerNotifications(N);
       cancelFullScreenAzanAlarms();
@@ -500,6 +510,35 @@ export async function reschedulePrayerNotifications(
   }
 }
 
+export async function reschedulePrayerNotifications(
+  data: PrayerTimesResult,
+  opts: { enabled: boolean; iftarExtra: boolean; prayerTimesAlreadyAdjusted?: boolean }
+): Promise<void> {
+  if (reschedulePrayerInFlight) {
+    pendingRescheduleArgs = { data, opts };
+    return reschedulePrayerInFlight;
+  }
+  reschedulePrayerInFlight = (async () => {
+    try {
+      let current = { data, opts };
+      for (;;) {
+        pendingRescheduleArgs = null;
+        await reschedulePrayerNotificationsBody(current.data, current.opts);
+        if (!pendingRescheduleArgs) break;
+        current = pendingRescheduleArgs;
+      }
+    } finally {
+      reschedulePrayerInFlight = null;
+      if (pendingRescheduleArgs) {
+        const next = pendingRescheduleArgs;
+        pendingRescheduleArgs = null;
+        await reschedulePrayerNotifications(next.data, next.opts);
+      }
+    }
+  })();
+  return reschedulePrayerInFlight;
+}
+
 /** Қолданба ашылғанда / фоннан оралғанда / background fetch — алдымен кэшті жаңарту, содан жоспарлау. */
 let rescheduleFromCacheInFlight: Promise<void> | null = null;
 /** In-flight кезінде жаңа ығысу/қала сұрауы келсе — цикл соңында қайта жүгіру. */
@@ -520,7 +559,18 @@ async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
   }
   if (cached.city !== selected.city || cached.country !== selected.country) {
     try {
-      const freshRaw = await fetchPrayerTimesForLocation(selected.city, selected.country);
+      const coordsHint = resolvePrayerScheduleCoords({
+        city: selected.city,
+        country: selected.country,
+        latitude: cached.latitude,
+        longitude: cached.longitude,
+      });
+      const freshRaw = await fetchPrayerTimesForLocation(
+        selected.city,
+        selected.country,
+        undefined,
+        coordsHint,
+      );
       if (!freshRaw.error) {
         const fresh =
           desiredShift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, desiredShift);
@@ -562,7 +612,13 @@ async function reschedulePrayerNotificationsFromCacheBody(): Promise<void> {
   let schedulePayload: PrayerTimesResult = cached;
   if (cached.appliedShiftMin == null) {
     try {
-      const freshRaw = await fetchPrayerTimesForLocation(selected.city, selected.country);
+      const coordsHint = resolvePrayerScheduleCoords(cached);
+      const freshRaw = await fetchPrayerTimesForLocation(
+        selected.city,
+        selected.country,
+        undefined,
+        coordsHint,
+      );
       if (!freshRaw.error) {
         schedulePayload =
           desiredShift === 0 ? freshRaw : applyPrayerTimeShift(freshRaw, desiredShift);

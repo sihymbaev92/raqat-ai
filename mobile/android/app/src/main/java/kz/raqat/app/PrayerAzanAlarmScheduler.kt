@@ -70,7 +70,8 @@ object PrayerAzanAlarmScheduler {
     for (i in 0 until arr.length()) {
       val item = arr.optJSONObject(i) ?: continue
       val atMillis = item.optLong("atMillis", 0L)
-      if (atMillis <= System.currentTimeMillis()) continue
+      /** Reschedule дәл секундта — ағымдағы намазды 5с терезеде сақтау. */
+      if (atMillis < System.currentTimeMillis() - 5_000L) continue
       val identifier = item.optString("identifier", "raqat-prayer-$i")
       val requestCode = stableRequestCode(identifier)
       val pi = pendingIntent(app, requestCode, item)

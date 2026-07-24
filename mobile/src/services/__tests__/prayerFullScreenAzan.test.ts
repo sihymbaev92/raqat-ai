@@ -4,6 +4,7 @@ import {
   prayerEnteredTitleForSlot,
   scheduleFullScreenAzanAlarmsForResult,
   scheduleTestAzanAlarmForQa,
+  shouldOpenPrayerAzanFromLaunchState,
   shouldRoutePrayerSoundToFullScreenAzan,
 } from "../prayerFullScreenAzan";
 import type { PrayerScheduleSlot } from "../prayerNotificationSchedule";
@@ -20,6 +21,33 @@ function slot(partial: Partial<PrayerScheduleSlot>): PrayerScheduleSlot {
 }
 
 describe("prayerFullScreenAzan", () => {
+  it("does not reopen azan from stale launch URL after dismiss", () => {
+    expect(
+      shouldOpenPrayerAzanFromLaunchState({
+        hasPending: false,
+        sessionActive: false,
+        playbackAlive: false,
+        hasLaunchUrl: true,
+      })
+    ).toBe(false);
+    expect(
+      shouldOpenPrayerAzanFromLaunchState({
+        hasPending: true,
+        sessionActive: false,
+        playbackAlive: false,
+        hasLaunchUrl: false,
+      })
+    ).toBe(true);
+    expect(
+      shouldOpenPrayerAzanFromLaunchState({
+        hasPending: false,
+        sessionActive: true,
+        playbackAlive: true,
+        hasLaunchUrl: true,
+      })
+    ).toBe(true);
+  });
+
   it("uses the Kazakh Екінті wording for asr entered title", () => {
     expect(prayerEnteredTitleForSlot("Екінті", "asr")).toBe("Екінті намазы кірді");
     expect(prayerEnteredTitleForSlot("Аср", "asr")).toBe("Екінті намазы кірді");
@@ -111,5 +139,28 @@ describe("prayerFullScreenAzan", () => {
     const result = await scheduleTestAzanAlarmForQa(90);
     expect(result.ok).toBe(false);
     expect(["native_module_missing", "schedule_empty"]).toContain(result.error);
+  });
+
+  it("cancels native alarms when schedule payload is empty (all muted / sound off)", async () => {
+    const cancel = jest.fn();
+    jest.resetModules();
+    jest.doMock("react-native", () => ({
+      Platform: { OS: "android", Version: 35 },
+      NativeModules: {
+        PrayerWidget: {
+          scheduleFullScreenAzanAlarms: jest.fn(async () => ({ scheduledCount: 1, identifiers: ["x"] })),
+          cancelFullScreenAzanAlarms: cancel,
+        },
+      },
+      Linking: { getInitialURL: jest.fn(async () => null), addEventListener: jest.fn(() => ({ remove: jest.fn() })) },
+    }));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require("../prayerFullScreenAzan") as typeof import("../prayerFullScreenAzan");
+    const result = await mod.scheduleFullScreenAzanAlarms(
+      [slot({ kind: "salat", salatKey: "fajr" })],
+      () => "off"
+    );
+    expect(result.accepted).toBe(true);
+    expect(cancel).toHaveBeenCalled();
   });
 });

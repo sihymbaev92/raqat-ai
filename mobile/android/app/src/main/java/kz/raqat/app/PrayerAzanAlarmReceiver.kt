@@ -33,9 +33,11 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
     }
 
     val pendingResult = goAsync()
+    var sessionGen = PrayerAzanActiveSession.currentGeneration()
     // Allowlist: FSI + FGS (overlay FGS ішінен)
     try {
       PrayerAzanActiveSession.markActive(app)
+      sessionGen = PrayerAzanActiveSession.currentGeneration()
       PrayerAzanPendingLaunch.save(app, label, enteredTitle, time, soundId, salatKey)
       PrayerAzanDelivery.showAzanFullScreenNotification(app, label, enteredTitle, time, soundId, salatKey)
       PrayerAzanDelivery.tryStartAzanActivity(app, label, enteredTitle, time, soundId, salatKey)
@@ -45,11 +47,17 @@ class PrayerAzanAlarmReceiver : BroadcastReceiver() {
 
     Handler(Looper.getMainLooper()).post {
       try {
+        if (!PrayerAzanActiveSession.isGenerationCurrent(sessionGen)) {
+          Log.i(TAG, "Skip FGS start — azan dismissed for $salatKey")
+          return@post
+        }
         PrayerAzanDeliveryService.start(app, label, enteredTitle, time, soundId, salatKey)
       } catch (t: Throwable) {
         Log.w(TAG, "Azan FGS failed for $salatKey", t)
         try {
-          PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+          if (PrayerAzanActiveSession.isGenerationCurrent(sessionGen)) {
+            PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+          }
         } catch (t2: Throwable) {
           Log.w(TAG, "Inline azan fallback failed for $salatKey", t2)
         }

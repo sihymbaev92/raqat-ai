@@ -13,6 +13,8 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 import expo.modules.ReactActivityDelegateWrapper
 
+import java.lang.ref.WeakReference
+
 class MainActivity : ReactActivity() {
   override fun attachBaseContext(newBase: Context) {
     super.attachBaseContext(DisplayMetricsCompat.wrap(newBase))
@@ -23,10 +25,18 @@ class MainActivity : ReactActivity() {
     // coloring the background, status bar, and navigation bar.
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
+    instanceRef = WeakReference(this)
     applyAzanWindowFlags(intent)
     // FSI хабарламасын мұнда өшірмейміз — RN PrayerAzan ашылғанша құлып экраны үшін керек.
     super.onCreate(null)
     PrayerAzanDelivery.bootstrapAzanFromMainActivity(this, intent)
+  }
+
+  override fun onDestroy() {
+    if (instanceRef?.get() === this) {
+      instanceRef = null
+    }
+    super.onDestroy()
   }
 
   override fun onNewIntent(intent: Intent) {
@@ -57,6 +67,21 @@ class MainActivity : ReactActivity() {
       }
     )
     applyAzanWindowFlags(intent)
+  }
+
+  companion object {
+    @Volatile
+    private var instanceRef: WeakReference<MainActivity>? = null
+
+    /** Жабу: Lock/Overlay/StopReceiver жолдарында да deep-link intent тазалансын. */
+    fun clearAzanLaunchStateIfPresent() {
+      val activity = instanceRef?.get() ?: return
+      try {
+        activity.runOnUiThread { activity.clearAzanLaunchState() }
+      } catch (_: Throwable) {
+        /* */
+      }
+    }
   }
 
   private fun applyAzanWindowFlags(intent: Intent?) {

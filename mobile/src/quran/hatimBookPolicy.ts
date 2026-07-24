@@ -7,14 +7,6 @@ import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { ensureBundledQuranTajweedLoaded } from "../services/bundledQuranTajweed";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 import { loadQcf4FontMap, loadQcf4Page } from "./loadQcf4Page";
-import {
-  setQuranArabicFontPreset,
-  setQuranArabicScriptEdition,
-  setQuranMushafTextScale,
-  setQuranReadingTheme,
-  setMushafDensity,
-} from "../storage/quranReaderPrefs";
-import { HATIM_LOCKED_MUSHAF_TEXT_SCALE } from "./mushafTextScale";
 
 /** Бекітілген хатым баптауы (git HEAD / «кешегі күн» — өзгертпеу). */
 export const HATIM_BOOK_READING_THEME: QuranReadingThemeId = "original";
@@ -89,13 +81,10 @@ export function resetHatimOfflinePreloadCache(): void {
   preloadPromise = null;
 }
 
-/** Бекітілген prefs — сүре оқу баптаулары хатымды ауыстырmasın. */
+/**
+ * Хатым бекітілген тема/қаріп — ортақ сүре prefs-ке жазбаймыз.
+ * resolveHatimBook* экран ішінде ғана қолданылады.
+ */
 export async function persistHatimBookLockedPrefs(): Promise<void> {
-  await Promise.all([
-    setQuranReadingTheme(HATIM_BOOK_READING_THEME),
-    setQuranArabicFontPreset(HATIM_BOOK_ARABIC_FONT),
-    setQuranArabicScriptEdition(HATIM_BOOK_SCRIPT),
-    setMushafDensity(HATIM_BOOK_DENSITY),
-    setQuranMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE),
-  ]);
+  /* no-op: shared AsyncStorage keys must stay for Surah/Settings */
 }

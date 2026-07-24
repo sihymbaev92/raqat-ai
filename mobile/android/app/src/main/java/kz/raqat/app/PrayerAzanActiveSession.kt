@@ -5,6 +5,8 @@ import android.content.Context
 /**
  * Азан сессиясы — FSI/legacy cleaner және activity retry үшін.
  * Process death-тен кейін SharedPreferences арқылы қалпына келеді (30 мин TTL).
+ *
+ * [generation] dismiss кезінде өседі — кешіктірілген retry/FGS stale wave-ті өшіреді.
  */
 object PrayerAzanActiveSession {
   private const val PREFS = "raqat_prayer_azan_session_v1"
@@ -15,12 +17,19 @@ object PrayerAzanActiveSession {
   @Volatile
   private var memoryActive: Boolean = false
 
+  @Volatile
+  private var generation: Long = 0L
+
   /** Жылдам оқу (in-memory); persist тексеру үшін [isActive]. */
   var active: Boolean
     get() = memoryActive
     set(value) {
       memoryActive = value
     }
+
+  fun currentGeneration(): Long = generation
+
+  fun isGenerationCurrent(expected: Long): Boolean = generation == expected
 
   fun markActive(context: Context) {
     memoryActive = true
@@ -38,6 +47,7 @@ object PrayerAzanActiveSession {
 
   fun clear(context: Context) {
     memoryActive = false
+    generation += 1L
     try {
       context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
     } catch (_: Throwable) {

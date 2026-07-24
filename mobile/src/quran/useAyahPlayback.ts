@@ -99,6 +99,7 @@ export function useAyahPlayback(opts: UseAyahPlaybackOpts): UseAyahPlaybackResul
 
   const stopAyahAudio = useCallback(async () => {
     ayahPlayRequestSeqRef.current += 1;
+    setLoadingAyahAudio(null);
     ayahAudioProgressRef.current = { pos: 0, dur: 0 };
     karaokeWordCountRef.current = 0;
     karaokePlainTextRef.current = "";

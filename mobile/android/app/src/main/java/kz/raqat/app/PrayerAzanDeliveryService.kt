@@ -23,6 +23,13 @@ class PrayerAzanDeliveryService : Service() {
       return START_NOT_STICKY
     }
     val app = applicationContext
+    val expectedGen = intent.getLongExtra(EXTRA_SESSION_GEN, -1L)
+    if (expectedGen >= 0L && !PrayerAzanActiveSession.isGenerationCurrent(expectedGen)) {
+      Log.i(TAG, "Skip FGS — azan already dismissed (stale generation)")
+      stopSelf()
+      return START_NOT_STICKY
+    }
+
     val defaultLabel = app.getString(R.string.prayer_azan_default_label)
     val label = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_LABEL).orEmpty().ifBlank { defaultLabel }
     val enteredTitle =
@@ -36,6 +43,11 @@ class PrayerAzanDeliveryService : Service() {
     val salatKey = intent.getStringExtra(PrayerAzanAlarmScheduler.EXTRA_SALAT_KEY).orEmpty()
 
     try {
+      // Жабу mid-flight: generation өзгерсе сессияны қайта тірілтпе.
+      if (expectedGen >= 0L && !PrayerAzanActiveSession.isGenerationCurrent(expectedGen)) {
+        stopSelf()
+        return START_NOT_STICKY
+      }
       PrayerAzanActiveSession.markActive(app)
       PrayerAzanPendingLaunch.save(app, label, enteredTitle, time, soundId, salatKey)
       val notification =
@@ -47,15 +59,17 @@ class PrayerAzanDeliveryService : Service() {
         // LockActivity / AlarmClock беті әлдеқашан ашық — FSI heads-up жасыру.
         PrayerAzanDelivery.scheduleSuppressAzanHeadsUp(app)
         Log.i(TAG, "Foreground azan notification only for $salatKey")
-        return START_STICKY
+        return START_NOT_STICKY
       }
 
       // FGS контекстінен overlay — Broadcast-тан сенімдірек (Honor).
       val overlayOk = PrayerAzanOverlay.show(app, label, enteredTitle, time, soundId, salatKey)
       if (!overlayOk) {
         PrayerAzanDelivery.tryStartAzanScreens(app, label, enteredTitle, time, soundId, salatKey)
+        val gen = PrayerAzanActiveSession.currentGeneration()
         Handler(Looper.getMainLooper()).postDelayed(
           {
+            if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
             if (!PrayerAzanActiveSession.isActive(app)) return@postDelayed
             if (PrayerAzanOverlay.isShowing()) return@postDelayed
             PrayerAzanDelivery.tryStartAzanLockFallback(app, label, enteredTitle, time, soundId, salatKey)
@@ -71,13 +85,15 @@ class PrayerAzanDeliveryService : Service() {
     } catch (t: Throwable) {
       Log.w(TAG, "Foreground azan delivery failed for $salatKey", t)
       try {
-        PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+        if (expectedGen < 0L || PrayerAzanActiveSession.isGenerationCurrent(expectedGen)) {
+          PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+        }
       } catch (t2: Throwable) {
         Log.w(TAG, "Inline fallback also failed for $salatKey", t2)
         stopSelf()
       }
     }
-    return START_STICKY
+    return START_NOT_STICKY
   }
 
   private fun promoteToForeground(notification: Notification) {
@@ -96,6 +112,7 @@ class PrayerAzanDeliveryService : Service() {
     private const val TAG = "PrayerAzanDelivery"
     const val ACTION_DELIVER = "kz.raqat.app.action.PRAYER_AZAN_DELIVER"
     const val EXTRA_SKIP_UI_LAUNCH = "skipUiLaunch"
+    const val EXTRA_SESSION_GEN = "sessionGen"
 
     fun start(
       context: Context,
@@ -107,6 +124,7 @@ class PrayerAzanDeliveryService : Service() {
       skipUiLaunch: Boolean = false
     ) {
       val app = context.applicationContext
+      val gen = PrayerAzanActiveSession.currentGeneration()
       val intent =
         Intent(app, PrayerAzanDeliveryService::class.java).apply {
           action = ACTION_DELIVER
@@ -116,6 +134,7 @@ class PrayerAzanDeliveryService : Service() {
           putExtra(PrayerAzanAlarmScheduler.EXTRA_SOUND_ID, soundId)
           putExtra(PrayerAzanAlarmScheduler.EXTRA_SALAT_KEY, salatKey)
           putExtra(EXTRA_SKIP_UI_LAUNCH, skipUiLaunch)
+          putExtra(EXTRA_SESSION_GEN, gen)
         }
       try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -125,7 +144,9 @@ class PrayerAzanDeliveryService : Service() {
         }
       } catch (t: Throwable) {
         Log.w(TAG, "startForegroundService failed — inline deliver", t)
-        PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+        if (PrayerAzanActiveSession.isGenerationCurrent(gen)) {
+          PrayerAzanDelivery.deliverAzan(app, label, enteredTitle, time, soundId, salatKey)
+        }
       }
     }
 

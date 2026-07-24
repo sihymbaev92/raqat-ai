@@ -21,7 +21,7 @@ public struct PrayerAzanOpenIntent: LiveActivityIntent {
 
   public func perform() async throws -> some IntentResult {
     if !alarmID.isEmpty {
-      PrayerAzanPendingLaunch.saveFromAlarmId(alarmID)
+      PrayerAzanPendingLaunch.saveFromAlarmId(alarmID, allowDuringSuppress: true)
     }
     if let pending = PrayerAzanPendingLaunch.read() {
       let soundId = pending["soundId"] ?? "adhan_haramain"

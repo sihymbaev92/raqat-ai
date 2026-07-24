@@ -116,12 +116,15 @@ export async function releaseAppHeavyMemory(): Promise<void> {
     safe("i18n", () => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const i18n = require("../services/offlineAutoTranslations") as typeof import("../services/offlineAutoTranslations");
-      if (locale === "kk") {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const runtime = require("../i18n/runtime") as typeof import("../i18n/runtime");
+      const liveLocale = runtime.getCurrentLocale();
+      if (liveLocale === "kk") {
         i18n.releaseOfflineAutoTranslationsMemory();
       } else {
         i18n.seedApkOfflineTranslationsSync();
         i18n.pruneOfflineAutoTranslationsToLocale(
-          locale as import("../services/offlineAutoTranslations").OfflineAutoTranslateTarget
+          liveLocale as import("../services/offlineAutoTranslations").OfflineAutoTranslateTarget
         );
       }
     }),
@@ -129,7 +132,7 @@ export async function releaseAppHeavyMemory(): Promise<void> {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const runtime = require("../i18n/runtime") as typeof import("../i18n/runtime");
       runtime.invalidateOfflineLocaleTreeCache();
-      if (locale !== "kk") {
+      if (runtime.getCurrentLocale() !== "kk") {
         runtime.reapplyCurrentLocale();
       }
     }),

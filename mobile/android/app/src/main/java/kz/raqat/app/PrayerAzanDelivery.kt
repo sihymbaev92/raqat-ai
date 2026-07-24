@@ -44,6 +44,8 @@ object PrayerAzanDelivery {
   @Volatile
   private var heldWakeLock: PowerManager.WakeLock? = null
 
+  private val azanUiHandler = Handler(Looper.getMainLooper())
+
   /** Толық RN PrayerAzanScreen — намаз уақытындағы негізгі азан беті. */
   fun azanActivityIntent(
     context: Context,
@@ -153,12 +155,14 @@ object PrayerAzanDelivery {
     soundId: String,
     salatKey: String
   ) {
-    val handler = Handler(Looper.getMainLooper())
+    val app = context.applicationContext
+    val gen = PrayerAzanActiveSession.currentGeneration()
     for (delay in AZAN_LAUNCH_RETRY_MS) {
-      handler.postDelayed(
+      azanUiHandler.postDelayed(
         {
-          if (!PrayerAzanActiveSession.isActive(context)) return@postDelayed
-          tryStartAzanScreens(context, label, enteredTitle, time, soundId, salatKey)
+          if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
+          if (!PrayerAzanActiveSession.isActive(app)) return@postDelayed
+          tryStartAzanScreens(app, label, enteredTitle, time, soundId, salatKey)
         },
         delay
       )
@@ -382,9 +386,15 @@ object PrayerAzanDelivery {
 
   fun scheduleSuppressAzanHeadsUp(context: Context) {
     val app = context.applicationContext
-    val handler = Handler(Looper.getMainLooper())
+    val gen = PrayerAzanActiveSession.currentGeneration()
     for (delay in longArrayOf(350L, 900L, 2_000L)) {
-      handler.postDelayed({ suppressAzanHeadsUpWhileUiShowing(app) }, delay)
+      azanUiHandler.postDelayed(
+        {
+          if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
+          suppressAzanHeadsUpWhileUiShowing(app)
+        },
+        delay
+      )
     }
   }
 
@@ -451,8 +461,10 @@ object PrayerAzanDelivery {
       tryStartAzanScreens(app, label, enteredTitle, time, soundId, salatKey)
       scheduleAzanActivityLaunches(context, label, enteredTitle, time, soundId, salatKey)
       scheduleSuppressAzanHeadsUp(app)
-      Handler(Looper.getMainLooper()).postDelayed(
+      val gen = PrayerAzanActiveSession.currentGeneration()
+      azanUiHandler.postDelayed(
         {
+          if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
           if (!PrayerAzanActiveSession.isActive(app)) return@postDelayed
           if (PrayerAzanOverlay.isShowing()) return@postDelayed
           if (PrayerAzanNativePlayer.isPlaying()) return@postDelayed
@@ -510,12 +522,23 @@ object PrayerAzanDelivery {
   /**
    * AlarmClock / FSI MainActivity-ны ашқанда: сессия + FSI «Өшіру» + дыбыс.
    * (RN PrayerAzanScreen nativeAudio=1 — JS қайта қоспайды.)
+   * Жабудан кейінгі stale raqat://azan intent сессияны қайта тірілтпесін.
    */
   fun bootstrapAzanFromMainActivity(context: Context, intent: Intent?) {
     val app = context.applicationContext
     val data = intent?.data
     if (data?.host != "azan") return
     if (intent.getBooleanExtra(EXTRA_AZAN_TRUSTED, false) != true) return
+
+    // Alarm/Lock/FGS әлдеқашан markActive+pending қояды. Dismiss кейін екеуі де бос —
+    // deep-link қалдығы дыбысты қайта қоспасын.
+    if (!PrayerAzanActiveSession.isActive(app) && PrayerAzanPendingLaunch.read(app) == null) {
+      Log.i(TAG, "Skip bootstrap — no active azan session (likely dismissed)")
+      if (context is MainActivity) {
+        context.clearAzanLaunchState()
+      }
+      return
+    }
 
     val defaultLabel = app.getString(R.string.prayer_azan_default_label)
     val label =
@@ -566,6 +589,11 @@ object PrayerAzanDelivery {
   fun dismissAzanDelivery(context: Context) {
     val app = context.applicationContext
     try {
+      azanUiHandler.removeCallbacksAndMessages(null)
+    } catch (_: Throwable) {
+      /* */
+    }
+    try {
       PrayerAzanDeliveryService.stopRunning(app)
     } catch (_: Throwable) {
       /* best effort */
@@ -573,10 +601,12 @@ object PrayerAzanDelivery {
     PrayerAzanOverlay.hide(app)
     clearFullScreenNotification(app)
     PrayerAzanNativePlayer.stop()
+    // Generation bump — in-flight FGS/retry/bootstrap wave өледі.
     PrayerAzanActiveSession.clear(app)
     PrayerAzanPendingLaunch.clear(app)
     PrayerLegacyNotificationCleaner.clear(app)
     releaseHeldWakeLock()
+    MainActivity.clearAzanLaunchStateIfPresent()
   }
 
   private fun releaseHeldWakeLock() {

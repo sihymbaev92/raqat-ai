@@ -204,7 +204,9 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
         if (gen !== lookupGenerationRef.current) return;
         setCheckErr(null);
         setCheckLookupDone(true);
-        setCheckProducts(cached.products);
+        setCheckProducts(
+          cached.products.filter((p) => productMatchesGoodsStatusFilter(p, goodsProductStatusFilter)),
+        );
         setCheckAdditives(cached.additives);
         setCheckCompanies([]);
         return;
@@ -220,14 +222,18 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
       setCheckAdditives([]);
       setCheckCompanies([]);
       const instantSeedProducts = fastSeedProductsForQuery(q, goodsProductStatusFilter);
-      if (instantSeedProducts.length > 0) setCheckProducts(instantSeedProducts);
+      if (instantSeedProducts.length > 0 && gen === lookupGenerationRef.current) {
+        setCheckProducts(instantSeedProducts);
+      }
       try {
         const [prodResolved, add] = await Promise.all([
           resolveHalalProductSearch(q, catalogItemsRef.current, productQueryOpts),
           searchHalalDamuAdditives(q, { perPage: INSTANT_HALAL_SEARCH_LIMIT }),
         ]);
         if (gen !== lookupGenerationRef.current) return;
-        const products = mergeHalalProductItems(prodResolved.items, instantSeedProducts);
+        const products = mergeHalalProductItems(prodResolved.items, instantSeedProducts).filter((p) =>
+          productMatchesGoodsStatusFilter(p, goodsProductStatusFilter),
+        );
         let additives = mergeHalalAdditiveItems(
           add.items,
           searchHalalAdditivesSeed(q, INSTANT_HALAL_SEARCH_LIMIT),
@@ -268,6 +274,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
     async (raw: string, _opts?: { silentBusy?: boolean }) => {
       const trimmed = raw.trim();
       if (!trimmed) return;
+      const gen = ++lookupGenerationRef.current;
       setCheckInput(trimmed);
       setGoodsQuick(trimmed);
       const digits = trimmed.replace(/\D/g, "");
@@ -279,7 +286,9 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
       setCheckAdditives([]);
       setCheckCompanies([]);
       const instantSeedProducts = fastSeedProductsForQuery(digits || trimmed, goodsProductStatusFilter);
-      if (instantSeedProducts.length > 0) setCheckProducts(instantSeedProducts);
+      if (instantSeedProducts.length > 0 && gen === lookupGenerationRef.current) {
+        setCheckProducts(instantSeedProducts);
+      }
       try {
         const [byBc, byTxt, add] = await Promise.all([
           fetchHalalDamuProductsByBarcode(digits || trimmed, barcodeQueryOpts),
@@ -288,6 +297,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
             perPage: INSTANT_HALAL_SEARCH_LIMIT,
           }),
         ]);
+        if (gen !== lookupGenerationRef.current) return;
         let merged = mergeHalalProductItems(byBc.items, instantSeedProducts);
         merged = mergeHalalProductItems(merged, lookupHalalProductsSeedByBarcode(digits || trimmed));
         merged = mergeHalalProductItems(merged, byTxt.items);
@@ -303,8 +313,10 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
             catalogItemsRef.current,
             barcodeQueryOpts,
           );
+          if (gen !== lookupGenerationRef.current) return;
           merged = mergeHalalProductItems(merged, fallback.items);
         }
+        if (gen !== lookupGenerationRef.current) return;
         merged = merged.filter((p) => productMatchesGoodsStatusFilter(p, goodsProductStatusFilter));
         setCheckErr(null);
         setCheckProducts(merged);
@@ -333,9 +345,11 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
             additives,
             companies: [],
           });
+          if (gen !== lookupGenerationRef.current) return;
           setScanResults(nextScan);
         }
       } finally {
+        if (gen !== lookupGenerationRef.current) return;
         setCheckLookupDone(true);
         setCheckFlowPhase(null);
       }
@@ -385,16 +399,22 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
     })();
   }, [runUnifiedSearch]);
 
-  const restoreScanSnapshot = useCallback((snap: HalalScanResultSnapshot) => {
-    setCheckInput(snap.barcode);
-    setLastCheckQuery(snap.barcode);
-    setCheckProducts(snap.products);
-    setCheckAdditives(snap.additives);
-    setCheckCompanies(snap.companies);
-    setCheckLookupDone(true);
-    setCheckErr(null);
-    setCheckFlowPhase(null);
-  }, []);
+  const restoreScanSnapshot = useCallback(
+    (snap: HalalScanResultSnapshot) => {
+      lookupGenerationRef.current += 1;
+      setCheckInput(snap.barcode);
+      setLastCheckQuery(snap.barcode);
+      setCheckProducts(
+        snap.products.filter((p) => productMatchesGoodsStatusFilter(p, goodsProductStatusFilter)),
+      );
+      setCheckAdditives(snap.additives);
+      setCheckCompanies(snap.companies);
+      setCheckLookupDone(true);
+      setCheckErr(null);
+      setCheckFlowPhase(null);
+    },
+    [goodsProductStatusFilter],
+  );
 
   useEffect(() => {
     setCheckLookupDone(false);

@@ -38,6 +38,10 @@ object PrayerAzanOverlay {
     salatKey: String
   ): Boolean {
     val app = context.applicationContext
+    if (!PrayerAzanActiveSession.isActive(app)) {
+      Log.i(TAG, "Skip overlay — azan session not active")
+      return false
+    }
     if (!canShow(app)) {
       Log.w(TAG, "SYSTEM_ALERT_WINDOW not granted")
       return false

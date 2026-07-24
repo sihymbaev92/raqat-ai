@@ -5,10 +5,17 @@ enum PrayerAzanPendingLaunch {
   private static let prefsKey = "raqat_ios_prayer_azan_pending_v1"
   private static let payloadsKey = "raqat_ios_prayer_azan_payloads_v1"
   private static let alarmIdsKey = "raqat_ios_prayer_azan_alarm_ids_v1"
+  private static let suppressAutoPendingUntilKey = "raqat_ios_azan_suppress_auto_pending_until_ms"
   private static let ttlMs: Int64 = 30 * 60 * 1000
+  /** Жабудан кейін AlarmKit .alerting observer pending-ті қайта жазбасын. */
+  private static let autoPendingSuppressMs: Int64 = 120 * 1000
 
   private static var defaults: UserDefaults {
     UserDefaults(suiteName: "group.kz.raqat.app") ?? .standard
+  }
+
+  private static var nowMs: Int64 {
+    Int64(Date().timeIntervalSince1970 * 1000)
   }
 
   static func save(
@@ -24,7 +31,7 @@ enum PrayerAzanPendingLaunch {
       "time": time,
       "soundId": soundId,
       "salatKey": salatKey,
-      "at_ms": Int64(Date().timeIntervalSince1970 * 1000),
+      "at_ms": nowMs,
     ]
     defaults.set(payload, forKey: prefsKey)
   }
@@ -41,7 +48,14 @@ enum PrayerAzanPendingLaunch {
     defaults.set(all, forKey: payloadsKey)
   }
 
-  static func saveFromAlarmId(_ alarmId: String) {
+  /**
+   - Parameters:
+     - allowDuringSuppress: true — пайдаланушы OpenIntent басқанда (жабу suppress-ін айналып өту).
+   */
+  static func saveFromAlarmId(_ alarmId: String, allowDuringSuppress: Bool = false) {
+    if !allowDuringSuppress, isAutoPendingSuppressed() {
+      return
+    }
     let all = defaults.dictionary(forKey: payloadsKey) as? [String: [String: Any]] ?? [:]
     guard let item = all[alarmId] else { return }
     save(
@@ -61,8 +75,7 @@ enum PrayerAzanPendingLaunch {
       return nil
     }
     let atMs = (raw["at_ms"] as? Int64) ?? Int64(raw["at_ms"] as? Double ?? 0)
-    let now = Int64(Date().timeIntervalSince1970 * 1000)
-    if atMs > 0, now - atMs > ttlMs {
+    if atMs > 0, nowMs - atMs > ttlMs {
       clear()
       return nil
     }
@@ -77,6 +90,18 @@ enum PrayerAzanPendingLaunch {
 
   static func clear() {
     defaults.removeObject(forKey: prefsKey)
+  }
+
+  /** Жабу / finish — pending өшіру + авто observer қайта ашпасын. */
+  static func clearAfterUserDismiss() {
+    clear()
+    defaults.set(nowMs + autoPendingSuppressMs, forKey: suppressAutoPendingUntilKey)
+  }
+
+  static func isAutoPendingSuppressed() -> Bool {
+    let until = (defaults.object(forKey: suppressAutoPendingUntilKey) as? Int64)
+      ?? Int64(defaults.double(forKey: suppressAutoPendingUntilKey))
+    return until > nowMs
   }
 
   static func replaceAlarmIdMap(_ map: [String: String]) {

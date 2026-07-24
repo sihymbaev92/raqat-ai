@@ -68,6 +68,13 @@ function cachedPrayerCoords(payload: PrayerTimesResult): { lat: number; lon: num
   return getKzPresetCoords(payload.city, payload.country) ?? getCityApproxCoords(payload.city);
 }
 
+/** Кэш/кесте үшін lat/lon — жоқ болса қала preset. */
+export function resolvePrayerScheduleCoords(
+  payload: Pick<PrayerTimesResult, "city" | "country" | "latitude" | "longitude">,
+): { lat: number; lon: number } | null {
+  return cachedPrayerCoords(payload as PrayerTimesResult);
+}
+
 async function buildWidgetPayload(
   payload: CachedPrayer,
   weatherOverride?: OpenMeteoCurrent | null

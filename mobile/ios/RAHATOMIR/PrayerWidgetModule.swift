@@ -98,11 +98,12 @@ class PrayerWidgetModule: NSObject {
   }
 
   @objc func clearPendingAzanLaunch() {
+    /** Тек pending consume — dismiss suppress қойма (жаңа азанға кедергі болмасын). */
     PrayerAzanPendingLaunch.clear()
   }
 
   @objc func finishAzanDelivery() {
-    PrayerAzanPendingLaunch.clear()
+    PrayerAzanPendingLaunch.clearAfterUserDismiss()
     PrayerAzanNativePlayer.shared.stop()
   }
 

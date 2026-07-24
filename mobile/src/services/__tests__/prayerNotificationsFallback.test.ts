@@ -92,6 +92,12 @@ async function loadPrayerNotificationsWithNative(
   const savePrayerCache = jest.fn(async () => undefined);
   jest.doMock("../../storage/prayerCache", () => ({
     loadPrayerCache: jest.fn(async () => opts.cachedPrayer ?? null),
+    loadPrayerCacheForCity: jest.fn(async () => opts.cachedPrayer ?? null),
+    resolvePrayerScheduleCoords: jest.fn((data: PrayerTimesResult) =>
+      Number.isFinite(data.latitude) && Number.isFinite(data.longitude)
+        ? { lat: data.latitude as number, lon: data.longitude as number }
+        : { lat: 43.238, lon: 76.945 }
+    ),
     savePrayerCache,
   }));
   jest.doMock("../hatimReminderNotifications", () => ({

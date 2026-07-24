@@ -110,13 +110,9 @@ import {
   getQuranReaderShowMeaning,
   getQuranReaderShowTranslit,
   getQuranReadingTheme,
-  setMushafDensity,
-  setQuranArabicScriptEdition,
-  setQuranMushafTextScale,
   setQuranReaderShowArabic,
   setQuranReaderShowMeaning,
   setQuranReaderShowTranslit,
-  setQuranReadingTheme,
   setQuranTajweedColorsEnabled,
   QURAN_READER_RECITER_KEY,
   QURAN_READER_ARABIC_FONT_KEY,
@@ -159,7 +155,8 @@ import { resolveQuranTranslitForDisplay } from "../utils/quranTranslitDisplay";
 import { useAppLocale } from "../i18n/runtime";
 import { useQuranReadingLocale } from "../quran/quranReadingLocale";
 import { useQuranTranslitScript } from "../quran/quranTranslitScript";
-import { touchMushafAccess, scheduleReleaseMushafScreenMemory, takeMushafNeedsReloadAfterInterruptedRelease } from "../quran/mushafMemoryRelease";
+import { useQuranReaderOrientation } from "../hooks/useQuranReaderOrientation";
+import { touchMushafAccess, scheduleReleaseMushafScreenMemory, setMushafScreenFocused, takeMushafNeedsReloadAfterInterruptedRelease } from "../quran/mushafMemoryRelease";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import {
   getQuranSurahTranslation,
@@ -288,6 +285,7 @@ function hatimShortTafsirForAyah(meaning: string, tr: (text: string) => string):
 
 export function QuranMushafBookScreen({ route, navigation }: Props) {
   const { initialPage, focusSurah, focusAyah, continuousMushaf } = route.params ?? {};
+  useQuranReaderOrientation();
   const surahScope =
     !continuousMushaf && focusSurah != null && focusSurah >= 1 && focusSurah <= 114
       ? focusSurah
@@ -689,6 +687,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
   useFocusEffect(
     useCallback(() => {
+      setMushafScreenFocused(true);
       touchMushafAccess();
       const interrupted = takeMushafNeedsReloadAfterInterruptedRelease();
       if (interrupted || mushafNeedsReloadAfterMemoryReleaseRef.current) {
@@ -722,6 +721,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         void preloadHatimOfflineAssets();
       })();
       return () => {
+        setMushafScreenFocused(false);
         /**
          * Қысқа шығу/қайту — байытылған беттерді ұстап тұру (жылдамдық).
          * Тек ұзақ idle кейін кэш босатылып, stub+reload қосылады.
@@ -737,6 +737,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       };
     }, [])
   );
+
+  /** Бет ауысқанда keep-alive — ұзақ оқу кезінде lastTouch ескірмесін. */
+  useEffect(() => {
+    touchMushafAccess();
+  }, [pageIndex]);
 
   useEffect(() => {
     if (!pages.length || loading) return;
@@ -805,6 +810,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   );
 
   const stopAudio = useCallback(async () => {
+    audioRequestSeqRef.current += 1;
     resetKaraokeState();
     try {
       await soundRef.current?.stopAsync();
@@ -816,6 +822,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     setAyahAudioIsPlaying(false);
     setPlayingRef(null);
     playingRefState.current = null;
+    setLoadingAyahAudio(null);
   }, [resetKaraokeState]);
 
   useEffect(() => () => {
@@ -854,9 +861,10 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
           /* ескі дыбыс бұзылса, төменде қайта жүктейміз */
         }
       }
+      /** Алдымен stop (seq bump), сосын жаңа seq — useAyahPlayback тәртібі. */
+      await stopAudio();
       const requestSeq = audioRequestSeqRef.current + 1;
       audioRequestSeqRef.current = requestSeq;
-      await stopAudio();
       setLoadingAyahAudio(ref);
       try {
         const isAyahTimedAudio = quranReciterUsesAyahAudio(reciterEdition);
@@ -972,7 +980,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       } catch {
         setToast(kk.quran.ayahAudioError);
       } finally {
-        setLoadingAyahAudio(null);
+        if (audioRequestSeqRef.current === requestSeq) {
+          setLoadingAyahAudio(null);
+        }
       }
     },
     [arabicScriptEdition, ayahForRef, flushKaraokeProgress, reciterEdition, scrollToAyahPage, stopAudio]
@@ -1233,11 +1243,9 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       onReadingTheme: () => {},
       onMushafTextScale: () => {
         setMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
-        void setQuranMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
       },
       onMushafDensity: () => {
         setMushafDensityState(resolveHatimBookDensity());
-        void setMushafDensity(resolveHatimBookDensity());
       },
       onShowReaderArabic: (v: boolean) => {
         setShowReaderArabic(v);
@@ -1257,7 +1265,6 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       },
       onArabicScriptEdition: () => {
         setArabicScriptEdition(resolveHatimBookScript());
-        void setQuranArabicScriptEdition(resolveHatimBookScript());
       },
       onPlayUntil: (scope: HatimAudioPlayUntil) => {
         setHatimPlayUntil(scope);

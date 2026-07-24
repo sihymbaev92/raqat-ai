@@ -138,7 +138,11 @@ export function scheduleFullScreenAzanAlarms(
   const rejected: FullScreenAzanScheduleResult = { accepted: false, identifiers: new Set() };
   if (Platform.OS !== "android" && Platform.OS !== "ios") return Promise.resolve(rejected);
   const payload = buildFullScreenAzanSlots(slots, soundIdForSlot);
-  if (payload.length === 0) return Promise.resolve(rejected);
+  /** Дыбыс off / бәрі muted — ескі native оятқыштарды өшіру. */
+  if (payload.length === 0) {
+    cancelFullScreenAzanAlarms();
+    return Promise.resolve({ accepted: true, identifiers: new Set() });
+  }
   const schedule = PrayerWidget?.scheduleFullScreenAzanAlarms;
   if (typeof schedule !== "function") return Promise.resolve(rejected);
   return Promise.resolve()
@@ -412,6 +416,21 @@ export async function isNativeAzanSessionActive(): Promise<boolean> {
 }
 
 /**
+ * Азан бетін launch URL/pending арқылы ашу керек пе.
+ * Жабудан кейін stale `raqat://azan` getInitialURL жалғыз өзі қайта ашпасын.
+ */
+export function shouldOpenPrayerAzanFromLaunchState(opts: {
+  hasPending: boolean;
+  sessionActive: boolean;
+  playbackAlive: boolean;
+  hasLaunchUrl: boolean;
+}): boolean {
+  if (opts.hasPending) return true;
+  if (opts.sessionActive && opts.playbackAlive && opts.hasLaunchUrl) return true;
+  return false;
+}
+
+/**
  * Азан дыбысы native-де ойнаса да RN boot/nav кешіккенде PrayerAzan экранын ашады.
  * NavContainer.onReady және app active кезінде шақырылады.
  */
@@ -433,17 +452,18 @@ export async function ensurePrayerAzanRouteFromLaunch(): Promise<boolean> {
 
   const sessionActive = await isNativeAzanSessionActive();
   const playback = sessionActive ? await getNativeAzanPlaybackStatus() : null;
-  if (sessionActive && (playback?.isPlaying || playback?.completed)) {
-    const fromUrl = prayerAzanParamsFromUrl(await Linking.getInitialURL().catch(() => null));
-    if (fromUrl) {
-      await openPrayerAzanScreen({ ...fromUrl, nativeAudio: true });
-      return true;
-    }
-  }
-
+  const playbackAlive = Boolean(playback?.isPlaying || playback?.completed || playback?.isDua);
   const fromUrl = prayerAzanParamsFromUrl(await Linking.getInitialURL().catch(() => null));
-  if (fromUrl) {
-    await openPrayerAzanScreen({ ...fromUrl, nativeAudio: fromUrl.nativeAudio ?? false });
+  if (
+    shouldOpenPrayerAzanFromLaunchState({
+      hasPending: false,
+      sessionActive,
+      playbackAlive,
+      hasLaunchUrl: Boolean(fromUrl),
+    }) &&
+    fromUrl
+  ) {
+    await openPrayerAzanScreen({ ...fromUrl, nativeAudio: true });
     return true;
   }
 
@@ -456,10 +476,10 @@ export async function ensurePrayerAzanRouteFromLaunch(): Promise<boolean> {
 export async function ensurePrayerAzanShouldBypassOnboarding(): Promise<boolean> {
   if (Platform.OS === "web") return false;
   if (await readPendingAzanLaunchFromNative()) return true;
-  if (await isNativeAzanSessionActive()) return true;
-  const initial = await Linking.getInitialURL().catch(() => null);
-  if (initial && initial.includes("azan")) return true;
-  return false;
+  const sessionActive = await isNativeAzanSessionActive();
+  if (!sessionActive) return false;
+  const playback = await getNativeAzanPlaybackStatus();
+  return Boolean(playback?.isPlaying || playback?.completed || playback?.isDua);
 }
 
 let azanLaunchRoutingInit = false;

@@ -13,6 +13,7 @@ import {
   searchHalalProductsSeed,
 } from "../services/halalProductsSeedKz";
 import { filterHalalCompaniesInstant, INSTANT_HALAL_SEARCH_LIMIT } from "./halalInstantSearch";
+import { productMatchesGoodsStatusFilter } from "./halalVerifyHelpers";
 
 const BAD_CERT = new Set([
   "expired",
@@ -23,6 +24,14 @@ const BAD_CERT = new Set([
   "rejected",
   "draft",
 ]);
+
+function filterProductsByStatusQuery(
+  items: HalalDamuProductItem[],
+  status?: string,
+): HalalDamuProductItem[] {
+  if (!status?.trim()) return items;
+  return items.filter((p) => productMatchesGoodsStatusFilter(p, status));
+}
 
 /** Сертификаты нашар/жойылған ұйымдарды өнім fallback-тен шығару. */
 export function isHalalCertifiedCompany(c: HalalDamuCompanyCard): boolean {
@@ -60,12 +69,21 @@ export async function resolveHalalProductBrowse(
   opts?: HalalDamuProductQuery & { limit?: number }
 ): Promise<HalalProductResolveResult> {
   const limit = opts?.limit ?? INSTANT_HALAL_SEARCH_LIMIT;
+  const status = opts?.status;
   const api = await fetchHalalDamuProductsBrowse({ ...opts, perPage: limit, page: opts?.page ?? 1 });
   if (api.items.length > 0) {
-    return { items: api.items.slice(0, limit), fromProducers: false, fromSeed: false, error: api.error };
+    return {
+      items: filterProductsByStatusQuery(api.items, status).slice(0, limit),
+      fromProducers: false,
+      fromSeed: false,
+      error: api.error,
+    };
   }
 
-  const seedItems = listHalalProductsSeedBrowse(limit);
+  const seedItems = filterProductsByStatusQuery(listHalalProductsSeedBrowse(limit * 3), status).slice(
+    0,
+    limit,
+  );
   if (seedItems.length > 0) {
     return { items: seedItems, fromProducers: false, fromSeed: true };
   }
@@ -80,24 +98,32 @@ export async function resolveHalalProductSearch(
 ): Promise<HalalProductResolveResult> {
   const q = query.trim();
   const limit = opts?.limit ?? INSTANT_HALAL_SEARCH_LIMIT;
+  const status = opts?.status;
 
   const api = await searchHalalDamuProducts(q, {
     ...opts,
     perPage: opts?.perPage ?? limit,
   });
   if (api.items.length > 0) {
-    return { items: api.items.slice(0, limit), fromProducers: false, fromSeed: false, error: api.error };
+    return {
+      items: filterProductsByStatusQuery(api.items, status).slice(0, limit),
+      fromProducers: false,
+      fromSeed: false,
+      error: api.error,
+    };
   }
 
-  const seedItems = searchHalalProductsSeed(q, limit);
+  const seedItems = filterProductsByStatusQuery(searchHalalProductsSeed(q, limit), status);
   if (seedItems.length > 0) {
-    return { items: seedItems, fromProducers: false, fromSeed: true };
+    return { items: seedItems.slice(0, limit), fromProducers: false, fromSeed: true };
   }
 
-  const producers = filterHalalCompaniesInstant(catalog, q, { limit })
-    .filter(isHalalCertifiedCompany)
-    .map(companyToHalalProductItem)
-    .slice(0, limit);
+  const producers = filterProductsByStatusQuery(
+    filterHalalCompaniesInstant(catalog, q, { limit })
+      .filter(isHalalCertifiedCompany)
+      .map(companyToHalalProductItem),
+    status,
+  ).slice(0, limit);
   if (producers.length > 0) {
     return { items: producers, fromProducers: true, fromSeed: false, error: api.error };
   }

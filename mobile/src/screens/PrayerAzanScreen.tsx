@@ -22,6 +22,7 @@ import { readAzanDuaPlaybackStatus, readAzanPlaybackStatus } from "../services/a
 import {
   finishAzanDelivery,
   getNativeAzanPlaybackStatus,
+  isNativeAzanSessionActive,
   playNativePrayerAzanAudio,
   playNativePrayerAzanDuaAudio,
   prayerEnteredTitleForSlot,
@@ -168,9 +169,14 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
     if (soundId !== "off") {
       if (useNativeAzan) {
         // Delivery may already be playing; if idle, start now (iOS AlarmKit open path).
+        // Жабудан кейін remount stale params-пен дыбысты қайта қоспасын.
         void getNativeAzanPlaybackStatus().then((st) => {
+          if (closingRef.current) return;
           if (st?.isPlaying || st?.completed || st?.isDua) return;
-          playNativePrayerAzanAudio(soundId);
+          void isNativeAzanSessionActive().then((active) => {
+            if (closingRef.current || !active) return;
+            playNativePrayerAzanAudio(soundId);
+          });
         });
       } else if (!isNativeAudio) {
         void previewPrayerNotifSound(soundId);

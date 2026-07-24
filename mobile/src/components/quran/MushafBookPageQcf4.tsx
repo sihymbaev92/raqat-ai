@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Platform, ScrollView, View, Text } from "react-native";
+import { AppState, Platform, ScrollView, View, Text } from "react-native";
 import { RaqatOrnamentSpinner } from "../RaqatOrnamentSpinner";
 import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
@@ -10,7 +10,7 @@ import { useI18n } from "../../i18n/useI18n";
 import { loadQcf4Page } from "../../quran/loadQcf4Page";
 import type { Qcf4PageJson, Qcf4Word } from "../../quran/qcf4Types";
 import { parseVerseKey } from "../../quran/qcf4Types";
-import { ensureQcf4FontsLoaded, qcf4FontFamilyName } from "../../quran/qcf4FontLoader";
+import { ensureQcf4FontsLoaded, invalidateQcf4FontLoadedMarks, qcf4FontFamilyName } from "../../quran/qcf4FontLoader";
 import {
   MUSHAF_BOOK_NATIVE_HATIM_INNER_SIDE_INSET,
   MUSHAF_BOOK_PAGE_EDGE_INSET,
@@ -62,6 +62,7 @@ import {
 import { tajweedColorForRule } from "../../content/tajweedRulesCatalog";
 import {
   ensureQcf4ColrPageFontLoaded,
+  invalidateQcf4ColrFontLoadedMarks,
   qcf4ColrFontFamilyName,
   qcf4ColrTajweedEnabledOnPlatform,
   qcf4ColrTextClassName,
@@ -229,6 +230,7 @@ export function MushafBookPageQcf4({
   const t = useI18n();
   const [qcfPage, setQcfPage] = useState<Qcf4PageJson | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
+  const [fontReloadToken, setFontReloadToken] = useState(0);
   const [colrReady, setColrReady] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
   const [localTajweedByAyah, setLocalTajweedByAyah] = useState<Record<string, string>>({});
@@ -296,6 +298,17 @@ export function MushafBookPageQcf4({
   );
   const useColrStack = showTajweedColors && qcf4ColrTajweedEnabledOnPlatform();
   const useColrGlyphs = useColrStack && colrReady;
+
+  useEffect(() => {
+    if (!isActive) return;
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next !== "active") return;
+      invalidateQcf4FontLoadedMarks();
+      invalidateQcf4ColrFontLoadedMarks();
+      setFontReloadToken((n) => n + 1);
+    });
+    return () => sub.remove();
+  }, [isActive]);
 
   useEffect(() => {
     if (!isActive || !useColrStack) {
@@ -370,7 +383,7 @@ export function MushafBookPageQcf4({
       alive = false;
       clearTimeout(watchdog);
     };
-  }, [page.mushafPageNumber, isActive, onLoadFailed]);
+  }, [page.mushafPageNumber, isActive, onLoadFailed, fontReloadToken]);
 
   useEffect(() => {
     if (!isActive || !showTajweedColors) return;

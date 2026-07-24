@@ -141,8 +141,10 @@ object PrayerAzanNativePlayer {
     lastContext?.let { PrayerAzanActiveSession.markActive(it) }
     val ctx = lastContext
     if (ctx != null && !sessionFullyFinished) {
+      val gen = PrayerAzanActiveSession.currentGeneration()
       Handler(Looper.getMainLooper()).postDelayed(
         {
+          if (!PrayerAzanActiveSession.isGenerationCurrent(gen)) return@postDelayed
           if (!playingDua && !sessionFullyFinished && PrayerAzanActiveSession.isActive(ctx)) {
             playDua(ctx)
           }
@@ -204,8 +206,10 @@ object PrayerAzanNativePlayer {
       lastDurationMs = 0
       if (clearFullyFinished) sessionFullyFinished = false
       abandonAudioFocus()
-      lastContext?.let { PrayerAzanActiveSession.clear(it) }
-        ?: run { PrayerAzanActiveSession.active = false }
+      lastContext?.let {
+        PrayerAzanActiveSession.clear(it)
+        PrayerAzanPendingLaunch.clear(it)
+      } ?: run { PrayerAzanActiveSession.active = false }
     }
   }
 
