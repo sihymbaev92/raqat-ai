@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Image,
-  ScrollView,
+  FlatList,
   View,
   Text,
   StyleSheet,
   Platform,
-  type LayoutChangeEvent,
   type ImageSourcePropType,
   type StyleProp,
   type TextStyle,
+  type ListRenderItemInfo,
 } from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -45,57 +45,69 @@ type Props = {
 export function TajweedMuftyatBook({ initialPage = 1 }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const scrollRef = useRef<ScrollView>(null);
-  const pageOffsetsRef = useRef<Record<number, number>>({});
-  const pendingInitialPageRef = useRef(initialPage);
+  const listRef = useRef<FlatList<number>>(null);
   const { tr } = useKkAutoTranslator();
 
-  const pages = useMemo(
-    () =>
-      TAJWEED_APP_PAGES.map((page) => ({
-        page: page.page,
-        content: getTajweedManualBookPage(page.page),
-      })).filter((page): page is { page: number; content: TajweedManualBookPage } => !!page.content),
+  const pageNumbers = useMemo(() => TAJWEED_APP_PAGES.map((p) => p.page), []);
+
+  const initialIndex = useMemo(() => {
+    const ix = pageNumbers.indexOf(initialPage);
+    return ix >= 0 ? ix : 0;
+  }, [initialPage, pageNumbers]);
+
+  useEffect(() => {
+    if (initialIndex <= 0) return;
+    const id = setTimeout(() => {
+      try {
+        listRef.current?.scrollToIndex({ index: initialIndex, animated: false, viewPosition: 0 });
+      } catch {
+        /* layout әлі дайын емес — onScrollToIndexFailed өтейді */
+      }
+    }, 80);
+    return () => clearTimeout(id);
+  }, [initialIndex]);
+
+  const renderItem = useCallback(
+    ({ item: page }: ListRenderItemInfo<number>) => {
+      const content = getTajweedManualBookPage(page);
+      if (!content) return null;
+      return <TajweedManualBookPageView page={content} styles={styles} tr={tr} />;
+    },
+    [styles, tr]
+  );
+
+  const keyExtractor = useCallback((page: number) => `manual-tajweed-${page}`, []);
+
+  const onScrollToIndexFailed = useCallback(
+    (info: { index: number; averageItemLength: number }) => {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, info.averageItemLength * info.index),
+        animated: false,
+      });
+      requestAnimationFrame(() => {
+        listRef.current?.scrollToIndex({ index: info.index, animated: false, viewPosition: 0 });
+      });
+    },
     []
   );
 
-  const scrollToPage = useCallback((page: number, animated = true) => {
-    const y = pageOffsetsRef.current[page];
-    if (typeof y !== "number") return;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - 8), animated });
-    pendingInitialPageRef.current = 0;
-  }, []);
-
-  useEffect(() => {
-    pendingInitialPageRef.current = initialPage;
-    const id = setTimeout(() => scrollToPage(initialPage, false), 120);
-    return () => clearTimeout(id);
-  }, [initialPage, scrollToPage]);
-
-  const onPageLayout = useCallback(
-    (page: number, event: LayoutChangeEvent) => {
-      pageOffsetsRef.current[page] = event.nativeEvent.layout.y;
-      if (pendingInitialPageRef.current === page) {
-        requestAnimationFrame(() => scrollToPage(page, false));
-      }
-    },
-    [scrollToPage]
-  );
-
   return (
-    <ScrollView
-      ref={scrollRef}
+    <FlatList
+      ref={listRef}
       style={styles.root}
       contentContainerStyle={styles.content}
+      data={pageNumbers}
+      keyExtractor={keyExtractor}
+      renderItem={renderItem}
+      initialScrollIndex={initialIndex > 0 ? initialIndex : undefined}
+      initialNumToRender={2}
+      maxToRenderPerBatch={2}
+      windowSize={5}
+      removeClippedSubviews={Platform.OS === "android"}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={Platform.OS === "web"}
-    >
-      {pages.map(({ page, content }) => (
-        <View key={`manual-tajweed-${page}`} onLayout={(event) => onPageLayout(page, event)}>
-          <TajweedManualBookPageView page={content} styles={styles} tr={tr} />
-        </View>
-      ))}
-    </ScrollView>
+      onScrollToIndexFailed={onScrollToIndexFailed}
+    />
   );
 }
 

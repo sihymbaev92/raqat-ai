@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAppLocale, getCurrentLocale } from "../i18n/runtime";
+import { useAppLocale } from "../i18n/runtime";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   View,
@@ -52,7 +52,6 @@ import { navigateToHatim } from "../navigation/navigateToMoreStack";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
-import { prefetchQuranAyahSearch } from "../quran/searchQuranAyahs";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "QuranList">;
@@ -89,7 +88,6 @@ export function QuranListScreen({ navigation }: Props) {
   useFocusEffect(
     useCallback(() => {
       void loadQuranBookFonts().catch(() => {});
-      void prefetchQuranAyahSearch(getCurrentLocale());
     }, [])
   );
 

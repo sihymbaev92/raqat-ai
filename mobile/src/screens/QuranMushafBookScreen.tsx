@@ -37,9 +37,7 @@ import { toEasternArabicIndic } from "../utils/easternArabicIndic";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { loadBundledTajweedSurahMap } from "../services/bundledQuranTajweed";
 import {
-  buildQcf4MushafPagesGlobal,
   buildQcf4MushafPagesGlobalLight,
-  buildMushafPagesGlobal,
   buildMushafPagesGlobalLight,
   filterMushafBookPagesForSurah,
   findMushafBookPageIndexForAyah,
@@ -596,22 +594,36 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       try {
         await preloadHatimOfflineAssets();
         if (!alive) return;
-        const buildFullPages = () =>
-          useQcf4PageRanges ? buildQcf4MushafPagesGlobal() : buildMushafPagesGlobal();
-        let full = buildFullPages();
-        const firstText = full[0]?.ayahs[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
-        if (!firstText.length) {
-          const { invalidateBundledJsonCache } = await import("../utils/loadBundledJson");
-          const { clearMushafPagesGlobalCache } = await import("../quran/buildMushafPagesGlobal");
-          const { releaseBundledQuranReaderMemory } = await import("../services/bundledQuranReader");
-          await invalidateBundledJsonCache("quran-uthmani-full.json");
-          releaseBundledQuranReaderMemory({ keepSurahList: true });
-          clearMushafPagesGlobalCache();
-          await preloadHatimOfflineAssets();
-          if (!alive) return;
-          full = buildFullPages();
+        // Web сияқты: жеңіл 604 бет қалады; мәтін resolveMushafBookAyah арқылы.
+        // Толық enrich+setPages JS thread-ті қатырады.
+        await runWhenHeavyWorkAllowed();
+        await ensureBundledQuranReaderLoaded();
+        if (!alive) return;
+        const probe = useQcf4PageRanges
+          ? buildQcf4MushafPagesGlobalLight()
+          : buildMushafPagesGlobalLight();
+        const firstStub = probe[0]?.ayahs[0];
+        if (firstStub) {
+          const { resolveMushafBookAyah } = await import("../quran/buildMushafPagesGlobal");
+          let resolved = resolveMushafBookAyah(firstStub);
+          let firstText = (resolved.text ?? "").replace(/^\uFEFF/, "").trim();
+          if (!firstText.length) {
+            const { invalidateBundledJsonCache } = await import("../utils/loadBundledJson");
+            const { clearMushafPagesGlobalCache } = await import("../quran/buildMushafPagesGlobal");
+            const { releaseBundledQuranReaderMemory } = await import("../services/bundledQuranReader");
+            await invalidateBundledJsonCache("quran-uthmani-full.json");
+            releaseBundledQuranReaderMemory({ keepSurahList: true });
+            clearMushafPagesGlobalCache();
+            await preloadHatimOfflineAssets();
+            if (!alive) return;
+            await ensureBundledQuranReaderLoaded();
+            resolved = resolveMushafBookAyah(firstStub);
+            firstText = (resolved.text ?? "").replace(/^\uFEFF/, "").trim();
+          }
+          if (!firstText.length && __DEV__) {
+            console.warn("[QuranMushafBook] bundled ayah text still empty after reload");
+          }
         }
-        if (full.length) applyPages(full, { keepPageIndex: true });
         setQuranTextRev((v) => v + 1);
       } catch (e) {
         if (__DEV__) console.error("[QuranMushafBook] load failed", e);

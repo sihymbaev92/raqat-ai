@@ -80,11 +80,8 @@ function ensureHalalWarm(): Promise<void> {
         ])
       )
       .then(async () => {
+        // Тек JS chunk + сайт warm — каталог/индекс Halal экранында жүктеледі (басу jank жоқ).
         await runWhenHeavyWorkAllowed();
-        const m = await import("../services/halalHubBootstrap");
-        // Каталогты навигациядан кейін — басуды бөгемеу
-        m.getHalalHubInstantCatalog();
-        void m.prefetchHalalDamuHub();
       })
       .then(() => undefined)
       .catch(() => undefined);

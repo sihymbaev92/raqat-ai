@@ -3,8 +3,6 @@ import {
   isTraditionFoundationTopicId,
   type TraditionTopicCategory,
 } from "./kazakhTraditionTopicStats";
-import { getTraditionReligiousEvidence } from "./traditionReligiousEvidence";
-import { getAllTraditionBatas, searchTraditionBatas } from "./traditionBataCatalog";
 import type { TraditionArticle, TraditionAudioBlessing, TraditionTopic } from "./traditionContentTypes";
 
 export type { TraditionArticle, TraditionAudioBlessing, TraditionTopic } from "./traditionContentTypes";
@@ -948,7 +946,22 @@ const LEGACY_BATA_AUDIO_ALIASES: Record<string, string> = {
   "bata-toishy": "bata-055",
 };
 
-export const TRADITION_AUDIO_BLESSINGS: TraditionAudioBlessing[] = getAllTraditionBatas();
+/** Хаб ашылғанда бата каталогы (~80KB) жүктелмеуі үшін lazy. */
+let traditionAudioBlessingsCache: TraditionAudioBlessing[] | null = null;
+
+function traditionAudioBlessings(): TraditionAudioBlessing[] {
+  if (!traditionAudioBlessingsCache) {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getAllTraditionBatas } = require("./traditionBataCatalog") as typeof import("./traditionBataCatalog");
+    traditionAudioBlessingsCache = getAllTraditionBatas();
+  }
+  return traditionAudioBlessingsCache;
+}
+
+/** Lazy — бірінші бата/аудио сұрауында materialize. */
+export function getTraditionAudioBlessings(): TraditionAudioBlessing[] {
+  return traditionAudioBlessings();
+}
 
 function resolveBlessingId(id: string): string {
   return LEGACY_BATA_AUDIO_ALIASES[id] ?? id;
@@ -1036,7 +1049,7 @@ export function getTraditionTopicByTitle(title: string): TraditionTopic | undefi
 
 export function getTraditionAudioById(id: string): TraditionAudioBlessing | undefined {
   const resolved = resolveBlessingId(id);
-  return TRADITION_AUDIO_BLESSINGS.find((audio) => audio.id === resolved);
+  return traditionAudioBlessings().find((audio) => audio.id === resolved);
 }
 
 export function getTraditionArticleById(id: string): TraditionArticle | undefined {
@@ -1045,17 +1058,20 @@ export function getTraditionArticleById(id: string): TraditionArticle | undefine
 
 export function getRelatedTraditionAudios(topicId: string, query = ""): TraditionAudioBlessing[] {
   if (topicId === "bata-beru") {
-    return query.trim() ? searchTraditionBatas(query) : getAllTraditionBatas();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const bata = require("./traditionBataCatalog") as typeof import("./traditionBataCatalog");
+    return query.trim() ? bata.searchTraditionBatas(query) : bata.getAllTraditionBatas();
   }
   const topic = getTraditionTopicById(topicId);
   const ids = topic?.audioIds ?? [];
+  const list = traditionAudioBlessings();
   if (ids.length) {
-    const byId = new Map(TRADITION_AUDIO_BLESSINGS.map((audio) => [audio.id, audio]));
+    const byId = new Map(list.map((audio) => [audio.id, audio]));
     return ids
       .map((id) => byId.get(resolveBlessingId(id)))
       .filter((audio): audio is TraditionAudioBlessing => Boolean(audio));
   }
-  return TRADITION_AUDIO_BLESSINGS.filter((audio) => audio.topicId === topicId);
+  return list.filter((audio) => audio.topicId === topicId);
 }
 
 export function getRelatedTraditionArticles(topicId: string): TraditionArticle[] {
@@ -1084,6 +1100,8 @@ export function traditionCategoryLabel(category: TraditionTopicCategory): string
 }
 
 export function traditionTopicSearchBlob(topic: TraditionTopic): string {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { getTraditionReligiousEvidence } = require("./traditionReligiousEvidence") as typeof import("./traditionReligiousEvidence");
   const evidenceText = getTraditionReligiousEvidence(topic.id)
     .flatMap((b) => [b.titleKk, b.noteKk ?? "", ...b.refs.map((r) => `${r.citationKk} ${r.excerptKk}`)])
     .join(" ");
