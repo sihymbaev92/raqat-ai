@@ -431,6 +431,19 @@ export function shouldOpenPrayerAzanFromLaunchState(opts: {
 }
 
 /**
+ * LockActivity/bootstrap әлдеқашан ойнатып қойғанда JS handoff
+ * `play()` арқылы азанды 0-ден қайта бастамасын.
+ */
+export function shouldStartNativeAzanAudioOnHandoff(status: {
+  isPlaying?: boolean;
+  completed?: boolean;
+  isDua?: boolean;
+} | null): boolean {
+  if (!status) return true;
+  return !(status.isPlaying || status.completed || status.isDua);
+}
+
+/**
  * Азан дыбысы native-де ойнаса да RN boot/nav кешіккенде PrayerAzan экранын ашады.
  * NavContainer.onReady және app active кезінде шақырылады.
  */
@@ -440,7 +453,10 @@ export async function ensurePrayerAzanRouteFromLaunch(): Promise<boolean> {
 
   const pending = await readPendingAzanLaunchFromNative();
   if (pending) {
-    playNativePrayerAzanAudio(pending.soundId);
+    const status = await getNativeAzanPlaybackStatus();
+    if (shouldStartNativeAzanAudioOnHandoff(status)) {
+      playNativePrayerAzanAudio(pending.soundId);
+    }
     await openPrayerAzanScreen({ ...pending, nativeAudio: true });
     try {
       PrayerWidget?.clearPendingAzanLaunch?.();

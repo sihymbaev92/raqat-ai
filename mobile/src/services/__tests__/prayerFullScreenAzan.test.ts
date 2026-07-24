@@ -6,6 +6,7 @@ import {
   scheduleTestAzanAlarmForQa,
   shouldOpenPrayerAzanFromLaunchState,
   shouldRoutePrayerSoundToFullScreenAzan,
+  shouldStartNativeAzanAudioOnHandoff,
 } from "../prayerFullScreenAzan";
 import type { PrayerScheduleSlot } from "../prayerNotificationSchedule";
 
@@ -46,6 +47,14 @@ describe("prayerFullScreenAzan", () => {
         hasLaunchUrl: true,
       })
     ).toBe(true);
+  });
+
+  it("does not restart native azan when LockActivity already playing", () => {
+    expect(shouldStartNativeAzanAudioOnHandoff(null)).toBe(true);
+    expect(shouldStartNativeAzanAudioOnHandoff({ isPlaying: false })).toBe(true);
+    expect(shouldStartNativeAzanAudioOnHandoff({ isPlaying: true })).toBe(false);
+    expect(shouldStartNativeAzanAudioOnHandoff({ completed: true })).toBe(false);
+    expect(shouldStartNativeAzanAudioOnHandoff({ isDua: true })).toBe(false);
   });
 
   it("uses the Kazakh Екінті wording for asr entered title", () => {
