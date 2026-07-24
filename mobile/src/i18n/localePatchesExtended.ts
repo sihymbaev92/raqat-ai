@@ -678,7 +678,7 @@ const uzGap: Partial<ExtendedPatch> = {
     halalCheckPhotoTitle: "Shtrixkod surat",
     traditionGuide: {
       traditionScreenMapBody:
-        "① Asil so'zlar — donishmand mualliflar, Abay «Qora so'z».\n② Kitoblar — rasmiy kutubxona, kundalik vositalar va an'ana qo'llanmalari.\n③ Urf-odat mavzulari — 37 kartochka, qidiruv, sevimlilar.\n④ Ayt to'plami — Ro'za hayit + Qurbon hayit (alohida blok).",
+        "① Asil so'zlar — donishmand mualliflar, Abay «Qora so'z».\n② Kitoblar — rasmiy kutubxona, kundalik vositalar va an'ana qo'llanmalari.\n③ Urf-odat mavzulari — qidiruv, sevimlilar (asosiy ikkitasi hubda alohida).\n④ Ayt to'plami — Ro'za hayit + Qurbon hayit (alohida blok).",
     },
   },
   prayer: {
@@ -711,7 +711,7 @@ const trGap: Partial<ExtendedPatch> = {
     halalCheckPhotoTitle: "Barkod fotoğrafı",
     traditionGuide: {
       traditionScreenMapBody:
-        "① Güzel sözler — bilge yazarlar, Abay «Kara söz».\n② Kitaplar — resmi kütüphane, günlük araçlar ve gelenek rehberleri.\n③ Gelenek konuları — 37 kart, arama, favoriler.\n④ Bayram derlemesi — Ramazan bayramı + Kurban bayramı (ayrı blok).",
+        "① Güzel sözler — bilge yazarlar, Abay «Kara söz».\n② Kitaplar — resmi kütüphane, günlük araçlar ve gelenek rehberleri.\n③ Gelenek konuları — arama, favoriler (iki temel konu hubda ayrı).\n④ Bayram derlemesi — Ramazan bayramı + Kurban bayramı (ayrı blok).",
     },
   },
   quran: {
@@ -742,7 +742,7 @@ const arGap: Partial<ExtendedPatch> = {
     halalCheckPhotoTitle: "صورة الباركود",
     traditionGuide: {
       traditionScreenMapBody:
-        "① كلمات نبيلة — مؤلفون حكماء، أبي «كلمات العظة».\n② كتب — مكتبة رسمية وأدوات يومية وأدلة التقاليد.\n③ مواضيع العادات — 37 بطاقة، بحث، مفضلة.\n④ مجموعة الأعياد — عيد الفطر + عيد الأضحى (قسم منفصل).",
+        "① كلمات نبيلة — مؤلفون حكماء، أبي «كلمات العظة».\n② كتب — مكتبة رسمية وأدوات يومية وأدلة التقاليد.\n③ مواضيع العادات — بحث ومفضلة (الأساسان منفصلان في المركز).\n④ مجموعة الأعياد — عيد الفطر + عيد الأضحى (قسم منفصل).",
     },
   },
   settings: {
@@ -815,7 +815,7 @@ export const EXTENDED_LOCALE_PATCHES = {
         favoriteTypeTopic: "Традиция",
         favoriteTypeArticle: "Статья",
         traditionScreenMapBody:
-          "① Мудрые слова — авторы, Абай «Слова назидания».\n② Книги — официальная библиотека, ежедневные пособия и гайды по традициям.\n③ Темы обычаев — 37 карточек, поиск, избранное.\n④ Сборник айтов — Ураза-байрам + Курбан-байрам (отдельный блок).",
+          "① Мудрые слова — авторы, Абай «Слова назидания».\n② Книги — официальная библиотека, ежедневные пособия и гайды по традициям.\n③ Темы обычаев — поиск, избранное (две основы отдельно на хабе).\n④ Сборник айтов — Ураза-байрам + Курбан-байрам (отдельный блок).",
       },
     },
     hadith: {
@@ -880,7 +880,7 @@ export const EXTENDED_LOCALE_PATCHES = {
         favoriteTypeTopic: "Tradition",
         favoriteTypeArticle: "Article",
         traditionScreenMapBody:
-          "① Wise words — authors, Abai “Words of Edification”.\n② Books — official library, daily tools and tradition guides.\n③ Custom topics — 37 cards, search, favorites.\n④ Ait collection — Oraza ait + Qurban ait (separate block).",
+          "① Wise words — authors, Abai “Words of Edification”.\n② Books — official library, daily tools and tradition guides.\n③ Custom topics — search, favorites (two foundation topics separate on the hub).\n④ Ait collection — Oraza ait + Qurban ait (separate block).",
       },
     },
   },

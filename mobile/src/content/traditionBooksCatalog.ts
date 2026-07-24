@@ -1,9 +1,9 @@
 import { KAZAKH_TRADITION_ORAZA_AIT_BLOCK_TITLE } from "./kazakhTraditionAnchors";
+import type { TraditionTopicCategory } from "./kazakhTraditionTopicStats";
 import {
   TRADITION_TOPIC_BLOCK_COUNT,
   TRADITION_TOPIC_COUNT_BY_CATEGORY,
-  type TraditionTopicCategory,
-} from "./kazakhTraditionTopicStats";
+} from "./traditionTopicsCatalog";
 import type { MainTabParamList, MoreStackParamList, RootStackParamList } from "../navigation/types";
 import {
   countEntriesForAuthor,
@@ -331,7 +331,7 @@ export const TRADITION_BOOKS: TraditionBookEntry[] = [
       "Қонақжайлық, асар, көрші құқығы, қоғамдық бірлік және әлеуметтік әдеп — ысырапсыз, адал ниетпен қолдану.",
     contents: ["Қонақ күту және дастарқан", "Асар мен көршіге көмек", "Қоғамдық татулық"],
     religionLink: "Қоғамдық игілік сүннетпен үйлеседі; мақтан және ысырап — шариғатқа қайшы.",
-    howToRead: ["Бір тақырыпты күнделікті өмірмен салыстыру.", "Отбада қысқа талқылау."],
+    howToRead: ["Бір тақырыпты күнделікті өмірмен салыстыру.", "Отбасында қысқа талқылау."],
     action: { kind: "scrollTopicsCategory", category: "social" },
   },
   {

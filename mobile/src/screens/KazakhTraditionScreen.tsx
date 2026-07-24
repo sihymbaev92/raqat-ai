@@ -12,6 +12,7 @@ import { getTraditionKazakhPalette } from "../theme/traditionKazakhTheme";
 import type { TraditionKazakhPalette } from "../theme/traditionKazakhTheme";
 import type { MoreStackParamList } from "../navigation/types";
 import type { TraditionTopicCategory } from "../content/kazakhTraditionTopicStats";
+import { isTraditionFoundationTopicId } from "../content/kazakhTraditionTopicStats";
 import {
   getTraditionTopicByTitle,
   getTraditionTopics,
@@ -27,15 +28,12 @@ type Nav = NativeStackNavigationProp<MoreStackParamList>;
 type Route = RouteProp<MoreStackParamList, "KazakhTradition">;
 type FilterKey = TraditionTopicCategory | "all";
 
-/** Негізгі тақырыптар — тізімнің басында. */
-const FOUNDATION_IDS = new Set(["dastur-men-din-negiz", "yrymdar-men-din"]);
-
 const FILTER_IDS: FilterKey[] = ["all", "faith", "family", "ceremony", "social"];
 
 function sortTopics(topics: TraditionTopic[]): TraditionTopic[] {
   return [...topics].sort((a, b) => {
-    const af = FOUNDATION_IDS.has(a.id) ? 0 : 1;
-    const bf = FOUNDATION_IDS.has(b.id) ? 0 : 1;
+    const af = isTraditionFoundationTopicId(a.id) ? 0 : 1;
+    const bf = isTraditionFoundationTopicId(b.id) ? 0 : 1;
     if (af !== bf) return af - bf;
     if (a.id === "dastur-men-din-negiz") return -1;
     if (b.id === "dastur-men-din-negiz") return 1;
@@ -112,7 +110,7 @@ export function KazakhTraditionScreen() {
   const queryNorm = deferredQuery.trim().toLocaleLowerCase("kk-KZ");
   const visibleTopics = useMemo(() => {
     /** Негіз бен ырым — жоғарыдағы картада ашылады; тізімде қайталанбайды. */
-    const base = topics.filter((topic) => !FOUNDATION_IDS.has(topic.id));
+    const base = topics.filter((topic) => !isTraditionFoundationTopicId(topic.id));
     const byCat =
       filter === "all" ? base : base.filter((topic) => topic.categories.includes(filter));
     if (!queryNorm) return byCat;

@@ -1,5 +1,8 @@
 import type { ImageSourcePropType } from "react-native";
-import type { TraditionTopicCategory } from "./kazakhTraditionTopicStats";
+import {
+  isTraditionFoundationTopicId,
+  type TraditionTopicCategory,
+} from "./kazakhTraditionTopicStats";
 import { getTraditionReligiousEvidence } from "./traditionReligiousEvidence";
 import { getAllTraditionBatas, searchTraditionBatas } from "./traditionBataCatalog";
 import type { TraditionArticle, TraditionAudioBlessing, TraditionTopic } from "./traditionContentTypes";
@@ -912,6 +915,21 @@ export const TRADITION_TOPICS: TraditionTopic[] = [
     articleIds: ["tradition-values", "daily-adab"],
   },
 ];
+
+/** Барлық салт-дәстүр тақырыптары (негізгі + тізім). */
+export const TRADITION_TOPIC_BLOCK_COUNT = TRADITION_TOPICS.length;
+
+/** Тізімде көрінетіндер (негізгі 2 тақырып хабта бөлек). */
+export const TRADITION_LIST_TOPIC_COUNT = TRADITION_TOPICS.filter(
+  (topic) => !isTraditionFoundationTopicId(topic.id)
+).length;
+
+export const TRADITION_TOPIC_COUNT_BY_CATEGORY: Record<TraditionTopicCategory, number> = {
+  family: TRADITION_TOPICS.filter((t) => t.categories.includes("family")).length,
+  social: TRADITION_TOPICS.filter((t) => t.categories.includes("social")).length,
+  ceremony: TRADITION_TOPICS.filter((t) => t.categories.includes("ceremony")).length,
+  faith: TRADITION_TOPICS.filter((t) => t.categories.includes("faith")).length,
+};
 
 /** Ескі topic audioIds → жаңа каталог id (100 бата). */
 const LEGACY_BATA_AUDIO_ALIASES: Record<string, string> = {
