@@ -10,6 +10,8 @@ final class PrayerAzanNativePlayer: NSObject, AVAudioPlayerDelegate {
   private var playingDua = false
   private var sessionFullyFinished = false
   private var lastDurationMs = 0
+  /** Жабу mid-dua-delay — asyncAfter playDua қайта қоспасын. */
+  private var playbackGeneration: Int = 0
 
   private override init() {
     super.init()
@@ -18,6 +20,7 @@ final class PrayerAzanNativePlayer: NSObject, AVAudioPlayerDelegate {
   func play(soundId: String) {
     guard !soundId.isEmpty, soundId != "off" else { return }
     stopInternal(keepSession: false, clearFullyFinished: true)
+    playbackGeneration += 1
     lastSoundId = soundId
     completed = false
     playingDua = false
@@ -113,8 +116,11 @@ final class PrayerAzanNativePlayer: NSObject, AVAudioPlayerDelegate {
     completed = true
     playingDua = false
     player = nil
+    let gen = playbackGeneration
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) { [weak self] in
-      guard let self, !self.playingDua, !self.sessionFullyFinished else { return }
+      guard let self else { return }
+      guard self.playbackGeneration == gen else { return }
+      guard !self.playingDua, !self.sessionFullyFinished else { return }
       self.playDua()
     }
   }
@@ -130,6 +136,7 @@ final class PrayerAzanNativePlayer: NSObject, AVAudioPlayerDelegate {
     player?.stop()
     player = nil
     if !keepSession {
+      playbackGeneration += 1
       lastSoundId = nil
       completed = false
       playingDua = false
