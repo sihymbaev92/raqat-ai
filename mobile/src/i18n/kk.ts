@@ -1346,7 +1346,7 @@ export const kk = {
       traditionEvidenceTitle: "Дәлелдер: аят және хадис",
       traditionEvidenceHint: "Қысқа дәлел — дінмен байланысты түсіну үшін. Толық үкім — ұстазбен.",
       traditionEvidenceDisclaimer:
-        "Бұл қысқа мағына. Толық мәтін мен үкім үшін Құран, хадис және мүфтият түсіндірмесін қараңыз.",
+        "Бұл қысқа мағына. Толық мәтін мен үкім үшін Құран, хадис және Муфтият түсіндірмесін қараңыз.",
       traditionEvidenceMeaningLabel: "Мағыналық түйін",
       traditionEvidenceOpenQuran: "Құранда оқу",
       traditionEvidenceOpenHadith: "Хадисті ашу",

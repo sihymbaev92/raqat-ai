@@ -24,7 +24,8 @@ const FORBIDDEN_UI_PATTERNS: Array<{ re: RegExp; hint: string }> = [
   { re: /берілеген/g, hint: "use «берілген»" },
   { re: /сүредің/g, hint: "use «сүренің»" },
   { re: /Дхул-Хижжа/g, hint: "use «Зул-хижжа»" },
-  { re: /мұсафа /g, hint: "use «мұсаф»" },
+  { re: /мұсафа /gi, hint: "use «мұсаф»" },
+  { re: /Мұсафа/g, hint: "use «Мұсаф»" },
   { re: /такбир/g, hint: "use «тәкбір»" },
   { re: /Зиджара/g, hint: "avoid nonstandard «Зиджара» in seerah UI" },
   { re: /толысты/g, hint: "use «кемелденді» / «толықты»" },
@@ -40,6 +41,14 @@ const FORBIDDEN_UI_PATTERNS: Array<{ re: RegExp; hint: string }> = [
     re: /[\u049B\u04B1\u049b\u04b1][\u006E\u0064][\u043B\u044B\u049B\u0442]/,
     hint: "use Cyrillic «нд» not Latin «nd» (e.g. құndылықтар → құndылықтар)",
   },
+  { re: /Ғғибадат|ғғибадат/g, hint: "use «Ғибадат»" },
+  { re: /есссіздік/g, hint: "use «ессіздік»" },
+  { re: /намаз\/dәрет/g, hint: "use Cyrillic «дәрет»" },
+  { re: /танисан|табасын(?![а-яәіңғүұқөһ])/gi, hint: "use 2nd-person «-сың»" },
+  { re: /қаңтарыл/gi, hint: "use «қарайып» / «қаңырап»" },
+  { re: /\bіс де\b/g, hint: "use «іс те»" },
+  { re: /бос арманы/g, hint: "use «бос арман»" },
+  { re: /Отбада[^сқн]/g, hint: "use «Отбасында»" },
 ];
 
 const SKIP_DIR_NAMES = new Set(["node_modules", ".git", "android", "ios"]);
