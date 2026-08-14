@@ -35,10 +35,7 @@ import {
 } from "../services/bundledQuranReader";
 import { surahTitleForLocale } from "../constants/surahTitleKk";
 import { QURAN_JUZ_STARTS, juzForSurahAyah, type QuranJuzStart } from "../data/quranJuzBoundaries";
-import {
-  mushafStartPageForSurah,
-  surahListMetaSubtitle,
-} from "../data/surahListMeta";
+import { surahListMetaSubtitle } from "../data/surahListMeta";
 import {
   QuranSurahListJuzHeader,
   QuranSurahListRow,
@@ -48,7 +45,7 @@ import { QuranContinueReadingCard } from "../components/quran/QuranContinueReadi
 import { HatimAyahWordSearchSheet } from "../components/quran/HatimAyahWordSearchSheet";
 import { HatimSurahSearchSheet } from "../components/quran/HatimSurahSearchSheet";
 import { useQuranContinueReading } from "../quran/useQuranContinueReading";
-import { navigateToHatim } from "../navigation/navigateToMoreStack";
+import { navigateToHatim, navigateToQuranSurah } from "../navigation/navigateToMoreStack";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
 import { beginLatestRequest } from "../utils/latestRequestGuard";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
@@ -232,11 +229,7 @@ export function QuranListScreen({ navigation }: Props) {
   const listBottomPad = 40 + Math.max(insets.bottom, 8);
   const openQuranReaderAt = useCallback(
     (surah: number, ayah = 1) => {
-      navigation.navigate("QuranSurah", {
-        surahNumber: surah,
-        initialAyah: ayah,
-        mushafLayout: true,
-      });
+      navigateToQuranSurah({ surahNumber: surah, initialAyah: ayah }, navigation);
     },
     [navigation]
   );
@@ -366,11 +359,11 @@ export function QuranListScreen({ navigation }: Props) {
               ]}
               onPress={() => setSurahSearchOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel={tr(kk.hatim.searchBtnA11y)}
+              accessibilityLabel={tr(kk.quran.searchBtnA11y)}
             >
               <MaterialIcons name="search" size={18} color={colors.accent} />
               <Text style={styles.wordSearchBtnTextSurah} numberOfLines={1}>
-                {tr(kk.hatim.searchQuickAction)}
+                {tr(kk.quran.searchQuickAction)}
               </Text>
             </Pressable>
             <Pressable
@@ -411,9 +404,11 @@ export function QuranListScreen({ navigation }: Props) {
               surahNumber={s.number}
               numberedTitle={`${s.number}. ${kkTitle}`}
               metaSubtitle={tr(surahListMetaSubtitle(s.number, ayahCount))}
-              mushafPage={mushafStartPageForSurah(s.number)}
               onPress={() => openQuranReaderAt(s.number)}
-              accessibilityLabel={kk.hatim.openSurahRowA11y(kkTitle)}
+              accessibilityLabel={kk.quran.openSurahRowA11y(kkTitle, {
+                surahNumber: s.number,
+                ayahCount,
+              })}
               colors={colors}
               isDark={isDark}
             />
@@ -426,7 +421,6 @@ export function QuranListScreen({ navigation }: Props) {
             surahNumber={j.startSurah}
             numberedTitle={tr(kk.quran.juzTitle(j.juz))}
             metaSubtitle={tr(kk.quran.juzStartsAtLine(surahTitle, j.startAyah))}
-            mushafPage={mushafStartPageForSurah(j.startSurah)}
             onPress={() => openQuranReaderAt(j.startSurah, j.startAyah)}
             accessibilityLabel={`${kk.quran.juzTitle(j.juz)}. ${kk.quran.juzStartsAtLine(surahTitle, j.startAyah)}`}
             colors={colors}

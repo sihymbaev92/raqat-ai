@@ -1,6 +1,7 @@
 import { isInsideMoreStackNavigator, navigateToMoreStackScreen, navigateToQuranSurah } from "../navigateToMoreStack";
 import { rootNavigationRef } from "../rootNavigationRef";
 import { CommonActions } from "@react-navigation/native";
+import { mushafPageForSurahAyah } from "../../quran/mushafPageForSurahAyah";
 
 jest.mock("../rootNavigationRef", () => ({
   rootNavigationRef: {
@@ -61,7 +62,29 @@ describe("navigateToMoreStackScreen", () => {
 
     expect(rootRef.navigate).toHaveBeenCalledWith("MoreStack", {
       screen: "QuranMushafBook",
-      params: { focusSurah: 2, focusAyah: 1, continuousMushaf: true },
+      params: {
+        focusSurah: 2,
+        focusAyah: 1,
+        initialPage: mushafPageForSurahAyah(2, 1),
+        continuousMushaf: true,
+      },
+    });
+  });
+
+  it("opens mushaf topic-search ayah on the exact Hafs page", () => {
+    const navigation = {
+      navigate: jest.fn(),
+      dispatch: jest.fn(),
+      getState: () => ({ routeNames: ["QuranList", "Hatim", "ContentHub"] }),
+    };
+
+    navigateToQuranSurah({ surahNumber: 2, initialAyah: 255, mushafLayout: true }, navigation);
+
+    expect(navigation.navigate).toHaveBeenCalledWith("QuranMushafBook", {
+      focusSurah: 2,
+      focusAyah: 255,
+      initialPage: mushafPageForSurahAyah(2, 255),
+      continuousMushaf: true,
     });
   });
 
@@ -77,6 +100,7 @@ describe("navigateToMoreStackScreen", () => {
     expect(navigation.navigate).toHaveBeenCalledWith("QuranMushafBook", {
       focusSurah: 1,
       focusAyah: 1,
+      initialPage: mushafPageForSurahAyah(1, 1),
       continuousMushaf: true,
     });
     expect(rootRef.navigate).not.toHaveBeenCalled();

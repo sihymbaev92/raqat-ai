@@ -9,8 +9,8 @@ describe("dhikr-list.json transliteration quality", () => {
     items: Array<{ id: number; slug: string; textAr: string; textKk: string; translitKk: string }>;
   };
 
-  it("has 220 dhikr entries", () => {
-    expect(data.items).toHaveLength(220);
+  it("has 119 dhikr entries", () => {
+    expect(data.items).toHaveLength(119);
   });
 
   it("translitKk has no Latin letters", () => {

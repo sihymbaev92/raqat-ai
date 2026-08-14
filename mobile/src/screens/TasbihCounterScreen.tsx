@@ -329,12 +329,13 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 2,
     },
     translitCompact: {
-      color: colors.scriptureTranslit,
-      fontSize: 14,
-      lineHeight: 20,
+      color: colors.text,
+      fontSize: 16,
+      lineHeight: 24,
       textAlign: "center",
       marginBottom: 8,
       paddingHorizontal: 12,
+      fontWeight: "900",
     },
     progressLine: {
       fontSize: 17,
@@ -352,9 +353,10 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 4,
     },
     translit: {
-      color: colors.scriptureTranslit,
-      fontSize: 14,
-      lineHeight: 21,
+      color: colors.text,
+      fontSize: 16,
+      lineHeight: 24,
+      fontWeight: "900",
     },
     meaning: {
       color: colors.scriptureMeaningKk,

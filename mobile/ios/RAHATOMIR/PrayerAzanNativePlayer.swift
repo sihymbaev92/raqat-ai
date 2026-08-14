@@ -30,6 +30,9 @@ final class PrayerAzanNativePlayer: NSObject, AVAudioPlayerDelegate {
 
   func playDua() {
     guard !sessionFullyFinished else { return }
+    if playingDua, let current = player, current.isPlaying {
+      return
+    }
     stopInternal(keepSession: true, clearFullyFinished: false)
     completed = true
     playingDua = true

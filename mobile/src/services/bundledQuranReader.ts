@@ -136,7 +136,7 @@ async function buildMapsFromBundlesAsync(
       };
     });
     if (ayahs.length) ayahsBySurah.set(s.number, ayahs);
-    if (i > 0 && i % 8 === 0) {
+    if (i > 0 && i % 32 === 0) {
       await new Promise<void>((resolve) => setTimeout(resolve, 0));
     }
   }

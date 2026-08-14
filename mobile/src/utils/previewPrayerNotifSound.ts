@@ -149,7 +149,7 @@ export async function previewPrayerNotifSound(id: PrayerNotifSoundId): Promise<v
       interruptionModeIOS: InterruptionModeIOS.DoNotMix,
       interruptionModeAndroid: InterruptionModeAndroid.DoNotMix,
       shouldDuckAndroid: true,
-      staysActiveInBackground: true,
+      staysActiveInBackground: false,
       playThroughEarpieceAndroid: false,
     });
   } catch {

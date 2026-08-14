@@ -22,7 +22,6 @@ import { tajweedSectionDisplayTitle } from "../content/tajweedSectionTitlesLocal
 import { useAppLocale } from "../i18n/runtime";
 import type { MoreStackParamList } from "../navigation/types";
 import { navigateToQuranSurah } from "../navigation/navigateToMoreStack";
-import { setQuranTajweedColorsEnabled } from "../storage/quranReaderPrefs";
 
 type Props = {
   onOpenPage: (page: number) => void;
@@ -65,7 +64,6 @@ export function TajweedGuideHome({ onOpenPage, onOpenQuran, onOpenColoredList }:
     }
     setOpeningSurah(true);
     try {
-      await setQuranTajweedColorsEnabled(true);
       navigateToQuranSurah(
         {
           surahNumber: 1,

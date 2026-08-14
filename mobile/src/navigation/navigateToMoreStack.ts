@@ -2,6 +2,7 @@ import { CommonActions } from "@react-navigation/native";
 import type { NavigatorScreenParams } from "@react-navigation/native";
 import { rootNavigationRef } from "./rootNavigationRef";
 import type { MainTabParamList, MoreStackParamList, RootStackParamList } from "./types";
+import { mushafPageForSurahAyah } from "../quran/mushafPageForSurahAyah";
 
 /** Navigation helpers — any React Navigation stack/tab instance. */
 export type StackNavLike = {
@@ -141,17 +142,20 @@ export function navigateToQuranMushafBook(
   navigateToMoreStackScreen("QuranMushafBook", params, navigation);
 }
 
-/** Сүре оқу экраны. Мұсаф режимі сұралса — нақты Hafs 604 бетіне ашады. */
+/** Сүре оқу экраны (аударма + транскрипция). `mushafLayout: true` — тек deep link / арнайы өту:
+ *  604-беттік хатым кітабы (QuranMushafBook). Құран тізімі мен сақталған бетбелгілер — `mushafLayout` жоқ. */
 export function navigateToQuranSurah(
   params: MoreStackParamList["QuranSurah"],
   navigation?: StackNavLike
 ): void {
   if (params.mushafLayout) {
+    const focusAyah = params.initialAyah ?? 1;
     navigateToMoreStackScreen(
       "QuranMushafBook",
       {
         focusSurah: params.surahNumber,
-        focusAyah: params.initialAyah ?? 1,
+        focusAyah,
+        initialPage: mushafPageForSurahAyah(params.surahNumber, focusAyah),
         continuousMushaf: true,
       },
       navigation

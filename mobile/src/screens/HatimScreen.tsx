@@ -60,7 +60,7 @@ import {
   toggleHatimSurah,
   type HatimResume,
 } from "../storage/hatimProgress";
-import { preloadHatimOfflineAssets, persistHatimBookLockedPrefs } from "../quran/hatimBookPolicy";
+import { preloadHatimOfflineAssets, persistHatimBookLockedPrefs, prewarmHatimSurahOpen, prefetchQuranMushafBookScreen } from "../quran/hatimBookPolicy";
 
 type Props = {
   navigation: NativeStackNavigationProp<MoreStackParamList, "Hatim">;
@@ -100,6 +100,7 @@ export function HatimScreen({ navigation }: Props) {
     useCallback(() => {
       void persistHatimBookLockedPrefs();
       void preloadHatimOfflineAssets();
+      prefetchQuranMushafBookScreen();
     }, [])
   );
 
@@ -212,16 +213,11 @@ export function HatimScreen({ navigation }: Props) {
   const openSearchSheet = useCallback(() => setSearchSheetOpen(true), []);
   const closeSearchSheet = useCallback(() => setSearchSheetOpen(false), []);
 
-  const onSearchPickSurah = useCallback(
-    (surahNumber: number) => {
-      scrollHatimToSurah(surahNumber);
-    },
-    [scrollHatimToSurah]
-  );
-
   const openMushafBook = useCallback(
     (opts?: { initialPage?: number; focusSurah?: number; focusAyah?: number }) => {
-      void preloadHatimOfflineAssets();
+      if (opts?.focusSurah != null) {
+        prewarmHatimSurahOpen(opts.focusSurah, opts.focusAyah ?? 1);
+      }
       navigateToQuranMushafBook(
         {
           ...(opts?.initialPage != null ? { initialPage: opts.initialPage } : {}),
@@ -252,6 +248,13 @@ export function HatimScreen({ navigation }: Props) {
       });
     },
     [openMushafBook]
+  );
+
+  const onSearchPickSurah = useCallback(
+    (surahNumber: number) => {
+      openMushafAtSurah(surahNumber);
+    },
+    [openMushafAtSurah]
   );
 
   const onNavApply = useCallback(

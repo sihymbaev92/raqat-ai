@@ -1,4 +1,9 @@
-import { TAJWEED_LETTER_AUDIO_BY_AR, tajweedLetterAudioSource, hasBundledTajweedLetterAudio } from "../tajweedLetterAudio";
+import {
+  TAJWEED_LETTER_AUDIO_BY_AR,
+  tajweedLetterAudioSource,
+  hasBundledTajweedLetterAudio,
+  isBareTajweedAlphabetLetter,
+} from "../tajweedLetterAudio";
 
 import { TAJWEED_ALPHABET_ROWS } from "../tajweedAlphabet";
 
@@ -48,5 +53,11 @@ describe("tajweedLetterAudio", () => {
 
   });
 
+  it("detects bare alphabet letters for letter-name audio routing", () => {
+    expect(isBareTajweedAlphabetLetter("ا")).toBe(true);
+    expect(isBareTajweedAlphabetLetter("ب")).toBe(true);
+    expect(isBareTajweedAlphabetLetter("أَدَبَ")).toBe(false);
+    expect(isBareTajweedAlphabetLetter("أَنْ")).toBe(false);
+  });
 });
 

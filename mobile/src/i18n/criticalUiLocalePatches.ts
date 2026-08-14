@@ -534,65 +534,6 @@ function traditionIntroLine(locale: LeakLocale): string {
   return map[locale];
 }
 
-function namazCompanionChrome(locale: LeakLocale) {
-  const map = {
-    ru: {
-      screenTitle: "Сопровождение суджуда",
-      pickerTitle: "Какой намаз сопровождаем?",
-      pickerSub:
-        "Пройдите фарз-ракяты шаг за шагом: takbir → киям → руку → суджуд → салам. Ниже — текст тех же шагов.",
-      rakatWord: "ракят",
-      finish: "Завершить",
-      lockedHint: "По шагам",
-    },
-    en: {
-      screenTitle: "Sujood guidance",
-      pickerTitle: "Which prayer shall we guide?",
-      pickerSub:
-        "Walk through fard units step by step: takbir → qiyam → ruku → sujood → salam. Reading text for those steps is below.",
-      rakatWord: "unit",
-      finish: "Finish",
-      lockedHint: "Step by step",
-    },
-    ky: {
-      screenTitle: "Сажда жетектее",
-      pickerTitle: "Кай намазды жетектейбиз?",
-      pickerSub:
-        "Фарз ракаттарды кадам-кадам өтүңүз: takbir → кыям → руку → сажда → салам. Төмөндө окуу тексти да бар.",
-      rakatWord: "ракат",
-      finish: "Аяктоо",
-      lockedHint: "Кадам боюнча",
-    },
-    uz: {
-      screenTitle: "Sajda yo'lboshchisi",
-      pickerTitle: "Qaysi namozni kuzatamiz?",
-      pickerSub:
-        "Farzy rak'atlarni qadam-baqadam o'ting: takbir → qiyom → ruku → sajda → salom. Pastda o'qish matni ham bor.",
-      rakatWord: "rak'at",
-      finish: "Tugatish",
-      lockedHint: "Qadam bo'yicha",
-    },
-    tr: {
-      screenTitle: "Secde rehberi",
-      pickerTitle: "Hangi namazi rehberleyelim?",
-      pickerSub:
-        "Farz rekatlari adim adim gecin: tekbir → kiyam → rüku → secde → selam. Asagida okuma metni de var.",
-      rakatWord: "rekat",
-      finish: "Bitir",
-      lockedHint: "Adim adim",
-    },
-    ar: {
-      screenTitle: "إرشاد السجود",
-      pickerTitle: "أي صلاة نرشد؟",
-      pickerSub:
-        "امشِ في ركعات الفرض خطوة بخطوة: تكبير → قيام → ركوع → سجود → سلام. وفي الأسفل نص القراءة.",
-      rakatWord: "ركعة",
-      finish: "إنهاء",
-      lockedHint: "خطوة بخطوة",
-    },
-  } as const;
-  return map[locale];
-}
 
 function alphabetTajweedChrome(locale: LeakLocale) {
   const map = {
@@ -800,7 +741,6 @@ function prayerNotifAcceptanceIos(locale: LeakLocale): string[] {
 export const CRITICAL_UI_LOCALE_PATCHES = {
   ru: {
     dashboard: { traditionTileSub: traditionTileSub("ru") },
-    namazCompanion: namazCompanionChrome("ru"),
     common: { close: "Закрыть", back: "Назад", open: "Открыть", continue: "Продолжить", none: "нет", guideAccordionExpand: "открыть", guideAccordionCollapse: "скрыть", appErrorTitle: "Ошибка приложения", appErrorHint: "«Повторить» — попробовать снова. Причину смотрите в логе / на экране.", distanceKmUnit: "км" },
     navigation: {
       savedTab: savedTabRu,
@@ -969,7 +909,6 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
   },
   en: {
     dashboard: { traditionTileSub: traditionTileSub("en") },
-    namazCompanion: namazCompanionChrome("en"),
     common: {
       close: "Close",
       back: "Back",
@@ -1148,7 +1087,6 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
   },
   ky: {
     dashboard: { traditionTileSub: traditionTileSub("ky") },
-    namazCompanion: namazCompanionChrome("ky"),
     common: {
       close: "Жабуу",
       back: "Артка",
@@ -1325,7 +1263,6 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
   },
   uz: {
     dashboard: { traditionTileSub: traditionTileSub("uz") },
-    namazCompanion: namazCompanionChrome("uz"),
     common: {
       close: "Yopish",
       back: "Orqaga",
@@ -1505,7 +1442,6 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
   },
   tr: {
     dashboard: { traditionTileSub: traditionTileSub("tr") },
-    namazCompanion: namazCompanionChrome("tr"),
     common: {
       close: "Kapat",
       back: "Geri",
@@ -1684,7 +1620,6 @@ export const CRITICAL_UI_LOCALE_PATCHES = {
   },
   ar: {
     dashboard: { traditionTileSub: traditionTileSub("ar") },
-    namazCompanion: namazCompanionChrome("ar"),
     common: {
       close: "إغلاق",
       back: "رجوع",

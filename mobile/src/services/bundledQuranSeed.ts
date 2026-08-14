@@ -1,6 +1,7 @@
 import { runAfterInteractions, runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ensureBundledSurahListLoaded, getBundledSurahList } from "./bundledQuranSurahList";
+import { prefetchBundledQuranReader } from "./bundledQuranReader";
 
 /**
  * v15: бандл runtime оқиды; 114 сүре AsyncStorage-ға көшірілмейді.
@@ -43,6 +44,7 @@ export async function seedBundledQuranCachesIfNeeded(opts?: {
     await ensureBundledSurahListLoaded().catch(() => {
       /* офлайн — QuranList remote/cache қайта көреді */
     });
+    void prefetchBundledQuranReader();
 
     /** Бос/сәтсіз жүктеуде flag қойма — келесі boot қайта көреді. */
     if (!getBundledSurahList()?.length) {
@@ -64,6 +66,7 @@ export async function seedBundledQuranCachesIfNeeded(opts?: {
 /** UI блоктаусыз: интеракциядан кейін (қайта іске қосу). */
 export function scheduleBundledQuranSeed(): void {
   runAfterInteractions(() => {
+    void prefetchBundledQuranReader();
     void seedBundledQuranCachesIfNeeded();
   });
 }

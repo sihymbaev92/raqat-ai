@@ -10,9 +10,23 @@ type Props = {
   colors: ThemeColors;
   companyCount: number;
   onOpenMap: () => void;
+  nearbyCount?: number | null;
+  locationLabel?: string | null;
+  locationBusy?: boolean;
+  locationDenied?: boolean;
+  radiusKm?: number;
 };
 
-export function HalalMapTabPanel({ colors, companyCount, onOpenMap }: Props) {
+export function HalalMapTabPanel({
+  colors,
+  companyCount,
+  onOpenMap,
+  nearbyCount = null,
+  locationLabel = null,
+  locationBusy = false,
+  locationDenied = false,
+  radiusKm = 5,
+}: Props) {
   useAppLocale();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
@@ -22,6 +36,20 @@ export function HalalMapTabPanel({ colors, companyCount, onOpenMap }: Props) {
         <MaterialIcons name="place" size={44} color={colors.accent} />
         <Text style={[styles.title, { color: colors.text }]}>{kk.features.halalMapTabTitle}</Text>
         <Text style={[styles.hint, { color: colors.muted }]}>{kk.features.halalMapTabHint}</Text>
+        {locationBusy ? (
+          <Text style={[styles.stat, { color: colors.muted }]}>{kk.features.halalHubLoading}</Text>
+        ) : locationDenied ? (
+          <Text style={[styles.stat, { color: colors.error }]}>{kk.features.halalNearbyPermDenied}</Text>
+        ) : nearbyCount != null && nearbyCount > 0 ? (
+          <Text style={[styles.stat, { color: colors.accent }]}>
+            {kk.features.halalMapTabNearbyStat(nearbyCount, radiusKm)}
+            {locationLabel ? ` · ${locationLabel}` : ""}
+          </Text>
+        ) : nearbyCount === 0 ? (
+          <Text style={[styles.stat, { color: colors.muted }]}>
+            {kk.features.halalNearbyEmpty}
+          </Text>
+        ) : null}
         <Text style={[styles.stat, { color: colors.muted }]}>
           {kk.features.halalMapTabStat(companyCount)}
         </Text>

@@ -11,14 +11,16 @@ export function useMushafLayoutMetrics(
   isDark: boolean,
   mushafDensity: MushafDensityId,
   bookMushaf?: boolean,
-  readingThemeId?: QuranReadingThemeId
+  readingThemeId?: QuranReadingThemeId,
+  quranSurahReader?: boolean
 ): MushafTypographyMetrics {
   return useMemo(
     () =>
       computeMushafTypography(arabicFontPreset, mushafTextScale, isDark, mushafDensity, {
         bookMushaf: bookMushaf === true,
+        quranSurahReader: quranSurahReader === true,
         readingThemeId,
       }),
-    [arabicFontPreset, mushafTextScale, isDark, mushafDensity, bookMushaf, readingThemeId]
+    [arabicFontPreset, mushafTextScale, isDark, mushafDensity, bookMushaf, readingThemeId, quranSurahReader]
   );
 }

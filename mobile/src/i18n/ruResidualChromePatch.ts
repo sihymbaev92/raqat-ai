@@ -37,7 +37,7 @@ export const RU_RESIDUAL_CHROME_PATCH = {
       "Включён режим API-only: для этого раздела обязателен доступ к API платформы (RAHAT OMIR).",
   },
   settings: {
-    sectionLinksSub: "Telegram, халяль и экосистема.",
+    feedbackPhoneSub: "Вопрос или предложение — позвоните по телефону.",
     androidPrayerWidgetHint:
       "На главном экране долго нажмите пустое место → «Виджеты» → RAHAT OMIR → «Намаз на главном» (ряд из 5 намазов, отсчёт, кибла). Расписание обновляется при открытии приложения.",
     prayerAzanFullScreenDeniedHint:

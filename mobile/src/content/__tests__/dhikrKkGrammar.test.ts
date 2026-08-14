@@ -12,12 +12,27 @@ const FORBIDDEN = [
   /сенімді қорғаушы/,
   /тымайтын жоқ/,
   /кеудемді жайғасын/,
-  /абwаба/,
+  /\bжайғастыр\b/,
+  /\bбастапқы\b/,
+  /\bқорғаушы\b/,
+  / уа /,
 ];
 
 describe("dhikr-list Kazakh grammar", () => {
-  it("has 220 dhikr items", () => {
-    expect(dhikrList.items).toHaveLength(220);
+  it("has 119 dhikr items", () => {
+    expect(dhikrList.items).toHaveLength(119);
+  });
+
+  it("textKk labels avoid ellipsis and common typos", () => {
+    const bad = dhikrList.items.filter(
+      (i) =>
+        i.textKk.includes("…") ||
+        / уа /.test(i.textKk) ||
+        /Мухаммад/.test(i.textKk) ||
+        /бастапқы/.test(i.textKk) ||
+        /Раббишрах|Раббанағфир|Раббиғфир/.test(i.textKk)
+    );
+    expect(bad.map((i) => i.id)).toEqual([]);
   });
 
   it("avoids common Kazakh grammar mistakes in textKk and meaningKk", () => {

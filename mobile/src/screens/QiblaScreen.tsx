@@ -7,9 +7,12 @@ import {
   ScrollView,
   Linking,
   Platform,
+  useWindowDimensions,
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useFocusEffect } from "@react-navigation/native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { StatusBar } from "expo-status-bar";
 import { QiblaSensorProvider, useQiblaSensor } from "../context/QiblaSensorContext";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -20,8 +23,10 @@ import { qiblaAlignHint, QIBLA_ALIGN_THRESHOLD_DEG, type QiblaAlignHint } from "
 import { angleDiff } from "../lib/qibla";
 import { useAppLocale } from "../i18n/runtime";
 import { useI18n } from "../i18n/useI18n";
+import { qiblaDialSize, useQiblaLandscapeFullscreen } from "../hooks/useQiblaLandscapeFullscreen";
+import { appBottomSafeInset, useDeviceSafeAreaInsets } from "../theme/deviceSafeArea";
 
-const { width } = Dimensions.get("window");
+const { width: initialWidth } = Dimensions.get("window");
 
 /** Көрсету үшін 0.1° дәлдік (солтүстік = 0…360). */
 function formatDeg1(n: number | null | undefined): string {
@@ -61,6 +66,10 @@ export function QiblaScreen() {
 function QiblaScreenContent() {
   const { colors } = useAppTheme();
   const t = useI18n();
+  const { width: layoutWidth, height: layoutHeight } = useWindowDimensions();
+  const deviceInsets = useDeviceSafeAreaInsets();
+  const bottomInset = appBottomSafeInset(deviceInsets);
+  const { landscape, enterLandscape, exitLandscape } = useQiblaLandscapeFullscreen();
   const {
     perm,
     bearing,
@@ -77,8 +86,14 @@ function QiblaScreenContent() {
     compassQuality,
     resetHeadingSmoothing,
   } = useQiblaSensor();
-  const dialSize = Math.min(width - 84, 260);
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const onlineGps = locationSource === "gps";
+  const dialSize = qiblaDialSize({
+    width: layoutWidth,
+    height: layoutHeight,
+    landscape,
+    onlineGps,
+  });
+  const styles = useMemo(() => makeStyles(colors, layoutWidth), [colors, layoutWidth]);
   const [manualWebHeading, setManualWebHeading] = useState<number | null>(null);
   const effectiveHeading = headingHasSample ? heading : manualWebHeading;
   const effectiveHeadingHasSample = headingHasSample || manualWebHeading != null;
@@ -216,40 +231,115 @@ function QiblaScreenContent() {
     );
   }
 
+  const compassNode =
+    bearing != null && !effectiveHeadingHasSample ? (
+      <View
+        style={{
+          width: dialSize,
+          height: dialSize,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <RaqatOrnamentSpinner size={landscape ? 64 : 52} />
+      </View>
+    ) : (
+      <QiblaArrowPointer
+        colors={colors}
+        size={dialSize}
+        rotateDeg={effectiveRotateDeg}
+        aligned={alignHint === "aligned" && bearing != null}
+        showDialRing
+        showDialHalo
+        showTopMarker
+        showPivotHub
+        showAlignLed
+        needlePulse
+        ornamentNeedle
+      />
+    );
+
+  const preciseReadout =
+    bearing != null ? (
+      <View style={[styles.preciseNums, landscape && styles.preciseNumsLandscape]}>
+        {onlineGps ? (
+          <Text style={[styles.onlineBadge, landscape && styles.onlineBadgeLandscape]}>
+            {t.qibla.locationSourceOnline}
+          </Text>
+        ) : null}
+        <Text style={[styles.preciseNumLine, landscape && styles.preciseNumLineLandscape]}>
+          {kk.qibla.azimuthReadout(formatDeg1(bearing))}
+        </Text>
+        <Text style={[styles.preciseNumLine, landscape && styles.preciseNumLineLandscape]}>
+          {kk.qibla.headingReadout(formatDeg1(effectiveHeading))}
+        </Text>
+        <Text style={[styles.preciseNumLine, landscape && styles.preciseNumLineLandscape]}>
+          {kk.qibla.compassQualityReadout(compassQuality, formatDeg1(headingAccuracyDeg))}
+        </Text>
+        <Text style={[styles.preciseNumLine, landscape && styles.preciseNumLineLandscape]}>
+          {onlineGps
+            ? kk.qibla.locationAccuracyReadout(formatAccuracyMeters(locationAccuracyM, t))
+            : kk.qibla.locationSourceCity}
+        </Text>
+      </View>
+    ) : null;
+
+  if (landscape) {
+    return (
+      <View
+        style={[
+          styles.landscapeRoot,
+          {
+            paddingTop: deviceInsets.top + 8,
+            paddingBottom: bottomInset + 8,
+            paddingLeft: deviceInsets.left + 12,
+            paddingRight: deviceInsets.right + 12,
+          },
+        ]}
+      >
+        <StatusBar style="auto" />
+        <View style={styles.landscapeCompassWrap}>{compassNode}</View>
+        <Text
+          style={[
+            styles.mainHint,
+            styles.landscapeMainHint,
+            alignHint === "aligned" && bearing != null && { color: colors.success },
+          ]}
+        >
+          {mainHint}
+        </Text>
+        {preciseReadout}
+        {bearing != null && alignHint !== "none" ? (
+          <Text style={[styles.offsetLine, styles.landscapeOffsetLine]} accessibilityLiveRegion="polite">
+            {alignHint === "aligned"
+              ? kk.qibla.offsetInZone(QIBLA_ALIGN_THRESHOLD_DEG)
+              : alignHint === "turn_cw"
+                ? kk.qibla.offsetPreciseCw(effectiveRotateDeg)
+                : kk.qibla.offsetPreciseCcw(effectiveRotateDeg)}
+          </Text>
+        ) : null}
+        <Pressable
+          style={({ pressed }) => [styles.landscapeCollapseBtn, pressed && { opacity: 0.9 }]}
+          onPress={exitLandscape}
+          accessibilityRole="button"
+          accessibilityLabel={t.qibla.collapsePortraitA11y}
+        >
+          <MaterialIcons name="fullscreen-exit" size={22} color={colors.accent} />
+          <Text style={styles.landscapeCollapseTxt}>{t.qibla.collapsePortrait}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.scroll}
       contentContainerStyle={styles.pad}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={[styles.arrowPanel, { position: "relative" }]}>
-        {bearing != null && !effectiveHeadingHasSample ? (
-          <View
-            style={{
-              width: dialSize,
-              height: dialSize,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <RaqatOrnamentSpinner size={52} />
-          </View>
-        ) : (
-          <QiblaArrowPointer
-            colors={colors}
-            size={dialSize}
-            rotateDeg={effectiveRotateDeg}
-            aligned={alignHint === "aligned" && bearing != null}
-            showDialRing
-            showDialHalo
-            showTopMarker
-            showPivotHub
-            showAlignLed
-            needlePulse
-            ornamentNeedle
-          />
-        )}
-      </View>
+      <View style={[styles.arrowPanel, { position: "relative" }]}>{compassNode}</View>
+
+      {onlineGps ? <Text style={styles.onlineBanner}>{t.qibla.locationSourceOnline}</Text> : null}
 
       {locationSource === "city" ? (
         <Text style={styles.cityBanner}>{kk.qibla.cityApproxHint}</Text>
@@ -264,20 +354,7 @@ function QiblaScreenContent() {
         {mainHint}
       </Text>
 
-      {bearing != null ? (
-        <View style={styles.preciseNums}>
-          <Text style={styles.preciseNumLine}>{kk.qibla.azimuthReadout(formatDeg1(bearing))}</Text>
-          <Text style={styles.preciseNumLine}>{kk.qibla.headingReadout(formatDeg1(effectiveHeading))}</Text>
-          <Text style={styles.preciseNumLine}>
-            {kk.qibla.compassQualityReadout(compassQuality, formatDeg1(headingAccuracyDeg))}
-          </Text>
-          <Text style={styles.preciseNumLine}>
-            {locationSource === "gps"
-              ? kk.qibla.locationAccuracyReadout(formatAccuracyMeters(locationAccuracyM, t))
-              : kk.qibla.locationSourceCity}
-          </Text>
-        </View>
-      ) : null}
+      {preciseReadout}
 
       {showWebCompassPermission ? (
         <View style={styles.webCompassCard}>
@@ -402,15 +479,100 @@ function QiblaScreenContent() {
         <Text style={styles.secondaryBtnTxt}>{kk.qibla.retryLocation}</Text>
       </Pressable>
 
+      {Platform.OS !== "web" ? (
+        <Pressable
+          style={({ pressed }) => [styles.expandBtn, pressed && { opacity: 0.9 }]}
+          onPress={enterLandscape}
+          accessibilityRole="button"
+          accessibilityLabel={t.qibla.expandLandscapeA11y}
+        >
+          <MaterialIcons name="screen-rotation" size={22} color="#fff" />
+          <Text style={styles.expandBtnTxt}>{t.qibla.expandLandscape}</Text>
+        </Pressable>
+      ) : null}
+
       <Text style={styles.hint}>{kk.qibla.magnetHint}</Text>
     </ScrollView>
   );
 }
 
-function makeStyles(colors: ThemeColors) {
+function makeStyles(colors: ThemeColors, layoutWidth: number = initialWidth) {
   return StyleSheet.create({
     scroll: { flex: 1, backgroundColor: colors.bg },
     pad: { padding: 20, paddingBottom: 32 },
+    landscapeRoot: {
+      flex: 1,
+      backgroundColor: colors.bg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    landscapeCompassWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 8,
+    },
+    landscapeMainHint: {
+      fontSize: 18,
+      lineHeight: 26,
+      marginBottom: 10,
+    },
+    landscapeOffsetLine: {
+      fontSize: 17,
+      marginBottom: 16,
+    },
+    landscapeCollapseBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 18,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    landscapeCollapseTxt: {
+      color: colors.accent,
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    onlineBanner: {
+      alignSelf: "stretch",
+      textAlign: "center",
+      color: colors.success,
+      fontSize: 13,
+      fontWeight: "800",
+      marginBottom: 8,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      backgroundColor: `${colors.success}18`,
+      borderWidth: 1,
+      borderColor: `${colors.success}44`,
+      overflow: "hidden",
+    },
+    onlineBadge: {
+      color: colors.success,
+      fontSize: 13,
+      fontWeight: "800",
+      textAlign: "center",
+      marginBottom: 6,
+    },
+    onlineBadgeLandscape: {
+      fontSize: 15,
+    },
+    expandBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: colors.accent,
+      paddingVertical: 14,
+      borderRadius: 12,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    expandBtnTxt: { color: "#fff", fontWeight: "700", fontSize: 16 },
     center: {
       flex: 1,
       backgroundColor: colors.bg,
@@ -448,6 +610,13 @@ function makeStyles(colors: ThemeColors) {
       borderColor: colors.border,
       gap: 4,
     },
+    preciseNumsLandscape: {
+      alignSelf: "center",
+      minWidth: Math.min(layoutWidth - 48, 420),
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      gap: 6,
+    },
     preciseNumLine: {
       color: colors.text,
       fontSize: 14,
@@ -455,6 +624,11 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       textAlign: "center",
       ...(Platform.OS === "ios" ? ({ fontVariant: ["tabular-nums"] } as const) : {}),
+    },
+    preciseNumLineLandscape: {
+      fontSize: 17,
+      lineHeight: 24,
+      fontWeight: "700",
     },
     webCompassCard: {
       alignSelf: "stretch",
@@ -585,7 +759,7 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 12,
       paddingVertical: 6,
       paddingHorizontal: 4,
-      minWidth: width - 84,
+      minWidth: layoutWidth - 84,
     },
     hint: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 8 },
   });

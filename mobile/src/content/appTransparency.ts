@@ -17,5 +17,6 @@ export const TRANSPARENCY_THIRD_PARTIES_KK = [
   "cdn.islamic.network / alquran.cloud / Quran.com CDN — Құран мәтін/аудио/тәжуид",
   "rahatomir.com/assets/quran/audio — қырғыз/өзбек аударма аудиосы (RAQAT CDN)",
   "Google / Apple — OAuth кіру (токен тек сіздің серверіңізге)",
-  "live.net.sa — Қағба тікелей эфир (HLS)",
+  "win.holol.com — Қағба тікелей эфир (HLS, 720p HTTPS)",
+  "live.net.sa — резерв эфир (HLS, 720p HTTP)",
 ] as const;

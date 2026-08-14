@@ -21,8 +21,8 @@ function yieldToUi(): Promise<void> {
  * Full Bukhari/Muslim dump is intentionally not shipped.
  */
 const MIN_TRUSTED_SEED = 50;
-/** Бандл схема: 10 — chrome i18n + weak-match cleanup + gap fills. */
-const BUNDLE_SCHEMA_VERSION = 10;
+/** Бандл схема: 11 — QMDB Bukhari PDF KK corpus (614). */
+const BUNDLE_SCHEMA_VERSION = 12;
 
 function yieldToUiDeferred(): Promise<void> {
   return yieldToUi();

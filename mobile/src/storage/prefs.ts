@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { migrateDhikrCountsMap, migrateDhikrId } from "../content/dhikrIdMigration";
 
 const K = {
   onboardingDone: "raqat_onboarding_done",
@@ -278,7 +279,11 @@ export async function getTasbihPrefs(): Promise<{
   const goalRaw = await AsyncStorage.getItem(K.tasbihGoalMode);
   const countRaw = await AsyncStorage.getItem(K.tasbihCount);
   const n = idRaw ? parseInt(idRaw, 10) : NaN;
-  const dhikrId = Number.isFinite(n) ? n : null;
+  let dhikrId = Number.isFinite(n) ? n : null;
+  if (dhikrId != null && dhikrId > 119) {
+    dhikrId = migrateDhikrId(dhikrId);
+    await AsyncStorage.setItem(K.tasbihDhikrId, String(dhikrId));
+  }
   const goalMode: TasbihGoalMode =
     goalRaw === "33"
       ? "33"
@@ -303,6 +308,13 @@ export async function setTasbihPrefs(
 }
 
 /** Әр зікір үшін сақталған санаулар (id → count). */
+function dhikrCountsNeedMigration(map: Record<number, number>): boolean {
+  return Object.keys(map).some((key) => {
+    const id = parseInt(key, 10);
+    return Number.isFinite(id) && id > 119;
+  });
+}
+
 export async function getAllDhikrCounts(): Promise<Record<number, number>> {
   const raw = await AsyncStorage.getItem(K.tasbihDhikrCountsMap);
   if (!raw) return {};
@@ -314,6 +326,11 @@ export async function getAllDhikrCounts(): Promise<Record<number, number>> {
       if (!Number.isFinite(id)) continue;
       const n = typeof v === "number" ? v : parseInt(String(v), 10);
       if (Number.isFinite(n) && n >= 0) out[id] = Math.floor(n);
+    }
+    if (dhikrCountsNeedMigration(out)) {
+      const migrated = migrateDhikrCountsMap(out);
+      await setAllDhikrCounts(migrated);
+      return migrated;
     }
     return out;
   } catch {

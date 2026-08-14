@@ -21,6 +21,7 @@ type Props = {
   source: ImageSourcePropType;
   imageWidth: number;
   imageHeight: number;
+  resizeMultiplier?: number;
   onClose: () => void;
   closeLabel?: string;
   pinchHint?: string;
@@ -31,6 +32,7 @@ export function ImageZoomOverlay({
   source,
   imageWidth,
   imageHeight,
+  resizeMultiplier,
   onClose,
   closeLabel = kk.common.closeImageZoom,
   pinchHint = kk.common.imagePinchZoomHint,
@@ -44,7 +46,7 @@ export function ImageZoomOverlay({
     <Modal
       visible={visible}
       transparent
-      animationType="fade"
+      animationType="none"
       statusBarTranslucent
       hardwareAccelerated={Platform.OS === "android"}
       presentationStyle="overFullScreen"
@@ -67,7 +69,12 @@ export function ImageZoomOverlay({
           {pinchHint}
         </Text>
         <View style={[styles.imageArea, { width, height: height * 0.82 }]}>
-          <ZoomableImageContent source={source} width={imageWidth} height={imageHeight} />
+          <ZoomableImageContent
+            source={source}
+            width={imageWidth}
+            height={imageHeight}
+            resizeMultiplier={resizeMultiplier}
+          />
         </View>
       </View>
     </Modal>

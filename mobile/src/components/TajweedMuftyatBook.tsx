@@ -11,6 +11,8 @@ import {
   type TextStyle,
   type ListRenderItemInfo,
 } from "react-native";
+import { Pressable } from "@/ui/Pressable";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
 import { QURAN_BOOK_FONT_FACE } from "../fonts/quranBookFonts";
@@ -23,6 +25,13 @@ import {
   type TajweedManualCropRect,
 } from "../content/tajweedManualBook";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
+import { useI18n } from "../i18n/useI18n";
+import {
+  isTajweedExampleSpeaking,
+  speakTajweedExample,
+  stopMuftyatSpeech,
+} from "../utils/tajweedMuftyatSpeech";
+import { resolveTajweedExampleReading } from "../utils/tajweedHarakatTranslitKk";
 
 /** Muftyat PDF scan — 766×1134 px (барлық бет бірдей). */
 export const MUFTYAT_PAGE_ASPECT = 766 / 1134;
@@ -40,13 +49,17 @@ function tajweedArabicTextStyle(): Pick<TextStyle, "fontFamily" | "writingDirect
 
 type Props = {
   initialPage?: number;
+  /** Тек бір бет (14+ мазмұны қосылмайды). */
+  singlePageOnly?: boolean;
 };
 
-export function TajweedMuftyatBook({ initialPage = 1 }: Props) {
+export function TajweedMuftyatBook({ initialPage = 1, singlePageOnly = false }: Props) {
   const { colors } = useAppTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const listRef = useRef<FlatList<number>>(null);
   const { tr } = useKkAutoTranslator();
+
+  useEffect(() => () => stopMuftyatSpeech(), []);
 
   const pageNumbers = useMemo(() => TAJWEED_APP_PAGES.map((p) => p.page), []);
 
@@ -90,6 +103,18 @@ export function TajweedMuftyatBook({ initialPage = 1 }: Props) {
     },
     []
   );
+
+  if (singlePageOnly) {
+    const content = getTajweedManualBookPage(initialPage);
+    if (!content) return null;
+    return (
+      <View style={styles.root}>
+        <View style={styles.content}>
+          <TajweedManualBookPageView page={content} styles={styles} tr={tr} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <FlatList
@@ -497,12 +522,43 @@ function ExampleGrid({
   targetArabicLetters?: string[];
   tr?: (text: string) => string;
 }) {
+  const kk = useI18n();
+  const { colors } = useAppTheme();
+  const [speakingArabic, setSpeakingArabic] = useState<string | null>(null);
+  const [speechFailed, setSpeechFailed] = useState(false);
   const targetSet = useMemo(() => new Set(targetArabicLetters), [targetArabicLetters]);
 
+  const playExample = useCallback(async (arabic: string) => {
+    const key = arabic.trim();
+    if (!key) return;
+    if (isTajweedExampleSpeaking(key)) {
+      stopMuftyatSpeech();
+      setSpeakingArabic(null);
+      return;
+    }
+    setSpeechFailed(false);
+    setSpeakingArabic(key);
+    try {
+      const ok = await speakTajweedExample(key);
+      if (!ok) setSpeechFailed(true);
+    } finally {
+      setSpeakingArabic((cur) => (cur === key ? null : cur));
+    }
+  }, []);
+
+  const hasArabic = items.some((item) => Boolean(item.arabic?.trim()));
+
   return (
-    <View style={styles.exampleGrid}>
+    <View style={styles.exampleGridWrap}>
+      {hasArabic ? (
+        <Text style={styles.exampleGridHint}>{kk.tajweedGuide.bookExamplePracticeHint}</Text>
+      ) : null}
+      {speechFailed ? (
+        <Text style={styles.exampleSpeechErr}>{kk.tajweedGuide.alphabetSpeechError}</Text>
+      ) : null}
+      <View style={styles.exampleGrid}>
       {items.map((item) => {
-        const reading = item.reading ? (tr ? tr(item.reading) : item.reading) : "";
+        const reading = resolveTajweedExampleReading(item.arabic, item.reading);
         const length = Math.max(
           Array.from(item.arabic ?? "").length,
           Array.from(reading).length,
@@ -510,6 +566,9 @@ function ExampleGrid({
         );
         const wide = length > 6;
         const full = length > 18;
+        const arabic = item.arabic?.trim() ?? "";
+        const active = arabic.length > 0 && speakingArabic === arabic;
+
         return (
           <View
             key={`${item.label ?? ""}-${item.arabic ?? ""}-${item.reading ?? ""}`}
@@ -517,6 +576,7 @@ function ExampleGrid({
               styles.exampleItem,
               wide && styles.exampleItemWide,
               full && styles.exampleItemFull,
+              active && styles.exampleItemActive,
             ]}
           >
             {item.label ? (
@@ -529,14 +589,39 @@ function ExampleGrid({
                 <HighlightedArabicText text={item.arabic} targetSet={targetSet} styles={styles} />
               </Text>
             ) : null}
-            {item.reading ? (
+            {reading ? (
               <Text maxFontSizeMultiplier={1.15} style={styles.exampleReading}>
                 {reading}
               </Text>
             ) : null}
+            {arabic ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.exampleCheckBtn,
+                  active && styles.exampleCheckBtnActive,
+                  pressed && { opacity: 0.9 },
+                ]}
+                onPress={() => void playExample(arabic)}
+                accessibilityRole="button"
+                accessibilityLabel={kk.tajweedGuide.bookExampleCheckA11y(arabic, reading || undefined)}
+              >
+                <MaterialCommunityIcons
+                  name={active ? "stop-circle-outline" : "account-voice"}
+                  size={14}
+                  color={active ? colors.accent : "#fff"}
+                />
+                <Text
+                  style={[styles.exampleCheckBtnText, active && styles.exampleCheckBtnTextActive]}
+                  numberOfLines={2}
+                >
+                  {active ? kk.tajweedGuide.bookExampleStopBtn : kk.tajweedGuide.bookExampleCheckBtn}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         );
       })}
+      </View>
     </View>
   );
 }
@@ -706,6 +791,21 @@ function makeStyles(colors: ThemeColors) {
     examplesSection: {
       gap: 5,
     },
+    exampleGridWrap: {
+      gap: 8,
+    },
+    exampleGridHint: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 17,
+      paddingHorizontal: 4,
+    },
+    exampleSpeechErr: {
+      color: colors.error,
+      fontSize: 12,
+      lineHeight: 17,
+      paddingHorizontal: 4,
+    },
     letterSectionTitle: {
       color: colors.muted,
       fontSize: 11,
@@ -730,9 +830,9 @@ function makeStyles(colors: ThemeColors) {
     exampleItem: {
       width: "22.8%",
       minWidth: 58,
-      minHeight: 76,
+      minHeight: 96,
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       gap: 3,
       borderRadius: 10,
       backgroundColor: colors.card,
@@ -740,15 +840,48 @@ function makeStyles(colors: ThemeColors) {
       paddingTop: 7,
       paddingBottom: 8,
     },
+    exampleItemActive: {
+      borderWidth: 1,
+      borderColor: colors.accent,
+      backgroundColor: colors.accentSurface,
+    },
+    exampleCheckBtn: {
+      marginTop: 6,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 4,
+      alignSelf: "stretch",
+      backgroundColor: colors.accent,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 4,
+    },
+    exampleCheckBtnActive: {
+      backgroundColor: colors.accentSurface,
+      borderWidth: 1,
+      borderColor: colors.accent,
+    },
+    exampleCheckBtnText: {
+      color: "#fff",
+      fontSize: 9,
+      lineHeight: 12,
+      fontWeight: "800",
+      textAlign: "center",
+      flexShrink: 1,
+    },
+    exampleCheckBtnTextActive: {
+      color: colors.accent,
+    },
     exampleItemWide: {
       width: "47%",
       minWidth: 120,
-      minHeight: 82,
+      minHeight: 108,
     },
     exampleItemFull: {
       width: "100%",
       minWidth: 0,
-      minHeight: 86,
+      minHeight: 112,
     },
     exampleLabel: {
       color: colors.muted,

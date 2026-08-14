@@ -34,6 +34,16 @@ describe("PrayerAzanScreen", () => {
     expect(shouldAutoStartPrayerAzanAudio(true, "adhan_haramain")).toBe(false);
   });
 
+  it("starts native azan on in-app screen open even without alarm session", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { shouldStartNativeAzanOnScreenMount } = require("../PrayerAzanScreen") as typeof import("../PrayerAzanScreen");
+
+    expect(shouldStartNativeAzanOnScreenMount(false, false, "adhan_haramain")).toBe(true);
+    expect(shouldStartNativeAzanOnScreenMount(true, false, "adhan_haramain")).toBe(false);
+    expect(shouldStartNativeAzanOnScreenMount(true, true, "adhan_haramain")).toBe(true);
+    expect(shouldStartNativeAzanOnScreenMount(false, true, "off")).toBe(false);
+  });
+
   it("closePrayerAzanScreen finishes delivery and resets navigation when back is unavailable", () => {
     jest.resetModules();
     const finishAzanDelivery = jest.fn();

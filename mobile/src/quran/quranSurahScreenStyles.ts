@@ -683,6 +683,8 @@ export function makeQuranSurahScreenStyles(
       writingDirection: "rtl",
       textAlign: "right",
       ...arabAyahFont,
+      ...(mushafArabSize ? { fontSize: mushafArabSize } : null),
+      ...(mushafArabLineHeight ? { lineHeight: mushafArabLineHeight } : null),
     }),
     /** Арабтан кейінгі оқылу + мағына: орталықтан (оқу қолданбаларының кең тараған түрі). */
     ayahBelowArabic: {

@@ -57,4 +57,18 @@ describe("filterHalalCompaniesLocal progressive fallback", () => {
     expect(out.some((c) => c.id === 1)).toBe(true);
     expect(out.every((c) => c.id !== 2 || (c.distanceM ?? 0) < 50_000)).toBe(true);
   });
+
+  it("falls back to same city when GPS radius misses address-only companies", () => {
+    const items = [
+      card({ id: 1, title: "Алматы кафе", address: "ҚР, Алматы қ., Абай 10" }),
+      card({ id: 2, title: "Астана дүкен", address: "ҚР, Астана қ., Бейбітшілік 1" }),
+    ];
+    const out = filterHalalCompaniesLocal(items, {
+      centerLat: 43.22,
+      centerLon: 76.85,
+      radiusKm: 5,
+    });
+    expect(out.some((c) => c.id === 1)).toBe(true);
+    expect(out.every((c) => c.id !== 2)).toBe(true);
+  });
 });

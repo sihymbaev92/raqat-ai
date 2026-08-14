@@ -34,7 +34,7 @@ import type { MoreStackParamList } from "../navigation/types";
 import { useAppTheme } from "../theme/ThemeContext";
 import { kk, APP_BRAND_KK } from "../i18n/kk";
 import { toEasternArabicIndic } from "../utils/easternArabicIndic";
-import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
+import { ensureBundledQuranReaderLoaded, isBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { loadBundledTajweedSurahMap } from "../services/bundledQuranTajweed";
 import {
   buildQcf4MushafPagesGlobalLight,
@@ -111,10 +111,8 @@ import {
   setQuranReaderShowArabic,
   setQuranReaderShowMeaning,
   setQuranReaderShowTranslit,
-  setQuranTajweedColorsEnabled,
   QURAN_READER_RECITER_KEY,
   QURAN_READER_ARABIC_FONT_KEY,
-  QURAN_TAJWEED_COLORS_KEY,
 } from "../storage/quranReaderPrefs";
 import { DEFAULT_QURAN_RECITER_EDITION, normalizeReciterEdition } from "../config/quranReciters";
 import {
@@ -143,6 +141,7 @@ import {
   resolveHatimBookDensity,
   resolveHatimBookReadingTheme,
   resolveHatimBookScript,
+  resolveHatimBookTajweedColors,
   hatimBookUsesBundledTextHafsOffline,
   preloadHatimOfflineAssets,
   persistHatimBookLockedPrefs,
@@ -172,7 +171,6 @@ import {
 import { isMushafBookRenderPageActive } from "../quran/mushafBookActivePage";
 import { shouldRenderSingleMushafBookPage } from "../quran/quranReaderModePolicy";
 import { fetchAlquranUthmaniAndUnicodeAyahs } from "../services/alquranSurahDualArabicFetch";
-import { runWhenHeavyWorkAllowed } from "../utils/uiDefer";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "QuranMushafBook">;
 type HatimAyahSelection = { ref: MushafAyahRef; item: CachedAyah };
@@ -354,7 +352,6 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   const [showReaderArabic, setShowReaderArabic] = useState(true);
   const [showReaderTranslit, setShowReaderTranslit] = useState(false);
   const [showReaderMeaning, setShowReaderMeaning] = useState(false);
-  const [showTajweedColors, setShowTajweedColors] = useState(false);
   const [reciterEdition, setReciterEdition] = useState(DEFAULT_QURAN_RECITER_EDITION);
   const [arabicScriptEdition, setArabicScriptEdition] = useState(resolveHatimBookScript());
   const [mushafDensity, setMushafDensityState] = useState(resolveHatimBookDensity());
@@ -424,7 +421,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
     [pagerLayoutWidth]
   );
   const pagerPages = useMemo(() => [...pages].reverse(), [pages]);
-  const effectiveShowTajweedColors = showTajweedColors && arabicScriptEdition === "madinah";
+  const effectiveShowTajweedColors = resolveHatimBookTajweedColors();
   const useQcf4PageRanges = useMemo(
     () =>
       !hatimBookUsesBundledTextHafsOffline() &&
@@ -434,6 +431,17 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       }) === "qcf4",
     [arabicScriptEdition, effectiveShowTajweedColors, readingThemeId]
   );
+
+  useEffect(() => {
+    if (!useQcf4PageRanges) return;
+    const page =
+      focusSurah != null && focusAyah != null
+        ? mushafPageForSurahAyah(focusSurah, focusAyah)
+        : initialPage != null
+          ? initialPage
+          : null;
+    if (page != null) preloadAdjacentQcf4Pages(page, 2);
+  }, [useQcf4PageRanges, focusSurah, focusAyah, initialPage]);
   const hatimReaderLayers = hatimMushafReaderLayers();
   const effectiveShowReaderTranslit = HATIM_MUSHAF_ARABIC_ONLY
     ? hatimReaderLayers.showReaderTranslit
@@ -573,13 +581,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
           void loadQcf4FontMap().catch(() => null);
           void loadQcf4Page(1).catch(() => null);
           void loadQcf4Page(2).catch(() => null);
-          preloadAdjacentQcf4Pages(1, 1);
-          await runWhenHeavyWorkAllowed();
-          await ensureBundledQuranReaderLoaded();
-          await runWhenHeavyWorkAllowed();
+          preloadAdjacentQcf4Pages(1, 2);
+          if (!isBundledQuranReaderLoaded()) {
+            await ensureBundledQuranReaderLoaded();
+          }
           if (!alive) return;
-          // Web renders one visible page and resolves text lazily from the loaded Quran cache.
-          // Replacing all 604 pages with full objects causes visible freezes on Hatim/Quran.
           setQuranTextRev((v) => v + 1);
         } catch (e) {
           if (__DEV__) console.warn("[QuranMushafBook] bundled quran load failed", e);
@@ -592,12 +598,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
     void (async () => {
       try {
-        await preloadHatimOfflineAssets();
+        void preloadHatimOfflineAssets();
         if (!alive) return;
-        // Web сияқты: жеңіл 604 бет қалады; мәтін resolveMushafBookAyah арқылы.
-        // Толық enrich+setPages JS thread-ті қатырады.
-        await runWhenHeavyWorkAllowed();
-        await ensureBundledQuranReaderLoaded();
+        if (!isBundledQuranReaderLoaded()) {
+          await ensureBundledQuranReaderLoaded();
+        }
         if (!alive) return;
         const probe = useQcf4PageRanges
           ? buildQcf4MushafPagesGlobalLight()
@@ -709,11 +714,10 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       }
       void (async () => {
         await persistHatimBookLockedPrefs();
-        const [showArabic, showTranslit, showMeaning, tj, rec, markers, playScope] = await Promise.all([
+        const [showArabic, showTranslit, showMeaning, rec, markers, playScope] = await Promise.all([
           getQuranReaderShowArabic(),
           getQuranReaderShowTranslit(),
           getQuranReaderShowMeaning(),
-          AsyncStorage.getItem(QURAN_TAJWEED_COLORS_KEY),
           getQuranReciterEdition(),
           loadAyahMarkers(),
           getHatimAudioPlayUntil(),
@@ -721,7 +725,6 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         setShowReaderArabic(showArabic);
         setShowReaderTranslit(showTranslit);
         setShowReaderMeaning(showMeaning);
-        if (tj != null) setShowTajweedColors(tj === "1");
         setReciterEdition(normalizeReciterEdition(rec));
         setArabicFontPreset(resolveHatimBookArabicFont());
         setArabicScriptEdition(resolveHatimBookScript());
@@ -1157,7 +1160,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     if (!useQcf4PageRanges || !currentPage?.mushafPageNumber || loading) return;
-    preloadAdjacentQcf4Pages(currentPage.mushafPageNumber, 1);
+    preloadAdjacentQcf4Pages(currentPage.mushafPageNumber, 2);
   }, [useQcf4PageRanges, currentPage?.mushafPageNumber, loading]);
 
   useEffect(() => {
@@ -1192,7 +1195,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
   }, [readingLocale, currentPage]);
 
   useEffect(() => {
-    if (!currentPage || !showTajweedColors || arabicScriptEdition !== "madinah") return;
+    if (!effectiveShowTajweedColors || !currentPage || arabicScriptEdition !== "madinah") return;
     const surahs = Array.from(new Set(currentPage.ayahs.map((a) => a.surahNumber)));
     const missing = surahs.filter((surah) =>
       currentPage.ayahs.some(
@@ -1214,7 +1217,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         tajweedInFlightRef.current.delete(surah);
       })();
     }
-  }, [arabicScriptEdition, currentPage, showTajweedColors]);
+  }, [arabicScriptEdition, currentPage, effectiveShowTajweedColors]);
 
   useEffect(() => {
     if (!currentPage || arabicScriptEdition !== "turkish") return;
@@ -1271,9 +1274,8 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
         setShowReaderMeaning(v);
         void setQuranReaderShowMeaning(v);
       },
-      onShowTajweedColors: (v: boolean) => {
-        setShowTajweedColors(v);
-        void setQuranTajweedColorsEnabled(v);
+      onShowTajweedColors: () => {
+        /* хатым mushaf: тәжуид түстері мүлдем өшірулі */
       },
       onArabicScriptEdition: () => {
         setArabicScriptEdition(resolveHatimBookScript());
@@ -2018,7 +2020,7 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             showReaderArabic,
             showReaderTranslit,
             showReaderMeaning,
-            showTajweedColors,
+            showTajweedColors: effectiveShowTajweedColors,
             arabicScriptEdition,
             playUntil: hatimPlayUntil,
           },

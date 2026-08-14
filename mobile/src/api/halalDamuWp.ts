@@ -11,12 +11,14 @@
  * - GET /company — соңғы мекемелер тізімі (_embed)
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import { getHalalDamuUrl } from "../config/halalDamuUrl";
 import { getRaqatApiBase } from "../config/raqatApiBase";
 import { parseLatLngFromMapServiceUrl } from "../lib/halalDamuMapLinkGeo";
 import { filterHalalCompaniesWithinRadius } from "../utils/halalGeoFilter";
 import { halalBarcodeLookupKeys, normalizeHalalBarcodeDigits } from "../utils/halalBarcodeLookup";
 import { dedupeHalalCompanyCards } from "../utils/halalInstantSearch";
+import { buildHalalMapMarkersFromCatalog } from "../utils/halalMapMarkers";
 
 const FETCH_TIMEOUT_MS = 25_000;
 /** Толық реестр JSON үлкен — желі баяу болса ұзақ күту. */
@@ -135,7 +137,7 @@ function halalApiRoot(): string {
   return apiBase();
 }
 
-/** Прокси сәтсіз болса (404) — halaldamu.kz тікелей қайталау. */
+/** Прокси сәтсіз болса — halaldamu.kz тікелей қайталау (native: кез келген HTTP қате). */
 async function halalDamuFetchGet(relativePath: string, timeoutMs: number = FETCH_TIMEOUT_MS): Promise<Response> {
   const rel = relativePath.replace(/^\//, "");
   const directUrl = `${apiBase()}/${rel}`;
@@ -143,15 +145,19 @@ async function halalDamuFetchGet(relativePath: string, timeoutMs: number = FETCH
     return fetchWithTimeout(directUrl, { method: "GET" }, timeoutMs);
   }
   const proxyUrl = `${getRaqatApiBase()}/api/v1/halal-damu/${rel}`;
+  const fetchDirect = () => fetchWithTimeout(directUrl, { method: "GET" }, timeoutMs);
   try {
     const r = await fetchWithTimeout(proxyUrl, { method: "GET" }, timeoutMs);
     if (r.ok) return r;
-    if (r.status === 404 || r.status === 502 || r.status === 503) {
-      return fetchWithTimeout(directUrl, { method: "GET" }, timeoutMs);
+    if (Platform.OS !== "web") {
+      const direct = await fetchDirect();
+      if (direct.ok) return direct;
+    } else if (r.status === 404 || r.status === 502 || r.status === 503) {
+      return fetchDirect();
     }
     return r;
   } catch {
-    return fetchWithTimeout(directUrl, { method: "GET" }, timeoutMs);
+    return fetchDirect();
   }
 }
 
@@ -909,12 +915,14 @@ export function seedHalalCompaniesBulkFromBundled(): void {
     if (!cards.length) return;
     const serverKey = halalServerBulkKey(undefined);
     if (companiesBulkMemory?.serverKey === serverKey && companiesBulkMemory.items.length >= cards.length) {
+      seedHalalDamuMapMarkersFromBulkMemory();
       return;
     }
     companiesBulkMemory = { serverKey, items: cards };
   } catch {
     /* bundled asset жоқ */
   }
+  seedHalalDamuMapMarkersFromBulkMemory();
 }
 
 async function halalWriteCompaniesBulkDisk(_serverKey: string, _items: HalalDamuCompanyCard[]): Promise<void> {
@@ -983,6 +991,7 @@ async function fetchHalalDamuCompaniesBulk(
         .filter((x) => x.id > 0)
     );
     companiesBulkMemory = { serverKey, items: all };
+    seedHalalDamuMapMarkersFromBulkMemory();
     return { all };
   } catch {
     try {
@@ -993,6 +1002,7 @@ async function fetchHalalDamuCompaniesBulk(
     const disk = await halalReadCompaniesBulkDisk(serverKey, { allowStale: true });
     if (disk) {
       companiesBulkMemory = { serverKey, items: disk.items };
+      seedHalalDamuMapMarkersFromBulkMemory();
       return { all: disk.items, fromDisk: true, syncedAt: disk.syncedAt };
     }
     seedHalalCompaniesBulkFromBundled();
@@ -1158,9 +1168,8 @@ export async function searchHalalDamuCompanies(
   halalAppendCompanyQueryParams(qs, opts, "server");
   if (!qs.has("per_page")) qs.set("per_page", String(Math.min(100, Math.max(1, Math.floor(opts?.perPage ?? 30)))));
   if (opts?.page != null) qs.set("page", String(Math.max(1, Math.floor(opts.page))));
-  const url = `${halalApiRoot()}/halal-bot/v1/companies?${qs.toString()}`;
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" }, FETCH_TIMEOUT_MS);
+    const r = await halalDamuFetchGet(`halal-bot/v1/companies?${qs.toString()}`, FETCH_TIMEOUT_MS);
     if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
     const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
     if (!data.success) return { items: [], error: "api" };
@@ -1193,9 +1202,8 @@ export async function fetchHalalDamuCompanyById(
   id: number
 ): Promise<{ card: HalalDamuCompanyCard | null; error?: string }> {
   if (!id) return { card: null, error: "bad_id" };
-  const url = `${halalApiRoot()}/halal-bot/v1/companies/${id}`;
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
+    const r = await halalDamuFetchGet(`halal-bot/v1/companies/${id}`);
     if (!r.ok) return { card: null, error: `HTTP ${r.status}` };
     const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
     if (!data.success) return { card: null, error: "api" };
@@ -1491,12 +1499,12 @@ export async function searchHalalDamuWpSiteCompanies(
     const slug = c.slug?.trim().toLowerCase();
     if (slug) bySlug.set(slug, c);
   }
-  const url = `${apiBase()}/wp/v2/search?${new URLSearchParams({
+  const qs = new URLSearchParams({
     search: q,
     per_page: String(limit),
-  }).toString()}`;
+  });
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
+    const r = await halalDamuFetchGet(`wp/v2/search?${qs.toString()}`);
     if (!r.ok) return [];
     const hits = await parseHalalDamuResponseJson<Array<Record<string, unknown>>>(r);
     if (!Array.isArray(hits)) return [];
@@ -1562,9 +1570,8 @@ export async function searchHalalDamuAdditives(
   qs.set("search", q);
   halalAppendAdditiveQueryParams(qs, opts);
   if (!qs.has("per_page")) qs.set("per_page", "30");
-  const url = `${halalApiRoot()}/halal-bot/v1/additives?${qs.toString()}`;
   try {
-    const r = await fetchWithTimeout(url, { method: "GET" });
+    const r = await halalDamuFetchGet(`halal-bot/v1/additives?${qs.toString()}`);
     if (!r.ok) return { items: [], error: `HTTP ${r.status}` };
     const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
     if (!data.success) return { items: [], error: "api" };
@@ -1593,6 +1600,16 @@ export type HalalDamuMapMarker = {
 let mapMarkersCache: { markers: HalalDamuMapMarker[]; totalFromApi: number; v: number } | null = null;
 
 const MAP_MARKERS_CACHE_V = 2;
+/** Bulk catalog in memory — derive map markers without a second API fetch. */
+export function seedHalalDamuMapMarkersFromBulkMemory(): boolean {
+  if (mapMarkersCache?.v === MAP_MARKERS_CACHE_V && mapMarkersCache.markers.length > 0) return true;
+  const bulk = companiesBulkMemory?.items;
+  if (!bulk?.length) return false;
+  const markers = buildHalalMapMarkersFromCatalog(bulk);
+  if (!markers.length) return false;
+  mapMarkersCache = { markers, totalFromApi: bulk.length, v: MAP_MARKERS_CACHE_V };
+  return true;
+}
 
 /** Кэшті тазалау (мысалы, тест немесе күшті жаңарту). */
 export function clearHalalDamuMapMarkersCache(): void {
@@ -1612,6 +1629,7 @@ let mapMarkersPrefetchInflight: Promise<void> | null = null;
 /** Карта табы / Halal hub — API маркерлерін фонда алдын ала жүктеу. */
 export function prefetchHalalDamuCompanyMapMarkers(): void {
   if (mapMarkersCache?.v === MAP_MARKERS_CACHE_V) return;
+  if (seedHalalDamuMapMarkersFromBulkMemory()) return;
   if (!mapMarkersPrefetchInflight) {
     mapMarkersPrefetchInflight = fetchHalalDamuCompanyMapMarkers()
       .then(() => undefined)
@@ -1639,6 +1657,13 @@ export async function fetchHalalDamuCompanyMapMarkers(): Promise<{
       withCoords: mapMarkersCache.markers.length,
     };
   }
+  if (seedHalalDamuMapMarkersFromBulkMemory() && mapMarkersCache) {
+    return {
+      markers: mapMarkersCache.markers,
+      totalFromApi: mapMarkersCache.totalFromApi,
+      withCoords: mapMarkersCache.markers.length,
+    };
+  }
   try {
     const r = await halalDamuFetchGet("halal-bot/v1/companies", FETCH_MAP_COMPANIES_MS);
     if (!r.ok) return { markers: [], error: `HTTP ${r.status}`, totalFromApi: 0, withCoords: 0 };
@@ -1649,7 +1674,8 @@ export async function fetchHalalDamuCompanyMapMarkers(): Promise<{
     const totalFromApi = itemsRaw.length;
     const markers: HalalDamuMapMarker[] = [];
     const badCert = new Set(["expired", "revoked", "cancelled", "inactive", "suspended", "rejected", "draft"]);
-    for (const it of itemsRaw) {
+    for (let i = 0; i < itemsRaw.length; i += 1) {
+      const it = itemsRaw[i]!;
       const o = it as Record<string, unknown>;
       const status = String(o.certificate_status ?? "").trim().toLowerCase();
       /** Тек анық нашар күйлерді шығарамыз; бос немесе «active» емес басқа мәндер картада қалуы мүмкін (API өзгерісі). */
@@ -1678,6 +1704,7 @@ export async function fetchHalalDamuCompanyMapMarkers(): Promise<{
       if (lat == null || lng == null) continue;
       const address = o.address != null && String(o.address).trim() ? String(o.address) : null;
       markers.push({ id, title, lat, lng, address });
+      if (i > 0 && i % 250 === 0) await yieldToUi();
     }
     mapMarkersCache = { markers, totalFromApi, v: MAP_MARKERS_CACHE_V };
     return { markers, totalFromApi, withCoords: markers.length };
@@ -1744,8 +1771,8 @@ export async function fetchHalalDamuCompaniesNearby(
     qs.set("radius", String(radiusM));
     halalAppendCompanyQueryParams(qs, { ...opts, perPage, page: 1 }, "server");
     if (!qs.has("per_page")) qs.set("per_page", String(perPage));
-    const url = `${halalApiRoot()}/halal-bot/v1/companies?${qs.toString()}`;
-    const r = await fetchWithTimeout(url, { method: "GET" }, 8_000);
+    const path = `halal-bot/v1/companies?${qs.toString()}`;
+    const r = await halalDamuFetchGet(path, 8_000);
     if (r.ok) {
       const data = await parseHalalDamuResponseJson<Record<string, unknown>>(r);
       if (data.success && Array.isArray(data.items)) {

@@ -4,6 +4,8 @@
  * дұрыс, араб жолы — жоқ. Сол қоқыс жолдарын UI-дан алып тастаймыз.
  */
 
+import { normalizeMuftyatKkPageText } from "./muftyatKkTextNormalize";
+
 const GARBAGE_CHAR =
   /[\u0100-\u024F\u0300-\u036F\u0250-\u02AF]/g;
 const ARAB_CHAR = /[\u0600-\u06FF]/g;
@@ -12,8 +14,12 @@ const KK_CHAR = /[а-яёәіңғүұқөһ]/gi;
 const KEEP_LINE =
   /^(Оқылуы|Мағынасы|Қажылық|مناسك الحج|Ескерту|Меккеге кірген|Пайғамбар)/i;
 
-/** PDF перенос: «Мек-\nке» → «Мекке» */
-const HYPHEN_BREAK = /([а-яёәіңғүұқөһ])-\n([а-яёәіңғүұқөһ])/gi;
+function mergePdfHyphenBreaks(text: string): string {
+  return text
+    .replace(/([а-яёәіңғүұқөһ])-\n([а-яёәіңғүұқөһ])/giu, "$1$2")
+    .replace(/(\d)-\n([а-яёәіңғүұқөһ])/giu, "$1$2")
+    .replace(/(\d)-\n(\d)/g, "$1-$2");
+}
 
 /** Жеке жолда қалуы керек тақырық/блок атаулары */
 const STRUCTURAL_LINE =
@@ -35,6 +41,10 @@ function mergeSoftLineBreaks(lines: string[]): string[] {
     if (STRUCTURAL_LINE.test(line)) {
       flush();
       out.push(line);
+      continue;
+    }
+    if (buf.endsWith("-")) {
+      buf = `${buf.slice(0, -1)}${line}`;
       continue;
     }
     if (!buf) {
@@ -72,17 +82,19 @@ export function isHajjMuftyatGarbageLine(line: string): boolean {
 }
 
 export function sanitizeHajjMuftyatPageText(raw: string): string {
-  const normalized = raw.replace(/\r\n/g, "\n").replace(HYPHEN_BREAK, "$1$2");
+  const normalized = mergePdfHyphenBreaks(raw.replace(/\r\n/g, "\n"));
   const lines = normalized.split("\n");
   const kept: string[] = [];
   for (const line of lines) {
     if (isHajjMuftyatGarbageLine(line)) continue;
     kept.push(line.trimEnd());
   }
-  return mergeSoftLineBreaks(kept)
-    .join("\n\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return normalizeMuftyatKkPageText(
+    mergeSoftLineBreaks(kept)
+      .join("\n\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim()
+  );
 }
 
 export function hajjMuftyatTextGarbageRatio(raw: string): number {

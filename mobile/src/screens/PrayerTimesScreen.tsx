@@ -73,6 +73,7 @@ import { beginLatestRequest } from "../utils/latestRequestGuard";
 import {
   canPreviewPrayerNotifSound,
   previewPrayerNotifSound,
+  stopPreviewPrayerNotifSound,
 } from "../utils/previewPrayerNotifSound";
 
 function mondayFirstWeekdayIndex(): number {
@@ -579,6 +580,7 @@ export function PrayerTimesScreen() {
       })();
       return () => {
         cancelled = true;
+        void stopPreviewPrayerNotifSound();
       };
     }, [fetchAndSave, locale])
   );
@@ -648,6 +650,8 @@ export function PrayerTimesScreen() {
         canPreviewPrayerNotifSound(prayerSoundId)
       ) {
         void previewPrayerNotifSound(prayerSoundId);
+      } else if (!wasMuted) {
+        void stopPreviewPrayerNotifSound();
       }
       if (result && !result.error) {
         const iftar = await getIftarEnabled();

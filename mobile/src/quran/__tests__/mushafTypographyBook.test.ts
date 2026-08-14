@@ -14,6 +14,8 @@ import { quranArabicAyahTextMetrics } from "../../config/quranArabicFontPresets"
 
 import { QURAN_READING_CREAM } from "../../theme/quranComReadingTheme";
 
+import { QURAN_SURAH_ARABIC_SCALE_BOOST } from "../mushafTextScale";
+
 
 
 describe("computeMushafTypography (mushaf book reader)", () => {
@@ -86,6 +88,16 @@ describe("computeMushafTypography (mushaf book reader)", () => {
 
     expect(m.densityLayout.mushafAyahRowMarginBottom).toBeGreaterThanOrEqual(0);
 
+  });
+
+  it("enlarges arabic only for Quran surah reader, not plain hatim book", () => {
+    const hatim = computeMushafTypography("quran_com", 1, false, "medium", { bookMushaf: true });
+    const quranSurah = computeMushafTypography("quran_com", 1, false, "medium", {
+      bookMushaf: true,
+      quranSurahReader: true,
+    });
+    expect(quranSurah.mushafArabSize).toBeGreaterThan(hatim.mushafArabSize ?? 0);
+    expect(quranSurah.scale).toBeCloseTo(hatim.scale * QURAN_SURAH_ARABIC_SCALE_BOOST, 5);
   });
 
 

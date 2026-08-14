@@ -309,6 +309,8 @@ export const NAMAZ_GUIDE_POSE_TITLE_TO_LEARNING_STEP_IDS: Record<string, string[
   "Рукуғ": ["namaz-3-ruku"],
   "Сәжде": ["namaz-4-sujud"],
   "Соңғы отырыс": ["namaz-5-final-sitting", "namaz-6-salam-end"],
+  "Аралық отырыс": ["namaz-5-final-sitting"],
+  "Соңғы отырыс және сәлем": ["namaz-5-final-sitting", "namaz-6-salam-end"],
 };
 
 export function getNamazRecitationBlocksForGuidePose(poseTitle: string): RecitationBlock[] {

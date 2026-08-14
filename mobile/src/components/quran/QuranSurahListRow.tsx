@@ -22,7 +22,8 @@ export type QuranSurahListRowProps = {
   surahNumber: number;
   numberedTitle: string;
   metaSubtitle: string;
-  mushafPage: number;
+  /** Хатым тізімінде 604-бет нөмірі; Құран тізімінде көрсетілмейді. */
+  mushafPage?: number;
   onPress: () => void;
   accessibilityLabel: string;
   colors: ThemeColors;
@@ -76,15 +77,17 @@ function QuranSurahListRowInner({
         <View style={styles.rightCol}>
           {inProgress ? <Text style={styles.progressDot}>●</Text> : null}
           {trailing}
-          <Text
-            style={styles.pageIndex}
-            importantForAccessibility="no"
-            allowFontScaling={false}
-            maxFontSizeMultiplier={1}
-            numberOfLines={1}
-          >
-            {mushafPage}
-          </Text>
+          {mushafPage != null ? (
+            <Text
+              style={styles.pageIndex}
+              importantForAccessibility="no"
+              allowFontScaling={false}
+              maxFontSizeMultiplier={1}
+              numberOfLines={1}
+            >
+              {mushafPage}
+            </Text>
+          ) : null}
         </View>
       </Pressable>
     </View>

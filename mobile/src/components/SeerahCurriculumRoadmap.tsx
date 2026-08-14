@@ -126,7 +126,13 @@ function SeerahPhaseBlock({
                 <View style={[styles.lessonNum, viewed && styles.lessonNumViewed]}>
                   <Text style={[styles.lessonNumText, viewed && styles.lessonNumTextViewed]}>{lesson.n}</Text>
                 </View>
-                <View style={styles.lessonTextCol} accessibilityLabel={kk.seerah.lessonA11y(lesson.n)}>
+                <Pressable
+                  oyuBackdrop={false}
+                  onPress={() => onOpenVideo(lesson.n)}
+                  accessibilityRole="button"
+                  accessibilityLabel={kk.seerah.openVideoA11y(lesson.n)}
+                  style={({ pressed }) => [styles.lessonTextCol, pressed && styles.lessonTextColPressed]}
+                >
                   <Text style={styles.lessonTitle} numberOfLines={2}>
                     {tr(lesson.titleKk)}
                     {isLast ? ` · ${kk.seerah.lastBadge}` : ""}
@@ -135,16 +141,6 @@ function SeerahPhaseBlock({
                     {tr(lesson.focusKk)}
                   </Text>
                   <Text style={styles.lessonSummary}>{tr(lesson.summaryKk)}</Text>
-                </View>
-                <Pressable
-                  oyuBackdrop={false}
-                  onPress={() => onOpenVideo(lesson.n)}
-                  accessibilityRole="button"
-                  accessibilityLabel={kk.seerah.openVideoA11y(lesson.n)}
-                  hitSlop={8}
-                  style={({ pressed }) => [styles.playBtn, pressed && { opacity: 0.88 }]}
-                >
-                  <MaterialIcons name="play-circle-outline" size={26} color={colors.accent} />
                 </Pressable>
               </View>
             );
@@ -229,6 +225,7 @@ function makePhaseStyles(colors: ThemeColors) {
     lessonNumText: { color: colors.accent, fontSize: 12, fontWeight: "900" },
     lessonNumTextViewed: { color: "#FFFFFF" },
     lessonTextCol: { flex: 1, minWidth: 0 },
+    lessonTextColPressed: { opacity: 0.88 },
     lessonTitle: { color: colors.text, fontSize: 14, fontWeight: "800" },
     lessonFocus: { color: colors.muted, fontSize: 12, fontWeight: "600", marginTop: 2 },
     lessonSummary: {
@@ -238,10 +235,6 @@ function makePhaseStyles(colors: ThemeColors) {
       fontWeight: "500",
       marginTop: 6,
       opacity: 0.92,
-    },
-    playBtn: {
-      paddingTop: 2,
-      paddingLeft: 2,
     },
   });
 }

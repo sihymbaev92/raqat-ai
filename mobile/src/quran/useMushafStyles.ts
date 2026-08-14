@@ -14,6 +14,8 @@ export type UseMushafStylesArgs = {
   mushafDensity: MushafDensityId;
   /** Хатым/мұсаф: кітап қарпі мен Quran.com темасы */
   mushafBookLike?: boolean;
+  /** QuranSurah — хатым емес, араб қарпі сәл үлкенірек */
+  quranSurahReader?: boolean;
   readingThemeId?: QuranReadingThemeId;
 };
 
@@ -36,6 +38,7 @@ export function useMushafStyles({
   isDark,
   mushafDensity,
   mushafBookLike,
+  quranSurahReader,
   readingThemeId,
 }: UseMushafStylesArgs): MushafStylesBundle {
   const metrics = useMushafLayoutMetrics(
@@ -44,7 +47,8 @@ export function useMushafStyles({
     isDark,
     mushafDensity,
     mushafBookLike === true,
-    readingThemeId
+    readingThemeId,
+    quranSurahReader === true
   );
   const densityPreset = useMemo(() => getMushafDensityPreset(mushafDensity), [mushafDensity]);
   return {

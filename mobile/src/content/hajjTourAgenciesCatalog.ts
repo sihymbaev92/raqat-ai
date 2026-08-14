@@ -27,14 +27,30 @@ export type HajjTourAgency = {
   /** E.164 (+7…) немесе wa.me сілтемесі */
   whatsapp?: string;
   website?: string;
+  /** @handle немесе толық instagram.com сілтемесі — басу арқылы ашылады */
   instagram?: string;
   services?: HajjTourService[];
   /** Тізімнің үстінде көрсету */
   featured?: boolean;
+  /** Логотипті ірі көрсету (мысалы: Ниет) */
+  logoLarge?: boolean;
 };
 
 /** Тіркелген қажылық тур агенттіктері — жаңа жол қосыңыз. */
-export const HAJJ_TOUR_AGENCIES: HajjTourAgency[] = [];
+export const HAJJ_TOUR_AGENCIES: HajjTourAgency[] = [
+  {
+    id: "niyet",
+    name: "Ниет",
+    tagline: "Niyet еткен жүрекке жол ашамыз · ұмыра · қажылық · Мекке–Медина",
+    city: "Алматы · Шымкент",
+    phone: "+77784477666",
+    whatsapp: "+77784477666",
+    instagram: "niyet_hajj_umrah_",
+    services: ["umrah", "hajj"],
+    featured: true,
+    logoLarge: true,
+  },
+];
 
 export function getHajjTourAgencies(): HajjTourAgency[] {
   return [...HAJJ_TOUR_AGENCIES].sort((a, b) => {

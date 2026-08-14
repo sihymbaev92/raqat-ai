@@ -4,18 +4,22 @@ import {
   HATIM_BOOK_READING_THEME,
   HATIM_BOOK_SCRIPT,
   hatimBookUsesBundledTextHafsOffline,
+  prewarmHatimSurahOpen,
   preloadHatimOfflineAssets,
   resetHatimOfflinePreloadCache,
   resolveHatimBookArabicFont,
   resolveHatimBookDensity,
   resolveHatimBookReadingTheme,
   resolveHatimBookScript,
+  resolveHatimBookTajweedColors,
+  HATIM_BOOK_TAJWEED_COLORS_ENABLED,
 } from "../hatimBookPolicy";
 import { clearMushafPagesGlobalCache } from "../buildMushafPagesGlobal";
 
 jest.mock("../loadQcf4Page", () => ({
   loadQcf4FontMap: jest.fn(async () => null),
   loadQcf4Page: jest.fn(async () => null),
+  preloadAdjacentQcf4Pages: jest.fn(),
 }));
 
 describe("hatimBookPolicy", () => {
@@ -32,6 +36,8 @@ describe("hatimBookPolicy", () => {
     expect(HATIM_BOOK_READING_THEME).toBe("original");
     expect(HATIM_BOOK_ARABIC_FONT).toBe("quran_com");
     expect(HATIM_BOOK_SCRIPT).toBe("madinah");
+    expect(resolveHatimBookTajweedColors(true)).toBe(false);
+    expect(HATIM_BOOK_TAJWEED_COLORS_ENABLED).toBe(false);
   });
 
   it("uses QCF4 Madinah on native unless EXPO_PUBLIC_MUSHAF_HATIM_TEXT_HAFS=1", () => {
@@ -50,5 +56,13 @@ describe("hatimBookPolicy", () => {
   it("preloads bundled quran pages without throwing", async () => {
     await expect(preloadHatimOfflineAssets()).resolves.toBeUndefined();
     await expect(preloadHatimOfflineAssets()).resolves.toBeUndefined();
+  });
+
+  it("prewarms QCF4 pages for surah open", () => {
+    const { preloadAdjacentQcf4Pages } = require("../loadQcf4Page") as {
+      preloadAdjacentQcf4Pages: jest.Mock;
+    };
+    prewarmHatimSurahOpen(2, 255);
+    expect(preloadAdjacentQcf4Pages).toHaveBeenCalled();
   });
 });

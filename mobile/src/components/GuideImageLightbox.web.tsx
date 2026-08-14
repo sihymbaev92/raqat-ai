@@ -13,6 +13,7 @@ import {
 import {
   guideLightboxFitSize,
   guideThumbFitContain,
+  guideImageDecodeMultiplier,
   resolveGuideImageThumbImageStyle,
 } from "../utils/guideLightboxFit";
 import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetAspect";
@@ -65,6 +66,7 @@ export function GuideImageLightbox({
 }: Props) {
   useAppLocale();
   const [open, setOpen] = useState(false);
+  const [zoomReady, setZoomReady] = useState(false);
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const pixelRatio = PixelRatio.get();
@@ -97,6 +99,23 @@ export function GuideImageLightbox({
     }
     return guideLightboxFitSize(width, height, insets.top, effectiveAspect);
   }, [width, height, insets.top, effectiveAspect]);
+
+  const modalDecodeMultiplier = useMemo(
+    () => guideImageDecodeMultiplier(modalImageSize.width, sourcePixels, pixelRatio),
+    [modalImageSize.width, sourcePixels, pixelRatio]
+  );
+
+  const instantDecodeMultiplier = thumbResizeMultiplier ?? modalDecodeMultiplier;
+
+  useEffect(() => {
+    if (!open) setZoomReady(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const fallback = setTimeout(() => setZoomReady(true), 150);
+    return () => clearTimeout(fallback);
+  }, [open]);
 
   const thumbImageStyle = useMemo((): StyleProp<ImageStyle> => {
     const flat = StyleSheet.flatten(thumbStyle) ?? {};
@@ -180,11 +199,23 @@ export function GuideImageLightbox({
         {kk.common.imagePinchZoomHint}
       </Text>
       <View style={styles.modalImageArea} pointerEvents="box-none">
-        <ZoomableImageContent
-          source={source}
-          width={modalImageSize.width}
-          height={modalImageSize.height}
-        />
+        {zoomReady ? (
+          <ZoomableImageContent
+            source={source}
+            width={modalImageSize.width}
+            height={modalImageSize.height}
+            resizeMultiplier={modalDecodeMultiplier}
+          />
+        ) : (
+          <RasterImage
+            source={source}
+            style={{ width: modalImageSize.width, height: modalImageSize.height }}
+            resizeMode="contain"
+            resizeMultiplier={instantDecodeMultiplier}
+            onLoad={() => setZoomReady(true)}
+            accessibilityIgnoresInvertColors
+          />
+        )}
       </View>
     </View>
   );

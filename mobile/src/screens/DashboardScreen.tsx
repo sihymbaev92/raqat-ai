@@ -47,9 +47,10 @@ import { DashboardQaumDuaBanner } from "../components/dashboard/DashboardQaumDua
 import { DashboardHomeServicesGrid } from "../components/dashboard/DashboardHomeServicesGrid";
 import { dashboardHomeServiceWebPath, type DashboardHomeServiceKey } from "../config/dashboardHomeServices";
 import { warmHalalHubScreen, warmKmdbHubScreen } from "../services/hubScreenWarmup";
+import { warmGreatWordsHub } from "../services/greatWordsWarmup";
 import { QiblaSensorProvider, useQiblaStable } from "../context/QiblaSensorContext";
 import { formatDashboardHeaderDateLines } from "../utils/formatKkDate";
-import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
+import { useAppLocale } from "../i18n/runtime";
 import { useI18n } from "../i18n/useI18n";
 import { getKzPresetCoords } from "../constants/kzCities";
 import { fetchOpenMeteoCurrent, WEATHER_REFRESH_INTERVAL_MS, type OpenMeteoCurrent } from "../services/openMeteoCurrent";
@@ -323,25 +324,26 @@ export function DashboardScreen() {
   const [qiblaReady, setQiblaReady] = useState(false);
 
   useEffect(() => {
-    /** Бірінші кадр: сенсор/GPS жоқ — home тез сызылсын. */
+    /** Бірінші кадр: сенсор/GPS жоқ — home тез сызылсын. Provider remount болмайды. */
     const task = runAfterInteractions(() => setQiblaReady(true), 1_200);
     return () => task.cancel();
   }, []);
 
-  if (!qiblaReady) {
-    return <DashboardScreenContent qiblaEnabled={false} />;
-  }
-
   return (
-    <QiblaSensorProvider>
-      <DashboardScreenWithQibla />
+    <QiblaSensorProvider sensorsEnabled={qiblaReady}>
+      <DashboardScreenInner qiblaReady={qiblaReady} />
     </QiblaSensorProvider>
   );
 }
 
-function DashboardScreenWithQibla() {
+function DashboardScreenInner({ qiblaReady }: { qiblaReady: boolean }) {
   const { resumeHeadingSubscription } = useQiblaStable();
-  return <DashboardScreenContent qiblaEnabled resumeHeadingSubscription={resumeHeadingSubscription} />;
+  return (
+    <DashboardScreenContent
+      qiblaEnabled={qiblaReady}
+      resumeHeadingSubscription={resumeHeadingSubscription}
+    />
+  );
 }
 
 function DashboardScreenContent({
@@ -353,9 +355,8 @@ function DashboardScreenContent({
 }) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useAppTheme();
-  const locale = useAppLocale();
-  useLocaleRevision();
   useI18n();
+  const locale = useAppLocale();
   const navigation = useNavigation<HomeTabCompositeNavigation>();
   const dashboardFocused = useIsFocused();
   const headerMetrics = useMemo(() => homeDashboardHeaderMetrics(insets), [insets.top]);
@@ -806,6 +807,8 @@ function DashboardScreenContent({
       warmKmdbHubScreen();
     } else if (key === "halal") {
       warmHalalHubScreen();
+    } else if (key === "tradition") {
+      warmGreatWordsHub();
     }
   }, []);
 

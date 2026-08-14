@@ -1,5 +1,6 @@
 import type { HalalDamuCompanyCard, HalalDamuMapMarker } from "../api/halalDamuWp";
 import { parseLatLngFromMapServiceUrl } from "../lib/halalDamuMapLinkGeo";
+import { haversineDistanceM } from "./halalGeoFilter";
 import { halalMapMarkerCap } from "./halalPerformanceProfile";
 
 const BAD_CERT = new Set(["expired", "revoked", "cancelled", "inactive", "suspended", "rejected", "draft"]);
@@ -42,4 +43,24 @@ export function buildHalalMapMarkersFromCatalog(
     if (out.length >= cap) break;
   }
   return out;
+}
+
+/** Карта маркерлерін GPS радиус бойынша сүзу (нақты lat/lng). */
+export function filterHalalMapMarkersWithinRadius(
+  markers: HalalDamuMapMarker[],
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number,
+  cap = halalMapMarkerCap()
+): HalalDamuMapMarker[] {
+  if (!Number.isFinite(centerLat) || !Number.isFinite(centerLon) || radiusKm <= 0) return [];
+  const radiusM = radiusKm * 1000;
+  const ranked = markers
+    .map((m) => ({
+      m,
+      d: haversineDistanceM(centerLat, centerLon, m.lat, m.lng),
+    }))
+    .filter((x) => x.d <= radiusM)
+    .sort((a, b) => a.d - b.d);
+  return ranked.slice(0, cap).map((x) => x.m);
 }

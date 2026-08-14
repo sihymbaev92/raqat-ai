@@ -131,7 +131,13 @@ async function requestWebOrientationPermission(): Promise<boolean> {
   }
 }
 
-function QiblaWebProvider({ children }: { children: React.ReactNode }) {
+function QiblaWebProvider({
+  children,
+  sensorsEnabled = true,
+}: {
+  children: React.ReactNode;
+  sensorsEnabled?: boolean;
+}) {
   const [perm, setPerm] = useState<QiblaPerm>("unknown");
   const [bearing, setBearing] = useState<number | null>(null);
   const [positionFailed, setPositionFailed] = useState(false);
@@ -250,6 +256,7 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (!sensorsEnabled) return;
     if (resumeTick <= 0) {
       return;
     }
@@ -293,7 +300,7 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
       alive = false;
       remove?.();
     };
-  }, [resumeTick, motionMode]);
+  }, [sensorsEnabled, resumeTick, motionMode]);
 
   const motionValue = useMemo<QiblaMotionValue>(
     () => ({
@@ -338,7 +345,13 @@ function QiblaWebProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
+function QiblaNativeProvider({
+  children,
+  sensorsEnabled = true,
+}: {
+  children: React.ReactNode;
+  sensorsEnabled?: boolean;
+}) {
   const [perm, setPerm] = useState<QiblaPerm>("unknown");
   const [bearing, setBearing] = useState<number | null>(null);
   const [positionFailed, setPositionFailed] = useState(false);
@@ -495,9 +508,13 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const task = runAfterInteractions(() => setLocationBootReady(true), 2_500);
+    if (!sensorsEnabled) {
+      setLocationBootReady(false);
+      return;
+    }
+    const task = runAfterInteractions(() => setLocationBootReady(true), 600);
     return () => task.cancel();
-  }, []);
+  }, [sensorsEnabled]);
 
   useEffect(() => {
     if (!locationBootReady) return;
@@ -646,7 +663,8 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
     let disposed = false;
     let startSeq = 0;
 
-    const canRun = () => perm === "granted" && shouldRunSensorsFromStore();
+    const canRun = () =>
+      perm === "granted" && shouldRunSensorsFromStore() && sensorsEnabled;
 
     const off = () => {
       startSeq += 1;
@@ -825,7 +843,7 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
       unNav();
       off();
     };
-  }, [perm, resumeTick, motionMode, bearing, refreshBearing]);
+  }, [perm, resumeTick, motionMode, bearing, refreshBearing, sensorsEnabled]);
 
   useEffect(() => {
     const interval = motionMode === "fast" ? 30 : 70;
@@ -857,11 +875,18 @@ function QiblaNativeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function QiblaSensorProvider({ children }: { children: React.ReactNode }) {
+export function QiblaSensorProvider({
+  children,
+  sensorsEnabled = true,
+}: {
+  children: React.ReactNode;
+  /** false: GPS/компас подпискаларын кідірту (басты бет бір рет ғана mount). */
+  sensorsEnabled?: boolean;
+}) {
   if (Platform.OS === "web") {
-    return <QiblaWebProvider>{children}</QiblaWebProvider>;
+    return <QiblaWebProvider sensorsEnabled={sensorsEnabled}>{children}</QiblaWebProvider>;
   }
-  return <QiblaNativeProvider>{children}</QiblaNativeProvider>;
+  return <QiblaNativeProvider sensorsEnabled={sensorsEnabled}>{children}</QiblaNativeProvider>;
 }
 
 export function useQiblaStable(): QiblaStableValue {

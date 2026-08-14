@@ -38,6 +38,7 @@ export function prefetchHalalDamuHub(): Promise<void> {
       ]);
       seedHalalCompaniesBulkFromBundled();
       await fetchHalalDamuCompaniesCatalog({ page: 1, ...HALAL_HUB_LIST_OPTS });
+      warmHalalCompanyMapMarkers();
     } catch {
       /* офлайн / API — CDN snapshot қолданылады */
     } finally {

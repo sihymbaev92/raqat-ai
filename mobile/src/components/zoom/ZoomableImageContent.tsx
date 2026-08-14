@@ -19,6 +19,8 @@ type Props = {
   source: ImageSourcePropType;
   width: number;
   height: number;
+  /** Android decode target — lightbox ашу жылдамдығы */
+  resizeMultiplier?: number;
 };
 
 function resetZoom(
@@ -41,7 +43,7 @@ function resetZoom(
 /**
  * Толық экран сурет: pinch масштабы, pan (үлкейткенде), екі рет басу.
  */
-export function ZoomableImageContent({ source, width, height }: Props) {
+export function ZoomableImageContent({ source, width, height, resizeMultiplier }: Props) {
   const scale = useSharedValue(IMAGE_ZOOM_MIN_SCALE);
   const savedScale = useSharedValue(IMAGE_ZOOM_MIN_SCALE);
   const translateX = useSharedValue(0);
@@ -108,6 +110,7 @@ export function ZoomableImageContent({ source, width, height }: Props) {
           source={source}
           style={{ width, height }}
           resizeMode="contain"
+          resizeMultiplier={resizeMultiplier}
           accessibilityIgnoresInvertColors
         />
       </Animated.View>

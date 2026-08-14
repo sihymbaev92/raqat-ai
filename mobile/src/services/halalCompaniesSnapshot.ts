@@ -76,11 +76,30 @@ export function snapshotRowToCompanyCard(row: HalalCompanySnapshotRow): HalalDam
 
 export async function ensureHalalCompaniesSnapshotLoaded(): Promise<HalalCompaniesSnapshotBundle | null> {
   const sync = ensureBundledSnapshotSync();
-  if (sync) return sync;
+  if (sync) {
+    try {
+      const { seedHalalCompaniesBulkFromBundled } = await import("../api/halalDamuWp");
+      seedHalalCompaniesBulkFromBundled();
+    } catch {
+      /* optional */
+    }
+    return sync;
+  }
   if (bundledCache) return bundledCache;
   if (!bundledLoadPromise) {
     bundledLoadPromise = tryLoadBundledJson<HalalCompaniesSnapshotBundle>("halal-companies-snapshot.json")
-      .then((data) => applyBundledSnapshot(data))
+      .then(async (data) => {
+        const applied = applyBundledSnapshot(data);
+        if (applied) {
+          try {
+            const { seedHalalCompaniesBulkFromBundled } = await import("../api/halalDamuWp");
+            seedHalalCompaniesBulkFromBundled();
+          } catch {
+            /* optional */
+          }
+        }
+        return applied;
+      })
       .finally(() => {
         bundledLoadPromise = null;
       });

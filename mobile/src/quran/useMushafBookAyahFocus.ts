@@ -137,6 +137,10 @@ export function useMushafBookAyahFocus(opts: UseMushafBookAyahFocusOpts): {
   ]);
 
   useEffect(() => {
+    lastRevealKeyRef.current = "";
+  }, [focusSurah, focusAyah]);
+
+  useEffect(() => {
     if (focusSurah == null || focusAyah == null || loading || !pages.length) return;
     revealAyahFocus({ surah: focusSurah, ayah: focusAyah });
   }, [focusAyah, focusSurah, loading, pages.length, revealAyahFocus]);

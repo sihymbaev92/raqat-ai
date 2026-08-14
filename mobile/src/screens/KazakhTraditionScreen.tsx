@@ -23,6 +23,7 @@ import { DinDasturConnectionCard } from "../components/tradition/DinDasturConnec
 import { DinMenDasturQuickGuideStrip } from "../components/tradition/DinMenDasturQuickGuideStrip";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { useI18n } from "../i18n/useI18n";
+import { warmGreatWordsHub } from "../services/greatWordsWarmup";
 
 type Nav = NativeStackNavigationProp<MoreStackParamList>;
 type Route = RouteProp<MoreStackParamList, "KazakhTradition">;
@@ -95,6 +96,13 @@ export function KazakhTraditionScreen() {
     setFilter("all");
     nav.setParams({ showTopics: undefined });
   }, [nav, route.params?.showTopics]);
+
+  useFocusEffect(
+    useCallback(() => {
+      warmGreatWordsHub();
+      return undefined;
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -195,6 +203,7 @@ export function KazakhTraditionScreen() {
           <View style={styles.ctaRow}>
             <Pressable
               oyuBackdrop={false}
+              onPressIn={() => warmGreatWordsHub()}
               onPress={() => nav.navigate("KazakhGreatWords")}
               style={({ pressed }) => [styles.ctaHalf, pressed && { opacity: 0.92 }]}
               accessibilityRole="button"
@@ -207,6 +216,7 @@ export function KazakhTraditionScreen() {
             </Pressable>
             <Pressable
               oyuBackdrop={false}
+              onPressIn={() => warmGreatWordsHub()}
               onPress={() => nav.navigate("KazakhGreatWordsAuthor", { authorId: "sana" })}
               style={({ pressed }) => [styles.ctaHalf, pressed && { opacity: 0.92 }]}
               accessibilityRole="button"
@@ -301,11 +311,11 @@ function makeStyles(p: TraditionKazakhPalette) {
     ctaRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
     ctaHalf: {
       flex: 1,
-      minHeight: 72,
+      minHeight: 88,
       backgroundColor: p.cardBg,
       borderRadius: 14,
-      paddingVertical: 12,
-      paddingHorizontal: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 8,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: p.goldMuted,
       alignItems: "center",
@@ -314,10 +324,12 @@ function makeStyles(p: TraditionKazakhPalette) {
     },
     ctaHalfTitle: {
       color: p.text,
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "900",
       textAlign: "center",
-      lineHeight: 16,
+      lineHeight: 15,
+      minHeight: 30,
+      width: "100%",
     },
     searchCard: {
       flexDirection: "row",

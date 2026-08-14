@@ -1,7 +1,8 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import { useFocusEffect } from "@react-navigation/native";
+import { runAfterInteractions } from "../../utils/uiDefer";
 import type { ThemeColors } from "../../theme/colors";
 import { uiText } from "../../theme/typography";
 import { kk } from "../../i18n/kk";
@@ -58,13 +59,12 @@ export const DashboardQaumDuaBanner = memo(function DashboardQaumDuaBanner({
 
   useFocusEffect(
     useCallback(() => {
-      void refresh();
+      const task = runAfterInteractions(() => {
+        void refresh();
+      }, 1_800);
+      return () => task.cancel();
     }, [refresh])
   );
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
 
   const onAmen = useCallback(async () => {
     if (!latest || amenBusy) return;

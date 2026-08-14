@@ -18,7 +18,9 @@ import { AndroidBackNavigationBridge } from "./src/navigation/AndroidBackNavigat
 import { RootNavigator } from "./src/navigation/RootNavigator";
 import { rootNavigationRef } from "./src/navigation/rootNavigationRef";
 import { darkColors, lightColors } from "./src/theme/colors";
-import { ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
+import { readBootThemePrefs, ThemeProvider, useAppTheme } from "./src/theme/ThemeContext";
+import type { ColorPaletteId } from "./src/theme/themePalettes";
+import type { ThemeSchemeId } from "./src/theme/themeSchemes";
 import { AppErrorBoundary } from "./src/components/AppErrorBoundary";
 import { setRootNavReady, setRootNavState } from "./src/voice/rootNavStateStore";
 import { hydrateRaqatApiBaseOverride } from "./src/config/raqatApiBase";
@@ -38,7 +40,9 @@ const OnboardingLanguageScreen = React.lazy(() =>
 );
 
 const APP_STATE_SYNC_COOLDOWN_MS = 60_000;
-const POST_BOOT_NATIVE_WARMUP_DELAY_MS = 2_400;
+const POST_BOOT_PRAYER_WARMUP_DELAY_MS = 2_400;
+const POST_BOOT_QURAN_WARMUP_DELAY_MS = 4_000;
+const POST_BOOT_GREAT_WORDS_WARMUP_DELAY_MS = 5_500;
 /** Рұқсаттар UI дайын болғаннан кейін бірден — баптауға кірмей. */
 const FIRST_LAUNCH_PERMISSIONS_DELAY_MS = 280;
 
@@ -108,6 +112,8 @@ function scheduleFirstLaunchPermissionsBurst(): void {
 export default function App() {
   const [bootReady, setBootReady] = useState(false);
   const [needsLanguageOnboarding, setNeedsLanguageOnboarding] = useState(false);
+  const [bootThemeScheme, setBootThemeScheme] = useState<ThemeSchemeId | undefined>();
+  const [bootColorPalette, setBootColorPalette] = useState<ColorPaletteId | undefined>();
   const colorScheme = useColorScheme();
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const lastAppStateSyncAtRef = useRef(0);
@@ -132,11 +138,16 @@ export default function App() {
         }
 
         if (!azanLockScreenLaunch) {
-          const [onboarding] = await Promise.all([
+          const [onboarding, themePrefs] = await Promise.all([
             getOnboardingDone(),
+            readBootThemePrefs().catch(() => null),
             hydrateRaqatApiBaseOverride().catch(() => {}),
           ]);
           onboardingDone = onboarding;
+          if (themePrefs) {
+            setBootThemeScheme(themePrefs.themeScheme);
+            setBootColorPalette(themePrefs.colorPalette);
+          }
           if (!onboardingDone && Platform.OS === "android") {
             try {
               const { ensurePrayerAzanShouldBypassOnboarding } = await import(
@@ -151,7 +162,15 @@ export default function App() {
             }
           }
         } else {
-          void hydrateRaqatApiBaseOverride().catch(() => {});
+          void Promise.all([
+            hydrateRaqatApiBaseOverride().catch(() => {}),
+            readBootThemePrefs()
+              .then((themePrefs) => {
+                setBootThemeScheme(themePrefs.themeScheme);
+                setBootColorPalette(themePrefs.colorPalette);
+              })
+              .catch(() => {}),
+          ]);
         }
 
         setNeedsLanguageOnboarding(!onboardingDone);
@@ -211,12 +230,6 @@ export default function App() {
         }
 
         setTimeout(() => {
-          void import("./src/services/bundledQuranSeed")
-            .then((m) => m.seedBundledQuranCachesIfNeeded())
-            .catch(() => {});
-          void import("./src/services/slimAssetPrefetch")
-            .then((m) => m.prefetchSlimBundledAssetsOnWifi())
-            .catch(() => {});
           void (async () => {
             if (Platform.OS === "web") return;
 
@@ -238,8 +251,23 @@ export default function App() {
               ensureQuranAudioBackgroundTask(),
               syncNativePrayerWidgetFromStorage(),
             ]);
-          })().catch((e) => reportBackgroundJobError("postBootNativeWarmup", e));
-        }, POST_BOOT_NATIVE_WARMUP_DELAY_MS);
+          })().catch((e) => reportBackgroundJobError("postBootPrayerWarmup", e));
+        }, POST_BOOT_PRAYER_WARMUP_DELAY_MS);
+
+        setTimeout(() => {
+          void import("./src/services/bundledQuranSeed")
+            .then((m) => m.seedBundledQuranCachesIfNeeded())
+            .catch(() => {});
+          void import("./src/services/slimAssetPrefetch")
+            .then((m) => m.prefetchSlimBundledAssetsOnWifi())
+            .catch(() => {});
+        }, POST_BOOT_QURAN_WARMUP_DELAY_MS);
+
+        setTimeout(() => {
+          void import("./src/services/greatWordsWarmup")
+            .then((m) => m.warmGreatWordsHub())
+            .catch((e) => reportBackgroundJobError("postBootGreatWordsWarmup", e));
+        }, POST_BOOT_GREAT_WORDS_WARMUP_DELAY_MS);
       });
     })();
   }, []);
@@ -250,6 +278,12 @@ export default function App() {
       if (Platform.OS === "web") return;
       const prev = appStateRef.current;
       appStateRef.current = next;
+      /** Қолданба жабылғанда / фонға кеткенде азан тоқтауы керек (preview және намаз уақыты). */
+      if (next === "background") {
+        void import("./src/services/azanPlaybackSync")
+          .then((m) => m.stopPreviewAzanPlaybackOnly())
+          .catch((e) => reportBackgroundJobError("azanPreviewStopOnBackground", e));
+      }
       /** iOS: үй түймесі — алдымен inactive, содан background; кэшті тек background күтпей жаңартамыз. */
       const leavingForeground = next === "background" || (next === "inactive" && prev === "active");
       const shouldReschedule =
@@ -289,6 +323,9 @@ export default function App() {
           void import("./src/services/accountSync")
             .then((m) => m.syncAccountDataWithServerBidirectional())
             .catch((e) => reportBackgroundJobError("accountSync", e));
+          void import("./src/services/halalHubBootstrap")
+            .then((m) => m.prefetchHalalDamuHub())
+            .catch((e) => reportBackgroundJobError("halalHubPrefetch", e));
         }
         await Promise.allSettled([
           reschedulePrayerNotificationsFromCache(),
@@ -366,7 +403,10 @@ export default function App() {
       <AppErrorBoundary>
         <ScreenFitProvider>
           <SafeAreaProvider>
-            <ThemeProvider>
+            <ThemeProvider
+              initialThemeScheme={bootThemeScheme}
+              initialColorPalette={bootColorPalette}
+            >
               <AppSafeAreaFrame>
                 {needsLanguageOnboarding ? (
                   <>

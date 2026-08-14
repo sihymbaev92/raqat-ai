@@ -1,4 +1,4 @@
-import { normalizeAllahummaTranslit, pickBestTranslit } from "../translitKk";
+import { normalizeAllahummaTranslit, pickBestTranslit, isRedundantTranslitTitle } from "../translitKk";
 
 describe("normalizeAllahummaTranslit", () => {
   it("replaces Kazakh address with phonetic Аллаһумма at start", () => {
@@ -25,5 +25,34 @@ describe("pickBestTranslit", () => {
     expect(pickBestTranslit(ar, "Аллаһ тағалам, инни ә'узу бикә мин шәрри мә халақа")).toBe(
       "Аллаһумма, инни ә'узу бикә мин шәрри мә халақа",
     );
+  });
+});
+
+describe("isRedundantTranslitTitle", () => {
+  it("detects exact duplicate title/translit", () => {
+    expect(
+      isRedundantTranslitTitle(
+        "СубханаЛлаһи уә бихамдиһи",
+        "СубханаЛлаһи уә бихамдиһи",
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps Kazakh label when different from translit", () => {
+    expect(
+      isRedundantTranslitTitle(
+        "Намаздан кейінгі тәспих",
+        "Субхана Аллаһ · Әлхамду Лиллаһ · Аллаһу Акбар",
+      ),
+    ).toBe(false);
+  });
+
+  it("hides partial translit title when full translit exists", () => {
+    expect(
+      isRedundantTranslitTitle(
+        "Ла илаһа иллаллаһу уахдаһу",
+        "Ла илаһа иллаллаһу уахдаһу ла шарика ләһу",
+      ),
+    ).toBe(true);
   });
 });

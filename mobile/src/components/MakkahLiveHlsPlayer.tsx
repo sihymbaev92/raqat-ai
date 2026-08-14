@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Modal,
   Platform,
   StatusBar,
   StyleSheet,
@@ -21,6 +20,10 @@ import {
   makkahLiveSourceNeedsQualityPin,
 } from "../config/makkahLiveYoutube";
 import { resolveHighestQualityHlsUrl } from "../utils/makkahLiveHlsResolve";
+import {
+  peekMakkahLiveResolved,
+  storeMakkahLiveResolved,
+} from "../utils/makkahLiveStreamCache";
 
 type Props = {
   title: string;
@@ -42,7 +45,11 @@ const HLS_HEADERS = {
 
 const APP_BAR_BODY_H = 52;
 const META_PANE_MIN_H = 72;
-const FHD_REFRESH_MS = 8 * 60_000;
+
+function peekPrimaryCachedUrl(): string | null {
+  const master = MAKKAH_LIVE_HLS_SOURCES[0];
+  return master ? peekMakkahLiveResolved(master) : null;
+}
 
 async function enableLiveAudioSession(): Promise<void> {
   if (Platform.OS === "web") return;
@@ -104,8 +111,8 @@ export function MakkahLiveHlsPlayer({
   const { width, height } = useWindowDimensions();
   const videoRef = useRef<Video>(null);
   const [sourceIndex, setSourceIndex] = useState(0);
-  const [playUrl, setPlayUrl] = useState<string | null>(null);
-  const [resolving, setResolving] = useState(true);
+  const [playUrl, setPlayUrl] = useState<string | null>(() => peekPrimaryCachedUrl());
+  const [resolving, setResolving] = useState(() => !peekPrimaryCachedUrl());
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -116,21 +123,29 @@ export function MakkahLiveHlsPlayer({
 
   const portraitVideoH = useMemo(() => {
     const ideal16x9 = Math.round((layoutWidth * 9) / 16);
-    const capByScreen = Math.round(height * 0.46);
+    const capByScreen = Math.round(height * 0.54);
     const reserved = APP_BAR_BODY_H + META_PANE_MIN_H + 24;
-    const capByStack = Math.max(160, Math.round(height - reserved));
+    const capByStack = Math.max(180, Math.round(height - reserved));
     return Math.min(ideal16x9, capByScreen, capByStack);
   }, [height, layoutWidth]);
 
   const resolvePlayUrl = useCallback(async (idx: number) => {
     const gen = ++resolveGenRef.current;
     const master = MAKKAH_LIVE_HLS_SOURCES[idx] ?? MAKKAH_LIVE_HLS_SOURCES[0]!;
-    setResolving(true);
-    setReady(false);
-    setPlayUrl(null);
+    const cached = peekMakkahLiveResolved(master);
+    if (cached) {
+      setPlayUrl(cached);
+      setResolving(false);
+    } else {
+      setResolving(true);
+      setReady(false);
+      setPlayUrl(null);
+    }
+
     let uri = master;
     if (makkahLiveSourceNeedsQualityPin(idx)) {
-      uri = await resolveHighestQualityHlsUrl(master);
+      uri = await resolveHighestQualityHlsUrl(master, 8000);
+      storeMakkahLiveResolved(master, uri);
     }
     if (gen !== resolveGenRef.current) return;
     setPlayUrl(uri);
@@ -151,14 +166,6 @@ export function MakkahLiveHlsPlayer({
 
   useEffect(() => {
     void resolvePlayUrl(sourceIndex);
-  }, [sourceIndex, resolvePlayUrl]);
-
-  useEffect(() => {
-    if (sourceIndex !== 0) return;
-    const t = setInterval(() => {
-      void resolvePlayUrl(0);
-    }, FHD_REFRESH_MS);
-    return () => clearInterval(t);
   }, [sourceIndex, resolvePlayUrl]);
 
   useEffect(() => {
@@ -248,11 +255,11 @@ export function MakkahLiveHlsPlayer({
   const videoEl =
     playUrl != null ? (
       <Video
-        key={`${playUrl}-${fullscreen ? "fs" : "half"}`}
+        key={playUrl}
         ref={videoRef}
         source={{ uri: playUrl, headers: { ...HLS_HEADERS } }}
         style={fullscreen ? styles.fsVideo : styles.video}
-        resizeMode={ResizeMode.CONTAIN}
+        resizeMode={ResizeMode.COVER}
         useNativeControls={false}
         shouldPlay
         isMuted={false}
@@ -291,79 +298,72 @@ export function MakkahLiveHlsPlayer({
     );
   }
 
-  const fullscreenOverlay = (
-    <Modal
-      visible={fullscreen}
-      animationType="fade"
-      presentationStyle="fullScreen"
-      supportedOrientations={["landscape", "landscape-left", "landscape-right"]}
-      statusBarTranslucent
-      navigationBarTranslucent
-      onRequestClose={exitFullscreen}
-    >
-      <View style={styles.fsRoot}>
-        <View style={styles.fsVideoStage}>{fullscreen ? videoEl : null}</View>
-        <View
-          style={[
-            styles.fsChrome,
-            {
-              paddingTop: Math.max(insets.top, 10),
-              paddingLeft: Math.max(insets.left, 10),
-              paddingRight: Math.max(insets.right, 10),
-            },
-          ]}
-          pointerEvents="box-none"
+  const fullscreenOverlay = fullscreen ? (
+    <View style={styles.fsRoot} pointerEvents="box-none">
+      <View
+        style={[
+          styles.fsChrome,
+          {
+            paddingTop: Math.max(insets.top, 10),
+            paddingLeft: Math.max(insets.left, 10),
+            paddingRight: Math.max(insets.right, 10),
+          },
+        ]}
+        pointerEvents="box-none"
+      >
+        <Pressable
+          onPress={handleBack}
+          accessibilityRole="button"
+          accessibilityLabel={collapseLabel}
+          style={styles.fsChromeBtn}
         >
-          <Pressable
-            onPress={handleBack}
-            accessibilityRole="button"
-            accessibilityLabel={collapseLabel}
-            style={styles.fsChromeBtn}
-          >
-            <MaterialIcons name="fullscreen-exit" size={26} color="#fff" />
-          </Pressable>
-        </View>
-        {showLoading ? (
-          <View style={styles.loadingOverlay} pointerEvents="none">
-            <ActivityIndicator color="#FFC107" size="large" />
-            <Text style={styles.loading}>{loadingLabel}</Text>
-          </View>
-        ) : null}
+          <MaterialIcons name="fullscreen-exit" size={26} color="#fff" />
+        </Pressable>
       </View>
-    </Modal>
-  );
+    </View>
+  ) : null;
 
   return (
     <View style={styles.root}>
+      {!fullscreen ? appBar : null}
       {fullscreenOverlay}
-      {appBar}
 
-      <View style={[styles.playerShell, { height: portraitVideoH, width: layoutWidth, alignSelf: "center" }]}>
-        {!fullscreen ? videoEl : null}
+      <View
+        style={[
+          styles.playerShell,
+          fullscreen && styles.playerShellFullscreen,
+          !fullscreen && { height: portraitVideoH, width: layoutWidth, alignSelf: "center" },
+        ]}
+      >
+        {videoEl}
         {showLoading ? (
           <View style={styles.loadingOverlay} pointerEvents="none">
             <ActivityIndicator color="#FFC107" size="large" />
             <Text style={styles.loading}>{loadingLabel}</Text>
           </View>
         ) : null}
-        <View style={styles.playerBottomChrome} pointerEvents="box-none">
-          <Pressable
-            onPress={enterFullscreen}
-            accessibilityRole="button"
-            accessibilityLabel={expandLabel}
-            style={({ pressed }) => [styles.expandBtn, pressed && { opacity: 0.88 }]}
-          >
-            <MaterialIcons name="fullscreen" size={22} color="#fff" />
-          </Pressable>
-        </View>
+        {!fullscreen ? (
+          <View style={styles.playerBottomChrome} pointerEvents="box-none">
+            <Pressable
+              onPress={enterFullscreen}
+              accessibilityRole="button"
+              accessibilityLabel={expandLabel}
+              style={({ pressed }) => [styles.expandBtn, pressed && { opacity: 0.88 }]}
+            >
+              <MaterialIcons name="fullscreen" size={22} color="#fff" />
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
-      <View style={[styles.metaPane, { paddingHorizontal: 16 + Math.max(insets.left, insets.right) }]}>
-        <View style={styles.liveBadgeRow}>
-          <View style={styles.liveDot} />
-          <Text style={styles.metaHint}>LIVE · HD</Text>
+      {!fullscreen ? (
+        <View style={[styles.metaPane, { paddingHorizontal: 16 + Math.max(insets.left, insets.right) }]}>
+          <View style={styles.liveBadgeRow}>
+            <View style={styles.liveDot} />
+            <Text style={styles.metaHint}>LIVE · HD</Text>
+          </View>
         </View>
-      </View>
+      ) : null}
     </View>
   );
 }
@@ -374,15 +374,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#000",
   },
   fsRoot: {
-    flex: 1,
-    backgroundColor: "#000",
-  },
-  fsVideoStage: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
+    zIndex: 4,
+  },
+  playerShellFullscreen: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+    zIndex: 2,
   },
   fsVideo: {
     width: "100%",

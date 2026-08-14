@@ -41,6 +41,32 @@ const EMPTY_CATALOG: GreatWordsCatalog = { version: 0, authors: [], entries: [] 
 let catalogCache: GreatWordsCatalog = EMPTY_CATALOG;
 let loadPromise: Promise<GreatWordsCatalog | null> | null = null;
 
+let statsCache: {
+  authors: number;
+  entries: number;
+  mergedTopics: number;
+  reflectiveEntries: number;
+} | null = null;
+let reflectiveEntriesCache: GreatWordsEntry[] | null = null;
+const displayEntriesCache = new Map<string, GreatWordsEntry[]>();
+
+export function isGreatWordsCatalogReady(): boolean {
+  return catalogCache.entries.length > 0;
+}
+
+function rebuildDerivedCaches(): void {
+  mergedTopicsCache = buildMergedTopics(catalogCache.entries);
+  mergedTopicsEntriesRef = catalogCache.entries;
+  displayEntriesCache.clear();
+  reflectiveEntriesCache = buildReflectiveGreatWordsEntries(999);
+  statsCache = {
+    authors: catalogCache.authors.length,
+    entries: catalogCache.entries.length,
+    mergedTopics: mergedTopicsCache.length,
+    reflectiveEntries: reflectiveEntriesCache.length,
+  };
+}
+
 /** CDN жоқ/ескі болса да «Сананы ашатын сөздер» толық ашылады. */
 function withSanaSeed(catalog: GreatWordsCatalog): GreatWordsCatalog {
   const authors = catalog.authors.filter((a) => a.id !== "sana");
@@ -66,8 +92,7 @@ export async function ensureGreatWordsCatalogLoaded(): Promise<GreatWordsCatalog
         } else {
           catalogCache = withSanaSeed({ version: 1, authors: [], entries: [] });
         }
-        mergedTopicsCache = null;
-        mergedTopicsEntriesRef = null;
+        rebuildDerivedCaches();
         return catalogCache.entries.length ? catalogCache : null;
       })
       .finally(() => {
@@ -82,6 +107,9 @@ export function releaseGreatWordsCatalogMemory(): void {
   loadPromise = null;
   mergedTopicsCache = null;
   mergedTopicsEntriesRef = null;
+  statsCache = null;
+  reflectiveEntriesCache = null;
+  displayEntriesCache.clear();
 }
 
 const MERGED_TOPIC_ID_PREFIX = "merged-topic:";
@@ -206,21 +234,26 @@ export function getEntriesByAuthorId(authorId: string): GreatWordsEntry[] {
 }
 
 export function getDisplayEntriesByAuthorId(authorId: string): GreatWordsEntry[] {
+  const cached = displayEntriesCache.get(authorId);
+  if (cached) return cached;
   const entries = getEntriesByAuthorId(authorId);
   /** Сана жинағы — бірегей тақырыптар; біріктіру қажет емес. */
   if (authorId === "sana") {
+    displayEntriesCache.set(authorId, entries);
     return entries;
   }
   const merged = buildMergedTopics(entries);
   const mergedIds = new Set(merged.flatMap((topic) => topic.entries.map((entry) => entry.id)));
   const singles = entries.filter((entry) => !mergedIds.has(entry.id));
   const virtual = merged.map((topic) => buildMergedEntry(topic, authorId));
-  return [...virtual, ...singles].sort((a, b) => {
+  const result = [...virtual, ...singles].sort((a, b) => {
     if (authorId === "abai") {
       return (a.karaSozNumber ?? 0) - (b.karaSozNumber ?? 0) || a.title.localeCompare(b.title, "kk");
     }
     return a.title.localeCompare(b.title, "kk") || a.id.localeCompare(b.id);
   });
+  displayEntriesCache.set(authorId, result);
+  return result;
 }
 
 export function getEntryById(id: string): GreatWordsEntry | undefined {
@@ -261,7 +294,7 @@ export function searchMergedGreatWordsTopics(query: string, limit = 16): GreatWo
     .slice(0, limit);
 }
 
-export function getReflectiveGreatWordsEntries(limit = 8): GreatWordsEntry[] {
+function buildReflectiveGreatWordsEntries(limit: number): GreatWordsEntry[] {
   const chosen: GreatWordsEntry[] = [];
   const seenAuthors = new Set<string>();
   const candidates = [...catalogCache.entries]
@@ -280,6 +313,13 @@ export function getReflectiveGreatWordsEntries(limit = 8): GreatWordsEntry[] {
   return chosen;
 }
 
+export function getReflectiveGreatWordsEntries(limit = 8): GreatWordsEntry[] {
+  if (reflectiveEntriesCache) {
+    return reflectiveEntriesCache.slice(0, limit);
+  }
+  return buildReflectiveGreatWordsEntries(limit);
+}
+
 export function searchGreatWordsEntries(query: string): GreatWordsEntry[] {
   const q = query.trim().toLowerCase();
   if (!q) return catalogCache.entries;
@@ -295,6 +335,7 @@ export function countEntriesForAuthor(authorId: string): number {
 }
 
 export function getGreatWordsStats(): { authors: number; entries: number; mergedTopics: number; reflectiveEntries: number } {
+  if (statsCache) return statsCache;
   return {
     authors: catalogCache.authors.length,
     entries: catalogCache.entries.length,
@@ -304,5 +345,5 @@ export function getGreatWordsStats(): { authors: number; entries: number; merged
 }
 
 export function hydrateGreatWordsCatalog(): Promise<void> {
-  return Promise.resolve();
+  return ensureGreatWordsCatalogLoaded().then(() => undefined);
 }

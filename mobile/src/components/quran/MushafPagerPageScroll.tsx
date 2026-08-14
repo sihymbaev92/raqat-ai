@@ -224,9 +224,10 @@ export function MushafPagerPageScroll({
   }, [ayahAudioIsPlaying, playingAyahInSurah, page.ayahs, scrollToAyahInPage]);
 
   const lastReadingRevealKeyRef = useRef("");
+
   useEffect(() => {
     lastReadingRevealKeyRef.current = "";
-  }, [surahNumber, page.key]);
+  }, [surahNumber, page.key, readingTargetAyah, page.ayahs.length]);
 
   useEffect(() => {
     if (readingTargetAyah == null || readingTargetAyah <= 0) return;
@@ -235,15 +236,14 @@ export function MushafPagerPageScroll({
     if (lastReadingRevealKeyRef.current === mark) return;
     lastReadingRevealKeyRef.current = mark;
     const ay = readingTargetAyah;
-    const t = setTimeout(() => {
-      scrollToAyahInPage(ay, { animated: true, viewOffset: 88 });
-    }, 520);
-    const t2 = setTimeout(() => {
-      scrollToAyahInPage(ay, { animated: false, viewOffset: 88 });
-    }, 960);
+    const delays = [120, 320, 520, 960, 1400, 2000, 2800];
+    const timers = delays.map((ms) =>
+      setTimeout(() => {
+        scrollToAyahInPage(ay, { animated: ms < 520, viewOffset: 88 });
+      }, ms)
+    );
     return () => {
-      clearTimeout(t);
-      clearTimeout(t2);
+      timers.forEach(clearTimeout);
     };
   }, [readingTargetAyah, page.key, page.ayahs, surahNumber, scrollToAyahInPage]);
 

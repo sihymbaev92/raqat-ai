@@ -41,11 +41,25 @@ type Ctx = {
 
 export const ThemeContext = createContext<Ctx | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>(DEFAULT_THEME_SCHEME);
-  const [colorPalette, setColorPaletteState] = useState<ColorPaletteId>(DEFAULT_COLOR_PALETTE);
+export function ThemeProvider({
+  children,
+  initialThemeScheme,
+  initialColorPalette,
+}: {
+  children: React.ReactNode;
+  initialThemeScheme?: ThemeSchemeId;
+  initialColorPalette?: ColorPaletteId;
+}) {
+  const [themeScheme, setThemeSchemeState] = useState<ThemeSchemeId>(
+    initialThemeScheme ?? DEFAULT_THEME_SCHEME
+  );
+  const [colorPalette, setColorPaletteState] = useState<ColorPaletteId>(
+    initialColorPalette ?? DEFAULT_COLOR_PALETTE
+  );
+  const bootHydratedRef = React.useRef(initialThemeScheme != null || initialColorPalette != null);
 
   useEffect(() => {
+    if (bootHydratedRef.current) return;
     (async () => {
       const schemeRaw = await AsyncStorage.getItem(STORAGE_KEY_SCHEME);
       if (isThemeSchemeId(schemeRaw)) {
@@ -108,4 +122,31 @@ export function useAppTheme(): Ctx {
     throw new Error("useAppTheme must be used within ThemeProvider");
   }
   return ctx;
+}
+
+/** Boot: тақырыпты бірінші кадрға дейін оқу (қосымша re-render азайту). */
+export async function readBootThemePrefs(): Promise<{
+  themeScheme: ThemeSchemeId;
+  colorPalette: ColorPaletteId;
+}> {
+  const schemeRaw = await AsyncStorage.getItem(STORAGE_KEY_SCHEME);
+  let themeScheme: ThemeSchemeId = DEFAULT_THEME_SCHEME;
+  if (isThemeSchemeId(schemeRaw)) {
+    themeScheme = schemeRaw;
+  } else {
+    const legacy = await AsyncStorage.getItem(STORAGE_KEY_LEGACY);
+    const systemDark = Appearance.getColorScheme() === "dark";
+    themeScheme = migrateLegacyThemeMode(legacy, systemDark);
+  }
+
+  const pal = await AsyncStorage.getItem(STORAGE_KEY_PALETTE);
+  const restoredViolet = await AsyncStorage.getItem(STORAGE_KEY_PALETTE_VIOLET_DEFAULT);
+  let colorPalette: ColorPaletteId = DEFAULT_COLOR_PALETTE;
+  if (restoredViolet !== "1" && (pal === "gold" || !isColorPaletteId(pal))) {
+    colorPalette = "violet";
+  } else if (isColorPaletteId(pal)) {
+    colorPalette = pal;
+  }
+
+  return { themeScheme, colorPalette };
 }

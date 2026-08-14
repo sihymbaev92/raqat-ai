@@ -6,7 +6,6 @@ import {
   Switch,
   Linking,
   Platform,
-  Image
 } from "react-native";
 import { Pressable } from "@/ui/Pressable";
 import * as Application from "expo-application";
@@ -31,10 +30,11 @@ import {
 } from "../theme/themeSchemes";
 import { kk } from "../i18n/kk";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
-import { menuIconAssets } from "../theme/menuIconAssets";
 import { getRaqatApiBase, hydrateRaqatApiBaseOverride } from "../config/raqatApiBase";
-import { getRaqatDonationUrl } from "../config/raqatDonationUrl";
-import { getRaqatSupportAccount } from "../config/raqatSupportAccount";
+import {
+  RAQAT_CONTACT_PHONE_DISPLAY,
+  RAQAT_CONTACT_PHONE_E164,
+} from "../config/raqatContactPhone";
 import { postAuthLogin, probePlatformLiveness, type PlatformLivenessProbe } from "../services/platformApiClient";
 import {
   getPrayerNotificationDiagnostics,
@@ -61,7 +61,7 @@ import {
 import { SettingsQiblaSection } from "../components/settings/SettingsQiblaSection";
 import { IndependenceBanner } from "../components/IndependenceBanner";
 import { PRIVACY_POLICY_URL } from "../content/appTransparency";
-import { navigateToMoreStackScreen, navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
+import { navigateToRootStackScreen } from "../navigation/navigateToMoreStack";
 import { ScreenFitScrollView } from "../components/ScreenFit";
 import { useI18n } from "../i18n/useI18n";
 import {
@@ -75,10 +75,7 @@ import { getUsageAnalyticsEnabled, setUsageAnalyticsEnabled } from "../storage/p
 
 const COMPACT_COLOR_PALETTES: ColorPaletteId[] = ["default", "sapphire", "violet", "rose"];
 
-type SettingsMoreLink = keyof Pick<
-  MoreStackParamList,
-  "TelegramInfo" | "Ecosystem" | "Halal"
->;
+const KASPI_BRAND_RED = "#F14635";
 
 type ReleaseDiagnostics = {
   api: PlatformLivenessProbe | null;
@@ -242,7 +239,7 @@ export function SettingsScreen() {
   const [loginMsg, setLoginMsg] = useState<string | null>(null);
   const [oauthMsg, setOauthMsg] = useState<string | null>(null);
   const [platformPid, setPlatformPid] = useState<string | null>(null);
-  const [supportAccountCopied, setSupportAccountCopied] = useState(false);
+  const [contactPhoneCopied, setContactPhoneCopied] = useState(false);
   const [localeBusy, setLocaleBusy] = useState(false);
   const [diagnostics, setDiagnostics] = useState<ReleaseDiagnostics>({
     api: null,
@@ -305,9 +302,19 @@ export function SettingsScreen() {
   const styles = makeStyles(colors);
   const ui = makeSettingsStyles(colors);
 
-  const openMore = (screen: SettingsMoreLink) => {
-    navigateToMoreStackScreen(screen, undefined, navigation);
-  };
+  const openFeedbackPhone = useCallback(() => {
+    void Linking.openURL(`tel:${RAQAT_CONTACT_PHONE_E164}`);
+  }, []);
+
+  const copyContactPhone = useCallback(async () => {
+    await Clipboard.setStringAsync(RAQAT_CONTACT_PHONE_DISPLAY);
+    setContactPhoneCopied(true);
+    if (supportCopyTimerRef.current) clearTimeout(supportCopyTimerRef.current);
+    supportCopyTimerRef.current = setTimeout(() => {
+      supportCopyTimerRef.current = null;
+      setContactPhoneCopied(false);
+    }, 2000);
+  }, []);
 
   const scrollPadBottom = 24 + Math.max(insets.bottom, 8);
 
@@ -326,24 +333,6 @@ export function SettingsScreen() {
     await syncAccountDataAfterLogin();
   }, [syncAccountDataAfterLogin]);
 
-  const donationUrl = getRaqatDonationUrl();
-  const supportAccount = getRaqatSupportAccount();
-
-  const openDonationUrl = useCallback(() => {
-    if (!donationUrl) return;
-    void Linking.openURL(donationUrl).catch(() => {});
-  }, [donationUrl]);
-
-  const copySupportAccount = useCallback(async () => {
-    if (!supportAccount) return;
-    await Clipboard.setStringAsync(supportAccount);
-    setSupportAccountCopied(true);
-    if (supportCopyTimerRef.current) clearTimeout(supportCopyTimerRef.current);
-    supportCopyTimerRef.current = setTimeout(() => {
-      supportCopyTimerRef.current = null;
-      setSupportAccountCopied(false);
-    }, 2000);
-  }, [supportAccount]);
 
   useEffect(() => {
     return () => {
@@ -703,87 +692,43 @@ export function SettingsScreen() {
         </SettingsCard>
       </SettingsSection>
 
-      <SettingsSection colors={colors} title={kk.settings.sectionLinks} subtitle={kk.settings.sectionLinksSub}>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
-        onPress={() => openMore("TelegramInfo")}
-        accessibilityRole="button"
-        accessibilityLabel={kk.dashboard.telegramShort}
-      >
-        <View style={styles.rowLead}>
-          <MaterialIcons name="telegram" size={22} color={colors.accent} />
-          <Text style={styles.rowTxt}>{kk.dashboard.telegramShort}</Text>
-        </View>
-        <Text style={styles.chev}>›</Text>
-      </Pressable>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }, styles.rowGap]}
-        onPress={() => openMore("Ecosystem")}
-        accessibilityRole="button"
-        accessibilityLabel={kk.ecosystem.cardTitle}
-      >
-        <View style={styles.rowLead}>
-          <Text style={styles.rowEmoji}>🌐</Text>
-          <Text style={styles.rowTxt}>{kk.ecosystem.cardTitle}</Text>
-        </View>
-        <Text style={styles.chev}>›</Text>
-      </Pressable>
-      <Pressable
-        style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }, styles.rowGap]}
-        onPress={() => openMore("Halal")}
-        accessibilityRole="button"
-        accessibilityLabel={kk.features.halalTitle}
-      >
-        <View style={styles.rowLead}>
-          <Image
-            source={menuIconAssets.tileHalal}
-            style={[styles.rowMenuIcon, styles.rowMenuIconPromo]}
-            resizeMode="contain"
-            accessibilityIgnoresInvertColors
-          />
-          <Text style={styles.rowTxt}>{kk.features.halalTitle}</Text>
-        </View>
-        <Text style={styles.chev}>›</Text>
-      </Pressable>
+      <SettingsSection colors={colors} title={kk.settings.sectionFeedback} subtitle={kk.settings.feedbackPhoneSub}>
+        <Pressable
+          style={({ pressed }) => [styles.row, pressed && { opacity: 0.9 }]}
+          onPress={openFeedbackPhone}
+          accessibilityRole="button"
+          accessibilityLabel={`${kk.settings.sectionFeedback}: ${RAQAT_CONTACT_PHONE_DISPLAY}`}
+        >
+          <View style={styles.rowLead}>
+            <MaterialIcons name="phone" size={22} color={colors.accent} />
+            <Text style={styles.rowTxt}>{RAQAT_CONTACT_PHONE_DISPLAY}</Text>
+          </View>
+          <Text style={styles.chev}>›</Text>
+        </Pressable>
       </SettingsSection>
 
       <SettingsSection colors={colors} title={kk.settings.sectionSupport}>
       <View style={styles.supportBlock}>
         <Text style={styles.supportTitle}>{kk.settings.supportProjectTitle}</Text>
         <Text style={styles.supportBody}>{kk.settings.supportProjectBody}</Text>
-        {supportAccount ? (
-          <>
-            <Text style={styles.supportAccountLabel}>{kk.settings.supportAccountLabel}</Text>
-            <View style={styles.supportAccountBox}>
-              <Text style={styles.supportAccountMono} selectable>
-                {supportAccount}
-              </Text>
-            </View>
-            <Pressable
-              style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
-              onPress={copySupportAccount}
-              accessibilityRole="button"
-              accessibilityLabel={kk.settings.supportAccountCopy}
-            >
-              <Text style={styles.supportCopyBtnTxt}>
-                {supportAccountCopied
-                  ? kk.settings.supportAccountCopied
-                  : kk.settings.supportAccountCopy}
-              </Text>
-            </Pressable>
-            <Text style={styles.supportDisclaimer}>{kk.settings.supportAccountDisclaimer}</Text>
-          </>
-        ) : null}
-        {donationUrl ? (
-          <Pressable
-            style={({ pressed }) => [styles.supportBtn, pressed && { opacity: 0.9 }]}
-            onPress={openDonationUrl}
-            accessibilityRole="button"
-            accessibilityLabel={kk.settings.supportProjectOpen}
-          >
-            <Text style={styles.supportBtnTxt}>{kk.settings.supportProjectOpen}</Text>
-          </Pressable>
-        ) : null}
+        <Text style={styles.supportKaspiLabel}>{kk.settings.supportKaspiLabel}</Text>
+        <View style={styles.supportAccountBox}>
+          <Text style={styles.supportAccountMono} selectable>
+            {RAQAT_CONTACT_PHONE_DISPLAY}
+          </Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [styles.supportCopyBtn, pressed && { opacity: 0.9 }]}
+          onPress={copyContactPhone}
+          accessibilityRole="button"
+          accessibilityLabel={kk.settings.supportAccountCopy}
+        >
+          <Text style={styles.supportCopyBtnTxt}>
+            {contactPhoneCopied ? kk.settings.supportAccountCopied : kk.settings.supportAccountCopy}
+          </Text>
+        </Pressable>
+        <Text style={styles.supportKaspiHint}>{kk.settings.supportKaspiHint}</Text>
+        <Text style={styles.supportDisclaimer}>{kk.settings.supportAccountDisclaimer}</Text>
       </View>
       </SettingsSection>
 </ScreenFitScrollView>
@@ -1093,6 +1038,22 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 14,
       marginBottom: 8,
       textAlign: "center",
+    },
+    supportKaspiLabel: {
+      color: KASPI_BRAND_RED,
+      fontSize: 15,
+      fontWeight: "800",
+      marginTop: 14,
+      marginBottom: 8,
+      textAlign: "center",
+      letterSpacing: 0.3,
+    },
+    supportKaspiHint: {
+      color: colors.muted,
+      fontSize: 12,
+      lineHeight: 18,
+      textAlign: "center",
+      marginTop: 10,
     },
     supportAccountBox: {
       backgroundColor: "#11151B",

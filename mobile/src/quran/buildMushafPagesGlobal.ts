@@ -12,6 +12,7 @@ let cachedMushafPages: MushafBookPageSlice[] | null = null;
 let cachedMushafPagesLight: MushafBookPageSlice[] | null = null;
 let cachedQcf4MushafPages: MushafBookPageSlice[] | null = null;
 let cachedQcf4MushafPagesLight: MushafBookPageSlice[] | null = null;
+const resolvedAyahCache = new Map<string, MushafBookAyah>();
 
 function bundledAyahRow(surah: number, ayah: number): MushafBookAyah | null {
   const rows = getBundledSurahAyahs(surah);
@@ -137,10 +138,15 @@ export function clearMushafPagesGlobalCache(): void {
   cachedMushafPagesLight = null;
   cachedQcf4MushafPages = null;
   cachedQcf4MushafPagesLight = null;
+  resolvedAyahCache.clear();
 }
 
 /** Жеңіл бет аяты → bundled мәтін (web фонда жүктелгенде). */
 export function resolveMushafBookAyah(stub: MushafBookAyah): MushafBookAyah {
+  const key = `${stub.surahNumber}:${stub.numberInSurah}`;
+  const hit = resolvedAyahCache.get(key);
+  if (hit && (hit.text ?? "").replace(/^\uFEFF/, "").trim()) return hit;
+
   const row = bundledAyahRow(stub.surahNumber, stub.numberInSurah);
   const textTajweed =
     (stub.textTajweed ?? "").trim() ||
@@ -148,9 +154,11 @@ export function resolveMushafBookAyah(stub: MushafBookAyah): MushafBookAyah {
     getBundledTajweedAyahText(stub.surahNumber, stub.numberInSurah) ||
     undefined;
   if (!row) {
-    return textTajweed ? { ...stub, textTajweed } : stub;
+    const out = textTajweed ? { ...stub, textTajweed } : stub;
+    if ((out.text ?? "").replace(/^\uFEFF/, "").trim()) resolvedAyahCache.set(key, out);
+    return out;
   }
-  return {
+  const merged = {
     ...row,
     ...stub,
     text: (stub.text ?? "").trim() || row.text,
@@ -170,6 +178,8 @@ export function resolveMushafBookAyah(stub: MushafBookAyah): MushafBookAyah {
     textHi: (stub.textHi ?? "").trim() || row.textHi,
     textKu: (stub.textKu ?? "").trim() || row.textKu,
   };
+  if ((merged.text ?? "").replace(/^\uFEFF/, "").trim()) resolvedAyahCache.set(key, merged);
+  return merged;
 }
 
 export function mushafBookPageIndex(page: number): number {

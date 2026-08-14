@@ -12,4 +12,14 @@ describe("hajjTourAgenciesCatalog", () => {
     expect(a).toEqual(b);
     expect(a).not.toBe(HAJJ_TOUR_AGENCIES);
   });
+
+  it("lists featured partner Niyet first with contact", () => {
+    const agencies = getHajjTourAgencies();
+    expect(agencies.length).toBeGreaterThan(0);
+    expect(agencies[0]?.id).toBe("niyet");
+    expect(agencies[0]?.featured).toBe(true);
+    expect(agencies[0]?.logoLarge).toBe(true);
+    expect(agencies[0]?.instagram).toBe("niyet_hajj_umrah_");
+    expect(agencies[0]?.website).toBeUndefined();
+  });
 });

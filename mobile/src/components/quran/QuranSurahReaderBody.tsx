@@ -87,6 +87,7 @@ export type QuranSurahReaderBodyProps = {
   horizontalListRef: React.RefObject<React.ComponentRef<typeof GestureHandlerFlatList<MushafPagerPage>> | null>;
   mushafPages: MushafPagerPage[];
   mushafPageWidth: number;
+  mushafPagerInitialIndex?: number;
   onHorizontalViewableItemsChanged: (info: {
     viewableItems: Array<{ isViewable?: boolean; index?: number | null }>;
   }) => void;
@@ -163,6 +164,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
     horizontalListRef,
     mushafPages,
     mushafPageWidth,
+    mushafPagerInitialIndex,
     onHorizontalViewableItemsChanged,
     viewabilityConfig,
     onMushafPagerScrollBeginDrag,
@@ -418,6 +420,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
             data={mushafPages}
             keyExtractor={(p) => p.key}
             {...mushafBookPagerListProps}
+            initialScrollIndex={mushafPagerInitialIndex}
             initialNumToRender={1}
             maxToRenderPerBatch={1}
             windowSize={3}

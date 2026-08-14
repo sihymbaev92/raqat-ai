@@ -27,7 +27,6 @@ import { kk, APP_BRAND_KK } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
 import { isSurahBookmarked, toggleBookmarkSurah } from "../storage/quranBookmarks";
 import {
-  saveSurahAyahsCache,
   displayCachedAyahArabic,
   quranAyahMeaningForLocale,
   type CachedAyah,
@@ -41,13 +40,8 @@ import {
   cancelScheduledQuranSurahMemoryRelease,
   scheduleReleaseQuranSurahMemory,
 } from "../quran/quranSurahMemoryRelease";
-import { enrichAyahsFromBundledQuranDb } from "../services/quranKkBundledLookup";
-import { enrichAyahsWithAlquranTajweed, shouldShowMushafBismillahBanner } from "../services/quranSurahTajweedEnrich";
-import { hasTajweedMarkup } from "../utils/hasTajweedMarkup";
-import {
-  tajweedRenderNoticeKind,
-  tajweedRenderNoticeVisible,
-} from "../quran/quranTajweedRenderPolicy";
+import { shouldShowMushafBismillahBanner } from "../services/quranSurahTajweedEnrich";
+import { resolveQuranReaderTajweedColors } from "../quran/quranReaderTajweedPolicy";
 import { useQuranSurahLoad } from "../quran/useQuranSurahLoad";
 import { surahTitleForLocale } from "../constants/surahTitleKk";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
@@ -97,7 +91,11 @@ import {
   estimateQuranAyahRowHeight,
   quranAyahListRowLayoutKind,
 } from "../quran/quranAyahListItemLayout";
-import { buildMushafPagesForSurah, findMushafPageIndexForAyah } from "../quran/buildMushafPagesForSurah";
+import { findMushafPageIndexForAyah, buildMushafPagesForSurah } from "../quran/buildMushafPagesForSurah";
+import {
+  scheduleScrollQuranSurahToAyah,
+  scrollQuranSurahToAyah,
+} from "../quran/quranSurahAyahScroll";
 import { clampMushafBookPageIndex } from "../quran/mushafBookPager";
 import type { MushafDensityId } from "../config/mushafConfig";
 import { DEFAULT_MUSHAF_DENSITY } from "../config/mushafConfig";
@@ -122,7 +120,6 @@ import {
   getQuranReaderShowTranslit,
   getQuranReaderAllowRotation,
   setQuranReaderAllowRotation,
-  getQuranTajweedColorsEnabled,
   QURAN_READER_RECITER_KEY,
   QURAN_READER_ARABIC_FONT_KEY,
   QURAN_READER_MUSHAF_TEXT_SCALE_KEY,
@@ -224,7 +221,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   } = useQuranSurahLoad(surahNumber);
   const [bookmarked, setBookmarked] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [showTajweedColors, setShowTajweedColors] = useState(false);
+  const effectiveShowTajweedColors = resolveQuranReaderTajweedColors();
   const [showReaderArabic, setShowReaderArabic] = useState(true);
   const [showReaderTranslit, setShowReaderTranslit] = useState(true);
   const [showReaderMeaning, setShowReaderMeaning] = useState(true);
@@ -239,7 +236,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
   const [juzPickerVisible, setJuzPickerVisible] = useState(false);
   const [readerAllowRotation, setReaderAllowRotation] = useState(true);
   const [mushafTextScale, setMushafTextScale] = useState(1);
-  const [tajweedLoading, setTajweedLoading] = useState(false);
   /** undefined — шешім күтілуде; null — скролл жоқ; санды — осы аятқа скролл */
   const {
     scrollTargetAyah,
@@ -287,6 +283,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     isDark,
     mushafDensity,
     mushafBookLike: mushafLayout,
+    quranSurahReader: true,
     readingThemeId,
   });
   const readingThemeSpec = useMemo(() => resolveQuranReadingTheme(readingThemeId), [readingThemeId]);
@@ -375,28 +372,36 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     return [] as MushafPagerPage[];
   }, [ayahs, mushafLayout, surahNumber]);
 
-  const showTajweedForDisplay = useMemo(
-    () => showTajweedColors && arabicScriptEdition === "madinah",
-    [showTajweedColors, arabicScriptEdition]
-  );
-
-  const tajweedNoticeText = useMemo(() => {
-    const kind = tajweedRenderNoticeKind({
-      showTajweed: showTajweedColors,
-      arabicScriptEdition,
-      surface: "surah",
-    });
-    if (!tajweedRenderNoticeVisible(kind)) return null;
-    if (kind === "surah_unicode_tags") return kk.quran.tajweedNoticeSurahUnicode;
-    return null;
-  }, [showTajweedColors, arabicScriptEdition]);
+  const showTajweedForDisplay =
+    effectiveShowTajweedColors && arabicScriptEdition === "madinah";
 
   pagesRef.current = mushafPages;
 
+  const pendingInitialAyah = useMemo(() => {
+    if (typeof scrollTargetAyah === "number" && scrollTargetAyah > 0) return scrollTargetAyah;
+    if (initialAyahParam != null && initialAyahParam > 0) return initialAyahParam;
+    return null;
+  }, [scrollTargetAyah, initialAyahParam]);
+
+  const mushafPagerInitialIndex = useMemo(() => {
+    if (!mushafPages.length || pendingInitialAyah == null) return undefined;
+    return findMushafPageIndexForAyah(mushafPages, pendingInitialAyah);
+  }, [mushafPages, pendingInitialAyah]);
+
   useEffect(() => {
     if (!mushafPages.length) return;
+    if (pendingInitialAyah != null) {
+      const pageIdx = findMushafPageIndexForAyah(mushafPages, pendingInitialAyah);
+      const pg = mushafPages[pageIdx];
+      if (pg) {
+        setVisibleMushafPrintPage(pg.mushafPageNumber);
+        mushafPagerIndexRef.current = pageIdx;
+      }
+      return;
+    }
     setVisibleMushafPrintPage(mushafPages[0]!.mushafPageNumber);
-  }, [surahNumber, mushafPages]);
+    mushafPagerIndexRef.current = 0;
+  }, [surahNumber, mushafPages, pendingInitialAyah]);
 
   useEffect(() => {
     mushafAyahScrollTopsRef.current = {};
@@ -437,55 +442,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       alive = false;
     };
   }, [surahNumber]);
-
-  const ensureTajweedTagsIfNeeded = useCallback(
-    async (enabled: boolean) => {
-      if (!enabled || arabicScriptEdition !== "madinah") return;
-      const cur = ayahsRef.current;
-      if (!cur.length) return;
-      if (cur.every((a) => hasTajweedMarkup(a.textTajweed))) return;
-      setTajweedLoading(true);
-      try {
-        const enriched = await enrichAyahsFromBundledQuranDb(
-          surahNumber,
-          await enrichAyahsWithAlquranTajweed(surahNumber, cur)
-        );
-        setAyahs(enriched);
-        if (enriched.some((a) => hasTajweedMarkup(a.textTajweed))) {
-          await saveSurahAyahsCache(surahNumber, enriched);
-        } else {
-          setToast(kk.quran.tajweedLoadFailedHint);
-        }
-      } finally {
-        setTajweedLoading(false);
-      }
-    },
-    [arabicScriptEdition, setAyahs, surahNumber]
-  );
-
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true;
-      void (async () => {
-        try {
-          const on = await getQuranTajweedColorsEnabled();
-          if (!alive) return;
-          setShowTajweedColors(on);
-          if (on) await ensureTajweedTagsIfNeeded(true);
-        } catch {
-          /* ignore */
-        }
-      })();
-      return () => {
-        alive = false;
-      };
-    }, [ensureTajweedTagsIfNeeded])
-  );
-
-  useEffect(() => {
-    if (!showTajweedColors || !ayahs.length) return;
-    void ensureTajweedTagsIfNeeded(true);
-  }, [showTajweedColors, ayahs.length, ensureTajweedTagsIfNeeded]);
 
   useEffect(() => {
     let alive = true;
@@ -636,30 +592,14 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     return () => clearTimeout(t);
   }, [toast]);
 
-  useEffect(() => {
-    if (scrollTargetAyah === undefined || scrollTargetAyah === null || !ayahs.length) return;
-    const idx = ayahs.findIndex((a) => a.numberInSurah === scrollTargetAyah);
-    if (idx < 0) return;
-    const fromSaved = initialAyahParam == null;
-    const id = setTimeout(() => {
-      if (mushafPageMode && mushafPages.length) {
-        const pageIdx = findMushafPageIndexForAyah(mushafPages, scrollTargetAyah!);
-        const pg = mushafPages[pageIdx];
-        if (pg) setVisibleMushafPrintPage(pg.mushafPageNumber);
-        horizontalListRef.current?.scrollToIndex({ index: pageIdx, animated: true });
-      } else if (mushafScrollMode) {
-        const go = () =>
-          mushafContinuousRef.current?.scrollToAyah(scrollTargetAyah!, { animated: true, viewOffset: 88 });
-        go();
-        setTimeout(go, 180);
-        setTimeout(go, 520);
-      } else {
-        listRef.current?.scrollToIndex({ index: idx, viewPosition: 0.12 });
+  useFocusEffect(
+    useCallback(() => {
+      if (initialAyahParam != null && initialAyahParam > 0) {
+        setScrollTargetAyah(initialAyahParam);
+        setFooterAnchorAyah(initialAyahParam);
       }
-      if (fromSaved) setResumeHighlightAyah(scrollTargetAyah);
-    }, 450);
-    return () => clearTimeout(id);
-  }, [scrollTargetAyah, ayahs, initialAyahParam, mushafPageMode, mushafScrollMode, mushafPages]);
+    }, [initialAyahParam, setScrollTargetAyah])
+  );
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: Array<{ isViewable?: boolean; item?: CachedAyah }> }) => {
@@ -739,10 +679,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     []
   );
 
-  const onMushafAyahTopMeasured = useCallback((ayahInSurah: number, topInContent: number) => {
-    mushafAyahScrollTopsRef.current[ayahInSurah] = topInContent;
-  }, []);
-
   const fallbackMushafScrollYForAyah = useCallback((ayahInSurah: number) => {
     const h = mushafScrollContentHeightRef.current;
     if (!h || !ayahs.length) return undefined;
@@ -752,6 +688,95 @@ export function QuranSurahScreen({ route, navigation }: Props) {
     const ratio = idx / (ayahs.length - 1);
     return ratio * h * 0.9;
   }, [ayahs]);
+
+  const onMushafAyahTopMeasured = useCallback(
+    (ayahInSurah: number, topInContent: number) => {
+      mushafAyahScrollTopsRef.current[ayahInSurah] = topInContent;
+      if (
+        mushafScrollMode &&
+        typeof scrollTargetAyah === "number" &&
+        scrollTargetAyah === ayahInSurah &&
+        ayahs.some((a) => a.numberInSurah === ayahInSurah)
+      ) {
+        scrollQuranSurahToAyah({
+          targetAyah: ayahInSurah,
+          ayahs,
+          animated: false,
+          mushafPageMode,
+          mushafScrollMode,
+          mushafPages,
+          mushafPageWidth,
+          horizontalListRef,
+          mushafScrollRef,
+          mushafContinuousRef,
+          listRef,
+          ayahScrollTops: mushafAyahScrollTopsRef.current,
+          fallbackMushafScrollY: fallbackMushafScrollYForAyah,
+        });
+      }
+    },
+    [
+      mushafScrollMode,
+      scrollTargetAyah,
+      ayahs,
+      mushafPageMode,
+      mushafPages,
+      mushafPageWidth,
+      fallbackMushafScrollYForAyah,
+    ]
+  );
+
+  useEffect(() => {
+    if (scrollTargetAyah === undefined || scrollTargetAyah === null || !ayahs.length) return;
+    const targetAyah = scrollTargetAyah;
+    if (ayahs.findIndex((a) => a.numberInSurah === targetAyah) < 0) return;
+    const fromSaved = initialAyahParam == null;
+    let alive = true;
+    let cancelRetries: (() => void) | undefined;
+    const timer = setTimeout(() => {
+      if (!alive) return;
+      setResumeHighlightAyah(targetAyah);
+      setFooterAnchorAyah(targetAyah);
+      if (mushafPageMode && mushafPages.length) {
+        const pageIdx = findMushafPageIndexForAyah(mushafPages, targetAyah);
+        const pg = mushafPages[pageIdx];
+        if (pg) {
+          setVisibleMushafPrintPage(pg.mushafPageNumber);
+          mushafPagerIndexRef.current = pageIdx;
+        }
+      }
+      cancelRetries = scheduleScrollQuranSurahToAyah({
+        targetAyah,
+        ayahs,
+        animated: fromSaved,
+        mushafPageMode,
+        mushafScrollMode,
+        mushafPages,
+        mushafPageWidth,
+        horizontalListRef,
+        mushafScrollRef,
+        mushafContinuousRef,
+        listRef,
+        ayahScrollTops: mushafAyahScrollTopsRef.current,
+        fallbackMushafScrollY: fallbackMushafScrollYForAyah,
+      });
+    }, 450);
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+      cancelRetries?.();
+    };
+  }, [
+    scrollTargetAyah,
+    ayahs,
+    initialAyahParam,
+    mushafPageMode,
+    mushafScrollMode,
+    mushafPages,
+    mushafPageWidth,
+    readerNavMode,
+    fallbackMushafScrollYForAyah,
+  ]);
 
   const mushafAyahAccessibilityLabel = useCallback(
     (ayahN: number) => {
@@ -981,9 +1006,9 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       playingAyahInSurah,
       loadingAyahAudio,
       ayahAudioIsPlaying,
-      showTajweedColors,
+      showTajweedColors: effectiveShowTajweedColors,
       showTajweedForDisplay,
-      tajweedLoading,
+      tajweedLoading: false,
       showReaderArabic,
       showReaderTranslit,
       showReaderMeaning,
@@ -997,6 +1022,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       readerAllowRotation,
       mushafTextScale,
       mushafHighlightAyah,
+      scrollTargetAyah,
       ayahMarkers,
       readerNavMode: effectiveReaderNavMode,
       surahNumber,
@@ -1008,9 +1034,8 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       playingAyahInSurah,
       loadingAyahAudio,
       ayahAudioIsPlaying,
-      showTajweedColors,
+      effectiveShowTajweedColors,
       showTajweedForDisplay,
-      tajweedLoading,
       showReaderArabic,
       showReaderTranslit,
       showReaderMeaning,
@@ -1024,6 +1049,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       readerAllowRotation,
       mushafTextScale,
       mushafHighlightAyah,
+      scrollTargetAyah,
       ayahMarkers,
       effectiveReaderNavMode,
       surahNumber,
@@ -1345,7 +1371,6 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         showReaderTranslit={showReaderTranslit}
         showReaderMeaning={showReaderMeaning}
         showTajweedForDisplay={showTajweedForDisplay}
-        tajweedNoticeText={tajweedNoticeText}
         arabicScriptEdition={arabicScriptEdition}
         bookmarked={bookmarked}
         setBookmarked={setBookmarked}
@@ -1365,6 +1390,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         horizontalListRef={horizontalListRef}
         mushafPages={mushafPages}
         mushafPageWidth={mushafPageWidth}
+        mushafPagerInitialIndex={mushafPagerInitialIndex}
         onHorizontalViewableItemsChanged={onHorizontalViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         onMushafPagerScrollBeginDrag={onMushafPagerScrollBeginDrag}

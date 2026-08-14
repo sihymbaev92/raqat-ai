@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Linking, Platform, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
@@ -26,6 +26,7 @@ import {
   sanitizeHajjMuftyatPageText,
 } from "../content/hajjMuftyatTextSanitize";
 import { HajjMuftyatPageText } from "./HajjMuftyatPageText";
+import { prefetchMakkahLivePrimaryStream } from "../utils/makkahLiveStreamCache";
 
 const PAGE_BY_NUM = new Map(HAJJ_MUFTYAT_PAGES.map((p) => [p.page, p]));
 const DEFAULT_PAGE_ASPECT = 766 / 1134;
@@ -317,7 +318,11 @@ export function HajjMuftyatGuide() {
   const t = useI18n();
 
   const toggle = (id: string) => setOpen((cur) => ({ ...cur, [id]: !cur[id] }));
+  useEffect(() => {
+    void prefetchMakkahLivePrimaryStream();
+  }, []);
   const openKaabaLive = () => {
+    void prefetchMakkahLivePrimaryStream();
     navigation.navigate("MakkahLive");
   };
 
@@ -334,6 +339,9 @@ export function HajjMuftyatGuide() {
       <Pressable
         oyuBackdrop={false}
         style={({ pressed }) => [styles.kaabaLiveBtn, pressed && { opacity: 0.92 }]}
+        onPressIn={() => {
+          void prefetchMakkahLivePrimaryStream();
+        }}
         onPress={openKaabaLive}
         accessibilityRole="button"
         accessibilityLabel={t.features.hajjKaabaOnlineA11y}

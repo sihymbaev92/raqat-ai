@@ -7,6 +7,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from muftyat_kk_normalize import normalize_muftyat_kk_page_text, normalize_muftyat_kk_text
+
 REPO = Path(__file__).resolve().parents[1]
 PDF_LOCAL = REPO / "data" / "muftyat-quran-oqip-uyreneyik.pdf"
 QURAN_UTSMANI = REPO / "mobile" / "assets" / "bundled" / "quran-uthmani-full.json"
@@ -66,12 +69,27 @@ def normalize_text(raw: str) -> str:
 
 def clean_for_tts(text: str) -> str:
     t = text
-    t = re.sub(r"^\d+\s*\n", "", t)
+    t = re.sub(r"^\d+\s*\n", "", t, flags=re.M)
     t = re.sub(r"[\uF000-\uF8FF\u200B-\u200F\uFEFF\u061C]", "", t)
     t = re.sub(r"\.{4,}", " ", t)
-    t = re.sub(r"\s*\n\s*", ". ", t)
+    t = re.sub(r"([а-яёәіңғүұқөһ])-\n([а-яёәіңғүұқөһ])", r"\1\2", t, flags=re.I)
+    lines = [ln.strip() for ln in t.split("\n") if ln.strip()]
+    sentences: list[str] = []
+    buf = ""
+    for line in lines:
+        if not buf:
+            buf = line
+            continue
+        if re.search(r"[.!?:»\"…)]$", buf) or (line[:1].isupper() and len(line) > 3):
+            sentences.append(buf)
+            buf = line
+        else:
+            buf = f"{buf} {line}"
+    if buf:
+        sentences.append(buf)
+    t = ". ".join(sentences)
     t = re.sub(r"\s+", " ", t)
-    return t.strip()
+    return normalize_muftyat_kk_text(t)
 
 
 def clean_for_display(text: str) -> str:
@@ -80,7 +98,7 @@ def clean_for_display(text: str) -> str:
     t = re.sub(r"[\uF000-\uF8FF\u200B-\u200F\uFEFF\u061C]", "", t)
     t = re.sub(r"[ \t]+", " ", t)
     t = re.sub(r"\n{3,}", "\n\n", t)
-    return t.strip()
+    return normalize_muftyat_kk_page_text(t.strip())
 
 
 def load_quran_arabic() -> dict[int, dict[int, str]]:

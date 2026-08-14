@@ -1,4 +1,5 @@
 import { getMuftyatPageText } from "./tajweedMuftyatPageText";
+import { normalizeMuftyatKkText } from "./muftyatKkTextNormalize";
 
 export type TajweedManualBookExample = {
   arabic?: string;
@@ -56,14 +57,14 @@ const PAGE_13: TajweedManualBookPage = {
       title: "Фатха",
       mark: "ـَ",
       text:
-        "Әріптің үстіне қойылатын сызықша. Жуан әріптің үстіне қойылса \"а\" мен \"о\"-ның арасында, ал жіңішке әріптің үстіне қойылса \"ә\" дыбысын білдіреді.",
+        "Әріптің үстіне қойылатын сызықша. Жуан әріптің үстіне қойылса «а» мен «о» арасында, ал жіңішке әріптің үстіне қойылса «ә» дыбысын білдіреді.",
     },
     {
       type: "examples",
       items: [
         { arabic: "وَزَعَ", reading: "уәзә‘а" },
-        { arabic: "زَرَأَ", reading: "зәраә" },
-        { arabic: "دَرَجَ", reading: "дәражә" },
+        { arabic: "زَرَأَ", reading: "зәрәә" },
+        { arabic: "دَرَجَ", reading: "дәрәжә" },
         { arabic: "أَدَبَ", reading: "әдәбә" },
       ],
     },
@@ -71,15 +72,15 @@ const PAGE_13: TajweedManualBookPage = {
       type: "rule",
       title: "Кәсра",
       mark: "ـِ",
-      text: "Әріптің астына қойылатын сызықша \"и\" дыбысын білдіреді.",
+      text: "Әріптің астына қойылатын сызықша «и» дыбысын білдіреді.",
     },
     {
       type: "examples",
       items: [
-        { arabic: "دَرِبَ", reading: "дәріба" },
+        { arabic: "دَرِبَ", reading: "дәрибә" },
         { arabic: "وَرِثَ", reading: "уәрисә" },
-        { arabic: "وَزِعَ", reading: "уәзиға" },
-        { arabic: "أَرِبَ", reading: "әриба" },
+        { arabic: "وَزِعَ", reading: "уәзи‘а" },
+        { arabic: "أَرِبَ", reading: "әрибә" },
       ],
     },
     {
@@ -91,10 +92,10 @@ const PAGE_13: TajweedManualBookPage = {
     {
       type: "examples",
       items: [
-        { arabic: "رَزُلَ", reading: "разулә" },
+        { arabic: "رَزُلَ", reading: "рәзулә" },
         { arabic: "وُدِعَ", reading: "уди‘а" },
         { arabic: "رُزِقَ", reading: "рузиқа" },
-        { arabic: "ضُرِبَ", reading: "дуриба" },
+        { arabic: "ضُرِبَ", reading: "дурибә" },
       ],
     },
     {
@@ -107,7 +108,7 @@ const PAGE_13: TajweedManualBookPage = {
     {
       type: "examples",
       items: [
-        { arabic: "أَرِخْ", reading: "арих" },
+        { arabic: "أَرِخْ", reading: "әрих" },
         { arabic: "اُدْعُ", reading: "уд‘у" },
         { arabic: "أَنْ", reading: "ән" },
         { arabic: "زِدْ", reading: "зид" },
@@ -378,7 +379,7 @@ const PAGE_20 = alphabetPage(20, [
     examples: [
       { arabic: "خُبِرَ", reading: "хубира" },
       { arabic: "خَبَرُ", reading: "хабәру" },
-      { arabic: "دَرَجُ", reading: "дәражу" },
+      { arabic: "دَرَجُ", reading: "дәрәжу" },
       { arabic: "تَرْبَحُ", reading: "тәрбәху" },
       { arabic: "رَبَحَ", reading: "рабәхә" },
       { arabic: "رَتَبَ", reading: "ратәбә" },
@@ -1303,16 +1304,16 @@ const PAGE_73 = manualPage(
 
 const PAGE_74 = manualPage(
   74,
-  "Тиләует сәждесі",
+  "Тіләуат сәждесі",
   [
-    "Тиләует сәждесі Құранның 14 жерінде кездеседі: Ағраф 7/206, Рағыд 13/15, Нахл 16/49, Исра 17/107, Мәрям 19/58, Хаж 22/18, Фұрқан 25/60, Нәміл 27/25, Сәжде 32/15, Сад 38/24, Фұссилат 41/37, Нәжім 53/62, Иншиқақ 84/21, Ғалақ 96/19.",
+    "Тіләуат сәждесі Құранның 14 жерінде кездеседі: Ағраф 7/206, Рағыд 13/15, Нахл 16/49, Исра 17/107, Мәрям 19/58, Хаж 22/18, Фұрқан 25/60, Нәміл 27/25, Сәжде 32/15, Сад 38/24, Фұссилат 41/37, Нәжім 53/62, Иншиқақ 84/21, Ғалақ 96/19.",
     "Бір сәжде аятын бірнеше рет қайталап оқыса, бір сәжде жеткілікті. Әр түрлі сәжде аяттарын оқыса, әрқайсысына бөлек сәжде жасайды.",
   ]
 );
 
 const PAGE_75 = manualPage(
   75,
-  "Тиләует сәждесін орындау",
+  "Тіләуат сәждесін орындау",
   [
     "Намаздан тыс уақытта қиямға тік тұрып «Аллаһу әкбәр» деп сәждеге жығылады. Сәждеде үш мәрте «Субухаана раббиал а‘ла» дейді.",
     "Сәждеден тұрған кезде «Сами‘нә уә әта‘нә ғуфраанәкә раббәнә уә иләйкәл масиир» деп айтады.",
@@ -1494,7 +1495,7 @@ function displayTextToBlocks(displayText: string): TajweedManualBookBlock[] {
 }
 
 function normalizeLine(line: string): string {
-  return line.replace(/\s+/g, " ").trim();
+  return normalizeMuftyatKkText(line.replace(/\s+/g, " ").trim());
 }
 
 function standaloneBlockForLine(line: string): TajweedManualBookBlock | null {
@@ -1533,11 +1534,7 @@ function appendParagraphPart(parts: string[], line: string): void {
 }
 
 function joinParagraphParts(parts: string[]): string {
-  return parts
-    .join(" ")
-    .replace(/\s+([,.;:!?])/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
+  return normalizeMuftyatKkText(parts.join(" "));
 }
 
 function shouldCloseParagraph(line: string): boolean {

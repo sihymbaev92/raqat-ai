@@ -419,30 +419,15 @@ export const kk = {
     studyMapPickHint: "Бөлімді таңдаңыз. Алдымен дәрет, кейін намаз қадамдарын оқыңыз.",
     wuduCardSub: "Қадамдар және бұзылу",
     fivePrayersTitle: "5 уақыт намаз",
-    fivePrayersSub: "Жетектеу · ниеттен сәлемге дейін",
+    fivePrayersSub: "Ниеттен сәлемге дейін",
     rakatTableTitle: "5 уақыт намаздың рәкәттері мен оқу реті",
     rakatTableHint:
       "Рәкәт реті сурет емес, қолданба бетіне мәтін болып жазылды. Тіл ауысқанда осы кесте де бірге аударылады.",
     afterPrayerDuasTitle: "Намаз соңында оқылатын дұғалар",
     afterPrayerDuasHint:
       "Реті: алдымен Аят әл-Курси, кейін Құнт дұғасын жаттауға ыңғайлы мәтін ретінде оқыңыз.",
-  },
-  namazCompanion: {
-    screenTitle: "Сәжде жетектеуі",
-    pickerTitle: "Қай намазды жетектейміз?",
-    pickerSub:
-      "Парыз рәкәттерін қадам-қадам өтіңіз: тәкбір → қиям → рукуғ → сәжде → сәлем. Төменде сол қадамдардың оқу мәтіні де бар.",
-    fardRakatLine: (n: number) => `${n} рәкәт парыз`,
-    rakatWord: "рәкәт",
-    startCta: "Бастау",
-    disclaimer:
-      "Оқу материалы (Ханафи). Тірі фиқһ үкімі емес; жеке мәселеде ұстазбен нақтылаңыз. RAHAT OMIR ҚМДБ ресми қолданбасы емес.",
-    stepOf: (current: number, total: number) => `Қадам ${current} / ${total}`,
-    exit: "Шығу",
-    prev: "Артқа",
-    next: "Келесі",
-    finish: "Аяқтау",
-    lockedHint: "Қадам бойынша",
+    translitLabel: "Транскрипция",
+    meaningLabel: "Мағына",
   },
 
   tajweedGuide: {
@@ -495,6 +480,17 @@ export const kk = {
     alphabetLegendHeavy: "Жуан",
     alphabetLegendLight: "Жіңішке",
     alphabetExampleLabel: "Мысал",
+    alphabetExamplePracticeHint:
+      "Алдымен мысал сөзді өзіңіз оқыңыз. «Дұрыс оқуды тыңдау» батырмасын басып, этalon дыбыспен салыстырыңыз.",
+    alphabetCheckExampleBtn: "Дұрыс оқуды тыңдау",
+    alphabetStopExampleBtn: "Тоқтату",
+    alphabetCheckExampleA11y: (example: string) => `${example} — дұрыс оқуды тыңдау`,
+    bookExamplePracticeHint:
+      "Алдымен арабша мысалды өзіңіз оқыңыз. «Дұрыс оқуды тексеру» этalon дыбысты ойнатады; астындағы транскрипция оқулыққа сәйкес.",
+    bookExampleCheckBtn: "Дұрыс оқуды тексеру",
+    bookExampleStopBtn: "Тоқтату",
+    bookExampleCheckA11y: (arabic: string, reading?: string) =>
+      reading ? `${arabic}, ${reading} — дұрыс оқуды тексеру` : `${arabic} — дұрыс оқуды тексеру`,
     alphabetSelectHint: "Әріпті таңдаңыз — атауы, дыбысы және қысқа мысал осында шығады.",
     alphabetToneHeavy: "Дыбыс: жуан (тәхфим)",
     alphabetToneLight: "Дыбыс: жіңішке (тарқиқ)",
@@ -578,6 +574,11 @@ export const kk = {
     accuracyKm: (km: string) => `±${km} км`,
     accuracyM: (m: number) => `±${m} м`,
     locationSourceCity: "Орын: таңдалған қала бойынша шамамен",
+    locationSourceOnline: "Онлайн GPS · нақты координат",
+    expandLandscape: "Үлкейту (альбом)",
+    collapsePortrait: "Портретке оралу",
+    expandLandscapeA11y: "Құбыла компасын альбомдық толық экранға ашу",
+    collapsePortraitA11y: "Портреттік көрініске оралу",
     webCompassTitle: "Сайтта компасты қосу",
     webCompassBody:
       "Телефон браузері компас сенсорын бөлек рұқсатпен ашады. Төмендегі батырманы басып, сұралса Motion/Orientation рұқсатын беріңіз.",
@@ -997,7 +998,7 @@ export const kk = {
     hajjSectionUnit: "бөлім",
     hajjTapSectionHint: "Бөлімді басыңыз — мәтін ретімен ашылады.",
     hajjScanCdnHint: "Скан беттері желіден жүктеледі; мәтін офлайн қолжетімді.",
-    hajjTourAgenciesTitle: "Қажылық ұйымдарын тексеру",
+    hajjTourAgenciesTitle: "Қажылық ұйымдары",
     hajjTourAgenciesLead: "Ұмыра/қажылық сапарына шығар алдында тексеретін қысқа нұсқаулық",
     hajjTourAgenciesEmptyTitle: "Агенттікті таңдағанда нені сұрау керек?",
     hajjTourAgenciesEmpty:
@@ -1011,6 +1012,7 @@ export const kk = {
       "Байланыс және баға — тікелей агенттікпен. RAHAT OMIR тек ақпараттық тізім; келісімшарт агенттікпен жасалады.",
     hajjTourServiceUmrah: "Ұмыра",
     hajjTourServiceHajj: "Қажылық",
+    hajjTourAgencyFeaturedBadge: "Ұсынылған серіктес",
     hajjTourAgencyOpenA11y: (name: string) => `${name} — байланыс`,
     kaabaLiveTitle: "Қағба — тікелей эфир",
     kaabaLiveSoundOn: "Дауысты қосу",
@@ -1071,6 +1073,7 @@ export const kk = {
     halalMapTabHint:
       "halaldamu.kz сайтындағыдай — сертификатты ұйымдарды картада көріңіз; нүктені басып карточканы ашыңыз.",
     halalMapTabStat: (count: number) => `~${count} мекеме (координаты бар нүктелер)`,
+    halalMapTabNearbyStat: (count: number, km: number) => `Жақын маңда: ${count} мекеме (${km} км)`,
     halalGoodsQuickTitle: "Жылдам іздеу",
     halalGoodsQuickHint: "2+ таңба — нәтиже автоматты жаңарады.",
     halalCheckPhotoShort: "Сурет",
@@ -2185,6 +2188,12 @@ export const kk = {
     /** Сүрелер тізімі: мағына/тақырып бойынша аят іздеу */
     topicAyahsQuickAction: "Тақырып бойынша аяттар іздеу",
     topicAyahsQuickActionA11y: "Тақырып бойынша аяттар іздеу",
+    searchBtnA11y: "Сүре іздеу",
+    searchQuickAction: "Сүре іздеу",
+    openSurahRowA11y: (title: string, meta?: { surahNumber: number; ayahCount: number }) =>
+      meta
+        ? `Сүре ${meta.surahNumber}, ${title}, ${meta.ayahCount} аят. Сүре оқу экранын ашу`
+        : `${title}. Сүре оқу экранын ашу`,
     ayahWordSearchTitle: "Тақырып бойынша аяттар іздеу",
     ayahWordSearchPlaceholder: "Іздеу: тақырып, мағына, транскрипция…",
     ayahWordSearchClearA11y: "Іздеу мәтінін тазалау",
@@ -2602,8 +2611,8 @@ export const kk = {
     sectionQibla: "Құбыла",
     sectionQiblaSub: "Компас жауап беру жылдамдығы (барлық экрандарда).",
     sectionAi: IMAM_AI_BRAND_KK,
-    sectionLinks: "Бөлімдер",
-    sectionLinksSub: "Telegram, халал және экожүйе.",
+    sectionFeedback: "Кері байланыс",
+    feedbackPhoneSub: "Сұрақ немесе ұсыныс — телефон арқылы хабарласыңыз.",
     sectionTransparency: "Ашықтық және құқық",
     sectionTransparencySub: "Тәуелсіздік, құпиялылық, дерек ағындары.",
     transparencyIndependenceTitle: "Тәуелсіздік",
@@ -2885,13 +2894,14 @@ export const kk = {
     /** Ең астындағы «жобаға үлес» блогы */
     supportProjectTitle: "Жобаға үлес",
     supportProjectBody:
-      "Қолданба мен деректерді дамытуға қолдау көрсетуге болады. Төменде шот немесе Telegram сілтемесі көрсетілуі мүмкін (build кезінде қосылады).",
-    supportProjectOpen: "Қолдау сілтемесін ашу",
-    supportAccountLabel: "Төлем реквизиті (шот)",
+      "Қолданба мен деректерді дамытуға Kaspi арқылы аударым жасауға болады.",
+    supportProjectOpen: "Жобаға үлес сілтемесін ашу",
+    supportKaspiLabel: "Kaspi",
+    supportKaspiHint: "Kaspi → Аударым → телефон нөміріне",
     supportAccountCopy: "Көшіру",
     supportAccountCopied: "Көшірілді",
     supportAccountDisclaimer:
-      "Төлем жасамас бұрын деректерді жоба иесімен тексеріңіз; қолданба тек көрсетеді.",
+      "Аударым жасамас бұрын нөмірді тексеріңіз; қолданба тек көрсетеді.",
   },
   more: {
     intro: `${APP_BRAND_KK} экожүйесінің бір бөлігі: Құран, дұғалар, баптаулар және Telegram осында.`,
@@ -2950,6 +2960,6 @@ export const kk = {
     independenceFull:
       "RAHAT OMIR — тәуелсіз исламдық сервистік жоба. ҚМДБ, Fatua.kz немесе Muftyat.kz ресми мобильді қолданбасы емес. Ресми сайттардан рұқсат бойынша үзінді/сілтеме көрсетіледі; пәтуа мен үкім берілмейді. Намаз оқуы ғылыми шолусыз — тек оқу материалы.",
     dataFlowsBody:
-      "Үшінші тараптар: api.rahatomir.com (аккаунт/синк); Muftyat/Fatua (индекс); api.muftyat.kz және Aladhan (намаз); islamic.network / alquran.cloud (Құран); Google/Apple (OAuth); live.net.sa (Қағба HLS).",
+      "Үшінші тараптар: api.rahatomir.com (аккаунт/синк); Muftyat/Fatua (индекс); api.muftyat.kz және Aladhan (намаз); islamic.network / alquran.cloud (Құран); Google/Apple (OAuth); win.holol.com / live.net.sa (Қағба HLS).",
   },
 };

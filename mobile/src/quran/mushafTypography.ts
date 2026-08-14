@@ -6,7 +6,7 @@ import {
   quranArabicAyahTextMetrics,
 } from "../config/quranArabicFontPresets";
 import { type MushafDensityId, type MushafDensityPreset, getMushafDensityPreset } from "../config/mushafConfig";
-import { clampMushafTextScale } from "./mushafTextScale";
+import { clampMushafTextScale, QURAN_SURAH_ARABIC_SCALE_BOOST } from "./mushafTextScale";
 import { muftyatQuranArabicInk } from "../theme/muftyatQuranStyle";
 import {
   DEFAULT_QURAN_READING_THEME,
@@ -32,6 +32,8 @@ export type MushafTypographyMetrics = {
 export type ComputeMushafTypographyOptions = {
   /** Хатым/мұсаф кітап оқуы: нақышты қаріп + тема сиясы */
   bookMushaf?: boolean;
+  /** Құран сүре оқу экраны (QuranSurah) — хатымға қатысы жоқ */
+  quranSurahReader?: boolean;
   readingThemeId?: QuranReadingThemeId;
 };
 
@@ -56,7 +58,9 @@ export function computeMushafTypography(
     default: undefined,
   });
   const arabAyahFont = quranArabicAyahTextMetrics(presetForMetrics, arabicLineFontFamily);
-  const scale = opts?.bookMushaf === true ? mushafTextScale : clampMushafTextScale(mushafTextScale);
+  const baseScale = opts?.bookMushaf === true ? mushafTextScale : clampMushafTextScale(mushafTextScale);
+  const quranSurahBoost = opts?.quranSurahReader === true ? QURAN_SURAH_ARABIC_SCALE_BOOST : 1;
+  const scale = baseScale * quranSurahBoost;
   const bookScaleBoost = qcomBook ? 1 : opts?.bookMushaf === true ? 1.04 : 1;
   /** Хатым compact: 604 бет бір экранға сiyу — line-height кем дегенде 1.8× (харакат кесілмеуі). */
   const lineHeightFactor = qcomBook

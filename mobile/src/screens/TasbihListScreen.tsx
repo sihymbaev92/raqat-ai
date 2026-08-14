@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { TasbihStackParamList } from "../navigation/types";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
 import { loadDhikrItems } from "./tasbihShared";
-import { pickBestTranslit } from "../utils/translitKk";
+import { pickBestTranslit, isRedundantTranslitTitle } from "../utils/translitKk";
 
 type Props = NativeStackScreenProps<TasbihStackParamList, "TasbihList">;
 
@@ -67,6 +67,7 @@ export function TasbihListScreen({ navigation }: Props) {
       const show = String(c);
       const translit = pickBestTranslit(d.textAr || "", d.translitKk);
       const title = tr(d.textKk);
+      const hideTitle = Boolean(translit && isRedundantTranslitTitle(title, translit));
       return (
         <View key={id} style={styles.listRowWrap}>
           <Pressable
@@ -89,12 +90,19 @@ export function TasbihListScreen({ navigation }: Props) {
                   {d.textAr}
                 </Text>
               ) : null}
-              <Text style={styles.listRowTitle} numberOfLines={2}>
-                {title}
-              </Text>
+              {hideTitle ? null : (
+                <Text style={styles.listRowTitle} numberOfLines={2}>
+                  {title}
+                </Text>
+              )}
               {translit ? (
-                <Text style={styles.listRowTranslit} numberOfLines={2}>
+                <Text style={styles.listRowTranslit} numberOfLines={3}>
                   {tr(translit)}
+                </Text>
+              ) : null}
+              {d.meaningKk ? (
+                <Text style={styles.listRowMeaning} numberOfLines={2}>
+                  {tr(d.meaningKk)}
                 </Text>
               ) : null}
               <Text style={styles.listRowProgress}>{show}</Text>
@@ -200,10 +208,18 @@ function makeStyles(colors: ThemeColors, isDark: boolean) {
     },
     listRowTitle: { color: colors.scriptureMeaningKk, fontWeight: "800", fontSize: 15 },
     listRowTranslit: {
-      color: colors.scriptureTranslit,
+      color: colors.text,
+      fontSize: 15,
+      marginTop: 4,
+      lineHeight: 22,
+      fontWeight: "900",
+    },
+    listRowMeaning: {
+      color: colors.muted,
       fontSize: 13,
       marginTop: 4,
-      lineHeight: 18,
+      lineHeight: 19,
+      fontWeight: "600",
     },
     listRowProgress: {
       color: colors.accent,

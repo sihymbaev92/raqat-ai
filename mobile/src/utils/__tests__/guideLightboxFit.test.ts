@@ -2,6 +2,7 @@ import {
   guideLightboxFitSize,
   guideThumbDisplaySize,
   guideThumbFitContain,
+  guideImageDecodeMultiplier,
   resolveGuideImageThumbFrame,
 } from "../guideLightboxFit";
 
@@ -54,5 +55,11 @@ describe("resolveGuideImageThumbFrame", () => {
   it("defaults to 220 when height missing", () => {
     const frame = resolveGuideImageThumbFrame({ width: "100%" });
     expect(frame.height).toBe(220);
+  });
+
+  it("caps decode multiplier to display pixels", () => {
+    expect(guideImageDecodeMultiplier(360, { width: 2000, height: 1200 }, 3)).toBeCloseTo(0.54, 2);
+    expect(guideImageDecodeMultiplier(360, { width: 400, height: 240 }, 2)).toBe(1);
+    expect(guideImageDecodeMultiplier(360, undefined, 3)).toBeUndefined();
   });
 });

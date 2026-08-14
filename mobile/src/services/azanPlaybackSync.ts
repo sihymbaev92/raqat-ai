@@ -1,11 +1,13 @@
 import { Platform } from "react-native";
 import {
+  finishAzanDelivery,
   getNativeAzanPlaybackStatus,
   type AzanPlaybackStatus,
 } from "./prayerFullScreenAzan";
 import {
   getPreviewAzanDuaPlaybackStatus,
   getPreviewAzanPlaybackStatus,
+  stopPreviewPrayerNotifSound,
 } from "../utils/previewPrayerNotifSound";
 
 function useNativeAzanPlayback(): boolean {
@@ -30,4 +32,15 @@ export async function readAzanDuaPlaybackStatus(
     if (status?.completed && !status.isPlaying) return status;
   }
   return getPreviewAzanDuaPlaybackStatus();
+}
+
+/** Тек preview (намaz баптау/уақыт toggle) — scheduled azan delivery-ді өшірмейді. */
+export async function stopPreviewAzanPlaybackOnly(): Promise<void> {
+  await stopPreviewPrayerNotifSound();
+}
+
+/** Preview + scheduled azan — барлық ойнатуды тоқтату. */
+export async function stopAllAzanPlayback(): Promise<void> {
+  finishAzanDelivery();
+  await stopPreviewPrayerNotifSound();
 }

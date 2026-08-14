@@ -30,6 +30,16 @@ export function tajweedLetterAudioUris(filename: string): string[] {
   return [`${base}/letters/${filename}`];
 }
 
+export function tajweedExampleAudioUri(filename: string): string {
+  return tajweedExampleAudioUris(filename)[0] ?? `${getTajweedAssetsBaseUrl()}/examples/${filename}`;
+}
+
+/** Мысал сөз MP3 — CDN (primary → rahatomir). */
+export function tajweedExampleAudioUris(filename: string): string[] {
+  const base = getTajweedAssetsBaseUrl();
+  return [`${base}/examples/${filename}`];
+}
+
 export function tajweedMuftyatPageImageUri(page: number): string {
   return tajweedMuftyatPageImageUris(page)[0] ?? "";
 }

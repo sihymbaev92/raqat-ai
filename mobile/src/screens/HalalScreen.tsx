@@ -50,12 +50,19 @@ import { useAppLocale, useLocaleRevision } from "../i18n/runtime";
 import { kk } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
 import { getHalalHubInstantCatalog, prefetchHalalDamuHub } from "../services/halalHubBootstrap";
-import { resolveInstantHalalCompanyMapMarkers, warmHalalCompanyMapMarkers } from "../utils/halalMapBootstrap";
+import {
+  refreshHalalMapMarkerCount,
+  resolveInstantHalalCompanyMapMarkers,
+  warmHalalCompanyMapMarkers,
+  prewarmHalalMapSession,
+} from "../utils/halalMapBootstrap";
 import { snapshotRowToCompanyCard } from "../services/halalCompaniesSnapshot";
 import { menuIconAssets } from "../theme/menuIconAssets";
 import { useAppTheme } from "../theme/ThemeContext";
+import { HalalLeafletPrewarmer } from "../components/halal/HalalLeafletPrewarmer";
 import { domainSettingsHeaderRightContainerStyle } from "../components/settings/DomainSettingsHeaderButton";
-import { runAfterInteractions } from "../utils/uiDefer";
+import { useHalalNearbyLocation } from "../hooks/useHalalNearbyLocation";
+import { filterHalalMapMarkersWithinRadius } from "../utils/halalMapMarkers";
 
 const HalalVerifyTabPanel = lazy(() =>
   import("../components/halal/HalalVerifyTabPanel").then((m) => ({ default: m.HalalVerifyTabPanel }))
@@ -97,7 +104,10 @@ export function HalalScreen({ navigation, route }: Props) {
   const [siteWebReady, setSiteWebReady] = useState(() => initialTab === "site");
   const [mapModalOpen, setMapModalOpen] = useState(false);
   const [mapCompanyCount, setMapCompanyCount] = useState(0);
+  const [mapAssetsPrewarm, setMapAssetsPrewarm] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<HalalDamuCompanyCard | null>(null);
+  const [screenFocused, setScreenFocused] = useState(true);
+  const nearbyLocation = useHalalNearbyLocation({ enabled: screenFocused });
 
   const activeTab = useMemo(
     () => halalHubWebTabById(activeTabId, tabs),
@@ -141,15 +151,17 @@ export function HalalScreen({ navigation, route }: Props) {
     void import("../components/officialSiteWebViewReload").then((m) =>
       m.prefetchOfficialSiteWebPages([siteUrl])
     );
-    const task = runAfterInteractions(() => {
-      void prefetchHalalDamuHub();
-      warmHalalCompanyMapMarkers();
-    }, 400);
-    return () => task.cancel();
+    warmHalalCompanyMapMarkers();
+    void prewarmHalalMapSession(kk.features.halalMapOpenDetail);
+    void prefetchHalalDamuHub();
   }, [siteUrl]);
 
   useFocusEffect(
     useCallback(() => {
+      setScreenFocused(true);
+      setMapAssetsPrewarm(true);
+      warmHalalCompanyMapMarkers();
+      void prewarmHalalMapSession(kk.features.halalMapOpenDetail);
       if (activeTabId === "site") {
         setSiteMounted(true);
         setSiteWebReady(true);
@@ -157,19 +169,62 @@ export function HalalScreen({ navigation, route }: Props) {
       if (activeTabId === "institutions") setInstitutionsMounted(true);
       if (activeTabId === "map") setMapMounted(true);
       if (activeTabId === "verify") setVerifyMounted(true);
-      return () => {
-        void import("../services/halalCompaniesSnapshot").then((m) =>
-          m.releaseHalalCompaniesSnapshotMemory()
-        );
-        void import("../api/halalDamuWp").then((m) => m.releaseHalalDamuMemoryCache());
-      };
+
+      setMapCompanyCount(resolveInstantHalalCompanyMapMarkers().length);
+      warmHalalCompanyMapMarkers();
+      void prefetchHalalDamuHub().then(() => {
+        void refreshHalalMapMarkerCount().then((count) => {
+          if (count > 0) setMapCompanyCount(count);
+        });
+      });
+      return () => setScreenFocused(false);
     }, [activeTabId])
   );
+
+  const nearbyMapCount = useMemo(() => {
+    if (nearbyLocation.centerLat == null || nearbyLocation.centerLon == null) return null;
+    const markers = resolveInstantHalalCompanyMapMarkers();
+    if (!markers.length) return null;
+    return filterHalalMapMarkersWithinRadius(
+      markers,
+      nearbyLocation.centerLat,
+      nearbyLocation.centerLon,
+      nearbyLocation.radiusKm
+    ).length;
+  }, [
+    nearbyLocation.centerLat,
+    nearbyLocation.centerLon,
+    nearbyLocation.radiusKm,
+    mapCompanyCount,
+  ]);
+
+  useEffect(() => {
+    if (nearbyLocation.centerLat == null || nearbyLocation.centerLon == null) return;
+    void prewarmHalalMapSession(
+      kk.features.halalMapOpenDetail,
+      undefined,
+      { lat: nearbyLocation.centerLat, lon: nearbyLocation.centerLon },
+      nearbyLocation.radiusKm
+    );
+  }, [nearbyLocation.centerLat, nearbyLocation.centerLon, nearbyLocation.radiusKm]);
+
+  useEffect(() => {
+    if (nearbyLocation.centerLat == null || nearbyLocation.centerLon == null) return;
+    void prewarmHalalMapSession(
+      kk.features.halalMapOpenDetail,
+      undefined,
+      { lat: nearbyLocation.centerLat, lon: nearbyLocation.centerLon },
+      nearbyLocation.radiusKm
+    );
+  }, [nearbyLocation.centerLat, nearbyLocation.centerLon, nearbyLocation.radiusKm]);
 
   useEffect(() => {
     if (!mapMounted) return;
     setMapCompanyCount(resolveInstantHalalCompanyMapMarkers().length);
     warmHalalCompanyMapMarkers();
+    void refreshHalalMapMarkerCount().then((count) => {
+      if (count > 0) setMapCompanyCount(count);
+    });
   }, [mapMounted]);
 
   const onReload = useCallback(() => {
@@ -290,7 +345,11 @@ export function HalalScreen({ navigation, route }: Props) {
         >
           {institutionsMounted ? (
             <Suspense fallback={null}>
-              <HalalCatalogTabPanel active={activeTabId === "institutions"} colors={colors} />
+              <HalalCatalogTabPanel
+                active={activeTabId === "institutions"}
+                colors={colors}
+                nearbyLocation={nearbyLocation}
+              />
             </Suspense>
               ) : null}
             </View>
@@ -302,10 +361,15 @@ export function HalalScreen({ navigation, route }: Props) {
             <ScrollView style={styles.mapPad} contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}>
               <Suspense fallback={null}>
                 <HalalMapTabPanel
-            colors={colors}
-                companyCount={mapCompanyCount}
-                onOpenMap={openMapModal}
-              />
+                  colors={colors}
+                  companyCount={mapCompanyCount}
+                  onOpenMap={openMapModal}
+                  nearbyCount={nearbyMapCount}
+                  locationLabel={nearbyLocation.locationLabel}
+                  locationBusy={nearbyLocation.locationBusy}
+                  locationDenied={nearbyLocation.locationDenied}
+                  radiusKm={nearbyLocation.radiusKm}
+                />
               </Suspense>
               </ScrollView>
               ) : null}
@@ -332,7 +396,11 @@ export function HalalScreen({ navigation, route }: Props) {
         onSelectCompanyId={onSelectCompanyFromMap}
         strings={mapStrings}
         colors={colors}
+        userLat={nearbyLocation.centerLat}
+        userLon={nearbyLocation.centerLon}
+        radiusKm={nearbyLocation.radiusKm}
       />
+      {mapAssetsPrewarm ? <HalalLeafletPrewarmer /> : null}
       <HalalCompanyDetailSheet
         visible={selectedCompany != null}
         company={selectedCompany}

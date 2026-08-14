@@ -74,6 +74,13 @@ const TAJWEED_LETTER_AUDIO_FILES: Record<string, string> = {
 
 export const TAJWEED_LETTER_AUDIO_BY_AR: Record<string, string> = TAJWEED_LETTER_AUDIO_FILES;
 
+const BARE_ALPHABET_LETTERS = new Set(Object.keys(TAJWEED_LETTER_AUDIO_FILES));
+
+/** Оқулықтағы жалғы 28 әріп (harakatsız) — example TTS емес, letter MP3. */
+export function isBareTajweedAlphabetLetter(ar: string): boolean {
+  return BARE_ALPHABET_LETTERS.has((ar ?? "").trim().normalize("NFC"));
+}
+
 
 
 function bundledLetterSource(file: string): AVPlaybackSource | undefined {

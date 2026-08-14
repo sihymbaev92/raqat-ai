@@ -1,0 +1,2047 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-13T23:27:25.770745+00:00",
+  "sources": {
+    "textbook": "Muftyat — Құран оқып-үйренейік! (pages 13–77 manual)",
+    "alphabetReference": "https://github.com/BBjamaat/learning-arabic-letters",
+    "tajweedRules": "https://github.com/quran/quran-tajweed",
+    "audioHarakatClips": "https://arabic-online.ru (harakat syllable clips)",
+    "audioQuran": "EveryAyah / Quran.com API (ar.husary word segments)"
+  },
+  "examples": {
+    "وَزَعَ": {
+      "arabic": "وَزَعَ",
+      "readingKk": "уәзә‘а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_9a9c775447.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "زَرَأَ": {
+      "arabic": "زَرَأَ",
+      "readingKk": "зәрәә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7e890ade40.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَرَجَ": {
+      "arabic": "دَرَجَ",
+      "readingKk": "дәрәжә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ed300f9773.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَدَبَ": {
+      "arabic": "أَدَبَ",
+      "readingKk": "әдәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d15ad6ea69.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَرِبَ": {
+      "arabic": "دَرِبَ",
+      "readingKk": "дәрибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_64aa78b41d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وَرِثَ": {
+      "arabic": "وَرِثَ",
+      "readingKk": "уәрисә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3059920a61.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وَزِعَ": {
+      "arabic": "وَزِعَ",
+      "readingKk": "уәзи‘а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_74187ca1be.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَرِبَ": {
+      "arabic": "أَرِبَ",
+      "readingKk": "әрибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2de9bc5bfb.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَزُلَ": {
+      "arabic": "رَزُلَ",
+      "readingKk": "рәзулә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_5c356c0c7d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وُدِعَ": {
+      "arabic": "وُدِعَ",
+      "readingKk": "уди‘а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0f8c8b622f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رُزِقَ": {
+      "arabic": "رُزِقَ",
+      "readingKk": "рузиқа",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0fe793fd83.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ضُرِبَ": {
+      "arabic": "ضُرِبَ",
+      "readingKk": "дурибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_efda0d2ae7.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَرِخْ": {
+      "arabic": "أَرِخْ",
+      "readingKk": "әрих",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3f0e7856b1.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اُدْعُ": {
+      "arabic": "اُدْعُ",
+      "readingKk": "уд‘у",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_71b00541c9.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَنْ": {
+      "arabic": "أَنْ",
+      "readingKk": "ән",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_21053ea34a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "زِدْ": {
+      "arabic": "زِدْ",
+      "readingKk": "зид",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d68f24e2e9.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَرْضُ": {
+      "arabic": "أَرْضُ",
+      "readingKk": "арду",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_62dd55b10a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَأْسُ": {
+      "arabic": "بَأْسُ",
+      "readingKk": "бәсу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_45ca74d280.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَبَا": {
+      "arabic": "رَبَا",
+      "readingKk": "рабәә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_594bcd10cf.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَبْ": {
+      "arabic": "أَبْ",
+      "readingKk": "әб",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_33d9a6f6b7.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَبُو": {
+      "arabic": "أَبُو",
+      "readingKk": "әбу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2592539cb2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَبِي": {
+      "arabic": "أَبِي",
+      "readingKk": "әби",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_19f7ef7900.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَبَا": {
+      "arabic": "أَبَا",
+      "readingKk": "әбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e2104f22ca.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "إِبْ": {
+      "arabic": "إِبْ",
+      "readingKk": "иб",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_34f94dfaa5.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أُبْ": {
+      "arabic": "أُبْ",
+      "readingKk": "уб",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_4db00b8469.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَا": {
+      "arabic": "بَا",
+      "readingKk": "бәә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7c7afb90ab.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَوْ": {
+      "arabic": "بَوْ",
+      "readingKk": "бәу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3b8e149583.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَوْبَة": {
+      "arabic": "تَوْبَة",
+      "readingKk": "тәубә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c979282922.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَبَ": {
+      "arabic": "تَبَ",
+      "readingKk": "тәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_37d2dc9628.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَوْ": {
+      "arabic": "تَوْ",
+      "readingKk": "тәу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_340740d00b.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَا": {
+      "arabic": "تَا",
+      "readingKk": "тәә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3bc5f0ae97.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بِتْ": {
+      "arabic": "بِتْ",
+      "readingKk": "бит",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e157044687.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَتْ": {
+      "arabic": "بَتْ",
+      "readingKk": "бәт",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a8549d663a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَتْ": {
+      "arabic": "أَتْ",
+      "readingKk": "әт",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c25a9b7916.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَتِ": {
+      "arabic": "أَتِ",
+      "readingKk": "әти",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a88a85666e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَثَتَ": {
+      "arabic": "بَثَتَ",
+      "readingKk": "бәсәтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_49d3629e72.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ثُبِتَ": {
+      "arabic": "ثُبِتَ",
+      "readingKk": "субитә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8b950d0636.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ثَبَتَ": {
+      "arabic": "ثَبَتَ",
+      "readingKk": "сәбәтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_65c326c5b2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بُثْ": {
+      "arabic": "بُثْ",
+      "readingKk": "бус",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3370fa8078.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَثْ": {
+      "arabic": "بَثْ",
+      "readingKk": "бәс",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_39c791a165.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَثَ": {
+      "arabic": "بَثَ",
+      "readingKk": "бәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0410003792.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَثْ": {
+      "arabic": "أَثْ",
+      "readingKk": "әс",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_08586c5c92.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَثَجَ": {
+      "arabic": "بَثَجَ",
+      "readingKk": "бәсәжә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_09963c565f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تُجِثَ": {
+      "arabic": "تُجِثَ",
+      "readingKk": "тужисә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_5256954a16.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَجَثَ": {
+      "arabic": "تَجَثَ",
+      "readingKk": "тәжәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_fd739cc4ff.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "جَبَتَ": {
+      "arabic": "جَبَتَ",
+      "readingKk": "жәбәтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e4a3548396.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أُجْ": {
+      "arabic": "أُجْ",
+      "readingKk": "уж",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_10ed797eab.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "إِجْ": {
+      "arabic": "إِجْ",
+      "readingKk": "иж",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0e10d0ad98.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَجَ": {
+      "arabic": "أَجَ",
+      "readingKk": "әжә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_42cb5cf552.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَجَبَ": {
+      "arabic": "حَجَبَ",
+      "readingKk": "хәжәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_9cbb7b7c35.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَتَحَ": {
+      "arabic": "أَتَحَ",
+      "readingKk": "әтәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3d92a57e98.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَحْتِ": {
+      "arabic": "تَحْتِ",
+      "readingKk": "тәхти",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_211111a491.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَحْتَ": {
+      "arabic": "تَحْتَ",
+      "readingKk": "тәхтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a7ccaf0f17.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَحَثَ": {
+      "arabic": "بَحَثَ",
+      "readingKk": "бәхәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c0b615b070.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حِبْ": {
+      "arabic": "حِبْ",
+      "readingKk": "хиб",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_9e3ad2abc2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَبْ": {
+      "arabic": "حَبْ",
+      "readingKk": "хаб",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c8fa56c912.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تُبِخَ": {
+      "arabic": "تُبِخَ",
+      "readingKk": "тубиха",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2cc3215a82.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أُبِخَ": {
+      "arabic": "أُبِخَ",
+      "readingKk": "убиха",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c62ffae5bc.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَخْبُسُ": {
+      "arabic": "تَخْبُسُ",
+      "readingKk": "тахбусу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_28337c9e2f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَخَتَ": {
+      "arabic": "بَخَتَ",
+      "readingKk": "бәхатә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_be2f98ab3c.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَبُسَ": {
+      "arabic": "خَبُسَ",
+      "readingKk": "хабусә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8a8f6a6970.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَبَتَ": {
+      "arabic": "خَبَتَ",
+      "readingKk": "хабәтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d442b6a6ce.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "جَهَدَ": {
+      "arabic": "جَهَدَ",
+      "readingKk": "жәхәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_1eb5c81ac2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَحَدُ": {
+      "arabic": "أَحَدُ",
+      "readingKk": "әхәду",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_03bbd33c16.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَدِبَ": {
+      "arabic": "حَدِبَ",
+      "readingKk": "хәдибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2e20e66cf0.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَحْدُثُ": {
+      "arabic": "تَحْدُثُ",
+      "readingKk": "тәхдусу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d57ac49170.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَدَثَ": {
+      "arabic": "حَدَثَ",
+      "readingKk": "хәдәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c3845ee270.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَبْجُ": {
+      "arabic": "دَبْجُ",
+      "readingKk": "дәбжу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_cec7127024.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَبَجَ": {
+      "arabic": "دَبَجَ",
+      "readingKk": "дәбәжә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0e13de7ab7.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَأْخُذُ": {
+      "arabic": "تَأْخُذُ",
+      "readingKk": "тәхузу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d569c55e3c.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَخْذُ": {
+      "arabic": "أَخْذُ",
+      "readingKk": "әхзу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c208cbc033.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَخَذَ": {
+      "arabic": "أَخَذَ",
+      "readingKk": "әхазә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_460ed5f548.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَذْبَحُ": {
+      "arabic": "تَذْبَحُ",
+      "readingKk": "тәзбәху",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_57468fe644.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ذَأَبَ": {
+      "arabic": "ذَأَبَ",
+      "readingKk": "зәәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_93b7fe8112.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ذَبْحُ": {
+      "arabic": "ذَبْحُ",
+      "readingKk": "зәбху",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0a3d25a340.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ذَبَحَ": {
+      "arabic": "ذَبَحَ",
+      "readingKk": "зәбәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ce9b4d90e2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خُبِرَ": {
+      "arabic": "خُبِرَ",
+      "readingKk": "хубира",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3099a36352.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَبَرُ": {
+      "arabic": "خَبَرُ",
+      "readingKk": "хабәру",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8b3d8325a9.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَرَجُ": {
+      "arabic": "دَرَجُ",
+      "readingKk": "дәрәжу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_dc1338822f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَرْبَحُ": {
+      "arabic": "تَرْبَحُ",
+      "readingKk": "тәрбәху",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_9369352c0d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَبَحَ": {
+      "arabic": "رَبَحَ",
+      "readingKk": "рабәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c86decaecd.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَتَبَ": {
+      "arabic": "رَتَبَ",
+      "readingKk": "ратәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_cf0ce751f8.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اِخْتَبَزَ": {
+      "arabic": "اِخْتَبَزَ",
+      "readingKk": "ихтәбәзә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_de2a349463.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خُبْزُ": {
+      "arabic": "خُبْزُ",
+      "readingKk": "хубзу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_6ef341288c.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَبَزَ": {
+      "arabic": "خَبَزَ",
+      "readingKk": "хабәзә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_fba5f8f34c.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حِزْبُ": {
+      "arabic": "حِزْبُ",
+      "readingKk": "хизбу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a8e7331bf8.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "زَبَرَ": {
+      "arabic": "زَبَرَ",
+      "readingKk": "зәбәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ef053ea863.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "زَبَدَ": {
+      "arabic": "زَبَدَ",
+      "readingKk": "зәбәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_eaa5a4bfe3.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَحْتَبِسُ": {
+      "arabic": "أَحْتَبِسُ",
+      "readingKk": "ахтәбису",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ee71449b43.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَبَسَ": {
+      "arabic": "حَبَسَ",
+      "readingKk": "хәбәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_19f81be9b4.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اِسْتَتَرَ": {
+      "arabic": "اِسْتَتَرَ",
+      "readingKk": "истәтәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_27652c3a4a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَسْبَحُ": {
+      "arabic": "تَسْبَحُ",
+      "readingKk": "тәсбәху",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_46ae8f5510.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَبَحَ": {
+      "arabic": "سَبَحَ",
+      "readingKk": "сәбәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_bde8109a36.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَبَبُ": {
+      "arabic": "سَبَبُ",
+      "readingKk": "сәбәбу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_798c895bd4.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَبَشُ": {
+      "arabic": "حَبَشُ",
+      "readingKk": "хәбәшу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_81b6aa6986.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "جَرَشُ": {
+      "arabic": "جَرَشُ",
+      "readingKk": "жәрашу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_38040253e0.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اِسْتَرْشَدَ": {
+      "arabic": "اِسْتَرْشَدَ",
+      "readingKk": "истәршәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a00ff4fb0b.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "شَرِبَ": {
+      "arabic": "شَرِبَ",
+      "readingKk": "шәрибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_da036fe550.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "شَجَرَ": {
+      "arabic": "شَجَرَ",
+      "readingKk": "шәжәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c3d181e019.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَخُصَ": {
+      "arabic": "رَخُصَ",
+      "readingKk": "рахуса",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e17dbff179.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَصَدَ": {
+      "arabic": "حَصَدَ",
+      "readingKk": "хәсадә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_862901fcee.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَصْبَحَ": {
+      "arabic": "أَصْبَحَ",
+      "readingKk": "асбәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_acba7744e7.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "صُبْحُ": {
+      "arabic": "صُبْحُ",
+      "readingKk": "субху",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e1d3f29c05.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "صَدْرُ": {
+      "arabic": "صَدْرُ",
+      "readingKk": "садру",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0917cc885b.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "صَبَرَ": {
+      "arabic": "صَبَرَ",
+      "readingKk": "сабәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_f1feaf31f3.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَدْخَضَ": {
+      "arabic": "أَدْخَضَ",
+      "readingKk": "әдхәда",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_03a336e7c8.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "دَخَضَ": {
+      "arabic": "دَخَضَ",
+      "readingKk": "дәхәда",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_772df0ae4b.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَرَضَ": {
+      "arabic": "حَرَضَ",
+      "readingKk": "хәрада",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_6221380875.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَضَرَ": {
+      "arabic": "حَضَرَ",
+      "readingKk": "хәдара",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_f6b1f93f32.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ضَبَحَ": {
+      "arabic": "ضَبَحَ",
+      "readingKk": "дабәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e1624cd219.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ضَرَبَ": {
+      "arabic": "ضَرَبَ",
+      "readingKk": "дарабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2fbd3b6fad.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَبِطَ": {
+      "arabic": "خَبِطَ",
+      "readingKk": "хәбита",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_95dfa17087.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَبَطَ": {
+      "arabic": "رَبَطَ",
+      "readingKk": "рабәта",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_da4e604905.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رُطْبُ": {
+      "arabic": "رُطْبُ",
+      "readingKk": "рутбу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c974ac5f00.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَطَبَ": {
+      "arabic": "خَطَبَ",
+      "readingKk": "хатабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_4c5931fe77.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "طَرْدُ": {
+      "arabic": "طَرْدُ",
+      "readingKk": "тарду",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7fbd83a11e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "طَرَحَ": {
+      "arabic": "طَرَحَ",
+      "readingKk": "тарахә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_c64342729e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "طَبَخَ": {
+      "arabic": "طَبَخَ",
+      "readingKk": "табәха",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_97ec527506.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "جَهَظَ": {
+      "arabic": "جَهَظَ",
+      "readingKk": "жәхәза",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0221dad4d0.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَحْظُرُ": {
+      "arabic": "تَحْظُرُ",
+      "readingKk": "тәхзуру",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_cbe06f9aad.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَظَرَ": {
+      "arabic": "حَظَرَ",
+      "readingKk": "хәзара",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e5158cb6da.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ظَرْبُ": {
+      "arabic": "ظَرْبُ",
+      "readingKk": "зарбу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_4ff4da9b8c.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ظَبَرَ": {
+      "arabic": "ظَبَرَ",
+      "readingKk": "забәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_74c59ca90e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ظَهَرَ": {
+      "arabic": "ظَهَرَ",
+      "readingKk": "захәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_bd16a294bd.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَرْجِعْ": {
+      "arabic": "أَرْجِعْ",
+      "readingKk": "әржи‘",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_60bfc0ba3a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَرْجَعَ": {
+      "arabic": "أَرْجَعَ",
+      "readingKk": "әржә‘а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8a332ef426.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَعِدَ": {
+      "arabic": "سَعِدَ",
+      "readingKk": "сә‘идә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_83a2524505.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَعُدَ": {
+      "arabic": "بَعُدَ",
+      "readingKk": "бә‘удә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_174ea5658a.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَعَثَ": {
+      "arabic": "بَعَثَ",
+      "readingKk": "бә‘асә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_fcb7f903a6.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "عَرَضَ": {
+      "arabic": "عَرَضَ",
+      "readingKk": "‘арада",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_6829f4f3c3.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "عَبَثَ": {
+      "arabic": "عَبَثَ",
+      "readingKk": "‘абәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a7d8d0ba4d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "عَبَرَ": {
+      "arabic": "عَبَرَ",
+      "readingKk": "‘абәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_5888f278ea.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اِسْتَغْرَبَ": {
+      "arabic": "اِسْتَغْرَبَ",
+      "readingKk": "истәғрабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7dc425d3ee.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "اِغْتَرَبَ": {
+      "arabic": "اِغْتَرَبَ",
+      "readingKk": "иғтәрабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8f4040863f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَسَغَ": {
+      "arabic": "رَسَغَ",
+      "readingKk": "расәға",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e46a24f7d1.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَغَدُ": {
+      "arabic": "رَغَدُ",
+      "readingKk": "рағаду",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_34a987f9d0.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "غَرَبَ": {
+      "arabic": "غَرَبَ",
+      "readingKk": "ғарабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_71201a0695.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "غَبَطَ": {
+      "arabic": "غَبَطَ",
+      "readingKk": "ғабәта",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_aa9185a38e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "صَحُفَ": {
+      "arabic": "صَحُفَ",
+      "readingKk": "сахуфә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_095cdc3660.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَسَفَ": {
+      "arabic": "خَسَفَ",
+      "readingKk": "хасәфә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a4c2926e19.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَفَدَ": {
+      "arabic": "خَفَدَ",
+      "readingKk": "хәфәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_4e60ee8a86.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَفِظَ": {
+      "arabic": "حَفِظَ",
+      "readingKk": "хәфиза",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_257659278e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَفَرَ": {
+      "arabic": "سَفَرَ",
+      "readingKk": "сәфәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_397d35ad86.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "فَرِحَ": {
+      "arabic": "فَرِحَ",
+      "readingKk": "фәрихә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ecac7e45d2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "فَتَحَ": {
+      "arabic": "فَتَحَ",
+      "readingKk": "фәтәхә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_5e256782cb.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "عَتَقَ": {
+      "arabic": "عَتَقَ",
+      "readingKk": "‘атәқа",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_114d798fe2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "طَبَقَ": {
+      "arabic": "طَبَقَ",
+      "readingKk": "табәқа",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_261cd876ad.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "غَسَقَ": {
+      "arabic": "غَسَقَ",
+      "readingKk": "ғасәқа",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ab1443e91d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "عَقَدَ": {
+      "arabic": "عَقَدَ",
+      "readingKk": "‘ақадә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_fb9d12927b.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَقَدَ": {
+      "arabic": "رَقَدَ",
+      "readingKk": "рақадә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_413192f2ac.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "قَطَعَ": {
+      "arabic": "قَطَعَ",
+      "readingKk": "қата‘а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8786b22c30.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "قَبِلَ": {
+      "arabic": "قَبِلَ",
+      "readingKk": "қабилә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_23c8950209.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ضَحِكَ": {
+      "arabic": "ضَحِكَ",
+      "readingKk": "дахикә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_4a986a517f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "تَرَكَ": {
+      "arabic": "تَرَكَ",
+      "readingKk": "тәракә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_d0411f084e.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَكَرَ": {
+      "arabic": "بَكَرَ",
+      "readingKk": "бәкәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_56e96af9b0.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "رَكِبَ": {
+      "arabic": "رَكِبَ",
+      "readingKk": "ракибә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_b21bb5e4da.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "شَكَرَ": {
+      "arabic": "شَكَرَ",
+      "readingKk": "шәкәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_352a9bda95.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "كُسِرَ": {
+      "arabic": "كُسِرَ",
+      "readingKk": "кусира",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2cbf7facf3.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "كَتَبَ": {
+      "arabic": "كَتَبَ",
+      "readingKk": "кәтәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7ef4234357.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَفْضَلَ": {
+      "arabic": "أَفْضَلَ",
+      "readingKk": "әфдалә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_134a33d9d4.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَسْفَلَ": {
+      "arabic": "أَسْفَلَ",
+      "readingKk": "әсфәлә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_26199e6173.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَهَلَ": {
+      "arabic": "سَهَلَ",
+      "readingKk": "сәхәлә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8a3f7343ee.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "فَلَكُ": {
+      "arabic": "فَلَكُ",
+      "readingKk": "фәләку",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_39e9d2f0dc.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "لَدَغَ": {
+      "arabic": "لَدَغَ",
+      "readingKk": "ләдәға",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_ce67f77066.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "لَفَتَ": {
+      "arabic": "لَفَتَ",
+      "readingKk": "ләфәтә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_87435a1408.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "لَبِسَ": {
+      "arabic": "لَبِسَ",
+      "readingKk": "ләбисә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_3e963ad400.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "خَتَمَ": {
+      "arabic": "خَتَمَ",
+      "readingKk": "хатәмә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2c7f1827de.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَكَمَ": {
+      "arabic": "حَكَمَ",
+      "readingKk": "хәкәмә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_38e2317bdd.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَمِدَ": {
+      "arabic": "حَمِدَ",
+      "readingKk": "хәмидә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8a484ccff4.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَمَلَ": {
+      "arabic": "حَمَلَ",
+      "readingKk": "хәмәлә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_9193b32013.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "مَكَرَ": {
+      "arabic": "مَكَرَ",
+      "readingKk": "мәкәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_84ac5d0b95.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "مَلَكَ": {
+      "arabic": "مَلَكَ",
+      "readingKk": "мәләкә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_8897532caf.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "مَسَكَ": {
+      "arabic": "مَسَكَ",
+      "readingKk": "мәсәкә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a8de23ebad.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ضَمَنُوا": {
+      "arabic": "ضَمَنُوا",
+      "readingKk": "дамәну",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_60caa438e6.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَكَنَ": {
+      "arabic": "سَكَنَ",
+      "readingKk": "сәкәнә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_bee061b507.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "صِنْفُ": {
+      "arabic": "صِنْفُ",
+      "readingKk": "синфу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7e365bb3e1.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حَنَفَ": {
+      "arabic": "حَنَفَ",
+      "readingKk": "хәнәфә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_10e4936a1d.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "نَكَسَ": {
+      "arabic": "نَكَسَ",
+      "readingKk": "нәкәсә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7d5117a5ee.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "نَبَذَ": {
+      "arabic": "نَبَذَ",
+      "readingKk": "нәбәзә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_63e4731017.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "حُكْمُهُ": {
+      "arabic": "حُكْمُهُ",
+      "readingKk": "хукмуһу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_f97fc844ba.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "قَلَمُهُ": {
+      "arabic": "قَلَمُهُ",
+      "readingKk": "қаләмуһу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_7fa7f9d44f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "طُهْرُ": {
+      "arabic": "طُهْرُ",
+      "readingKk": "туһру",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_54981dd454.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "ذَهَبَ": {
+      "arabic": "ذَهَبَ",
+      "readingKk": "зәһәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a4c980dc35.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "هَرَبَ": {
+      "arabic": "هَرَبَ",
+      "readingKk": "һәрабә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_db338e3ee5.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "هَلَكَ": {
+      "arabic": "هَلَكَ",
+      "readingKk": "һәләкә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_03eabda5b8.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَمُوا": {
+      "arabic": "سَمُوا",
+      "readingKk": "самуу",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_5353390e18.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "فَوْرُ": {
+      "arabic": "فَوْرُ",
+      "readingKk": "фауру",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_0dd41f01ae.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "قَوْمُ": {
+      "arabic": "قَوْمُ",
+      "readingKk": "қауму",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_de26b8f79f.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وُكِلَ": {
+      "arabic": "وُكِلَ",
+      "readingKk": "укилә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_1ba947f0da.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وَجَدَ": {
+      "arabic": "وَجَدَ",
+      "readingKk": "уәжәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_b6a813fcb2.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "وَجَبَ": {
+      "arabic": "وَجَبَ",
+      "readingKk": "уәжәбә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_2f5c959fbc.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "نَشِيَ": {
+      "arabic": "نَشِيَ",
+      "readingKk": "нәшийә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_93bb88ea69.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَقِيَ": {
+      "arabic": "بَقِيَ",
+      "readingKk": "бәқийә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_e9035a3122.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "بَيْتُ": {
+      "arabic": "بَيْتُ",
+      "readingKk": "бәйту",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_40198738f6.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَيَّدَ": {
+      "arabic": "سَيَّدَ",
+      "readingKk": "сәйәдә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_86d32ce108.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "سَيْرَ": {
+      "arabic": "سَيْرَ",
+      "readingKk": "сәйәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_67f542ea98.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "يَسَرَ": {
+      "arabic": "يَسَرَ",
+      "readingKk": "йәсәра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_79b05ba7b5.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "يَبِسَ": {
+      "arabic": "يَبِسَ",
+      "readingKk": "йәбисә",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ex_a19d18bc45.mp3"
+      },
+      "textSource": "Muftyat manual"
+    },
+    "أَب": {
+      "arabic": "أَب",
+      "readingKk": "а·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ab.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "بَب": {
+      "arabic": "بَب",
+      "readingKk": "ба·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "bab.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "تَب": {
+      "arabic": "تَب",
+      "readingKk": "та·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "tab.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "ثَلَاث": {
+      "arabic": "ثَلَاث",
+      "readingKk": "са·ла·а·са",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "thalath.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "جَمَل": {
+      "arabic": "جَمَل",
+      "readingKk": "жа·ма·ла",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "jamal.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "حَجّ": {
+      "arabic": "حَجّ",
+      "readingKk": "ха·жа·жа",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "hajj.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "خَبَر": {
+      "arabic": "خَبَر",
+      "readingKk": "ха·ба·ра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "khabar.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "دِين": {
+      "arabic": "دِين",
+      "readingKk": "ди·йа·на",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "din.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "ذَكَر": {
+      "arabic": "ذَكَر",
+      "readingKk": "за·ка·ра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "dhikr.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "رَبّ": {
+      "arabic": "رَبّ",
+      "readingKk": "ра·ба·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "rabb.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "زَكَاة": {
+      "arabic": "زَكَاة",
+      "readingKk": "за·ка·а·та",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "zakat.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "سَلَام": {
+      "arabic": "سَلَام",
+      "readingKk": "са·ла·а·ма",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "salam.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "شَيْء": {
+      "arabic": "شَيْء",
+      "readingKk": "ша·й·а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "shay.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "صَلَاة": {
+      "arabic": "صَلَاة",
+      "readingKk": "са·ла·а·та",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "salat.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "ضَرَب": {
+      "arabic": "ضَرَب",
+      "readingKk": "да·ра·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "darab.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "طَيِّب": {
+      "arabic": "طَيِّب",
+      "readingKk": "та·йи·йи·ба",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "tayyib.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "ظُلْم": {
+      "arabic": "ظُلْم",
+      "readingKk": "зу·л·ма",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "zulm.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "عَلِمَ": {
+      "arabic": "عَلِمَ",
+      "readingKk": "‘а·ли·ма",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "alima.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "غَفَار": {
+      "arabic": "غَفَار",
+      "readingKk": "ға·фа·а·ра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "ghaffar.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "فَضْل": {
+      "arabic": "فَضْل",
+      "readingKk": "фа·д·ла",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "fadl.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "قُرْآن": {
+      "arabic": "قُرْآن",
+      "readingKk": "қу·р·аа·на",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "quran.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "كَرِيم": {
+      "arabic": "كَرِيم",
+      "readingKk": "ка·ри·йа·ма",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "karim.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "لَا": {
+      "arabic": "لَا",
+      "readingKk": "ла·а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "la.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "مُحَمَّد": {
+      "arabic": "مُحَمَّد",
+      "readingKk": "му·ха·ма·ма·да",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "muhammad.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "نُور": {
+      "arabic": "نُور",
+      "readingKk": "ну·уа·ра",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "nur.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "وَقْت": {
+      "arabic": "وَقْت",
+      "readingKk": "уа·қ·та",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "waqt.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "هُدًى": {
+      "arabic": "هُدًى",
+      "readingKk": "һу·да·а",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "huda.mp3"
+      },
+      "textSource": "alphabet/grid"
+    },
+    "يَوْم": {
+      "arabic": "يَوْم",
+      "readingKk": "йа·у·ма",
+      "audio": {
+        "source": "harakat-clips",
+        "file": "yawm.mp3"
+      },
+      "textSource": "alphabet/grid"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useAppLocale } from "../i18n/runtime";
@@ -6,6 +6,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { kk } from "../i18n/kk";
 import type { MoreStackParamList } from "../navigation/types";
 import { MakkahLiveHlsPlayer } from "../components/MakkahLiveHlsPlayer";
+import { prefetchMakkahLivePrimaryStream } from "../utils/makkahLiveStreamCache";
 import { appBottomSafeInset, useDeviceSafeAreaInsets } from "../theme/deviceSafeArea";
 
 type Props = NativeStackScreenProps<MoreStackParamList, "MakkahLive">;
@@ -20,6 +21,10 @@ export function MakkahLiveScreen({ navigation }: Props) {
   const deviceInsets = useDeviceSafeAreaInsets();
   const bottomInset = appBottomSafeInset(deviceInsets);
   const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    void prefetchMakkahLivePrimaryStream();
+  }, []);
 
   return (
     <View

@@ -40,7 +40,7 @@ const IOS_PROD_NS_EXCEPTION_DOMAINS = {
 const BASE_EXTRA = {
   imamAiApiBase: "https://api.rahatomir.com",
   raqatApiBase: "https://api.rahatomir.com",
-  raqatDonationUrl: "https://t.me/my_islamic_ai_bot",
+  raqatDonationUrl: "",
   raqatSupportAccount: "",
   googleWebClientId: "",
   googleIosClientId: "",

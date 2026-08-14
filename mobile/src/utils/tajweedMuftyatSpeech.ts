@@ -7,8 +7,16 @@ import {
   primeWebSpeechVoices,
   resolveArabicTtsOptions,
 } from "./tajweedArabicTts";
-import { playTajweedLetterAudio, stopTajweedLetterAudio } from "./tajweedLetterAudioPlayer";
+import { prepareTajweedExampleSpeech, segmentTajweedArabicLetters } from "./tajweedArabicSegment";
+import { isBareTajweedAlphabetLetter } from "../content/tajweedLetterAudio";
+import { hasLocalBundledExampleAudio } from "../content/tajweedExampleAudio";
+import {
+  playTajweedExampleAudio,
+  playTajweedLetterAudio,
+  stopTajweedLetterAudio,
+} from "./tajweedLetterAudioPlayer";
 import { tajweedLetterSpeechAr } from "../content/tajweedAlphabet";
+import { normalizeMuftyatKkText } from "../content/muftyatKkTextNormalize";
 
 type VoiceRow = {
   identifier?: string;
@@ -78,16 +86,7 @@ export async function resolveKazakhTtsOptions(
 }
 
 export function prepareMuftyatKkSpeech(input: string): string {
-  let t = (input ?? "").trim();
-  if (!t) return t;
-  t = t
-    .replace(/\s*\.\s*\./g, ". ")
-    .replace(/([А-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ])-+\s*\.\s*([А-Яа-яӘәІіҢңҒғҮүҰұҚқӨөҺһ])/gu, "$1$2")
-    .replace(/әр\s*\.\s*қайсысына/giu, "әрқайсысына")
-    .replace(/кажет/giu, "қажет")
-    .replace(/[ \t]{2,}/g, " ")
-    .replace(/\s+([,.;:!?])/g, "$1");
-  return t.trim();
+  return normalizeMuftyatKkText(input);
 }
 
 function buildKkSpeakOptions(
@@ -348,4 +347,104 @@ export function warmTajweedLetterSpeech(): void {
 
 export function isTajweedLetterSpeaking(ar: string): boolean {
   return activeKey === `letter-${ar}`;
+}
+
+/**
+ * TTS fallback — әр harakat кластерін жеке оқиды (әріп тастамай).
+ */
+async function speakTajweedExampleLettersSequential(
+  example: string,
+  cancelled: () => boolean,
+): Promise<void> {
+  const clusters = segmentTajweedArabicLetters(example);
+  if (!clusters.length) {
+    throw new Error("empty example");
+  }
+
+  const arOpt = await resolveArabicTtsOptions({ preferMale: true });
+  const opts = buildTajweedArabicSpeakOptions(arOpt, { preferMale: true, slow: true });
+  const { speakWebArabicUtterance } = await import("./tajweedArabicTts");
+
+  for (let i = 0; i < clusters.length; i++) {
+    if (cancelled()) return;
+    const spoken = prepareTajweedArabicSpeech(clusters[i]!);
+    if (Platform.OS === "web") {
+      await speakWebArabicUtterance(spoken, 0.68);
+    } else {
+      await speakOnce(spoken, opts);
+    }
+    if (i < clusters.length - 1 && !cancelled()) {
+      await new Promise((r) => setTimeout(r, 120));
+    }
+  }
+}
+
+/**
+ * Мысал сөз — оқушы алдымен өзі оқиды, батырма этalon MP3 ойнатады (микрофон жоқ).
+ */
+export async function speakTajweedExample(exampleAr: string): Promise<boolean> {
+  const example = (exampleAr ?? "").trim();
+  if (!example) return false;
+
+  const gen = ++queueGen;
+  const key = `example-${example}`;
+  activeKey = key;
+  const cancelled = () => gen !== queueGen || activeKey !== key;
+
+  try {
+    await pauseAfterStop();
+    if (cancelled()) return false;
+
+    // Жалғы 28 әріп (ا, ب…) — arabic-online.ru атауы; TTS «ән» деп қате оқimasın.
+    if (isBareTajweedAlphabetLetter(example)) {
+      const ok = await speakTajweedLetter(example);
+      if (gen === queueGen && activeKey === key) activeKey = null;
+      return ok;
+    }
+
+    // Араб сандары — этalon дыбыс жоқ.
+    if (/^[\u0660-\u0669]$/.test(example.normalize("NFC"))) {
+      if (gen === queueGen) activeKey = null;
+      return false;
+    }
+
+    // Web: bundled MP3 жоқ болса CDN емес — тікелей баяу араб TTS (eski буын клиптері жоқ).
+    const preferTtsOnWeb = Platform.OS === "web" && !hasLocalBundledExampleAudio(example);
+
+    if (!preferTtsOnWeb) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const played = await playTajweedExampleAudio(example);
+        if (cancelled()) return false;
+        if (played) {
+          if (gen === queueGen && activeKey === key) activeKey = null;
+          return true;
+        }
+        await pauseAfterStop();
+        if (cancelled()) return false;
+      }
+    }
+
+    const arOpt = await resolveArabicTtsOptions({ preferMale: true });
+    if (cancelled()) return false;
+    try {
+      await speakTajweedExampleLettersSequential(example, cancelled);
+    } catch {
+      const spoken = prepareTajweedArabicSpeech(prepareTajweedExampleSpeech(example));
+      if (Platform.OS === "web") {
+        const { speakWebArabicUtterance } = await import("./tajweedArabicTts");
+        await speakWebArabicUtterance(spoken, 0.62);
+      } else {
+        await speakOnce(spoken, buildTajweedArabicSpeakOptions(arOpt, { preferMale: true, slow: true }));
+      }
+    }
+    if (gen === queueGen && activeKey === key) activeKey = null;
+    return true;
+  } catch {
+    if (gen === queueGen) activeKey = null;
+    return false;
+  }
+}
+
+export function isTajweedExampleSpeaking(exampleAr: string): boolean {
+  return activeKey === `example-${(exampleAr ?? "").trim()}`;
 }

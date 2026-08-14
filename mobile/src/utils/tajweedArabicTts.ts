@@ -250,16 +250,17 @@ export type TajweedArabicSpeakOptions = {
   pitch: number;
 };
 
-/** Тәжуид оқу параметрлері; preferMale — әріптер үшін төмен pitch fallback. */
+/** Тәжуид оқу параметрлері; preferMale — әріптер үшін; slow — мысал сөз (баяу). */
 export function buildTajweedArabicSpeakOptions(
   opt: ArabicTtsOptions,
-  opts: { preferMale?: boolean } = {}
+  opts: { preferMale?: boolean; slow?: boolean } = {}
 ): TajweedArabicSpeakOptions {
   const raw = (opt.language ?? "ar-SA").replace(/_/g, "-");
   const language = raw.toLowerCase().startsWith("ar") ? raw : "ar-SA";
   const voiceId = opt.voice?.trim();
   const hasVoice = Boolean(voiceId);
   const preferMale = Boolean(opts.preferMale);
+  const slow = Boolean(opts.slow);
 
   let pitch: number;
   if (preferMale) {
@@ -276,10 +277,18 @@ export function buildTajweedArabicSpeakOptions(
   const useVoice =
     (Platform.OS === "ios" || Platform.OS === "web") && hasVoice;
 
+  const rate = slow
+    ? Platform.OS === "android"
+      ? 0.62
+      : 0.58
+    : Platform.OS === "android"
+      ? 0.85
+      : 0.78;
+
   return {
     language,
     ...(useVoice ? { voice: voiceId } : {}),
-    rate: Platform.OS === "android" ? 0.85 : 0.78,
+    rate,
     pitch,
   };
 }
@@ -341,7 +350,7 @@ export function waitForWebVoices(maxMs = 2800): Promise<void> {
 }
 
 /** Web Speech API — expo-speech бір әріпте сенімсіз. */
-export async function speakWebArabicUtterance(text: string): Promise<void> {
+export async function speakWebArabicUtterance(text: string, rate = WEB_AR_SPEECH_RATE): Promise<void> {
   await waitForWebVoices();
   return new Promise((resolve, reject) => {
     if (typeof window === "undefined" || !window.speechSynthesis) {
@@ -360,7 +369,7 @@ export async function speakWebArabicUtterance(text: string): Promise<void> {
     }
     const utterance = new SpeechSynthesisUtterance(trimmed);
     utterance.lang = "ar-SA";
-    utterance.rate = WEB_AR_SPEECH_RATE;
+    utterance.rate = rate;
     utterance.volume = 1;
     const voice = pickWebArabicVoice();
     if (voice) {

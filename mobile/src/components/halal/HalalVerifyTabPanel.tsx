@@ -125,18 +125,16 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
 
   const productQueryOpts = useMemo(
     () => ({
-      status: goodsProductStatusFilter.trim() || undefined,
       perPage: INSTANT_HALAL_SEARCH_LIMIT,
     }),
-    [goodsProductStatusFilter],
+    [],
   );
 
   const barcodeQueryOpts = useMemo(
     () => ({
-      status: goodsProductStatusFilter.trim() || undefined,
       perPage: INSTANT_HALAL_SEARCH_LIMIT,
     }),
-    [goodsProductStatusFilter],
+    [],
   );
 
   const checkSummary = useMemo(
@@ -152,9 +150,15 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
     useCallback(() => {
       screenActiveRef.current = true;
       void prefetchHalalDamuHub();
+      prefetchHalalProductsSeedIndex();
+      try {
+        setSeedProductCount(getHalalProductsSeedCount());
+        setSeedAdditiveCount(getHalalAdditivesSeedCount());
+      } catch {
+        /* best-effort */
+      }
       void runWhenHeavyWorkAllowed().then(() => {
         if (!screenActiveRef.current) return;
-        prefetchHalalProductsSeedIndex();
         try {
           setSeedProductCount(getHalalProductsSeedCount());
           setSeedAdditiveCount(getHalalAdditivesSeedCount());
@@ -203,6 +207,7 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
       if (cached) {
         if (gen !== lookupGenerationRef.current) return;
         setCheckErr(null);
+        setCheckFlowPhase(null);
         setCheckLookupDone(true);
         setCheckProducts(
           cached.products.filter((p) => productMatchesGoodsStatusFilter(p, goodsProductStatusFilter)),
@@ -259,7 +264,10 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
         }
         void pushHalalLookupHistory(q, "text");
       } finally {
-        if (gen !== lookupGenerationRef.current) return;
+        if (gen !== lookupGenerationRef.current) {
+          if (useMainBusy && !silentBusy) setCheckFlowPhase(null);
+          return;
+        }
         if (!silentBusy) {
           if (useMainBusy) setCheckFlowPhase(null);
           else setGoodsQuickBusy(false);
@@ -349,8 +357,9 @@ export function HalalVerifyTabPanel({ colors, isDark, insets, onOpenInstitutions
           setScanResults(nextScan);
         }
       } finally {
-        if (gen !== lookupGenerationRef.current) return;
-        setCheckLookupDone(true);
+        if (gen === lookupGenerationRef.current) {
+          setCheckLookupDone(true);
+        }
         setCheckFlowPhase(null);
       }
     },

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import { RasterImage } from "@/ui/RasterImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import type { ThemeColors } from "../theme/colors";
-import { guideLightboxFitSize, guideThumbFitContain, resolveGuideImageThumbImageStyle } from "../utils/guideLightboxFit";
+import { guideLightboxFitSize, guideThumbFitContain, guideImageDecodeMultiplier, resolveGuideImageThumbImageStyle } from "../utils/guideLightboxFit";
 import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetAspect";
 import { ZoomableImageContent } from "./zoom/ZoomableImageContent";
 import { kk } from "../i18n/kk";
@@ -71,6 +71,7 @@ export function GuideImageLightbox({
 }: Props) {
   useAppLocale();
   const [open, setOpen] = useState(false);
+  const [zoomReady, setZoomReady] = useState(false);
   const insets = useSafeAreaInsets();
   const modalInsets = modalSafeAreaInsets(insets);
   const { width, height } = useWindowDimensions();
@@ -104,6 +105,23 @@ export function GuideImageLightbox({
     }
     return guideLightboxFitSize(width, height, insets.top, effectiveAspect);
   }, [width, height, insets.top, effectiveAspect]);
+
+  const modalDecodeMultiplier = useMemo(
+    () => guideImageDecodeMultiplier(modalImageSize.width, sourcePixels, pixelRatio),
+    [modalImageSize.width, sourcePixels, pixelRatio]
+  );
+
+  const instantDecodeMultiplier = thumbResizeMultiplier ?? modalDecodeMultiplier;
+
+  useEffect(() => {
+    if (!open) setZoomReady(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const fallback = setTimeout(() => setZoomReady(true), 150);
+    return () => clearTimeout(fallback);
+  }, [open]);
 
   /** Android: absoluteFill + scale contain ортадан кесіп көрсетуі мүмкін — өлшем Image-ке тікелей. */
   const thumbImageStyle = useMemo((): StyleProp<ImageStyle> => {
@@ -183,7 +201,7 @@ export function GuideImageLightbox({
       <Modal
         visible={open}
         transparent
-        animationType="fade"
+        animationType="none"
         statusBarTranslucent
         hardwareAccelerated={Platform.OS === "android"}
         presentationStyle="overFullScreen"
@@ -206,11 +224,23 @@ export function GuideImageLightbox({
             {kk.common.imagePinchZoomHint}
           </Text>
           <View style={styles.modalImageArea}>
-            <ZoomableImageContent
-              source={source}
-              width={modalImageSize.width}
-              height={modalImageSize.height}
-            />
+            {zoomReady ? (
+              <ZoomableImageContent
+                source={source}
+                width={modalImageSize.width}
+                height={modalImageSize.height}
+                resizeMultiplier={modalDecodeMultiplier}
+              />
+            ) : (
+              <RasterImage
+                source={source}
+                style={{ width: modalImageSize.width, height: modalImageSize.height }}
+                resizeMode="contain"
+                resizeMultiplier={instantDecodeMultiplier}
+                onLoad={() => setZoomReady(true)}
+                accessibilityIgnoresInvertColors
+              />
+            )}
           </View>
         </View>
       </Modal>

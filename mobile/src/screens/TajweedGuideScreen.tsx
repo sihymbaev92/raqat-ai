@@ -43,9 +43,7 @@ export function TajweedGuideScreen() {
 
   const onOpenQuran = useCallback(() => {
     void (async () => {
-      const { setQuranTajweedColorsEnabled } = await import("../storage/quranReaderPrefs");
       const { navigateToQuranSurah } = await import("../navigation/navigateToMoreStack");
-      await setQuranTajweedColorsEnabled(true);
       navigateToQuranSurah(
         {
           surahNumber: 1,
@@ -65,7 +63,7 @@ export function TajweedGuideScreen() {
             {tr(kk.tajweedGuide.sectionBook)} · {readerPage}
           </Text>
         </View>
-        <TajweedMuftyatBook initialPage={readerPage} />
+        <TajweedMuftyatBook initialPage={readerPage} singlePageOnly />
       </View>
     );
   }

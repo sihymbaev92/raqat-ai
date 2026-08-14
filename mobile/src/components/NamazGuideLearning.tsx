@@ -55,7 +55,21 @@ function makeLearnStyles(colors: ThemeColors) {
       lineHeight: 32,
       marginBottom: 6,
     },
-    recTr: { color: colors.muted, fontSize: 12, lineHeight: 18, marginBottom: 4 },
+    recTrCaption: {
+      color: colors.accent,
+      fontWeight: "800",
+      fontSize: 11,
+      letterSpacing: 0.4,
+      textTransform: "uppercase",
+      marginBottom: 4,
+    },
+    recTr: {
+      color: colors.text,
+      fontSize: 16,
+      lineHeight: 24,
+      fontWeight: "900",
+      marginBottom: 8,
+    },
     recTrEn: {
       color: colors.muted,
       fontSize: 12,
@@ -115,7 +129,12 @@ function RecitationBlocks({
         <View key={b.id} style={styles.recBlock}>
           <Text style={styles.recLabel}>{tr(b.label)}</Text>
           <Text style={styles.recAr}>{b.arabic}</Text>
-          {b.transliterationKk ? <Text style={styles.recTr}>{tr(b.transliterationKk)}</Text> : null}
+          {b.transliterationKk ? (
+            <>
+              <Text style={styles.recTrCaption}>{kk.namazGuide.translitLabel}</Text>
+              <Text style={styles.recTr}>{tr(b.transliterationKk)}</Text>
+            </>
+          ) : null}
           <Text style={styles.recMean}>{tr(b.meaningKk)}</Text>
         </View>
       ))}
@@ -141,7 +160,12 @@ export function NamazGuidePoseRecitationBlocks({
         <View key={b.id} style={styles.recBlock}>
           <Text style={styles.recLabel}>{tr(b.label)}</Text>
           <Text style={styles.recAr}>{b.arabic}</Text>
-          {b.transliterationKk ? <Text style={styles.recTr}>{tr(b.transliterationKk)}</Text> : null}
+          {b.transliterationKk ? (
+            <>
+              <Text style={styles.recTrCaption}>{kk.namazGuide.translitLabel}</Text>
+              <Text style={styles.recTr}>{tr(b.transliterationKk)}</Text>
+            </>
+          ) : null}
           <Text style={styles.recMean}>{tr(b.meaningKk)}</Text>
         </View>
       ))}

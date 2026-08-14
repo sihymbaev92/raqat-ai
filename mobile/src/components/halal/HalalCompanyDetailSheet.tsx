@@ -72,7 +72,14 @@ export function HalalCompanyDetailSheet({ visible, company, colors, isDark, onCl
         thumbnailUrl: withMedia.thumbnailUrl ?? full.thumbnailUrl,
         galleryUrls: withMedia.galleryUrls.length ? withMedia.galleryUrls : full.galleryUrls,
       });
-      if (!full.phone && !full.address && !full.phones.length) {
+      const hasContact =
+        !!full.phone?.trim() ||
+        !!full.address?.trim() ||
+        (full.phones?.length ?? 0) > 0 ||
+        !!company.phone?.trim() ||
+        !!company.address?.trim() ||
+        (company.phones?.length ?? 0) > 0;
+      if (!hasContact && isHalalMapCompanyStub(full)) {
         setLoadErr(kk.features.halalHubNetworkErr);
       }
       setLoading(false);

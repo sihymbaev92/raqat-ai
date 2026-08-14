@@ -68,6 +68,7 @@ KK_SOURCE_LABEL: dict[str, str] = {
     "islam": "Islam.kz",
     "muslim": "Muslim.kz",
     "sunnah": "Sunnah.com",
+    "qmdb_bukhari_2005": "Сахих әл-Бұхари · ҚМДБ (2005), Доскелді Қожатайұлы аудармасы",
 }
 
 ID_RE = re.compile(r"^([a-z][a-z0-9]*)-(\d+)$")
@@ -234,6 +235,12 @@ def export_rows(
             site = str(r["kk_source_site"]).strip()
             item["kkSourceSite"] = site
             item["kkSourceLabel"] = KK_SOURCE_LABEL.get(site, site)
+            if site == "qmdb_bukhari_2005" and text_kk:
+                item["bookTitleKk"] = "Сахих әл-Бұхари (ҚМДБ, 2005)"
+                item["sourceCitationKk"] = (
+                    f"Сахих әл-Бұхари, хадис № {ref} · ҚМДБ басылымы (2005)"
+                )
+                item["catalogOrigin"] = "kz-trusted"
         if "kk_source_url" in cols and r["kk_source_url"]:
             item["kkSourceUrl"] = str(r["kk_source_url"]).strip()
         out.append(item)

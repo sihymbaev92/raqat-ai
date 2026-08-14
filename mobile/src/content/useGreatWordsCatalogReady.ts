@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
-import { ensureGreatWordsCatalogLoaded } from "./greatWordsCatalog";
+import { ensureGreatWordsCatalogLoaded, isGreatWordsCatalogReady } from "./greatWordsCatalog";
 
 export function useGreatWordsCatalogReady(): {
   ready: boolean;
   loading: boolean;
   failed: boolean;
 } {
-  const [state, setState] = useState(() => ({
-    ready: false,
-    loading: true,
-    failed: false,
-  }));
+  const [state, setState] = useState(() => {
+    const ready = isGreatWordsCatalogReady();
+    return { ready, loading: !ready, failed: false };
+  });
 
   useEffect(() => {
+    if (state.ready) return;
     let cancelled = false;
     void ensureGreatWordsCatalogLoaded().then((catalog) => {
       if (cancelled) return;
@@ -22,7 +22,7 @@ export function useGreatWordsCatalogReady(): {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [state.ready]);
 
   return state;
 }

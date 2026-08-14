@@ -2,11 +2,11 @@ import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
-  Modal,
   StyleSheet,
   ScrollView,
   Platform,
 } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import type { ThemeColors } from "../theme/colors";
@@ -17,15 +17,17 @@ import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner
 import {
   getNamazLearningHintsForGuidePose,
   getNamazRecitationBlocksForGuidePose,
-  type RecitationBlock,
 } from "../content/namazLearningContent";
 import {
+  FIVE_PRAYER_DAILY_ORDER,
+  FIVE_PRAYER_NIIYET_EXAMPLES,
   FIVE_PRAYER_RAKAT_ROWS,
   FIVE_PRAYER_RAKAT_SUMMARY,
   NAMAZ_POSE_VISUAL_STEPS,
   NAMAZ_PRAYER_TYPE_CARDS,
   type NamazPrayerTypeCardContent,
 } from "../content/namazPrayerGuideContent";
+import { FIVE_PRAYER_END_RECITATIONS } from "../content/namazSpecialPrayerDuas";
 import { NAMAZ_WUDU_EXTENDED } from "../content/namazWuduExtended";
 import { NAMAZ_WUDU_VISUAL_STEPS } from "../content/namazWuduSteps";
 import { GuideImageLightbox } from "../components/GuideImageLightbox";
@@ -34,11 +36,6 @@ import {
   NamazGuidePoseRecitationBlocks,
   NamazGuideWuduLearningBlock,
 } from "../components/NamazGuideLearning";
-import {
-  NamazCompanionPicker,
-  NamazCompanionSession,
-} from "../components/NamazCompanionPanel";
-import type { NamazCompanionSalatKey } from "../content/namazCompanionSession";
 import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
 import { useHardwareBackPress } from "../navigation/useHardwareBackPress";
 import { useModalSafeAreaInsets, appBottomSafeInset } from "../theme/deviceSafeArea";
@@ -47,29 +44,6 @@ const WUDU_THEORY_ACC_KEY = "wudu-theory";
 const NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER = Platform.OS === "android" ? 0.45 : undefined;
 const NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO = 0.34;
 type NamazPrimarySectionKey = "wudu" | "five-prayers";
-
-const FIVE_PRAYER_END_RECITATIONS: RecitationBlock[] = [
-  {
-    id: "ayat-al-kursi",
-    label: "1. Аят әл-Курси",
-    arabic:
-      "اللَّهُ لَا إِلٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ، لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ، لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ، مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ، يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ، وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ، وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ، وَلَا يَئُودُهُ حِفْظُهُمَا، وَهُوَ الْعَلِيُّ الْعَظِيمُ",
-    transliterationKk:
-      "Аллаһу лә иләһә иллә һуәл-хайюл-қайюм. Лә тә'хузуһу синәтун уә лә нәум. Ләһу мә фис-сәмәуәти уә мә фил-ард. Мән зәлләзи яшфағу ғиндәһу иллә би-изниһ. Яғләму мә бәйна әйдиһим уә мә халфаһум. Уә лә юхитуна бишәй'им мин ғилмиһи иллә бимә шәә. Уасиъа курсийюһус-сәмәуәти уәл-ард. Уә лә йәудуһу хифзуһума, уә һуәл-ғалийюл-ғазим.",
-    meaningKk:
-      "Алладан басқа құлшылыққа лайық тәңір жоқ. Ол — Мәңгі Тірі, барлық нәрсені Басқарушы. Оны қалғу да, ұйқы да алмайды. Көктер мен жердегі барлық нәрсе Оған тән. Оның рұқсатынсыз кім шапағат ете алады? Ол олардың алдындағыны да, артындағыны да біледі. Олар Оның білімінен қалағанынан басқа ештеңені қамти алмайды. Оның Күрсиі көктер мен жерді қамтиды. Екеуін сақтау Оған ауыр емес. Ол — аса Биік, өте Ұлы.",
-  },
-  {
-    id: "qunut-dua",
-    label: "2. Құнт дұғасы",
-    arabic:
-      "اللَّهُمَّ إِنَّا نَسْتَعِينُكَ وَنَسْتَغْفِرُكَ وَنَسْتَهْدِيكَ، وَنُؤْمِنُ بِكَ وَنَتُوبُ إِلَيْكَ، وَنَتَوَكَّلُ عَلَيْكَ، وَنُثْنِي عَلَيْكَ الْخَيْرَ كُلَّهُ، نَشْكُرُكَ وَلَا نَكْفُرُكَ، وَنَخْلَعُ وَنَتْرُكُ مَنْ يَفْجُرُكَ.\nاللَّهُمَّ إِيَّاكَ نَعْبُدُ، وَلَكَ نُصَلِّي وَنَسْجُدُ، وَإِلَيْكَ نَسْعَى وَنَحْفِدُ، نَرْجُو رَحْمَتَكَ وَنَخْشَى عَذَابَكَ، إِنَّ عَذَابَكَ بِالْكُفَّارِ مُلْحِقٌ",
-    transliterationKk:
-      "Аллаһуммә иннә нәстәғинукә уә нәстағфирукә уә нәстәһдик. Уә ну'мину бикә уә нәтубу иләйк. Уә нәтәуәккәлу ғаләйк. Уә нусни ғаләйкәл-хайра кулләһ. Нәшкурукә уә лә нәкфурук. Уә нахлағу уә нәтруку мән йәфжурук.\nАллаһуммә иййәкә нәғбуду, уә ләкә нусалли уә нәсжуд. Уә иләйкә нәсға уә нәхфид. Нәржу рахмәтәкә уә нәхшә ғазәбәк. Иннә ғазәбәкә бил-куффәри мулхиқ.",
-    meaningKk:
-      "Уа, Алла! Біз Сенен жәрдем сұраймыз, кешірім тілейміз, тура жол сұраймыз. Саған иман келтіреміз, Саған тәубе етеміз, Саған тәуекел етеміз. Барлық жақсылықпен Сені мадақтаймыз. Саған шүкір етеміз, күпірлік етпейміз. Саған қарсы келгеннен алыстаймыз.\nУа, Алла! Тек Саған құлшылық қыламыз, Сен үшін намаз оқып, сәжде етеміз. Саған ұмтыламыз, қызмет етеміз. Рақымыңнан үміт етеміз, азабыңнан қорқамыз. Расында, Сенің азабың кәпірлерге жетеді.",
-  },
-];
 
 export function NamazGuideScreen() {
   const { colors } = useAppTheme();
@@ -91,31 +65,32 @@ function NamazGuideBody({
   const [selectedPrimarySection, setSelectedPrimarySection] = useState<NamazPrimarySectionKey | null>(null);
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({});
   const [selectedPrayerCard, setSelectedPrayerCard] = useState<NamazPrayerTypeCardContent | null>(null);
-  const [companionSalatKey, setCompanionSalatKey] = useState<NamazCompanionSalatKey | null>(null);
-  const [companionStepIndex, setCompanionStepIndex] = useState(0);
-  const exitCompanionSession = useCallback(() => {
-    setCompanionSalatKey(null);
-    setCompanionStepIndex(0);
+  const resetNamazGuidePanels = useCallback(() => {
+    setSelectedPrimarySection(null);
+    setSelectedPrayerCard(null);
+    setAccOpen({});
   }, []);
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        resetNamazGuidePanels();
+      };
+    }, [resetNamazGuidePanels])
+  );
   const closeOpenNamazPanel = useCallback(() => {
     if (selectedPrayerCard) {
       setSelectedPrayerCard(null);
       return true;
     }
-    if (companionSalatKey) {
-      exitCompanionSession();
-      return true;
-    }
     if (selectedPrimarySection) {
-      exitCompanionSession();
       setSelectedPrimarySection(null);
       return true;
     }
     return false;
-  }, [companionSalatKey, exitCompanionSession, selectedPrayerCard, selectedPrimarySection]);
+  }, [selectedPrayerCard, selectedPrimarySection]);
   useHardwareBackPress(
     closeOpenNamazPanel,
-    selectedPrimarySection != null || selectedPrayerCard != null || companionSalatKey != null
+    selectedPrimarySection != null || selectedPrayerCard != null
   );
   const toggleAcc = (key: string) => setAccOpen((o) => ({ ...o, [key]: !o[key] }));
 
@@ -201,13 +176,6 @@ function NamazGuideBody({
 
   const renderFivePrayerContent = () => (
     <View style={styles.namazExpanded}>
-      <NamazCompanionPicker
-        colors={colors}
-        onStart={(key) => {
-          setCompanionSalatKey(key);
-          setCompanionStepIndex(0);
-        }}
-      />
       <View style={styles.manualNamazPage}>
         <View style={styles.manualPageHeader}>
           <Text style={styles.manualPageEyebrow}>{t.namazGuide.screenTitle}</Text>
@@ -224,19 +192,34 @@ function NamazGuideBody({
             </View>
             {row.rakats.map((rakat) => (
               <Text key={`${row.key}-${rakat}`} style={styles.rakatLine}>
-                {tr(rakat)}
+                · {tr(rakat)}
               </Text>
             ))}
-            {row.notes.map((note) => (
-              <Text key={`${row.key}-note-${note}`} style={styles.rakatNoteLine}>
-                {tr(note)}
-              </Text>
-            ))}
+            {row.hint ? (
+              <Text style={styles.rakatHintLine}>{tr(row.hint)}</Text>
+            ) : null}
           </View>
         ))}
         <View style={styles.rakatSummaryBox}>
           {FIVE_PRAYER_RAKAT_SUMMARY.map((line) => (
             <Text key={line} style={styles.rakatSummaryLine}>
+              {tr(line)}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.rakatNiyyetBox}>
+          <Text style={styles.rakatNiyyetTitle}>Ниет мысалдары (парыз)</Text>
+          {FIVE_PRAYER_NIIYET_EXAMPLES.map((row) => (
+            <View key={row.key} style={styles.rakatNiyyetRow}>
+              <Text style={styles.rakatNiyyetPrayer}>{tr(row.prayer)}</Text>
+              <Text style={styles.rakatNiyyetText}>{tr(row.niyyet)}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={styles.rakatOrderBox}>
+          <Text style={styles.rakatNiyyetTitle}>Күн ішіндегі оқу реті</Text>
+          {FIVE_PRAYER_DAILY_ORDER.map((line) => (
+            <Text key={line} style={styles.rakatOrderLine}>
               {tr(line)}
             </Text>
           ))}
@@ -310,8 +293,96 @@ function NamazGuideBody({
     </View>
   );
 
+  const renderPrayerCardContent = (card: NamazPrayerTypeCardContent) => (
+    <View style={styles.visualStepCard}>
+      <View style={styles.ltrImageWrap}>
+        <GuideImageLightbox
+          source={card.image}
+          colors={colors}
+          thumbStyle={[styles.namazGuideImageThumb, styles.namazGuideImageThumbBleed]}
+          imageAspectRatio={imageAssetAspectRatio(card.image)}
+          closeLabel={kk.namazGuide.closeImageLightbox}
+          openImageA11y={`${tr(card.title)}. ${tr(card.subtitle)}. ${kk.namazGuide.openImageA11y}`}
+          softenThumbOverlay={false}
+          fitThumbToScreen
+          maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
+          thumbResizeMultiplier={NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER}
+        />
+      </View>
+      <View style={styles.visualStepCardBody}>
+        <Text style={styles.stepShortExplain}>{tr(card.lead)}</Text>
+        {card.sections.map((section) => (
+          <View key={`${card.key}-${section.title}`} style={styles.block}>
+            <Text style={styles.blockTitle}>{tr(section.title)}</Text>
+            {section.lines.map((line) => (
+              <Text
+                key={`${card.key}-${section.title}-${line}`}
+                style={[styles.blockBody, styles.prayerGuideSectionLine]}
+              >
+                {tr(line)}
+              </Text>
+            ))}
+          </View>
+        ))}
+        {(card.recitations?.length ?? 0) > 0 ? (
+          <View style={styles.namazPoseReciteWrap}>
+            <NamazGuidePoseRecitationBlocks blocks={card.recitations!} colors={colors} />
+          </View>
+        ) : null}
+        <GuideAutoTranslateBanner colors={colors} visible={translated} />
+      </View>
+    </View>
+  );
+
+  const panelOpen = selectedPrimarySection != null || selectedPrayerCard != null;
+  const panelTitle = selectedPrayerCard
+    ? `${selectedPrayerCard.no}. ${tr(selectedPrayerCard.title)}`
+    : primarySectionTitle;
+  const panelSub = selectedPrayerCard ? tr(selectedPrayerCard.subtitle) : primarySectionSub;
+
+  if (panelOpen) {
+    return (
+      <View
+        style={[
+          styles.modalRoot,
+          { paddingTop: modalInsets.top, paddingBottom: modalBottomPad },
+        ]}
+      >
+        <View style={styles.modalHeader}>
+          <View style={styles.modalTitleCol}>
+            <Text style={styles.modalTitle} numberOfLines={1}>
+              {panelTitle}
+            </Text>
+            <Text style={styles.modalSub} numberOfLines={1}>
+              {panelSub}
+            </Text>
+          </View>
+        </View>
+        {selectedPrayerCard ? (
+          <ScrollView
+            style={styles.root}
+            contentContainerStyle={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+            removeClippedSubviews={Platform.OS === "android"}
+          >
+            {renderPrayerCardContent(selectedPrayerCard)}
+          </ScrollView>
+        ) : selectedPrimarySection ? (
+          <ScrollView
+            style={styles.root}
+            contentContainerStyle={styles.modalContent}
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            removeClippedSubviews={Platform.OS === "android"}
+          >
+            {selectedPrimarySection === "wudu" ? renderWuduContent() : renderFivePrayerContent()}
+          </ScrollView>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
-    <>
     <ScrollView
       style={styles.root}
       contentContainerStyle={styles.content}
@@ -386,118 +457,6 @@ function NamazGuideBody({
       <GuideAutoTranslateBanner colors={colors} visible={translated} />
 
     </ScrollView>
-    <Modal
-      visible={selectedPrimarySection != null}
-      animationType="slide"
-      onRequestClose={closeOpenNamazPanel}
-      statusBarTranslucent
-      navigationBarTranslucent={Platform.OS === "android"}
-    >
-      <View
-        style={[
-          styles.modalRoot,
-          { paddingTop: modalInsets.top, paddingBottom: modalBottomPad },
-        ]}
-      >
-        <View style={styles.modalHeader}>
-          <View style={styles.modalTitleCol}>
-            <Text style={styles.modalTitle} numberOfLines={1}>
-              {companionSalatKey ? kk.namazCompanion.screenTitle : primarySectionTitle}
-            </Text>
-            <Text style={styles.modalSub} numberOfLines={1}>
-              {companionSalatKey ? kk.namazCompanion.lockedHint : primarySectionSub}
-            </Text>
-          </View>
-        </View>
-        {selectedPrimarySection && companionSalatKey ? (
-          <NamazCompanionSession
-            colors={colors}
-            salatKey={companionSalatKey}
-            stepIndex={companionStepIndex}
-            onStepIndexChange={setCompanionStepIndex}
-            onExit={exitCompanionSession}
-          />
-        ) : selectedPrimarySection ? (
-          <ScrollView
-            style={styles.root}
-            contentContainerStyle={styles.modalContent}
-            keyboardShouldPersistTaps="handled"
-            nestedScrollEnabled
-            removeClippedSubviews={Platform.OS === "android"}
-          >
-            {selectedPrimarySection === "wudu" ? renderWuduContent() : renderFivePrayerContent()}
-          </ScrollView>
-        ) : null}
-      </View>
-    </Modal>
-    <Modal
-      visible={selectedPrayerCard != null}
-      animationType="slide"
-      onRequestClose={() => setSelectedPrayerCard(null)}
-      statusBarTranslucent
-      navigationBarTranslucent={Platform.OS === "android"}
-    >
-      <View
-        style={[
-          styles.modalRoot,
-          { paddingTop: modalInsets.top, paddingBottom: modalBottomPad },
-        ]}
-      >
-        <View style={styles.modalHeader}>
-          <View style={styles.modalTitleCol}>
-            <Text style={styles.modalTitle} numberOfLines={1}>
-              {selectedPrayerCard ? `${selectedPrayerCard.no}. ${tr(selectedPrayerCard.title)}` : ""}
-            </Text>
-            <Text style={styles.modalSub} numberOfLines={1}>
-              {selectedPrayerCard ? tr(selectedPrayerCard.subtitle) : ""}
-            </Text>
-          </View>
-        </View>
-        {selectedPrayerCard ? (
-          <ScrollView
-            style={styles.root}
-            contentContainerStyle={styles.modalContent}
-            keyboardShouldPersistTaps="handled"
-            removeClippedSubviews={Platform.OS === "android"}
-          >
-            <View style={styles.visualStepCard}>
-              <View style={styles.ltrImageWrap}>
-                <GuideImageLightbox
-                  source={selectedPrayerCard.image}
-                  colors={colors}
-                  thumbStyle={[styles.namazGuideImageThumb, styles.namazGuideImageThumbBleed]}
-                  imageAspectRatio={imageAssetAspectRatio(selectedPrayerCard.image)}
-                  closeLabel={kk.namazGuide.closeImageLightbox}
-                  openImageA11y={`${tr(selectedPrayerCard.title)}. ${tr(selectedPrayerCard.subtitle)}. ${kk.namazGuide.openImageA11y}`}
-                  softenThumbOverlay={false}
-                  fitThumbToScreen
-                  maxThumbHeightRatio={NAMAZ_IMAGE_THUMB_MAX_HEIGHT_RATIO}
-                  thumbResizeMultiplier={NAMAZ_IMAGE_THUMB_RESIZE_MULTIPLIER}
-                />
-              </View>
-              <View style={styles.visualStepCardBody}>
-                <Text style={styles.stepShortExplain}>{tr(selectedPrayerCard.lead)}</Text>
-                {selectedPrayerCard.sections.map((section) => (
-                  <View key={`${selectedPrayerCard.key}-${section.title}`} style={styles.block}>
-                    <Text style={styles.blockTitle}>{tr(section.title)}</Text>
-                    {section.lines.map((line) => (
-                      <Text
-                        key={`${selectedPrayerCard.key}-${section.title}-${line}`}
-                        style={[styles.blockBody, styles.prayerGuideSectionLine]}
-                      >
-                        {tr(line)}
-                      </Text>
-                    ))}
-                  </View>
-                ))}
-                <GuideAutoTranslateBanner colors={colors} visible={translated} />
-              </View>
-            </View>
-          </ScrollView>
-        ) : null}
-      </View>
-    </Modal>
-    </>
   );
 }
 
@@ -510,29 +469,11 @@ function makeStyles(colors: ThemeColors) {
       minHeight: 64,
       paddingTop: 10,
       paddingBottom: 10,
-      paddingHorizontal: 12,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 10,
+      paddingHorizontal: 14,
+      justifyContent: "center",
       backgroundColor: colors.card,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-    },
-    modalBackBtn: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.bg,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    modalBackTxt: {
-      color: colors.text,
-      fontSize: 24,
-      fontWeight: "800",
-      lineHeight: 28,
     },
     modalTitleCol: { flex: 1, minWidth: 0 },
     modalTitle: { color: colors.text, fontSize: 18, fontWeight: "900" },
@@ -828,44 +769,41 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 5,
     },
     rakatPrayerCard: {
-      borderRadius: 14,
+      borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.accentSurface,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      marginBottom: 6,
     },
     rakatPrayerTop: {
-      marginBottom: 6,
+      marginBottom: 4,
     },
     rakatPrayerTitle: {
       color: colors.text,
-      fontSize: 15,
-      lineHeight: 20,
-      fontWeight: "900",
-      textAlign: "center",
+      fontSize: 14,
+      lineHeight: 18,
+      fontWeight: "700",
     },
     rakatPrayerTime: {
       color: colors.muted,
       fontSize: 11,
       lineHeight: 15,
-      fontWeight: "700",
-      textAlign: "center",
-      marginTop: 2,
+      fontWeight: "500",
+      marginTop: 1,
     },
     rakatLine: {
       color: colors.text,
-      fontSize: 14,
-      lineHeight: 21,
-      fontWeight: "700",
-      textAlign: "center",
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "500",
     },
-    rakatNoteLine: {
+    rakatHintLine: {
       color: colors.muted,
-      fontSize: 13,
-      lineHeight: 20,
-      textAlign: "center",
-      marginTop: 6,
+      fontSize: 11,
+      lineHeight: 15,
+      marginTop: 4,
     },
     rakatSummaryBox: {
       borderRadius: 14,
@@ -877,10 +815,52 @@ function makeStyles(colors: ThemeColors) {
     },
     rakatSummaryLine: {
       color: colors.accent,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: "600",
+    },
+    rakatNiyyetBox: {
+      marginTop: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      gap: 8,
+    },
+    rakatNiyyetTitle: {
+      color: colors.text,
       fontSize: 13,
-      lineHeight: 19,
-      fontWeight: "900",
-      textAlign: "center",
+      fontWeight: "800",
+    },
+    rakatNiyyetRow: {
+      gap: 2,
+    },
+    rakatNiyyetPrayer: {
+      color: colors.accent,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    rakatNiyyetText: {
+      color: colors.text,
+      fontSize: 11,
+      lineHeight: 16,
+    },
+    rakatOrderBox: {
+      marginTop: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.bg,
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      gap: 4,
+    },
+    rakatOrderLine: {
+      color: colors.text,
+      fontSize: 11,
+      lineHeight: 16,
     },
     imageHint: {
       color: colors.muted,

@@ -143,3 +143,23 @@ export function guideLightboxFitSize(
   }
   return { width: maxW, height: maxW / aspectRatio };
 }
+
+/**
+ * Android Image.resizeMultiplier — decode тек экранға керек пиксельге.
+ * Толық bundle декоды lightbox ашуын баяулатпасын.
+ */
+export function guideImageDecodeMultiplier(
+  displayWidthDp: number,
+  sourcePixels: { width: number; height: number } | undefined,
+  pixelRatio: number,
+  floor = 0.4,
+  ceiling = 1
+): number | undefined {
+  if (!sourcePixels?.width || sourcePixels.width <= 0 || pixelRatio <= 0) {
+    return undefined;
+  }
+  const targetPx = Math.max(1, displayWidthDp * pixelRatio);
+  const raw = targetPx / sourcePixels.width;
+  if (!Number.isFinite(raw) || raw <= 0) return undefined;
+  return Math.min(ceiling, Math.max(floor, raw));
+}

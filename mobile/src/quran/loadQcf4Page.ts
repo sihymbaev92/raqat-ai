@@ -22,8 +22,8 @@ const pageCache = new Map<number, Qcf4PageJson>();
 const inflight = new Map<number, Promise<Qcf4PageJson | null>>();
 let fontMapCache: Qcf4FontMap | null = null;
 let fontMapInflight: Promise<Qcf4FontMap | null> | null = null;
-/** 604 бетті толық ұстамау — көрінетін терезе + көрші (±1–2 preload). */
-const PAGE_CACHE_MAX = 4;
+/** 604 бетті толық ұстамау — көрінетін терезе + көрші (±2 preload). */
+const PAGE_CACHE_MAX = 7;
 
 const BUNDLED_FONT_MAP = require("../../assets/quran/qcf4/font-map.json") as Qcf4FontMap;
 

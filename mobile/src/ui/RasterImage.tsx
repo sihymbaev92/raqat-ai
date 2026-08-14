@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
+  PixelRatio,
   type ImageProps,
   type ImageSourcePropType,
   type StyleProp,
@@ -14,8 +15,11 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Pressable } from "@/ui/Pressable";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ImageZoomOverlay } from "../components/zoom/ImageZoomOverlay";
-import { guideLightboxFitSize } from "../utils/guideLightboxFit";
-import { imageAssetAspectRatio } from "../utils/imageAssetAspect";
+import {
+  guideLightboxFitSize,
+  guideImageDecodeMultiplier,
+} from "../utils/guideLightboxFit";
+import { imageAssetAspectRatio, imageAssetPixelSize } from "../utils/imageAssetAspect";
 import { kk } from "../i18n/kk";
 
 export type RasterImageProps = ImageProps & {
@@ -75,6 +79,12 @@ export function RasterImage({
     return resolveModalImageSize(source, width, height, insets.top);
   }, [zoomable, source, width, height, insets.top]);
 
+  const modalDecodeMultiplier = useMemo(() => {
+    if (!zoomable || source == null) return undefined;
+    const pixels = imageAssetPixelSize(source);
+    return guideImageDecodeMultiplier(modalImageSize.width, pixels, PixelRatio.get());
+  }, [zoomable, source, modalImageSize.width]);
+
   const androidDecodeProps =
     Platform.OS === "android" && resizeMultiplier != null
       ? ({ resizeMultiplier } as unknown as Partial<ImageProps>)
@@ -133,6 +143,7 @@ export function RasterImage({
         source={source}
         imageWidth={modalImageSize.width}
         imageHeight={modalImageSize.height}
+        resizeMultiplier={modalDecodeMultiplier ?? resizeMultiplier}
         onClose={() => setOpen(false)}
         closeLabel={zoomCloseLabel}
       />

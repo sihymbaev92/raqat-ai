@@ -1,4 +1,4 @@
-import { buildHalalMapMarkersFromCatalog } from "../halalMapMarkers";
+import { buildHalalMapMarkersFromCatalog, filterHalalMapMarkersWithinRadius } from "../halalMapMarkers";
 import type { HalalDamuCompanyCard } from "../../api/halalDamuWp";
 
 function card(partial: Partial<HalalDamuCompanyCard> & { id: number; title: string }): HalalDamuCompanyCard {
@@ -37,5 +37,14 @@ describe("halalMapMarkers", () => {
     ]);
     expect(markers).toHaveLength(1);
     expect(markers[0]?.id).toBe(1);
+  });
+
+  it("filters map markers within radius", () => {
+    const markers = buildHalalMapMarkersFromCatalog([
+      card({ id: 1, title: "Near", lat: 43.24, lon: 76.91 }),
+      card({ id: 2, title: "Far", lat: 42.0, lon: 70.0 }),
+    ]);
+    const near = filterHalalMapMarkersWithinRadius(markers, 43.24, 76.91, 5);
+    expect(near.map((m) => m.id)).toEqual([1]);
   });
 });

@@ -6,7 +6,11 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Pressable } from "@/ui/Pressable";
 import { useAppTheme } from "../theme/ThemeContext";
 import { useTabHomeBackHeader } from "../navigation/useTabHomeBackHeader";
-import { navigateToMoreStackScreen, navigateToQuranMushafBook } from "../navigation/navigateToMoreStack";
+import {
+  navigateToMoreStackScreen,
+  navigateToQuranMushafBook,
+  navigateToQuranSurah,
+} from "../navigation/navigateToMoreStack";
 import { loadQuranLastReadState, type QuranLastReadGlobal } from "../storage/quranLastRead";
 import { getBookmarkedSurahs } from "../storage/quranBookmarks";
 import { loadAyahMarkers, type AyahMarkerRecord } from "../storage/quranAyahMarkers";
@@ -112,7 +116,11 @@ export function SavedTabScreen() {
     snapshot.ayahMarkers.length > 0 ||
     snapshot.halalFavorites.length > 0;
 
-  const openMushaf = (surah: number, ayah = 1) => {
+  const openQuranReader = (surah: number, ayah = 1) => {
+    navigateToQuranSurah({ surahNumber: surah, initialAyah: ayah }, navigation);
+  };
+
+  const openHatimMushaf = (surah: number, ayah = 1) => {
     navigateToQuranMushafBook(
       { focusSurah: surah, focusAyah: ayah, continuousMushaf: true },
       navigation
@@ -157,7 +165,7 @@ export function SavedTabScreen() {
           title={st.lastAyahTitle}
           body={surahLine(snapshot.lastRead.surah, snapshot.lastRead.ayah)}
           action={st.open}
-          onPress={() => openMushaf(snapshot.lastRead!.surah, snapshot.lastRead!.ayah)}
+          onPress={() => openQuranReader(snapshot.lastRead!.surah, snapshot.lastRead!.ayah)}
         />
       ) : null}
 
@@ -177,7 +185,7 @@ export function SavedTabScreen() {
           action={snapshot.hatimResume ? st.continue : st.openHatim}
           onPress={() =>
             snapshot.hatimResume
-              ? openMushaf(snapshot.hatimResume.surah, snapshot.hatimResume.ayah)
+              ? openHatimMushaf(snapshot.hatimResume.surah, snapshot.hatimResume.ayah)
               : navigateToMoreStackScreen("Hatim", undefined, navigation)
           }
         />
@@ -192,7 +200,7 @@ export function SavedTabScreen() {
               title={surahLine(row.surah, row.ayah)}
               body={row.marker.note.trim() || st.markedAyahDefault}
               action={st.open}
-              onPress={() => openMushaf(row.surah, row.ayah)}
+              onPress={() => openQuranReader(row.surah, row.ayah)}
               compact
             />
           ))}
@@ -205,7 +213,7 @@ export function SavedTabScreen() {
             {snapshot.bookmarkedSurahs.slice(0, 18).map((surah) => (
               <Pressable
                 key={surah}
-                onPress={() => openMushaf(surah, 1)}
+                onPress={() => openQuranReader(surah, 1)}
                 style={({ pressed }) => [styles.chip, pressed && { opacity: 0.88 }]}
                 accessibilityRole="button"
               >

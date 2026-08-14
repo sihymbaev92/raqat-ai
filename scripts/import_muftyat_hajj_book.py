@@ -18,10 +18,10 @@ import sys
 import urllib.request
 from pathlib import Path
 
-if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8")
-
 REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "scripts"))
+from muftyat_kk_normalize import normalize_muftyat_kk_page_text
+
 PDF_URL = "https://www.muftyat.kz/media/muftyat/982258_1387348468.pdf"
 PDF_LOCAL = REPO / "data" / "muftyat-hajj.pdf"
 OUT_DIR = REPO / "mobile" / "assets" / "hajj" / "muftyat"
@@ -115,7 +115,7 @@ def sanitize_page_text(raw: str) -> str:
         kept.append(line.rstrip())
     out = "\n".join(kept)
     out = re.sub(r"\n{3,}", "\n\n", out)
-    return out.strip()
+    return normalize_muftyat_kk_page_text(out.strip())
 
 
 def text_quality(text: str) -> tuple[bool, float]:

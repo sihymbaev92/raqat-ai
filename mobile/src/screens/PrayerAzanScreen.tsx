@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ImageBackground, Platform, ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BackHandler, ImageBackground, Platform, ScrollView, View, Text, StyleSheet, Pressable } from "react-native";
 import type { NativeStackScreenProps, NativeStackNavigationProp } from "@react-navigation/native-stack";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,7 +24,6 @@ import {
   getNativeAzanPlaybackStatus,
   isNativeAzanSessionActive,
   playNativePrayerAzanAudio,
-  playNativePrayerAzanDuaAudio,
   prayerEnteredTitleForSlot,
   stopNativePrayerAzanAudio,
   suppressAzanHeadsUpBanner,
@@ -100,6 +99,17 @@ export function shouldAutoStartPrayerAzanAudio(isNativeAudio: boolean, soundId: 
   return !isNativeAudio && soundId !== "off";
 }
 
+/** RN PrayerAzanScreen mount: native дыбыс қашан қосылуы керек (alarm handoff vs in-app). */
+export function shouldStartNativeAzanOnScreenMount(
+  isNativeAudio: boolean,
+  sessionActive: boolean,
+  soundId: PrayerNotifSoundId
+): boolean {
+  if (soundId === "off") return false;
+  if (shouldAutoStartPrayerAzanAudio(isNativeAudio, soundId)) return true;
+  return sessionActive;
+}
+
 export function closePrayerAzanScreen(
   navigation: NativeStackNavigationProp<RootStackParamList, "PrayerAzan">
 ): void {
@@ -168,17 +178,17 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
     suppressAzanHeadsUpBanner();
     if (soundId !== "off") {
       if (useNativeAzan) {
-        // Delivery may already be playing; if idle, start now (iOS AlarmKit open path).
-        // Жабудан кейін remount stale params-пен дыбысты қайта қоспасын.
+        // Delivery may already be playing; if idle, start now (iOS AlarmKit / in-app prayer moment).
         void getNativeAzanPlaybackStatus().then((st) => {
           if (closingRef.current) return;
           if (st?.isPlaying || st?.completed || st?.isDua) return;
           void isNativeAzanSessionActive().then((active) => {
-            if (closingRef.current || !active) return;
+            if (closingRef.current) return;
+            if (!shouldStartNativeAzanOnScreenMount(isNativeAudio, active, soundId)) return;
             playNativePrayerAzanAudio(soundId);
           });
         });
-      } else if (!isNativeAudio) {
+      } else if (shouldAutoStartPrayerAzanAudio(isNativeAudio, soundId)) {
         void previewPrayerNotifSound(soundId);
       }
     }
@@ -188,6 +198,24 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
       if (!isNativeAudio) stopNativePrayerAzanAudio();
     };
   }, [isNativeAudio, soundId, useNativeAzan]);
+
+  const stop = useCallback(() => {
+    if (stopped || closingRef.current) return;
+    closingRef.current = true;
+    setStopped(true);
+    finishAzanDelivery();
+    void stopPreviewPrayerNotifSound();
+    closePrayerAzanScreen(navigation);
+  }, [navigation, stopped]);
+
+  useEffect(() => {
+    if (Platform.OS === "web") return undefined;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      stop();
+      return true;
+    });
+    return () => sub.remove();
+  }, [stop]);
 
   useEffect(() => {
     if (stopped || soundId === "off") return undefined;
@@ -221,7 +249,8 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
       }
 
       const duaStatus = await readAzanDuaPlaybackStatus(useNativeAzan);
-      if (duaStatus?.isPlaying || duaStatus?.isDua) {
+      if (duaStatus?.isPlaying || duaStatus?.isDua || azanStatus?.isDua) {
+        duaStartedRef.current = true;
         if (duaIdx >= 0) setActiveTextIdx(duaIdx);
         return;
       }
@@ -240,16 +269,12 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
         return;
       }
 
-      if (azanPlaybackFinished(azanStatus)) {
+      if (azanPlaybackFinished(azanStatus) || azanStatus?.completed) {
         if (duaIdx >= 0) setActiveTextIdx(duaIdx);
         if (!duaStartedRef.current) {
           duaStartedRef.current = true;
-          if (useNativeAzan) {
-            const nativeStatus = await getNativeAzanPlaybackStatus();
-            if (!nativeStatus?.isDua && !nativeStatus?.isPlaying) {
-              playNativePrayerAzanDuaAudio();
-            }
-          } else {
+          // Native player azan біткеннен кейін playDua-ны өзі шақырады (~280ms).
+          if (!useNativeAzan) {
             void playAzanDuaAudio();
           }
         }
@@ -283,12 +308,6 @@ export function PrayerAzanScreen({ route, navigation }: Props) {
     if (typeof y !== "number") return;
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 12), animated: true });
   }, [activeTextIdx]);
-
-  const stop = async () => {
-    await stopPreviewPrayerNotifSound();
-    setStopped(true);
-    closePrayerAzanScreen(navigation);
-  };
 
   return (
     <ImageBackground source={AZAN_BACKGROUND} resizeMode="cover" testID="screen-prayer-azan" style={styles.root}>

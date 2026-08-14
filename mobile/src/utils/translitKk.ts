@@ -154,3 +154,19 @@ export function pickBestTranslit(ar: string, translitRaw?: string): string {
   if (isUsableTranslit(t)) return t;
   return arabicToKkCyrillicFallback(ar);
 }
+
+function translitCompareKey(raw: string): string {
+  return normalizeTranslitText(raw)
+    .toLowerCase()
+    .replace(/[\s·\-'’`.,!?;:()/]/g, "");
+}
+
+/** textKk транскрипциямен қайталанса — тізімде екі жол көрсетпейміз. */
+export function isRedundantTranslitTitle(title: string, translit: string): boolean {
+  const t = translitCompareKey(title);
+  const r = translitCompareKey(translit);
+  if (!t || !r) return false;
+  if (t === r) return true;
+  // textKk — translitKk-тың қысқартылған нұсқасы (мыс. id 5).
+  return r.startsWith(t) && t.length >= 10;
+}

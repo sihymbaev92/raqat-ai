@@ -71,6 +71,10 @@ object PrayerAzanNativePlayer {
   @Synchronized
   fun playDua(context: Context) {
     if (sessionFullyFinished) return
+    if (playingDua && isPlaying()) {
+      Log.i("PrayerAzanNativePlayer", "Skip playDua — already playing")
+      return
+    }
     val app = context.applicationContext
     stopInternal(keepSession = true, clearFullyFinished = false)
     lastContext = app

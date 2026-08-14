@@ -26,6 +26,7 @@ describe("prepareMuftyatKkSpeech", () => {
     expect(prepareMuftyatKkSpeech("дыбыс-. сыз")).toBe("дыбыссыз");
     expect(prepareMuftyatKkSpeech("әр. қайсысына")).toBe("әрқайсысына");
     expect(prepareMuftyatKkSpeech("кажет")).toBe("қажет");
+    expect(prepareMuftyatKkSpeech("Тиләует сәждесі")).toBe("Тіләуат сәждесі");
   });
 });
 

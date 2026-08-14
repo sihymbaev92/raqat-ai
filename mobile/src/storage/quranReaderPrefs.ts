@@ -20,6 +20,7 @@ import {
 } from "../config/quranReciters";
 import { clampMushafTextScale } from "../quran/mushafTextScale";
 import { QURAN_READER_ARABIC_ONLY } from "../quran/quranReaderModePolicy";
+import { resolveQuranReaderTajweedColors } from "../quran/quranReaderTajweedPolicy";
 import {
   DEFAULT_QURAN_READING_THEME,
   normalizeQuranReadingTheme,
@@ -178,11 +179,12 @@ export async function setQuranReaderShowMeaning(on: boolean): Promise<void> {
 }
 
 export async function getQuranTajweedColorsEnabled(): Promise<boolean> {
-  return readBoolKey(QURAN_TAJWEED_COLORS_KEY, false);
+  return resolveQuranReaderTajweedColors(await readBoolKey(QURAN_TAJWEED_COLORS_KEY, false));
 }
 
 export async function setQuranTajweedColorsEnabled(on: boolean): Promise<void> {
-  await writeBoolKey(QURAN_TAJWEED_COLORS_KEY, on);
+  void on;
+  /* no-op: Surah reader tajweed colors are policy-locked off */
 }
 
 export async function getQuranReciterEdition(): Promise<string> {
