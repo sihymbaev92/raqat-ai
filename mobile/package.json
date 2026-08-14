@@ -55,6 +55,8 @@
     "bundle:i18n-offline": "node scripts/build-offline-auto-translations.mjs",
     "bundle:i18n-offline:all": "node scripts/build-offline-auto-translations.mjs --all",
     "bundle:i18n-apk": "node scripts/build-offline-auto-translations-apk.cjs",
+    "namaz:scholar-export": "npx --yes tsx scripts/export-namaz-scholar-review-pack.ts",
+    "namaz:scholar-signoff": "node scripts/apply-namaz-scholar-signoff.cjs",
     "bundle:i18n-spiritual": "node scripts/fill-spiritual-content-i18n.cjs && node scripts/build-offline-auto-translations-apk.cjs",
     "bundle:quran-translations": "node scripts/build-quran-translation-bundle.mjs",
     "export:quran-kk-bundle": "cd .. && .venv/bin/python scripts/export_quran_kk_bundled_json.py --db global_clean.db --out mobile/assets/bundled/quran-kk-from-db.json",

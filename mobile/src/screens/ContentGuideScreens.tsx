@@ -14,6 +14,7 @@ import { kk } from "../i18n/kk";
 import { useI18n } from "../i18n/useI18n";
 import { useKkAutoTranslator } from "../quran/useKkAutoTranslator";
 import { GuideAutoTranslateBanner } from "../components/GuideAutoTranslateBanner";
+import { NamazScholarReviewBanner } from "../components/NamazScholarReviewBanner";
 import {
   getNamazLearningHintsForGuidePose,
   getNamazRecitationBlocksForGuidePose,
@@ -389,6 +390,7 @@ function NamazGuideBody({
       keyboardShouldPersistTaps="handled"
       nestedScrollEnabled
     >
+      <NamazScholarReviewBanner colors={colors} />
       <View style={styles.studyMap}>
         <Text style={styles.studyMapTitle}>{t.namazGuide.studyMapTitle}</Text>
         <Text style={styles.studyMapHint}>{t.namazGuide.studyMapPickHint}</Text>

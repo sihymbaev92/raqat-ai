@@ -19,31 +19,80 @@ const GTX_LANG = { ru: "ru", en: "en", ky: "ky", uz: "uz", tr: "tr", ar: "ar" };
 
 function hash(s) {
   let h = 5381;
-  const t = String(s).trim();
-  for (let i = 0; i < t.length; i++) h = (h * 33) ^ t.charCodeAt(i);
+  for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
   return (h >>> 0).toString(36);
 }
+
+const MAX_CHUNK_CHARS = 1500;
 
 async function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function translateGtx(text, target) {
+function splitLongText(text) {
+  if (text.length <= MAX_CHUNK_CHARS) return [text];
+  const parts = [];
+  let buf = "";
+  for (const sentence of text.split(/(?<=[.!?…])\s+/u)) {
+    const next = buf ? `${buf} ${sentence}` : sentence;
+    if (next.length > MAX_CHUNK_CHARS && buf) {
+      parts.push(buf);
+      buf = sentence;
+    } else {
+      buf = next;
+    }
+  }
+  if (buf) parts.push(buf);
+  return parts.length ? parts : [text];
+}
+
+async function translateGtxOnce(text, target) {
   const lang = GTX_LANG[target] || target;
   const url =
     "https://translate.googleapis.com/translate_a/single?client=gtx&sl=kk&tl=" +
     encodeURIComponent(lang) +
     "&dt=t&q=" +
     encodeURIComponent(text);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`gtx ${res.status}`);
-  const data = await res.json();
-  const parts = Array.isArray(data?.[0]) ? data[0] : [];
-  const out = parts
-    .map((row) => (Array.isArray(row) ? row[0] : ""))
-    .filter(Boolean)
-    .join("");
-  return String(out || "").trim();
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20000);
+  try {
+    const res = await fetch(url, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`gtx ${res.status}`);
+    const data = await res.json();
+    const parts = Array.isArray(data?.[0]) ? data[0] : [];
+    const out = parts
+      .map((row) => (Array.isArray(row) ? row[0] : ""))
+      .filter(Boolean)
+      .join("");
+    return String(out || "").trim();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function translateGtx(text, target) {
+  const chunks = splitLongText(text);
+  const out = [];
+  for (const chunk of chunks) {
+    let lastErr;
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        const tr = await translateGtxOnce(chunk, target);
+        if (tr) {
+          out.push(tr);
+          lastErr = null;
+          break;
+        }
+        lastErr = new Error("empty translation");
+      } catch (e) {
+        lastErr = e;
+        await sleep(400 * (attempt + 1));
+      }
+    }
+    if (lastErr) throw lastErr;
+    await sleep(80);
+  }
+  return out.join(" ").trim();
 }
 
 async function main() {
@@ -62,23 +111,26 @@ async function main() {
     for (let i = 0; i < missing.length; i++) {
       const src = missing[i];
       try {
-        const tr = await translateGtx(src, loc);
-        if (tr && tr !== src) {
+        let tr = await translateGtx(src, loc);
+        if (!tr && (loc === "ky" || loc === "uz")) tr = src;
+        if (!tr && src.length <= 4) tr = src;
+        if (tr) {
           map[hash(src)] = tr;
           filled++;
         } else {
           failed++;
+          console.warn(`empty ${loc} [${i + 1}/${missing.length}]: ${src.slice(0, 60)}`);
         }
       } catch (e) {
         failed++;
         console.warn(`fail ${loc} [${i + 1}/${missing.length}]: ${e.message}`);
-        await sleep(800);
+        await sleep(1200);
       }
-      if ((i + 1) % 10 === 0) {
+      if ((i + 1) % 5 === 0) {
         process.stdout.write(`  ${loc} ${i + 1}/${missing.length}\r`);
-        await sleep(120);
+        await sleep(180);
       } else {
-        await sleep(60);
+        await sleep(100);
       }
     }
     console.log(`${loc}: done`);

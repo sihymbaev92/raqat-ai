@@ -29,6 +29,7 @@ $Pairs = @(
   @{ Local = Join-Path $Mobile "assets\quran\qcf4\fonts"; Remote = "$WebRoot/assets/quran/qcf4/fonts" }
   @{ Local = Join-Path $Mobile "assets\quran\qcf4\pages"; Remote = "$WebRoot/assets/quran/qcf4/pages" }
   @{ Local = Join-Path $Mobile "assets\tajweed\letters"; Remote = "$WebRoot/assets/tajweed/letters" }
+  @{ Local = Join-Path $Mobile "assets\tajweed\examples"; Remote = "$WebRoot/assets/tajweed/examples" }
   @{ Local = Join-Path $Mobile "assets\tajweed\muftyat"; Remote = "$WebRoot/assets/tajweed/muftyat" }
   @{ Local = Join-Path $Mobile "assets\hajj\muftyat"; Remote = "$WebRoot/assets/hajj/muftyat" }
   @{ Local = Join-Path $Mobile "assets\bundled\offline-auto-translations-core.json"; Remote = "$WebRoot/assets/bundled/offline-auto-translations-core.json" }
