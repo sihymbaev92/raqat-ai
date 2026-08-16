@@ -36,6 +36,7 @@ const APK_JSON_LOADERS: Partial<Record<BundledJsonName, () => unknown>> = {
   "mosques-2gis-kz.json": () => require("../../assets/bundled/mosques-2gis-kz.json"),
   "quran-kk-from-db.json": () => require("../../assets/bundled/quran-kk-from-db.json"),
   "quran-uthmani-full.json": () => require("../../assets/bundled/quran-uthmani-full.json"),
+  "quran-unicode-full.json": () => require("../../assets/bundled/quran-unicode-full.json"),
   "quran-en-transliteration-full.json": () =>
     require("../../assets/bundled/quran-en-transliteration-full.json"),
   "quran-tajweed-offline.json": () => require("../../assets/bundled/quran-tajweed-offline.json"),
@@ -127,6 +128,8 @@ function loadFromAssetRequire(name: BundledJsonName): unknown {
       return translitFixtureFromKk();
     case "quran-kk-from-db.json":
       return kkDb();
+    case "quran-unicode-full.json":
+      return testRequire("../../assets/bundled/quran-unicode-full.json");
     case "quran-tajweed-offline.json":
       return { version: 1, surahs: { "1": { "1": "test [h:1[x]" } } };
     case "great-words-catalog.json":
@@ -264,6 +267,13 @@ function isValidApkBundledPayload(name: BundledJsonName, data: unknown): boolean
     if (!Array.isArray(surahs) || surahs.length < 114) return false;
     const kk = surahs[0]?.ayahs?.[0]?.text_kk?.replace(/^\uFEFF/, "").trim() ?? "";
     return kk.length > 0;
+  }
+  if (name === "quran-unicode-full.json") {
+    const surahs = (data as { data?: { surahs?: Array<{ ayahs?: Array<{ text?: string }> }> } })?.data
+      ?.surahs;
+    if (!Array.isArray(surahs) || surahs.length < 114) return false;
+    const text = surahs[0]?.ayahs?.[0]?.text?.replace(/^\uFEFF/, "").trim() ?? "";
+    return text.length > 0;
   }
   if (name === "surah-list-api.json") {
     const rows = (data as { data?: unknown[] })?.data;

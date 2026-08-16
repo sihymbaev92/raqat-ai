@@ -24,4 +24,27 @@ describe("quranArabicNoClipTextStyle", () => {
     expect(style.lineHeight).toBe(62);
     expect(style.paddingBottom).toBe(12);
   });
+
+  it("adds descender room for turkishMedinaParity without Medina-open spacing", () => {
+    const style = quranArabicNoClipTextStyle(
+      { fontSize: 28, lineHeight: 34, includeFontPadding: false },
+      { turkishMedinaParity: true }
+    );
+
+    expect(style.includeFontPadding).toBe(true);
+    expect(style.lineHeight).toBeGreaterThanOrEqual(37);
+    expect(style.paddingBottom).toBeGreaterThanOrEqual(3);
+    expect(style.textAlignVertical).toBe("top");
+  });
+
+  it("adds extra descender room for turkish scroll list", () => {
+    const style = quranArabicNoClipTextStyle(
+      { fontSize: 23, lineHeight: 41, includeFontPadding: false },
+      { turkishMedinaParity: true, ayahScrollStyle: true }
+    );
+
+    expect(style.lineHeight).toBeGreaterThanOrEqual(41);
+    expect(style.paddingBottom).toBeGreaterThanOrEqual(5);
+    expect(style.textAlignVertical).toBe("center");
+  });
 });

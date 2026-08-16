@@ -3,6 +3,7 @@
 export type BundledJsonName =
   | "surah-list-api.json"
   | "quran-uthmani-full.json"
+  | "quran-unicode-full.json"
   | "quran-en-transliteration-full.json"
   | "quran-kk-from-db.json"
   | "quran-translations-offline.json"
@@ -21,6 +22,7 @@ export const APK_BUNDLED_JSON: readonly BundledJsonName[] = [
   "mosques-2gis-kz.json",
   "quran-kk-from-db.json",
   "quran-uthmani-full.json",
+  "quran-unicode-full.json",
   "quran-en-transliteration-full.json",
   "quran-tajweed-offline.json",
   "quran-translations-offline.json",

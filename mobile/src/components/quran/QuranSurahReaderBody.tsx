@@ -23,7 +23,7 @@ import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSur
 import { toggleBookmarkSurah } from "../../storage/quranBookmarks";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import type { QuranReadingThemeId } from "../../theme/quranComReadingTheme";
-import { AyahArabicKaraokeText } from "./AyahArabicKaraokeText";
+import { QuranReaderAyahArabic } from "./QuranReaderAyahArabic";
 import { MushafContinuousArabicBlock, type MushafContinuousArabicHandle } from "./MushafContinuousArabicBlock";
 import { MushafPagerPageScroll, type MushafPagerPageStyles } from "./MushafPagerPageScroll";
 import { MushafBookFooter } from "./MushafBookFooter";
@@ -37,6 +37,8 @@ import { runAfterInteractions } from "../../utils/uiDefer";
 import { mushafBookPagerListProps } from "../../quran/mushafBookPager";
 import { setQuranReaderAllowRotation } from "../../storage/quranReaderPrefs";
 import type { AyahMarkerRecord } from "../../storage/quranAyahMarkers";
+import { resolveEditionArabicTextStyle } from "../../quran/quranTurkishPrintTypography";
+import { useTurkishPrintFontsReady } from "../../quran/useTurkishPrintFontsReady";
 import type { QuranSurahScreenStyles } from "../../quran/quranSurahScreenStyles";
 import type { ListRenderItem } from "@shopify/flash-list";
 
@@ -121,6 +123,7 @@ export type QuranSurahReaderBodyProps = {
   }) => void;
   flashListPlaybackExtra: unknown;
   renderAyahListRow: ListRenderItem<CachedAyah>;
+  mushafTextScale?: number;
 };
 
 export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
@@ -194,10 +197,17 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
     onViewableItemsChanged,
     flashListPlaybackExtra,
     renderAyahListRow,
+    mushafTextScale = 1,
   } = props;
   const t = useI18n();
   const translitScript = useQuranTranslitScript();
   const insets = useSafeAreaInsets();
+  const turkishFontsReady = useTurkishPrintFontsReady(arabicScriptEdition);
+  const mushafArabicAyahTxt = resolveEditionArabicTextStyle(
+    styles.mushafAyahTxt,
+    arabicScriptEdition,
+    { fontsReady: turkishFontsReady }
+  );
 
   if (loading && !ayahs.length) {
     return (
@@ -576,14 +586,17 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                         accessibilityLabel={mushafAyahAccessibilityLabel(ayahN)}
                         style={({ pressed }) => [pressed && { opacity: 0.82 }]}
                       >
-                        <AyahArabicKaraokeText
+                        <QuranReaderAyahArabic
                           plainText={arabicPlain}
                           taggedText={showTajweedForDisplay ? item.textTajweed : undefined}
                           showTajweedColors={showTajweedForDisplay}
                           isDark={isDark}
-                          baseStyle={styles.mushafAyahTxt}
+                          arabicScriptEdition={arabicScriptEdition}
+                          baseTextStyle={styles.mushafAyahTxt}
+                          mushafTextScale={mushafTextScale}
                           audioFocus={hasLoaded}
                           audioLoading={isLoad}
+                          bareText
                         />
                       </Pressable>
                     ) : null}
@@ -616,7 +629,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
                 loadingAyahAudio={loadingAyahAudio}
                 resumeHighlightAyah={mushafHighlightAyah ?? null}
                 ayahMarkers={ayahMarkers}
-                mushafAyahTxt={styles.mushafAyahTxt}
+                mushafAyahTxt={mushafArabicAyahTxt}
                 contentWidth={mushafArabicContentWidth}
                 toEasternArabicIndic={toEasternArabicIndic}
                 scrollViewRef={mushafScrollRef}
@@ -689,6 +702,7 @@ export function QuranSurahReaderBody(props: QuranSurahReaderBodyProps) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />
         }
         showsVerticalScrollIndicator
+        removeClippedSubviews={false}
         renderItem={renderAyahListRow}
       />
       )}

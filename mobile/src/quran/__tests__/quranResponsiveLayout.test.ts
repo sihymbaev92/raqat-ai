@@ -7,6 +7,7 @@ import {
   hatimAyahAutoFitTextStyle,
   responsiveQuranFontSize,
   responsiveQuranLineHeight,
+  resolveQuranArabicTypography,
 } from "../quranResponsiveLayout";
 
 describe("quranResponsiveLayout", () => {
@@ -35,6 +36,14 @@ describe("quranResponsiveLayout", () => {
   it("uses generous line height for harakat (1.8×)", () => {
     expect(responsiveQuranLineHeight(22)).toBeGreaterThanOrEqual(39);
     expect(responsiveQuranLineHeight(26)).toBe(47);
+  });
+
+  it("resolveQuranArabicTypography uses ayah scroll for turkish when Medina parity", () => {
+    const { fontSize } = resolveQuranArabicTypography(360, 22, {
+      turkishPrint: true,
+      ayahScrollStyle: true,
+    });
+    expect(fontSize).toBe(23);
   });
 
   it("exposes hatim ayah auto-fit text props", () => {

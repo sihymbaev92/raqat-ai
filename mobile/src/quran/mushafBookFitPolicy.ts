@@ -1,5 +1,5 @@
-import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
 import { lookupQuranReadingTheme, type QuranReadingThemeId } from "../theme/quranComReadingTheme";
+import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
 
 type OnePageFitInput = {
   arabicScriptEdition: QuranArabicScriptEditionId;
@@ -73,5 +73,6 @@ export function mushafOnePageFitScale(
               ? 0.08
               : 0.04;
   const maxScale = profile === "pager" ? 0.86 : 0.9;
-  return Math.max(0.58, Math.min(maxScale, 0.9 - densePenalty - heightPenalty));
+  const minScale = 0.58;
+  return Math.max(minScale, Math.min(maxScale, 0.9 - densePenalty - heightPenalty));
 }

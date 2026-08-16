@@ -13,6 +13,7 @@ import {
 import { displayCachedAyahArabic, type CachedAyah } from "../../storage/quranSurahCache";
 import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import { quranSurahArabicWrapStyle } from "../../quran/quranResponsiveLayout";
+import { quranArabicAyahStyleForEdition } from "../../quran/quranTurkishPrintTypography";
 import { useI18n } from "../../i18n/useI18n";
 
 const CREAM_BG = "#FDFBF7";
@@ -41,15 +42,18 @@ export function KhatmTajweedAyahScroll({
 }: Props) {
   const t = useI18n();
   const { width: screenWidth } = useWindowDimensions();
+  const contentWidth = Math.max(280, screenWidth);
+  const arabicTextStyle = quranArabicAyahStyleForEdition(mushafAyahTxt, arabicScriptEdition);
   const metrics = useMemo(
     () =>
       buildQuranArabicFlowMetrics({
-        contentWidth: screenWidth,
-        baseFontSize: typeof mushafAyahTxt.fontSize === "number" ? mushafAyahTxt.fontSize : 24,
-        baseTextStyle: mushafAyahTxt,
+        contentWidth,
+        baseFontSize: typeof arabicTextStyle.fontSize === "number" ? arabicTextStyle.fontSize : 24,
+        baseTextStyle: arabicTextStyle,
         ayahScrollStyle: true,
+        turkishMedinaParity: arabicScriptEdition === "turkish",
       }),
-    [screenWidth, mushafAyahTxt]
+    [contentWidth, arabicTextStyle, arabicScriptEdition]
   );
 
   const bg = isDark ? undefined : CREAM_BG;
@@ -93,8 +97,7 @@ export function KhatmTajweedAyahScroll({
                 direction: "rtl",
               }}
             >
-              {/** RTL: flex-start = экранның оң жағы */}
-              <View style={{ width: "100%", alignItems: "flex-start" }}>
+              <View style={{ width: "100%", alignItems: "flex-end" }}>
                 <View
                   style={{
                     paddingHorizontal: 10,

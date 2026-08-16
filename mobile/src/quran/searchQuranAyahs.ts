@@ -126,6 +126,7 @@ async function fetchApiSearchHits(
 
   const bearer = ((await getValidAccessToken()) ?? "").trim() || undefined;
   const res = await fetchPlatformQuranSearch(base, token, {
+    lang: quranSearchLangForLocale(locale),
     limit: Math.min(limit, 50),
     includeTranslit: true,
     timeoutMs,

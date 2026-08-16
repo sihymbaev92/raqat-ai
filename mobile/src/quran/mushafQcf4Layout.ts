@@ -1,11 +1,33 @@
 import { Platform } from "react-native";
 import type { Qcf4PageJson, Qcf4Word, Qcf4WordType } from "./qcf4Types";
-import { HATIM_UNIFIED_ARABIC_FONT_SIZE } from "./mushafTextScale";
+import { HATIM_LOCKED_MUSHAF_TEXT_SCALE, HATIM_UNIFIED_ARABIC_FONT_SIZE } from "./mushafTextScale";
+import {
+  TURKISH_PRINT_HATIM_GLYPH_SCALE_QCOM,
+  TURKISH_PRINT_HATIM_LINE_HEIGHT_FACTOR,
+  TURKISH_PRINT_HATIM_PHONE_GLYPH_MAX,
+  TURKISH_PRINT_HATIM_PHONE_GLYPH_SCALE_QCOM,
+  TURKISH_PRINT_HATIM_CHROME_RESERVE,
+  TURKISH_PRINT_HATIM_PAGE_CHROME_H,
+  TURKISH_PRINT_HATIM_PHONE_VERTICAL_SAFE,
+  TURKISH_PRINT_HATIM_GLYPH_EXTRA_QCOM,
+  TURKISH_PRINT_HATIM_TABLET_GLYPH_MAX,
+  TURKISH_PRINT_HATIM_FONT_SIZE_OFFSET,
+  TURKISH_PRINT_HATIM_MEDINA_PARITY,
+} from "./quranTurkishPrintTypography";
+
+export const QCF4_GLYPH_SCALE_QCOM = 0.78;
+export const QCF4_GLYPH_EXTRA_QCOM = 1;
+export const QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM = 1.48;
+export const QCF4_CHROME_JUZ_RESERVE = 28;
+const QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y = 1.06;
+const QCF4_NATIVE_LINE_INNER_PADDING = 2;
 
 export const QCF4_RENDER_LINE_COUNT = 15;
 /** Жол арасы — харакат/нүкте кесілмей, бірақ бет тығыздығы сақталады. */
 export const QCF4_QCOM_LINE_GAP = 8;
 export const QCF4_EXTERNAL_SURAH_FRAME_RESERVE = 56;
+/** Жүз/бет қатары мен сүре рамкасы арасын сәл жақындату (QCF4 + Unicode text-hafs). */
+export const QCF4_EXTERNAL_SURAH_FRAME_TOP_TIGHTEN = 6;
 export const QCF4_PHONE_WEB_SAFE_INSET = 10;
 export const QCF4_PHONE_NATIVE_SAFE_INSET = 14;
 export const QCF4_PHONE_LINE_PADDING = 16;
@@ -162,4 +184,113 @@ export function qcf4SafeGlyphSizeForLine(args: {
 /** Ayah/Quran.com: QCF4 қatarы justify арқылы созылмайды. */
 export function qcf4HatimLineJustifyContent(): "flex-start" {
   return "flex-start";
+}
+
+/** Хатым QCF4: бет биіктігінен араб жолы аймағы (MushafBookPageQcf4 формуласы). */
+export function computeHatimQcf4LinesAreaH(args: {
+  pageHeight: number;
+  qcomPurePage?: boolean;
+  useExternalSurahFrame?: boolean;
+  isPhoneQcf4Page?: boolean;
+  /** Түрік Unicode: мәтін жоғары, аз vert reserve. */
+  turkishUnicodePrint?: boolean;
+  /** Түрік Unicode хатым (Medina parity): тар chrome + vert safe. */
+  unicodeTurkishHatim?: boolean;
+}): number {
+  const qcomPurePage = args.qcomPurePage ?? true;
+  const turkishOverrides = args.turkishUnicodePrint === true && !TURKISH_PRINT_HATIM_MEDINA_PARITY;
+  const turkishHatim = args.unicodeTurkishHatim === true || turkishOverrides;
+  const chromeReserve = qcomPurePage
+    ? turkishHatim
+      ? TURKISH_PRINT_HATIM_PAGE_CHROME_H
+      : QCF4_CHROME_JUZ_RESERVE
+    : 0;
+  const surahFrameReserve = args.useExternalSurahFrame ? QCF4_EXTERNAL_SURAH_FRAME_RESERVE : 0;
+  const linesAreaH = Math.max(80, args.pageHeight - chromeReserve - surahFrameReserve);
+  const phoneVerticalSafePadding =
+    qcomPurePage && args.isPhoneQcf4Page
+      ? turkishHatim
+        ? TURKISH_PRINT_HATIM_PHONE_VERTICAL_SAFE
+        : QCF4_PHONE_VERTICAL_SAFE_PADDING
+      : 0;
+  return Math.max(80, linesAreaH - phoneVerticalSafePadding * 2);
+}
+
+/** Unicode text-hafs: Medina QCF4 glyphSize/lineHeight-пен бірдей визуалдық өлшем. */
+export function computeHatimQcf4EquivalentTextMetrics(args: {
+  linesAreaH: number;
+  mushafTextScale?: number;
+  isPhoneQcf4Page?: boolean;
+  qcomPurePage?: boolean;
+  /** Түрік Unicode: ірі glyph + тар қatar арасы. */
+  turkishUnicodePrint?: boolean;
+  /** Түрік Unicode + Medina parity: fontSize Medina, line-height тарірек. */
+  unicodeTurkishPrint?: boolean;
+}): { fontSize: number; lineHeight: number } {
+  const mushafTextScale = args.mushafTextScale ?? HATIM_LOCKED_MUSHAF_TEXT_SCALE;
+  const qcomPurePage = args.qcomPurePage ?? true;
+  const isPhoneQcf4Page = args.isPhoneQcf4Page ?? false;
+  const turkishOverrides = args.turkishUnicodePrint === true && !TURKISH_PRINT_HATIM_MEDINA_PARITY;
+  const unicodeTurkish = args.unicodeTurkishPrint === true;
+  const { lineHeight } = computeQcf4LineMetrics({
+    linesAreaH: args.linesAreaH,
+    renderLineCount: QCF4_RENDER_LINE_COUNT,
+    fitOneScreen: true,
+    qcomPurePage,
+  });
+  const qcomGlyphScale = turkishOverrides
+    ? qcomPurePage && isPhoneQcf4Page
+      ? TURKISH_PRINT_HATIM_PHONE_GLYPH_SCALE_QCOM
+      : TURKISH_PRINT_HATIM_GLYPH_SCALE_QCOM
+    : qcomPurePage && isPhoneQcf4Page
+      ? QCF4_PHONE_GLYPH_SCALE_QCOM
+      : QCF4_GLYPH_SCALE_QCOM;
+  const displayLineHeightScale =
+    turkishOverrides || unicodeTurkish
+      ? TURKISH_PRINT_HATIM_LINE_HEIGHT_FACTOR
+      : QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM;
+  const safeCapLineHeightScale = turkishOverrides
+    ? TURKISH_PRINT_HATIM_LINE_HEIGHT_FACTOR
+    : QCF4_GLYPH_LINE_HEIGHT_SCALE_QCOM;
+  const rawGlyphSize = Math.max(
+    1,
+    Math.round(
+      lineHeight * (qcomPurePage ? qcomGlyphScale : 0.82) * mushafTextScale
+    ) +
+      (qcomPurePage
+        ? turkishOverrides
+          ? TURKISH_PRINT_HATIM_GLYPH_EXTRA_QCOM
+          : QCF4_GLYPH_EXTRA_QCOM
+        : 0) -
+      1
+  );
+  const turkishGlyphCap = isPhoneQcf4Page
+    ? TURKISH_PRINT_HATIM_PHONE_GLYPH_MAX
+    : TURKISH_PRINT_HATIM_TABLET_GLYPH_MAX;
+  const glyphSize = turkishOverrides
+    ? Math.max(1, Math.min(rawGlyphSize, turkishGlyphCap))
+    : qcomPurePage && (isPhoneQcf4Page || Platform.OS !== "web")
+      ? qcf4SafeGlyphSizeForLine({
+          rawGlyphSize,
+          lineHeight,
+          maxGlyphSize: isPhoneQcf4Page ? QCF4_PHONE_GLYPH_MAX_QCOM : rawGlyphSize,
+          lineHeightScale: safeCapLineHeightScale,
+          visualScaleY: Platform.OS === "web" ? 1 : QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y,
+          lineInnerPadding: Platform.OS === "web" ? 0 : QCF4_NATIVE_LINE_INNER_PADDING,
+        })
+      : rawGlyphSize;
+  const glyphLineHeight = qcomPurePage
+    ? turkishOverrides || isPhoneQcf4Page
+      ? Math.ceil(glyphSize * displayLineHeightScale)
+      : Math.max(lineHeight, Math.ceil(glyphSize * displayLineHeightScale))
+    : lineHeight;
+  const fontSize =
+    unicodeTurkish && TURKISH_PRINT_HATIM_FONT_SIZE_OFFSET !== 0
+      ? Math.max(1, glyphSize + TURKISH_PRINT_HATIM_FONT_SIZE_OFFSET)
+      : glyphSize;
+  const resolvedLineHeight =
+    unicodeTurkish && TURKISH_PRINT_HATIM_FONT_SIZE_OFFSET !== 0
+      ? Math.ceil(fontSize * TURKISH_PRINT_HATIM_LINE_HEIGHT_FACTOR)
+      : glyphLineHeight;
+  return { fontSize, lineHeight: resolvedLineHeight };
 }

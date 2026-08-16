@@ -11,6 +11,8 @@ type Props = {
   primaryAyah: number;
   mushafPageNumber: number;
   styles: MushafBookPageStyles;
+  /** Араб блок horizontal padding-імен chrome жиегін туралау (Түрік хатым). */
+  horizontalInset?: number;
 };
 
 /** Хатым жоғарғы жол: сол — қазақша сүре аты, оң — бет нөмірі. */
@@ -18,6 +20,7 @@ export function MushafBookPageChrome({
   primarySurah,
   mushafPageNumber,
   styles: st,
+  horizontalInset,
 }: Props) {
   const t = useI18n();
   const locale = useAppLocale();
@@ -41,7 +44,14 @@ export function MushafBookPageChrome({
       accessibilityLabel={pageA11y}
       accessible
     >
-      <View style={st.pageChromeRow}>
+      <View
+        style={[
+          st.pageChromeRow,
+          horizontalInset != null
+            ? { paddingHorizontal: horizontalInset, marginBottom: 6, paddingTop: 4 }
+            : null,
+        ]}
+      >
         <Text style={st.pageChromeSurah} numberOfLines={1}>
           {surahLine}
         </Text>

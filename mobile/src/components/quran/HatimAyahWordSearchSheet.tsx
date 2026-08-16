@@ -51,7 +51,7 @@ export function HatimAyahWordSearchSheet({
     if (keyboardOffset <= 0) return Math.round(winH * 0.82);
     return Math.max(280, winH - keyboardOffset - 8);
   }, [keyboardOffset]);
-  const resultsMaxHeight = useMemo(() => Math.max(180, cardMaxHeight - 132), [cardMaxHeight]);
+  const resultsMaxHeight = useMemo(() => Math.max(160, cardMaxHeight - 188), [cardMaxHeight]);
 
   useEffect(() => {
     if (!visible) return;

@@ -14,6 +14,7 @@ import {
   loadBundledJson,
   releaseBundledJsonMemory,
   tryLoadBundledJson,
+  invalidateBundledJsonCache,
 } from "../utils/loadBundledJson";
 
 type SurahBundle = {
@@ -48,17 +49,34 @@ function buildKkMapsFromDbBundle(kkFromDbBundle: KkDbBundle): void {
   }
 }
 
+function buildTurkishPrintBySurah(
+  unicodeBundle: { data?: { surahs?: SurahBundle[] } } | null | undefined
+): Map<number, Map<number, string>> {
+  const out = new Map<number, Map<number, string>>();
+  for (const s of unicodeBundle?.data?.surahs ?? []) {
+    const m = new Map<number, string>();
+    for (const a of s.ayahs ?? []) {
+      const t = (a.text ?? "").trim();
+      if (t) m.set(a.numberInSurah, t);
+    }
+    if (m.size) out.set(s.number, m);
+  }
+  return out;
+}
+
 function buildMapsFromBundles(
   surahListBundle: unknown,
   fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
   _translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: KkDbBundle | null
+  kkFromDbBundle: KkDbBundle | null,
+  unicodeQuranBundle?: { data?: { surahs?: SurahBundle[] } } | null
 ): void {
   buildMapsFromBundlesSync(
     surahListBundle,
     fullQuranBundle,
     _translitBundle,
-    kkFromDbBundle
+    kkFromDbBundle,
+    unicodeQuranBundle
   );
 }
 
@@ -66,7 +84,8 @@ function buildMapsFromBundlesSync(
   surahListBundle: unknown,
   fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
   _translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: KkDbBundle | null
+  kkFromDbBundle: KkDbBundle | null,
+  unicodeQuranBundle?: { data?: { surahs?: SurahBundle[] } } | null
 ): void {
   if (surahListBundle != null) {
     const parsed = parseSurahsFromApiJson(surahListBundle);
@@ -79,21 +98,25 @@ function buildMapsFromBundlesSync(
   if (!kkBySurah) kkBySurah = new Map();
   if (!bookTranslitBySurah) bookTranslitBySurah = new Map();
 
+  const turkishBySurah = buildTurkishPrintBySurah(unicodeQuranBundle);
   ayahsBySurah = new Map();
   for (const s of fullQuranBundle?.data?.surahs ?? []) {
     const kkMap = kkBySurah.get(s.number);
     const dbTrMap = bookTranslitBySurah.get(s.number);
+    const turkishMap = turkishBySurah.get(s.number);
     const ayahs: CachedAyah[] = (s.ayahs ?? []).map((a) => {
       const trDb = dbTrMap?.get(a.numberInSurah);
       const trDbStr = (trDb ?? "").trim();
       // Тек кирилл (кітаптық) — латын EN-ді сақтамаймыз; экран арабтан KK генерациялайды.
       const tr = trDbStr && hasCyrillicScript(trDbStr) ? trDbStr : "";
       const kkTxt = kkMap?.get(a.numberInSurah);
+      const textTurkishPrint = turkishMap?.get(a.numberInSurah);
       return {
         numberInSurah: a.numberInSurah,
         text: a.text,
         ...(tr ? { translit: tr } : {}),
         ...(kkTxt ? { textKk: kkTxt } : {}),
+        ...(textTurkishPrint ? { textTurkishPrint } : {}),
       };
     });
     if (ayahs.length) ayahsBySurah.set(s.number, ayahs);
@@ -104,7 +127,8 @@ async function buildMapsFromBundlesAsync(
   surahListBundle: unknown,
   fullQuranBundle: { data?: { surahs?: SurahBundle[] } },
   translitBundle: { data?: { surahs?: SurahBundle[] } },
-  kkFromDbBundle: KkDbBundle | null
+  kkFromDbBundle: KkDbBundle | null,
+  unicodeQuranBundle?: { data?: { surahs?: SurahBundle[] } } | null
 ): Promise<void> {
   if (surahListBundle != null) {
     const parsed = parseSurahsFromApiJson(surahListBundle);
@@ -117,22 +141,26 @@ async function buildMapsFromBundlesAsync(
   if (!kkBySurah) kkBySurah = new Map();
   if (!bookTranslitBySurah) bookTranslitBySurah = new Map();
 
+  const turkishBySurah = buildTurkishPrintBySurah(unicodeQuranBundle);
   ayahsBySurah = new Map();
   const surahs = fullQuranBundle?.data?.surahs ?? [];
   for (let i = 0; i < surahs.length; i += 1) {
     const s = surahs[i]!;
     const kkMap = kkBySurah.get(s.number);
     const dbTrMap = bookTranslitBySurah.get(s.number);
+    const turkishMap = turkishBySurah.get(s.number);
     const ayahs: CachedAyah[] = (s.ayahs ?? []).map((a) => {
       const trDb = dbTrMap?.get(a.numberInSurah);
       const trDbStr = (trDb ?? "").trim();
       const tr = trDbStr && hasCyrillicScript(trDbStr) ? trDbStr : "";
       const kkTxt = kkMap?.get(a.numberInSurah);
+      const textTurkishPrint = turkishMap?.get(a.numberInSurah);
       return {
         numberInSurah: a.numberInSurah,
         text: a.text,
         ...(tr ? { translit: tr } : {}),
         ...(kkTxt ? { textKk: kkTxt } : {}),
+        ...(textTurkishPrint ? { textTurkishPrint } : {}),
       };
     });
     if (ayahs.length) ayahsBySurah.set(s.number, ayahs);
@@ -165,14 +193,54 @@ export async function ensureBundledKkReaderLoaded(): Promise<void> {
   await kkLoadPromise;
 }
 
+async function loadUnicodeBundleWithRetry(): Promise<{ data?: { surahs?: SurahBundle[] } } | null> {
+  let unicodeQuranBundle = await loadBundledJson<{ data?: { surahs?: SurahBundle[] } }>(
+    "quran-unicode-full.json"
+  ).catch(() => null);
+  if (unicodeQuranBundle) return unicodeQuranBundle;
+  await invalidateBundledJsonCache("quran-unicode-full.json");
+  unicodeQuranBundle = await loadBundledJson<{ data?: { surahs?: SurahBundle[] } }>(
+    "quran-unicode-full.json"
+  ).catch(() => null);
+  return unicodeQuranBundle;
+}
+
+function bundledTurkishPrintReady(): boolean {
+  const row = ayahsBySurah?.get(1)?.[0];
+  return Boolean((row?.textTurkishPrint ?? "").trim());
+}
+
+async function mergeUnicodeTurkishPrintIfNeeded(): Promise<void> {
+  if (bundledTurkishPrintReady() || !ayahsBySurah?.size) return;
+  const unicodeQuranBundle = await loadUnicodeBundleWithRetry();
+  const turkishBySurah = buildTurkishPrintBySurah(unicodeQuranBundle);
+  if (!turkishBySurah.size) return;
+  for (const [surah, rows] of ayahsBySurah) {
+    const turkishMap = turkishBySurah.get(surah);
+    if (!turkishMap?.size) continue;
+    ayahsBySurah.set(
+      surah,
+      rows.map((a) => {
+        const t = turkishMap.get(a.numberInSurah);
+        return t ? { ...a, textTurkishPrint: t } : a;
+      })
+    );
+  }
+  releaseBundledJsonMemory("quran-unicode-full.json");
+}
+
 async function loadBundlesAsync(): Promise<void> {
   const kkReady = Boolean(kkBySurah && kkBySurah.size > 0);
-  if (ayahsBySurah && kkReady) return;
+  if (ayahsBySurah && kkReady) {
+    await mergeUnicodeTurkishPrintIfNeeded();
+    return;
+  }
 
   await ensureBundledKkReaderLoaded();
 
-  const [fullQuranBundle, translitBundle] = await Promise.all([
+  const [fullQuranBundle, unicodeQuranBundle, translitBundle] = await Promise.all([
     loadBundledJson("quran-uthmani-full.json").catch(() => null),
+    loadUnicodeBundleWithRetry(),
     tryLoadBundledJson("quran-en-transliteration-full.json"),
   ]);
 
@@ -192,9 +260,11 @@ async function loadBundlesAsync(): Promise<void> {
     surahListBundle,
     fullQuranBundle as { data?: { surahs?: SurahBundle[] } },
     (translitBundle ?? { data: { surahs: [] } }) as { data?: { surahs?: SurahBundle[] } },
-    null
+    null,
+    unicodeQuranBundle as { data?: { surahs?: SurahBundle[] } } | null
   );
   releaseBundledJsonMemory("quran-uthmani-full.json");
+  releaseBundledJsonMemory("quran-unicode-full.json");
   releaseBundledJsonMemory("quran-en-transliteration-full.json");
 }
 
@@ -338,6 +408,7 @@ export function releaseBundledQuranReaderMemory(opts?: { keepSurahList?: boolean
   loadPromise = null;
   kkLoadPromise = null;
   releaseBundledJsonMemory("quran-uthmani-full.json");
+  releaseBundledJsonMemory("quran-unicode-full.json");
   releaseBundledJsonMemory("quran-en-transliteration-full.json");
   releaseBundledJsonMemory("quran-kk-from-db.json");
 }

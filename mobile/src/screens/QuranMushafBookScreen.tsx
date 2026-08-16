@@ -39,6 +39,7 @@ import { loadBundledTajweedSurahMap } from "../services/bundledQuranTajweed";
 import {
   buildQcf4MushafPagesGlobalLight,
   buildMushafPagesGlobalLight,
+  clearMushafBookAyahResolveCache,
   filterMushafBookPagesForSurah,
   findMushafBookPageIndexForAyah,
   mushafBookPageIndex,
@@ -86,7 +87,9 @@ import {
 import { resolveCachedOrRemoteQuranAudioUri } from "../services/quranAudioCache";
 import { ayahNumbersForAudioPlayUntil } from "../quran/quranAyahPlayQueue";
 import {
+  getHatimArabicScriptEdition,
   getHatimAudioPlayUntil,
+  setHatimArabicScriptEdition,
   setHatimAudioPlayUntil,
   type HatimAudioPlayUntil,
 } from "../storage/hatimPrefs";
@@ -120,7 +123,7 @@ import {
   normalizeArabicFontPreset,
   type QuranArabicFontPresetId,
 } from "../config/quranArabicFontPresets";
-import { DEFAULT_QURAN_ARABIC_SCRIPT_EDITION } from "../config/quranArabicScriptEdition";
+import { DEFAULT_QURAN_ARABIC_SCRIPT_EDITION, type QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
 import { DEFAULT_MUSHAF_DENSITY } from "../config/mushafConfig";
 import {
   DEFAULT_QURAN_READING_THEME,
@@ -714,20 +717,22 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       }
       void (async () => {
         await persistHatimBookLockedPrefs();
-        const [showArabic, showTranslit, showMeaning, rec, markers, playScope] = await Promise.all([
+        const [showArabic, showTranslit, showMeaning, rec, markers, playScope, scriptEdition] =
+          await Promise.all([
           getQuranReaderShowArabic(),
           getQuranReaderShowTranslit(),
           getQuranReaderShowMeaning(),
           getQuranReciterEdition(),
           loadAyahMarkers(),
           getHatimAudioPlayUntil(),
+          getHatimArabicScriptEdition(),
         ]);
         setShowReaderArabic(showArabic);
         setShowReaderTranslit(showTranslit);
         setShowReaderMeaning(showMeaning);
         setReciterEdition(normalizeReciterEdition(rec));
         setArabicFontPreset(resolveHatimBookArabicFont());
-        setArabicScriptEdition(resolveHatimBookScript());
+        setArabicScriptEdition(scriptEdition);
         setMushafDensityState(resolveHatimBookDensity());
         setMushafTextScale(HATIM_LOCKED_MUSHAF_TEXT_SCALE);
         setReadingThemeId(resolveHatimBookReadingTheme());
@@ -1277,8 +1282,11 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
       onShowTajweedColors: () => {
         /* хатым mushaf: тәжуид түстері мүлдем өшірулі */
       },
-      onArabicScriptEdition: () => {
-        setArabicScriptEdition(resolveHatimBookScript());
+      onArabicScriptEdition: (id: QuranArabicScriptEditionId) => {
+        setArabicScriptEdition(id);
+        void setHatimArabicScriptEdition(id);
+        clearMushafBookAyahResolveCache();
+        setQuranTextRev((v) => v + 1);
       },
       onPlayUntil: (scope: HatimAudioPlayUntil) => {
         setHatimPlayUntil(scope);
@@ -2025,6 +2033,14 @@ export function QuranMushafBookScreen({ route, navigation }: Props) {
             playUntil: hatimPlayUntil,
           },
           handlers: hatimReaderSettingsHandlers,
+        }}
+        playUntilScope={hatimPlayUntil}
+        arabicScriptEdition={arabicScriptEdition}
+        onArabicScriptEdition={(id) => {
+          setArabicScriptEdition(id);
+          void setHatimArabicScriptEdition(id);
+          clearMushafBookAyahResolveCache();
+          setQuranTextRev((v) => v + 1);
         }}
       />
     </View>

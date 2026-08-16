@@ -19,10 +19,72 @@ function addPadding(base: unknown, extra: number): number {
  */
 export function quranArabicNoClipTextStyle(
   style: TextStyle,
-  opts: { compact?: boolean; extraBottomPadding?: number } = {}
+  opts: {
+    compact?: boolean;
+    extraBottomPadding?: number;
+    turkishPrintHatim?: boolean;
+    /** Түрік Unicode viewport: lineHeight сәл кеңейеді, descender padding. */
+    turkishMedinaParity?: boolean;
+    turkishQfFixedSize?: boolean;
+    /** Сүре scroll тізімі — asti descender кесілмеуі. */
+    ayahScrollStyle?: boolean;
+  } = {}
 ): TextStyle {
   const fontSize = numeric(style.fontSize);
   const lineHeight = numeric(style.lineHeight);
+  if (opts.turkishQfFixedSize) {
+    return {
+      ...style,
+      flexShrink: 0,
+      includeFontPadding: true,
+      ...(Platform.OS !== "web" ? { textAlignVertical: "center" as const } : null),
+    };
+  }
+  if (opts.turkishMedinaParity) {
+    const scroll = opts.ayahScrollStyle === true;
+    const verticalPad = scroll
+      ? fontSize != null
+        ? Math.max(5, Math.ceil(fontSize * 0.12))
+        : 5
+      : fontSize != null
+        ? Math.max(3, Math.ceil(fontSize * 0.08))
+        : 3;
+    const minLineHeight =
+      fontSize != null
+        ? Math.max(
+            lineHeight ?? 0,
+            fontSize + (scroll ? 14 : 12),
+            Math.ceil(fontSize * (scroll ? 1.28 : 1.32))
+          )
+        : lineHeight;
+    return {
+      ...style,
+      flexShrink: 0,
+      ...(minLineHeight != null ? { lineHeight: minLineHeight } : null),
+      includeFontPadding: true,
+      paddingTop: addPadding(style.paddingTop, scroll ? Math.max(2, Math.floor(verticalPad * 0.4)) : 1),
+      paddingBottom: addPadding(style.paddingBottom, verticalPad + (opts.extraBottomPadding ?? 0) + (scroll ? 0 : 2)),
+      ...(Platform.OS !== "web"
+        ? { textAlignVertical: (scroll ? "center" : "top") as const }
+        : null),
+    };
+  }
+  if (opts.turkishPrintHatim) {
+    const verticalPad = fontSize != null ? Math.max(1, Math.ceil(fontSize * 0.03)) : 1;
+    const minLineHeight =
+      fontSize != null
+        ? Math.max(lineHeight ?? 0, fontSize + 4, Math.ceil(fontSize * 1.08))
+        : lineHeight;
+    return {
+      ...style,
+      flexShrink: 0,
+      ...(minLineHeight != null ? { lineHeight: minLineHeight } : null),
+      includeFontPadding: true,
+      paddingTop: addPadding(style.paddingTop, Math.max(1, Math.floor(verticalPad * 0.35))),
+      paddingBottom: addPadding(style.paddingBottom, verticalPad + (opts.extraBottomPadding ?? 0)),
+      ...(Platform.OS !== "web" ? { textAlignVertical: "center" as const } : null),
+    };
+  }
   const factor = opts.compact ? COMPACT_ARABIC_LINE_HEIGHT_FACTOR : MIN_ARABIC_LINE_HEIGHT_FACTOR;
   const minLineHeight = fontSize != null ? Math.ceil(fontSize * factor) : null;
   const safeLineHeight =

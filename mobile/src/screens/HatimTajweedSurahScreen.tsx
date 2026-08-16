@@ -130,9 +130,17 @@ function makeStyles(isDark: boolean) {
       backgroundColor: bar,
     },
     backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-    titleCol: { flex: 1, alignItems: "center", minWidth: 0 },
-    appBarTitle: { fontSize: 17, fontWeight: "800", color: ink },
-    appBarArabic: { fontSize: 14, color: ink, opacity: 0.72, marginTop: 2 },
+    titleCol: { flex: 1, alignItems: "stretch", minWidth: 0, paddingHorizontal: 4 },
+    appBarTitle: { fontSize: 17, fontWeight: "800", color: ink, textAlign: "center" },
+    appBarArabic: {
+      fontSize: 14,
+      color: ink,
+      opacity: 0.72,
+      marginTop: 2,
+      alignSelf: "stretch",
+      textAlign: "right",
+      writingDirection: "rtl",
+    },
     center: { flex: 1, alignItems: "center", justifyContent: "center" },
   });
 }

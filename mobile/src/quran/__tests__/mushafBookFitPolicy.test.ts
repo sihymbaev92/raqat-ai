@@ -92,4 +92,10 @@ describe("mushafBookFitPolicy", () => {
     expect(mushafOnePageFitScale(500, 760, "book")).toBeCloseTo(0.86);
     expect(mushafOnePageFitScale(180, 760, "book")).toBe(1);
   });
+
+  it("uses the same fit scale policy for all script editions", () => {
+    const madinah = mushafOnePageFitScale(1100, 720, "book");
+    const turkish = mushafOnePageFitScale(1100, 720, "book");
+    expect(turkish).toBe(madinah);
+  });
 });

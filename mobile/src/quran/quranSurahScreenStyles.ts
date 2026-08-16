@@ -330,7 +330,7 @@ export function makeQuranSurahScreenStyles(
       fontSize: 24,
       fontWeight: "400",
       writingDirection: "rtl",
-      textAlign: "center",
+      textAlign: "right",
       lineHeight: 40,
       letterSpacing: 0.04,
       ...Platform.select({
@@ -348,7 +348,8 @@ export function makeQuranSurahScreenStyles(
       paddingHorizontal: 10,
     },
     mushafBismillahBannerTxt: {
-      textAlign: "center",
+      textAlign: "right",
+      writingDirection: "rtl",
       color: quranAyahArabicInk,
       ...(mushafBismFont ? { fontSize: mushafBismFont } : { fontSize: Math.round(36 * scale) }),
       ...(mushafBismLh ? { lineHeight: mushafBismLh } : { lineHeight: Math.round(52 * scale) }),
@@ -587,7 +588,8 @@ export function makeQuranSurahScreenStyles(
       fontSize: 15,
       marginTop: 8,
       writingDirection: "rtl",
-      textAlign: "center",
+      textAlign: "right",
+      alignSelf: "stretch",
     },
     toastWrap: {
       position: "absolute",
@@ -611,7 +613,9 @@ export function makeQuranSurahScreenStyles(
     ayahCol: { flex: 1, minWidth: 0 },
     ayahArBlock: {
       width: "100%",
-      alignItems: "flex-end",
+      alignSelf: "stretch",
+      alignItems: "stretch",
+      direction: "rtl",
     },
     ayahRow: {
       alignItems: "stretch",
@@ -630,7 +634,7 @@ export function makeQuranSurahScreenStyles(
     },
     bismillahBanner: {
       width: "100%",
-      alignItems: "center",
+      alignItems: "stretch",
       justifyContent: "center",
       paddingVertical: 20,
       paddingHorizontal: 14,
@@ -643,7 +647,7 @@ export function makeQuranSurahScreenStyles(
     bismillahBannerTxt: quranArabicNoClipTextStyle({
       color: quranAyahArabicInk,
       writingDirection: "rtl",
-      textAlign: "center",
+      textAlign: "right",
       ...arabAyahFont,
       fontSize:
         typeof arabAyahFont.fontSize === "number" ? Math.round(arabAyahFont.fontSize * 1.12) : 36,
@@ -657,7 +661,9 @@ export function makeQuranSurahScreenStyles(
     ayahArabicTap: {
       position: "relative",
       alignSelf: "stretch",
+      width: "100%",
       maxWidth: "100%",
+      overflow: "visible",
     },
     ayahArabicTapPressed: {
       backgroundColor: "transparent",
@@ -682,6 +688,11 @@ export function makeQuranSurahScreenStyles(
       color: quranAyahArabicInk,
       writingDirection: "rtl",
       textAlign: "right",
+      width: "100%",
+      alignSelf: "stretch",
+      flexShrink: 1,
+      minWidth: 0,
+      maxWidth: "100%",
       ...arabAyahFont,
       ...(mushafArabSize ? { fontSize: mushafArabSize } : null),
       ...(mushafArabLineHeight ? { lineHeight: mushafArabLineHeight } : null),

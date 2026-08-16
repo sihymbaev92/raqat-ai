@@ -23,6 +23,7 @@ import {
   getQuranTajweedSurahs,
   type QuranTajweedSurah,
 } from "../services/quranTajweedAsset";
+import { scriptureArabicTextStyle } from "../theme/scriptureArabicTextStyle";
 import { TAJWEED_RULES_CATALOG } from "../content/tajweedRulesCatalog";
 
 const CREAM_BG = "#FDFBF7";
@@ -197,13 +198,16 @@ export function HatimTajweedListScreen({ navigation }: Props) {
                   <Text style={styles.cardTitle} numberOfLines={2}>
                     {displayTitle}
                   </Text>
+                  {locale !== "ar" && item.name ? (
+                    <Text
+                      style={[styles.cardArabic, scriptureArabicTextStyle({ font: "lateef" })]}
+                      numberOfLines={1}
+                    >
+                      {item.name}
+                    </Text>
+                  ) : null}
                   <Text style={styles.cardSub}>{subtitle}</Text>
                 </View>
-                {locale !== "ar" ? (
-                  <Text style={styles.cardArabic} numberOfLines={1}>
-                    {item.name ?? ""}
-                  </Text>
-                ) : null}
               </Pressable>
             );
           }}
@@ -326,6 +330,11 @@ function makeStyles(isDark: boolean) {
     cardBody: { flex: 1, minWidth: 0 },
     cardTitle: { color: ink, fontWeight: "800", fontSize: 15 },
     cardSub: { color: muted, fontSize: 12, marginTop: 2 },
-    cardArabic: { color: muted, fontSize: 18, fontWeight: "500", maxWidth: 120, textAlign: "right" },
+    cardArabic: {
+      color: muted,
+      fontSize: 18,
+      fontWeight: "500",
+      marginTop: 2,
+    },
   });
 }

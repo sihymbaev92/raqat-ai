@@ -4,6 +4,7 @@ import {
   buildQcf4MushafPagesGlobalLight,
   buildMushafPagesGlobal,
   buildMushafPagesGlobalLight,
+  clearMushafPagesGlobalCache,
   filterMushafBookPagesForSurah,
   findMushafBookPageIndexForAyah,
   resolveMushafBookAyah,
@@ -38,6 +39,7 @@ describe("buildQcf4MushafPagesGlobalLight", () => {
 describe("buildMushafPagesGlobal", () => {
   beforeAll(async () => {
     await ensureBundledQuranReaderLoaded();
+    clearMushafPagesGlobalCache();
   });
 
   it("builds exactly 604 Hafs pages", () => {
@@ -68,6 +70,21 @@ describe("buildMushafPagesGlobal", () => {
     expect(p2.mushafPageNumber).toBe(2);
     expect(baqarah.map((a) => a.numberInSurah)).toEqual([1, 2, 3, 4, 5]);
     expect(baqarah.every((a) => (a.text ?? "").trim().length > 8)).toBe(true);
+  });
+
+  it("resolveMushafBookAyah includes Turkish Unicode from bundled reader", () => {
+    const enriched = resolveMushafBookAyah({
+      surahNumber: 1,
+      numberInSurah: 1,
+      text: "",
+    });
+    expect((enriched.textTurkishPrint ?? "").trim().length).toBeGreaterThan(0);
+  });
+
+  it("full Hatim pages include Turkish Unicode print text", () => {
+    const pages = buildMushafPagesGlobal();
+    const fatiha1 = pages[0]!.ayahs[0]!;
+    expect((fatiha1.textTurkishPrint ?? "").trim().length).toBeGreaterThan(0);
   });
 
   it("resolveMushafBookAyah enriches Arabic-only stubs with meaning and reading", () => {

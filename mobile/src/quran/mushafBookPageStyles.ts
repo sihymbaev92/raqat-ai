@@ -150,7 +150,7 @@ export function makeMushafBookPageStyles(
       fontSize: qcomBook ? 19 : 24,
       lineHeight: qcomBook ? 28 : 40,
       fontWeight: "400",
-      textAlign: "center",
+      textAlign: "right",
       writingDirection: "rtl",
       ...(qcomBook
         ? QCOM_SURAH_TITLE_FONT
@@ -177,7 +177,7 @@ export function makeMushafBookPageStyles(
     },
     bismillahBannerTxt: quranArabicNoClipTextStyle({
       color: mushafPageInk,
-      textAlign: "center",
+      textAlign: "right",
       writingDirection: "rtl",
       fontSize: qcomBook ? HATIM_UNIFIED_ARABIC_FONT_SIZE : mushafBismFont,
       lineHeight: qcomBook ? HATIM_UNIFIED_ARABIC_LINE_HEIGHT : mushafBismLh,
@@ -293,8 +293,13 @@ export function makeMushafBookPageStyles(
       marginTop: 1,
       color: uiMuted,
       fontSize: 14,
+      alignSelf: "stretch",
+      width: "100%",
       textAlign: "right",
       writingDirection: "rtl",
+      ...(Platform.OS === "web"
+        ? { fontFamily: `"${QURAN_BOOK_FONT_FACE.lateef}", "Scheherazade New", serif` }
+        : { fontFamily: QURAN_BOOK_FONT_FACE.lateef }),
     },
   });
 }

@@ -29,6 +29,7 @@ import {
   type HatimReaderSettingsSnapshot,
 } from "./HatimReaderSettingsMenuSection";
 import type { HatimAudioPlayUntil } from "../../storage/hatimPrefs";
+import type { QuranArabicScriptEditionId } from "../../config/quranArabicScriptEdition";
 import {
   QURAN_READING_LOCALES,
   setQuranReadingLocale,
@@ -77,6 +78,9 @@ type Props = {
   };
   /** Хатым: «Ойнату … дейін» жолы playUntil баптауымен сәйкес. */
   playUntilScope?: HatimAudioPlayUntil;
+  /** Араб имла: Медине (Усмани) | Түрік (Unicode). */
+  arabicScriptEdition?: QuranArabicScriptEditionId;
+  onArabicScriptEdition?: (id: QuranArabicScriptEditionId) => void;
 };
 
 type MenuStyles = {
@@ -169,6 +173,8 @@ export function AyahContextMenuSheet({
   hasMarkerForAyah,
   hatimReaderSettings,
   playUntilScope = "juz",
+  arabicScriptEdition,
+  onArabicScriptEdition,
 }: Props) {
   useAppLocale();
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
@@ -266,7 +272,7 @@ export function AyahContextMenuSheet({
                   setReciterOpen((v) => !v);
                 }}
               />
-              {reciterOpen ? (
+              { reciterOpen ? (
                 <View style={s.reciterWrap}>
                   {QURAN_RECITER_GROUP_ORDER.map((group) => {
                     const items = QURAN_RECITER_OPTIONS.filter((r) => r.group === group);
@@ -319,6 +325,59 @@ export function AyahContextMenuSheet({
                     );
                   })}
                 </View>
+              ) : null}
+              {arabicScriptEdition != null && onArabicScriptEdition ? (
+                <>
+                  <View style={s.divider} />
+                  <Text style={[s.reciterGroup, { marginTop: 4 }]}>{tr(kk.quran.ayahMenuArabicScriptTitle)}</Text>
+                  {(
+                    [
+                      {
+                        id: "madinah" as const,
+                        label: kk.quran.ayahMenuArabicScriptMadinah,
+                        icon: "menu-book" as const,
+                      },
+                      {
+                        id: "turkish" as const,
+                        label: kk.quran.ayahMenuArabicScriptTurkish,
+                        icon: "language" as const,
+                      },
+                    ] as const
+                  ).map((opt) => {
+                    const selected = arabicScriptEdition === opt.id;
+                    return (
+                      <Pressable
+                        key={opt.id}
+                        oyuBackdrop={false}
+                        onPress={() => {
+                          onArabicScriptEdition(opt.id);
+                          closeAll();
+                        }}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={tr(opt.label)}
+                        style={({ pressed }) => [
+                          s.reciterOption,
+                          selected && s.reciterOptionSelected,
+                          pressed && { opacity: 0.88 },
+                        ]}
+                      >
+                        <MaterialIcons
+                          name={selected ? "radio-button-checked" : "radio-button-unchecked"}
+                          size={18}
+                          color={selected ? colors.accent : colors.muted}
+                        />
+                        <MaterialIcons name={opt.icon} size={18} color={colors.text} />
+                        <Text
+                          style={[s.reciterOptionText, selected && s.reciterOptionTextSelected]}
+                          numberOfLines={2}
+                        >
+                          {tr(opt.label)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </>
               ) : null}
               <View style={s.divider} />
               <MenuRow

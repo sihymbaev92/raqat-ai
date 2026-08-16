@@ -141,13 +141,27 @@ export function clearMushafPagesGlobalCache(): void {
   resolvedAyahCache.clear();
 }
 
+/** Тест / bundled quran жаңарғанда resolve кэшін тазалау (Turkish Unicode merge). */
+export function clearMushafBookAyahResolveCache(): void {
+  resolvedAyahCache.clear();
+}
+
 /** Жеңіл бет аяты → bundled мәтін (web фонда жүктелгенде). */
 export function resolveMushafBookAyah(stub: MushafBookAyah): MushafBookAyah {
   const key = `${stub.surahNumber}:${stub.numberInSurah}`;
-  const hit = resolvedAyahCache.get(key);
-  if (hit && (hit.text ?? "").replace(/^\uFEFF/, "").trim()) return hit;
-
   const row = bundledAyahRow(stub.surahNumber, stub.numberInSurah);
+  const hit = resolvedAyahCache.get(key);
+  if (hit && (hit.text ?? "").replace(/^\uFEFF/, "").trim()) {
+    const turkishPrint =
+      (hit.textTurkishPrint ?? "").trim() || (row?.textTurkishPrint ?? "").trim() || undefined;
+    if (turkishPrint && turkishPrint !== (hit.textTurkishPrint ?? "").trim()) {
+      const patched = { ...hit, textTurkishPrint: turkishPrint };
+      resolvedAyahCache.set(key, patched);
+      return patched;
+    }
+    return hit;
+  }
+
   const textTajweed =
     (stub.textTajweed ?? "").trim() ||
     (row?.textTajweed ?? "").trim() ||

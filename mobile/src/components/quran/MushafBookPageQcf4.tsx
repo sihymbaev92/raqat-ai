@@ -18,6 +18,7 @@ import {
 } from "../../quran/mushafBookPageLayout";
 import {
   QCF4_EXTERNAL_SURAH_FRAME_RESERVE,
+  QCF4_EXTERNAL_SURAH_FRAME_TOP_TIGHTEN,
   QCF4_PHONE_GLYPH_SCALE_QCOM,
   QCF4_PHONE_GLYPH_MAX_QCOM,
   QCF4_PHONE_LINE_PADDING,
@@ -80,8 +81,6 @@ const QCF4_NATIVE_GLYPH_VISUAL_SCALE_Y = 1.06;
 const QCF4_NATIVE_LINE_INNER_PADDING = 2;
 /** Жоғарғы джуз/бет жолы. */
 const QCF4_CHROME_JUZ_RESERVE = 28;
-/** Жүз/бет қатары мен сүре рамкасы арасын сәл жақындату. */
-const QCF4_EXTERNAL_SURAH_FRAME_TOP_TIGHTEN = 6;
 const QCF4_READABLE_WEB_FONT =
   `"${QURAN_BOOK_FONT_FACE.scheherazade}", "Scheherazade New", "${QURAN_BOOK_FONT_FACE.lateef}", Lateef, serif`;
 const QCF4_TAJWEED_FETCH_TIMEOUT_MS = 14_000;

@@ -132,7 +132,9 @@ export function displayCachedAyahArabic(item: CachedAyah, edition: QuranArabicSc
     const alt = (item.textTurkishPrint ?? "").trim();
     if (alt) return alt;
   }
-  return (item.text ?? "").trim();
+  const uthmani = (item.text ?? "").trim();
+  if (uthmani) return uthmani;
+  return "";
 }
 
 /** Платформа/басқа дерек үстінен Мадина + түрік жолдарын қою (негізгі kk/translit сақталады). */

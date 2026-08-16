@@ -4,7 +4,7 @@ import { Pressable } from "@/ui/Pressable";
 import type { ThemeColors } from "../../theme/colors";
 import { quranSurahListTypography } from "../../theme/quranSurahListTheme";
 import { surahArabicListTitle } from "../../data/surahArabicTitles";
-import { QURAN_BOOK_FONT_FACE } from "../../fonts/quranBookFonts";
+import { scriptureArabicTextStyle, scriptureArabicContainerStyle } from "../../theme/scriptureArabicTextStyle";
 
 function quranSurahListPalette(colors: ThemeColors, isDark: boolean) {
   return {
@@ -49,6 +49,23 @@ function QuranSurahListRowInner({
   const palette = useMemo(() => quranSurahListPalette(colors, isDark), [colors, isDark]);
   const arabicTitle = useMemo(() => surahArabicListTitle(surahNumber), [surahNumber]);
   const styles = useMemo(() => makeStyles(palette), [palette]);
+  /** Хатым: араб атау оң жақ бағанада (бет нөмірінің үстінде). */
+  const hatimArabicTrailing = mushafPage != null;
+
+  const arabicTitleNode = arabicTitle ? (
+    <View style={hatimArabicTrailing ? styles.arabicHostTrailing : styles.arabicHost}>
+      <Text
+        style={[
+          scriptureArabicTextStyle({ font: "lateef" }),
+          hatimArabicTrailing ? styles.arabicTitleTrailing : styles.arabicTitle,
+        ]}
+        numberOfLines={hatimArabicTrailing ? 2 : 1}
+        allowFontScaling={false}
+      >
+        {arabicTitle}
+      </Text>
+    </View>
+  ) : null;
 
   return (
     <View style={styles.rowWrap}>
@@ -60,34 +77,51 @@ function QuranSurahListRowInner({
         accessibilityLabel={accessibilityLabel}
       >
         <View style={styles.mainCol}>
-          <View style={styles.titleRow}>
-            <Text style={styles.numberedTitle} numberOfLines={1} allowFontScaling={false}>
-              {numberedTitle}
-            </Text>
-            {arabicTitle ? (
-              <Text style={styles.arabicTitle} numberOfLines={1} allowFontScaling={false}>
-                {arabicTitle}
-              </Text>
-            ) : null}
-          </View>
+          <Text style={styles.numberedTitle} numberOfLines={1} allowFontScaling={false}>
+            {numberedTitle}
+          </Text>
+          {!hatimArabicTrailing ? arabicTitleNode : null}
           <Text style={styles.metaSubtitle} numberOfLines={1}>
             {metaSubtitle}
           </Text>
         </View>
-        <View style={styles.rightCol}>
-          {inProgress ? <Text style={styles.progressDot}>●</Text> : null}
-          {trailing}
-          {mushafPage != null ? (
-            <Text
-              style={styles.pageIndex}
-              importantForAccessibility="no"
-              allowFontScaling={false}
-              maxFontSizeMultiplier={1}
-              numberOfLines={1}
-            >
-              {mushafPage}
-            </Text>
-          ) : null}
+        <View style={[styles.rightCol, hatimArabicTrailing && styles.rightColHatim]}>
+          {hatimArabicTrailing ? (
+            <>
+              {arabicTitleNode}
+              <View style={styles.rightColFoot}>
+                {inProgress ? <Text style={styles.progressDot}>●</Text> : null}
+                {trailing}
+                {mushafPage != null ? (
+                  <Text
+                    style={styles.pageIndex}
+                    importantForAccessibility="no"
+                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1}
+                    numberOfLines={1}
+                  >
+                    {mushafPage}
+                  </Text>
+                ) : null}
+              </View>
+            </>
+          ) : (
+            <>
+              {inProgress ? <Text style={styles.progressDot}>●</Text> : null}
+              {trailing}
+              {mushafPage != null ? (
+                <Text
+                  style={styles.pageIndex}
+                  importantForAccessibility="no"
+                  allowFontScaling={false}
+                  maxFontSizeMultiplier={1}
+                  numberOfLines={1}
+                >
+                  {mushafPage}
+                </Text>
+              ) : null}
+            </>
+          )}
         </View>
       </Pressable>
     </View>
@@ -149,29 +183,34 @@ function makeStyles(palette: ReturnType<typeof quranSurahListPalette>) {
       minHeight: 68,
     },
     cardPressed: { opacity: 0.88 },
-    mainCol: { flex: 1, minWidth: 0, paddingRight: 8 },
-    titleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      flexWrap: "nowrap",
-      gap: 8,
-      minWidth: 0,
-    },
+    mainCol: { flex: 1, minWidth: 0, paddingRight: 8, alignSelf: "stretch" },
     numberedTitle: {
       ...quranSurahListTypography.numberedTitle,
       color: palette.title,
       flexShrink: 0,
+      textAlign: "left",
+    },
+    arabicHost: {
+      ...scriptureArabicContainerStyle(),
+      marginTop: 2,
+      alignItems: "flex-end",
     },
     arabicTitle: {
       ...quranSurahListTypography.arabicInline,
       color: palette.title,
-      writingDirection: "rtl",
-      flexShrink: 1,
-      ...(Platform.OS === "android" ? { includeFontPadding: false } : {}),
-      ...Platform.select({
-        web: { fontFamily: QURAN_BOOK_FONT_FACE.lateef },
-        default: { fontFamily: QURAN_BOOK_FONT_FACE.lateef },
-      }),
+      ...(Platform.OS === "android" ? { includeFontPadding: true } : {}),
+    },
+    arabicHostTrailing: {
+      alignItems: "flex-end",
+      alignSelf: "flex-end",
+      maxWidth: 156,
+      marginBottom: 2,
+    },
+    arabicTitleTrailing: {
+      ...quranSurahListTypography.arabicInline,
+      color: palette.title,
+      textAlign: "right",
+      ...(Platform.OS === "android" ? { includeFontPadding: true } : {}),
     },
     metaSubtitle: {
       ...quranSurahListTypography.metaSubtitle,
@@ -184,6 +223,20 @@ function makeStyles(palette: ReturnType<typeof quranSurahListPalette>) {
       gap: 4,
       flexShrink: 0,
       paddingLeft: 4,
+    },
+    rightColHatim: {
+      flexDirection: "column",
+      alignItems: "flex-end",
+      justifyContent: "center",
+      gap: 2,
+      minWidth: 52,
+      maxWidth: 168,
+    },
+    rightColFoot: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      alignSelf: "flex-end",
     },
     pageIndex: {
       ...quranSurahListTypography.pageIndex,

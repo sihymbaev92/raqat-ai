@@ -31,7 +31,8 @@ describe("hatimBookPolicy", () => {
   it("locks Hatim reader prefs to git HEAD defaults", () => {
     expect(resolveHatimBookReadingTheme("muftyat")).toBe(HATIM_BOOK_READING_THEME);
     expect(resolveHatimBookArabicFont("lateef")).toBe(HATIM_BOOK_ARABIC_FONT);
-    expect(resolveHatimBookScript("turkish")).toBe(HATIM_BOOK_SCRIPT);
+    expect(resolveHatimBookScript("turkish")).toBe("turkish");
+    expect(resolveHatimBookScript(null)).toBe(HATIM_BOOK_SCRIPT);
     expect(resolveHatimBookDensity("compact")).toBe(HATIM_BOOK_DENSITY);
     expect(HATIM_BOOK_READING_THEME).toBe("original");
     expect(HATIM_BOOK_ARABIC_FONT).toBe("quran_com");

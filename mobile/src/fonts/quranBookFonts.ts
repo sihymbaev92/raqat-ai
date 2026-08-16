@@ -5,7 +5,7 @@
 import * as Font from "expo-font";
 import { Platform } from "react-native";
 import { Lateef_400Regular } from "@expo-google-fonts/lateef";
-import { ScheherazadeNew_400Regular } from "@expo-google-fonts/scheherazade-new";
+import { ScheherazadeNew_400Regular, ScheherazadeNew_700Bold } from "@expo-google-fonts/scheherazade-new";
 import { QURAN_BOOK_FONT_ENTRIES } from "../services/quranBookFontManifest";
 import {
   areQuranBookFontsCached,
@@ -20,6 +20,7 @@ export const QURAN_BOOK_FONT_FACE = {
   amiri: "Amiri_400Regular",
   lateef: "Lateef_400Regular",
   scheherazade: "ScheherazadeNew_400Regular",
+  scheherazadeBold: "ScheherazadeNew_700Bold",
   /** Madina Uthmani оқу нақыші (Lateef). */
   uthmanic: "Lateef_400Regular",
 } as const;
@@ -27,6 +28,7 @@ export const QURAN_BOOK_FONT_FACE = {
 const BUNDLED_BOOK_FONTS: Record<string, number> = {
   [QURAN_BOOK_FONT_FACE.lateef]: Lateef_400Regular,
   [QURAN_BOOK_FONT_FACE.scheherazade]: ScheherazadeNew_400Regular,
+  [QURAN_BOOK_FONT_FACE.scheherazadeBold]: ScheherazadeNew_700Bold,
 };
 
 export async function isQuranBookFontsReady(): Promise<boolean> {

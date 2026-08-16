@@ -1,7 +1,10 @@
 import type { MushafDensityId } from "../config/mushafConfig";
 import { DEFAULT_MUSHAF_DENSITY } from "../config/mushafConfig";
 import type { QuranArabicFontPresetId } from "../config/quranArabicFontPresets";
-import type { QuranArabicScriptEditionId } from "../config/quranArabicScriptEdition";
+import {
+  normalizeQuranArabicScriptEdition,
+  type QuranArabicScriptEditionId,
+} from "../config/quranArabicScriptEdition";
 import type { QuranReadingThemeId } from "../theme/quranComReadingTheme";
 import { ensureBundledQuranReaderLoaded } from "../services/bundledQuranReader";
 import { loadQuranBookFonts } from "../fonts/quranBookFonts";
@@ -44,8 +47,8 @@ export function resolveHatimBookArabicFont(
 export function resolveHatimBookScript(
   stored?: QuranArabicScriptEditionId | string | null
 ): QuranArabicScriptEditionId {
-  void stored;
-  return HATIM_BOOK_SCRIPT;
+  if (stored == null || String(stored).trim() === "") return HATIM_BOOK_SCRIPT;
+  return normalizeQuranArabicScriptEdition(stored);
 }
 
 export function resolveHatimBookDensity(stored?: MushafDensityId | string | null): MushafDensityId {

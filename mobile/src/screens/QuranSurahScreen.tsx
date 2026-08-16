@@ -114,6 +114,7 @@ import {
   getMushafDensity,
   getQuranReaderNavMode,
   getQuranArabicScriptEdition,
+  setQuranArabicScriptEdition,
   getQuranReadingTheme,
   getQuranReaderShowArabic,
   getQuranReaderShowMeaning,
@@ -972,6 +973,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         playingAyahInSurah={playingAyahInSurah}
         loadingAyahAudio={loadingAyahAudio}
         ayahAudioIsPlaying={ayahAudioIsPlaying}
+        mushafTextScale={mushafTextScale}
         onPlay={onListPlayAyah}
         onLongPress={onListLongPressAyah}
       />
@@ -991,6 +993,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
       playingAyahInSurah,
       loadingAyahAudio,
       ayahAudioIsPlaying,
+      mushafTextScale,
       onListPlayAyah,
       onListLongPressAyah,
     ]
@@ -1283,6 +1286,11 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         hasMarkerForAyah={
           ayahMenuItem ? Boolean(ayahMarkers[`${surahNumber}:${ayahMenuItem.numberInSurah}`]) : false
         }
+        arabicScriptEdition={arabicScriptEdition}
+        onArabicScriptEdition={(id) => {
+          setArabicScriptEdition(id);
+          void setQuranArabicScriptEdition(id);
+        }}
       />
       <QuranSurahTranslationSheet
         visible={!!translationTargetItem}
@@ -1420,6 +1428,7 @@ export function QuranSurahScreen({ route, navigation }: Props) {
         onViewableItemsChanged={onViewableItemsChanged}
         flashListPlaybackExtra={flashListPlaybackExtra}
         renderAyahListRow={renderAyahListRow}
+        mushafTextScale={mushafTextScale}
       />
 
     </View>
